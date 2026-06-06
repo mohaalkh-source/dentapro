@@ -1,0 +1,1517 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>DentaPro | متجر مستلزمات طب الأسنان</title>
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<style>
+:root {
+  --primary: #0a5c8a;
+  --primary-light: #1a8bbf;
+  --primary-dark: #063d5e;
+  --accent: #00c2a8;
+  --accent2: #f59e0b;
+  --bg: #f0f6fb;
+  --card: #ffffff;
+  --text: #0f2133;
+  --text-muted: #5a7a90;
+  --border: #d0e4ef;
+  --danger: #e53e3e;
+  --success: #22c55e;
+  --shadow: 0 4px 24px rgba(10,92,138,0.10);
+  --shadow-lg: 0 12px 48px rgba(10,92,138,0.18);
+  --radius: 16px;
+  --radius-sm: 10px;
+  --font-ar: 'Cairo', sans-serif;
+  --font-en: 'DM Sans', sans-serif;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  font-family: var(--font-ar);
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+body.en { font-family: var(--font-en); direction: ltr; text-align: left; }
+body.en [dir="rtl"] { direction: ltr; }
+
+/* ===== SCROLLBAR ===== */
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:#e8f3fa}
+::-webkit-scrollbar-thumb{background:var(--primary-light);border-radius:3px}
+
+/* ===== HEADER ===== */
+header{
+  position: sticky; top:0; z-index:1000;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+  box-shadow: 0 2px 16px rgba(10,92,138,0.08);
+}
+.header-inner{
+  max-width:1320px; margin:0 auto;
+  display:flex; align-items:center; justify-content:space-between;
+  padding: 14px 24px; gap:16px;
+}
+.logo{
+  display:flex; align-items:center; gap:10px;
+  text-decoration:none;
+}
+.logo-icon{
+  width:44px; height:44px; border-radius:12px;
+  background: linear-gradient(135deg, var(--primary), var(--accent));
+  display:flex; align-items:center; justify-content:center;
+  font-size:22px; color:#fff;
+  box-shadow: 0 4px 12px rgba(10,92,138,0.3);
+}
+.logo-text{
+  font-weight:900; font-size:22px;
+  color: var(--primary-dark);
+  letter-spacing:-0.5px;
+}
+.logo-text span{color:var(--accent)}
+
+.header-search{
+  flex:1; max-width:480px;
+  position:relative;
+}
+.header-search input{
+  width:100%; padding:11px 48px 11px 18px;
+  border:2px solid var(--border); border-radius:50px;
+  font-family:inherit; font-size:14px; color:var(--text);
+  background:#f8fbfd; outline:none; transition:all 0.2s;
+}
+body.en .header-search input{padding:11px 18px 11px 48px}
+.header-search input:focus{border-color:var(--primary-light); background:#fff; box-shadow:0 0 0 3px rgba(26,139,191,0.12)}
+.header-search .search-btn{
+  position:absolute; top:50%; right:14px; transform:translateY(-50%);
+  background:none; border:none; cursor:pointer; color:var(--primary); font-size:16px;
+}
+body.en .header-search .search-btn{right:auto; left:14px}
+
+.header-actions{display:flex; align-items:center; gap:8px}
+.lang-btn{
+  padding:7px 14px; border-radius:50px;
+  border:2px solid var(--border); background:transparent;
+  font-family:inherit; font-size:13px; font-weight:700;
+  color:var(--primary); cursor:pointer; transition:all 0.2s;
+  display:flex; align-items:center; gap:5px;
+}
+.lang-btn:hover{background:var(--primary); color:#fff; border-color:var(--primary)}
+
+.cart-btn{
+  position:relative; width:44px; height:44px; border-radius:50%;
+  background: var(--primary); color:#fff; border:none;
+  cursor:pointer; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; box-shadow:0 3px 10px rgba(10,92,138,0.3);
+}
+.cart-btn:hover{background:var(--primary-dark); transform:scale(1.05)}
+.cart-count{
+  position:absolute; top:-4px; right:-4px;
+  background:var(--accent2); color:#fff; border-radius:50%;
+  width:20px; height:20px; font-size:11px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid #fff;
+}
+body.en .cart-count{right:auto; left:-4px}
+
+/* ===== HERO ===== */
+.hero{
+  background: linear-gradient(135deg, var(--primary-dark) 0%, var(--primary) 50%, var(--primary-light) 100%);
+  padding:70px 24px;
+  position:relative; overflow:hidden;
+}
+.hero::before{
+  content:''; position:absolute; inset:0;
+  background: radial-gradient(circle at 20% 50%, rgba(0,194,168,0.2) 0%, transparent 60%),
+              radial-gradient(circle at 80% 20%, rgba(255,255,255,0.05) 0%, transparent 50%);
+}
+.hero-inner{max-width:1320px; margin:0 auto; position:relative; z-index:1; display:flex; align-items:center; gap:48px}
+.hero-content{flex:1}
+.hero-badge{
+  display:inline-flex; align-items:center; gap:8px;
+  background:rgba(0,194,168,0.2); border:1px solid rgba(0,194,168,0.4);
+  color:#7fffef; padding:6px 16px; border-radius:50px;
+  font-size:13px; font-weight:600; margin-bottom:20px;
+}
+.hero h1{
+  font-size:clamp(28px,4vw,52px); font-weight:900;
+  color:#fff; line-height:1.2; margin-bottom:18px;
+}
+.hero h1 span{color:var(--accent)}
+.hero p{color:rgba(255,255,255,0.8); font-size:17px; line-height:1.7; margin-bottom:32px; max-width:520px}
+.hero-btns{display:flex; gap:14px; flex-wrap:wrap}
+.btn-primary{
+  padding:14px 32px; border-radius:50px;
+  background: linear-gradient(135deg, var(--accent), #00a896);
+  color:#fff; border:none; font-family:inherit; font-size:15px; font-weight:700;
+  cursor:pointer; transition:all 0.25s;
+  box-shadow:0 6px 20px rgba(0,194,168,0.4);
+  text-decoration:none; display:inline-block;
+}
+.btn-primary:hover{transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,194,168,0.5)}
+.btn-outline{
+  padding:14px 32px; border-radius:50px;
+  background:transparent; color:#fff;
+  border:2px solid rgba(255,255,255,0.4);
+  font-family:inherit; font-size:15px; font-weight:600;
+  cursor:pointer; transition:all 0.25s; text-decoration:none; display:inline-block;
+}
+.btn-outline:hover{background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.7)}
+.hero-stats{display:flex; gap:32px; margin-top:40px; flex-wrap:wrap}
+.stat{text-align:center}
+.stat-num{font-size:28px; font-weight:900; color:var(--accent); display:block}
+.stat-label{font-size:13px; color:rgba(255,255,255,0.7)}
+.hero-visual{
+  flex:0 0 auto; width:340px; height:280px;
+  background:rgba(255,255,255,0.08); border-radius:24px;
+  border:1px solid rgba(255,255,255,0.15);
+  display:flex; align-items:center; justify-content:center;
+  font-size:100px; backdrop-filter:blur(10px);
+}
+
+/* ===== SECTION ===== */
+section{padding:64px 24px}
+.section-inner{max-width:1320px; margin:0 auto}
+.section-header{text-align:center; margin-bottom:48px}
+.section-tag{
+  display:inline-block; padding:5px 16px; border-radius:50px;
+  background:rgba(10,92,138,0.08); color:var(--primary);
+  font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  margin-bottom:12px;
+}
+.section-title{font-size:clamp(22px,3vw,36px); font-weight:900; color:var(--primary-dark); margin-bottom:12px}
+.section-sub{color:var(--text-muted); font-size:16px; max-width:520px; margin:0 auto}
+
+/* ===== CATEGORIES ===== */
+.categories-grid{
+  display:grid; grid-template-columns:repeat(auto-fill, minmax(170px,1fr)); gap:16px;
+}
+.cat-card{
+  background:var(--card); border-radius:var(--radius);
+  padding:28px 16px; text-align:center; cursor:pointer;
+  border:2px solid var(--border); transition:all 0.25s;
+  text-decoration:none; color:inherit;
+}
+.cat-card:hover{border-color:var(--primary-light); transform:translateY(-4px); box-shadow:var(--shadow)}
+.cat-card.active{border-color:var(--primary); background:linear-gradient(135deg,rgba(10,92,138,0.06),rgba(0,194,168,0.04))}
+.cat-icon{font-size:36px; margin-bottom:12px; display:block}
+.cat-name{font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:4px}
+.cat-count{font-size:12px; color:var(--text-muted)}
+
+/* ===== PRODUCTS ===== */
+.products-header{
+  display:flex; align-items:center; justify-content:space-between;
+  margin-bottom:24px; gap:16px; flex-wrap:wrap;
+}
+.filter-tabs{display:flex; gap:8px; flex-wrap:wrap}
+.filter-tab{
+  padding:7px 18px; border-radius:50px; border:2px solid var(--border);
+  background:transparent; font-family:inherit; font-size:13px; font-weight:600;
+  color:var(--text-muted); cursor:pointer; transition:all 0.2s;
+}
+.filter-tab.active,.filter-tab:hover{background:var(--primary); color:#fff; border-color:var(--primary)}
+
+.products-grid{
+  display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:20px;
+}
+.product-card{
+  background:var(--card); border-radius:var(--radius);
+  border:1px solid var(--border); overflow:hidden;
+  transition:all 0.25s; position:relative;
+}
+.product-card:hover{box-shadow:var(--shadow-lg); transform:translateY(-4px)}
+.product-badge{
+  position:absolute; top:12px; right:12px; z-index:2;
+  background:var(--danger); color:#fff; padding:4px 10px;
+  border-radius:50px; font-size:11px; font-weight:700;
+}
+body.en .product-badge{right:auto; left:12px}
+.product-img{
+  width:100%; height:200px; object-fit:contain;
+  background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+  display:flex; align-items:center; justify-content:center;
+  font-size:72px; padding:16px; cursor:pointer;
+}
+.product-info{padding:18px}
+.product-brand{font-size:11px; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px}
+.product-name{font-weight:700; font-size:15px; color:var(--primary-dark); margin-bottom:6px; line-height:1.4; cursor:pointer}
+.product-name:hover{color:var(--primary)}
+.product-desc{font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px}
+.product-price-row{display:flex; align-items:center; justify-content:space-between; gap:8px}
+.product-price{font-size:20px; font-weight:900; color:var(--primary)}
+.product-old-price{font-size:13px; color:var(--text-muted); text-decoration:line-through}
+.add-to-cart{
+  width:40px; height:40px; border-radius:50%;
+  background:var(--primary); color:#fff; border:none; cursor:pointer;
+  font-size:18px; display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s; flex-shrink:0;
+}
+.add-to-cart:hover{background:var(--accent); transform:scale(1.1)}
+.add-to-cart.added{background:var(--success)}
+.product-stars{display:flex; gap:2px; color:var(--accent2); font-size:13px; margin-bottom:10px}
+.product-stars span{font-size:12px; color:var(--text-muted); margin-right:4px}
+body.en .product-stars span{margin-right:0; margin-left:4px}
+
+/* ===== CART SIDEBAR ===== */
+.cart-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:2000;
+  opacity:0; visibility:hidden; transition:all 0.3s;
+  backdrop-filter:blur(4px);
+}
+.cart-overlay.open{opacity:1; visibility:visible}
+.cart-sidebar{
+  position:fixed; top:0; left:-480px; bottom:0; width:min(480px,100vw);
+  background:var(--card); z-index:2001; transition:left 0.35s cubic-bezier(0.4,0,0.2,1);
+  display:flex; flex-direction:column; box-shadow:var(--shadow-lg);
+}
+body.en .cart-sidebar{left:auto; right:-480px; transition:right 0.35s cubic-bezier(0.4,0,0.2,1)}
+.cart-sidebar.open{left:0}
+body.en .cart-sidebar.open{left:auto; right:0}
+.cart-header{
+  padding:20px 24px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+  color:#fff;
+}
+.cart-title{font-size:18px; font-weight:800; display:flex; align-items:center; gap:10px}
+.close-btn{
+  width:36px; height:36px; border-radius:50%; border:2px solid rgba(255,255,255,0.3);
+  background:transparent; color:#fff; cursor:pointer; font-size:16px;
+  display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+}
+.close-btn:hover{background:rgba(255,255,255,0.2)}
+.cart-items{flex:1; overflow-y:auto; padding:16px}
+.cart-empty{
+  text-align:center; padding:48px 24px; color:var(--text-muted);
+}
+.cart-empty i{font-size:56px; margin-bottom:16px; opacity:0.3}
+.cart-item{
+  display:flex; gap:12px; padding:14px;
+  border-radius:var(--radius-sm); border:1px solid var(--border);
+  margin-bottom:10px; background:#fafcfe; transition:all 0.2s;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.cart-item-img{
+  width:68px; height:68px; border-radius:10px;
+  background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+  display:flex; align-items:center; justify-content:center; font-size:32px; flex-shrink:0;
+}
+.cart-item-info{flex:1}
+.cart-item-name{font-weight:700; font-size:14px; color:var(--primary-dark); margin-bottom:4px}
+.cart-item-price{color:var(--primary); font-weight:800; font-size:15px}
+.cart-item-controls{display:flex; align-items:center; gap:8px; margin-top:8px}
+.qty-btn{
+  width:28px; height:28px; border-radius:50%; border:2px solid var(--border);
+  background:#fff; cursor:pointer; font-size:14px; font-weight:700; color:var(--primary);
+  display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+}
+.qty-btn:hover{background:var(--primary); color:#fff; border-color:var(--primary)}
+.qty-num{font-weight:800; font-size:15px; min-width:24px; text-align:center; color:var(--text)}
+.remove-item{
+  margin-right:auto; background:none; border:none; color:#ccc;
+  cursor:pointer; font-size:15px; transition:color 0.2s; padding:4px;
+}
+body.en .remove-item{margin-right:0; margin-left:auto}
+.remove-item:hover{color:var(--danger)}
+
+.cart-footer{
+  padding:20px 24px; border-top:1px solid var(--border);
+  background:#fafcfe;
+}
+.cart-total-row{display:flex; justify-content:space-between; align-items:center; margin-bottom:16px}
+.cart-total-label{font-size:15px; color:var(--text-muted)}
+.cart-total-price{font-size:24px; font-weight:900; color:var(--primary)}
+.checkout-btn{
+  width:100%; padding:16px; border-radius:50px;
+  background:linear-gradient(135deg, var(--primary), var(--primary-light));
+  color:#fff; border:none; font-family:inherit; font-size:16px; font-weight:800;
+  cursor:pointer; transition:all 0.25s;
+  box-shadow:0 6px 20px rgba(10,92,138,0.3);
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+.checkout-btn:hover{transform:translateY(-2px); box-shadow:0 10px 28px rgba(10,92,138,0.4)}
+
+/* ===== ORDER MODAL ===== */
+.modal-overlay{
+  position:fixed; inset:0; background:rgba(0,0,0,0.6); z-index:3000;
+  opacity:0; visibility:hidden; transition:all 0.3s; backdrop-filter:blur(6px);
+  display:flex; align-items:center; justify-content:center; padding:16px;
+}
+.modal-overlay.open{opacity:1; visibility:visible}
+.modal{
+  background:var(--card); border-radius:24px; width:100%; max-width:620px;
+  max-height:90vh; overflow-y:auto; box-shadow:0 24px 80px rgba(0,0,0,0.3);
+  animation: modalIn 0.35s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes modalIn{from{opacity:0;transform:scale(0.9)}to{opacity:1;transform:scale(1)}}
+.modal-header{
+  padding:24px 28px 20px; border-bottom:1px solid var(--border);
+  background:linear-gradient(135deg,var(--primary-dark),var(--primary));
+  border-radius:24px 24px 0 0; color:#fff;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.modal-title{font-size:20px; font-weight:800; display:flex; align-items:center; gap:10px}
+.modal-body{padding:28px}
+.modal-steps{
+  display:flex; gap:8px; margin-bottom:28px; padding:12px;
+  background:#f8fbfd; border-radius:var(--radius-sm);
+}
+.step{
+  flex:1; text-align:center; padding:10px 8px; border-radius:10px;
+  font-size:12px; font-weight:700; color:var(--text-muted);
+  transition:all 0.3s; display:flex; flex-direction:column; align-items:center; gap:4px;
+}
+.step.active{background:var(--primary); color:#fff; box-shadow:0 4px 12px rgba(10,92,138,0.3)}
+.step.done{background:rgba(34,197,94,0.1); color:var(--success)}
+.step-num{
+  width:24px; height:24px; border-radius:50%; background:rgba(255,255,255,0.25);
+  font-size:12px; font-weight:800; display:flex; align-items:center; justify-content:center;
+}
+.step.done .step-num{background:var(--success); color:#fff}
+
+/* Order Summary inside modal */
+.order-summary{
+  background:#f0f8ff; border-radius:var(--radius-sm); padding:16px;
+  margin-bottom:24px; border:1px solid #cce4f6;
+}
+.order-summary-title{font-weight:800; font-size:14px; color:var(--primary-dark); margin-bottom:12px; display:flex; align-items:center; gap:6px}
+.summary-item{display:flex; justify-content:space-between; padding:6px 0; border-bottom:1px solid #ddeef8; font-size:13px}
+.summary-item:last-child{border:none; padding-top:10px; font-weight:800; font-size:15px; color:var(--primary)}
+
+/* Form Styles */
+.form-group{margin-bottom:20px}
+.form-label{
+  display:flex; align-items:center; gap:6px;
+  font-size:14px; font-weight:700; color:var(--primary-dark); margin-bottom:8px;
+}
+.form-label .required{color:var(--danger); font-size:16px}
+.form-input,.form-textarea,.form-select{
+  width:100%; padding:13px 16px; border-radius:var(--radius-sm);
+  border:2px solid var(--border); background:#fafcfe;
+  font-family:inherit; font-size:14px; color:var(--text);
+  outline:none; transition:all 0.2s;
+}
+.form-input:focus,.form-textarea:focus,.form-select:focus{
+  border-color:var(--primary-light); background:#fff;
+  box-shadow:0 0 0 3px rgba(26,139,191,0.12);
+}
+.form-input.error,.form-textarea.error{border-color:var(--danger); background:#fff8f8}
+.form-textarea{resize:vertical; min-height:100px; line-height:1.6}
+.char-counter{text-align:left; font-size:12px; color:var(--text-muted); margin-top:4px}
+body.en .char-counter{text-align:right}
+.form-row{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+.input-with-icon{position:relative}
+.input-icon{
+  position:absolute; top:50%; right:14px; transform:translateY(-50%);
+  color:var(--primary-light); font-size:16px; pointer-events:none;
+}
+body.en .input-icon{right:auto; left:14px}
+.input-with-icon .form-input{padding-right:44px}
+body.en .input-with-icon .form-input{padding-right:16px; padding-left:44px}
+.phone-input-wrap{display:flex; gap:8px}
+.country-code{
+  padding:13px 12px; border-radius:var(--radius-sm); border:2px solid var(--border);
+  background:#fafcfe; font-family:inherit; font-size:14px; color:var(--text);
+  font-weight:700; outline:none; min-width:90px; cursor:pointer;
+  transition:border-color 0.2s;
+}
+.country-code:focus{border-color:var(--primary-light)}
+
+/* Location Section */
+.location-section{
+  border:2px dashed var(--border); border-radius:var(--radius);
+  padding:20px; background:#f8fbfd;
+}
+.location-methods{display:flex; gap:10px; margin-bottom:16px; flex-wrap:wrap}
+.loc-method-btn{
+  flex:1; min-width:130px; padding:10px 14px; border-radius:var(--radius-sm);
+  border:2px solid var(--border); background:#fff; cursor:pointer; font-family:inherit;
+  font-size:13px; font-weight:600; color:var(--text-muted); transition:all 0.2s;
+  display:flex; align-items:center; justify-content:center; gap:7px;
+}
+.loc-method-btn:hover{border-color:var(--primary-light); color:var(--primary); background:rgba(10,92,138,0.04)}
+.loc-method-btn.active{background:var(--primary); color:#fff; border-color:var(--primary); box-shadow:0 4px 14px rgba(10,92,138,0.25)}
+.loc-method-btn i{font-size:16px}
+.map-preview{
+  width:100%; height:200px; border-radius:var(--radius-sm);
+  border:2px solid var(--border); overflow:hidden; position:relative;
+  background:linear-gradient(135deg,#e8f4ff,#d0e8f5);
+  display:flex; align-items:center; justify-content:center;
+  flex-direction:column; gap:8px; color:var(--text-muted); cursor:pointer;
+  transition:all 0.2s; margin-top:12px;
+}
+.map-preview:hover{border-color:var(--primary-light)}
+.map-preview.located{
+  background: linear-gradient(135deg, #d0eaff, #b8ddf5);
+  border-color: var(--success);
+}
+.map-preview i{font-size:32px; color:var(--primary-light)}
+.map-preview .map-placeholder-text{font-size:14px; font-weight:600}
+.map-preview .map-coords{font-size:12px; color:var(--success); font-weight:700}
+.location-confirm{
+  display:none; align-items:center; gap:8px; padding:10px 14px;
+  background:rgba(34,197,94,0.1); border-radius:var(--radius-sm);
+  border:1px solid rgba(34,197,94,0.3); margin-top:10px;
+  font-size:13px; font-weight:600; color:#16a34a;
+}
+.location-confirm.show{display:flex}
+.location-confirm i{font-size:16px}
+
+/* GPS Spinner */
+.gps-loading{
+  display:none; align-items:center; gap:10px; padding:12px;
+  background:rgba(10,92,138,0.06); border-radius:var(--radius-sm); margin-top:8px;
+  font-size:13px; color:var(--primary); font-weight:600;
+}
+.gps-loading.show{display:flex}
+.spinner{
+  width:18px; height:18px; border:3px solid rgba(10,92,138,0.2);
+  border-top-color:var(--primary); border-radius:50%;
+  animation:spin 0.8s linear infinite; flex-shrink:0;
+}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Validation */
+.field-error{font-size:12px; color:var(--danger); margin-top:5px; display:none; align-items:center; gap:4px}
+.field-error.show{display:flex}
+
+/* Modal footer */
+.modal-footer{
+  padding:20px 28px; border-top:1px solid var(--border);
+  display:flex; gap:12px; justify-content:space-between; align-items:center;
+  background:#fafcfe; border-radius:0 0 24px 24px;
+}
+.btn-back{
+  padding:12px 24px; border-radius:50px; border:2px solid var(--border);
+  background:transparent; font-family:inherit; font-size:14px; font-weight:700;
+  color:var(--text-muted); cursor:pointer; transition:all 0.2s;
+  display:flex; align-items:center; gap:8px;
+}
+.btn-back:hover{border-color:var(--primary); color:var(--primary)}
+.btn-next{
+  padding:13px 32px; border-radius:50px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff; border:none; font-family:inherit; font-size:15px; font-weight:800;
+  cursor:pointer; transition:all 0.25s; box-shadow:0 6px 20px rgba(10,92,138,0.3);
+  display:flex; align-items:center; gap:8px;
+}
+.btn-next:hover{transform:translateY(-1px); box-shadow:0 10px 28px rgba(10,92,138,0.4)}
+.btn-submit{
+  padding:13px 32px; border-radius:50px;
+  background:linear-gradient(135deg,var(--accent),#00a896);
+  color:#fff; border:none; font-family:inherit; font-size:15px; font-weight:800;
+  cursor:pointer; transition:all 0.25s; box-shadow:0 6px 20px rgba(0,194,168,0.4);
+  display:flex; align-items:center; gap:8px;
+}
+.btn-submit:hover{transform:translateY(-1px)}
+
+/* Success Screen */
+.success-screen{
+  display:none; text-align:center; padding:40px 24px;
+}
+.success-screen.show{display:block}
+.success-icon{
+  width:88px; height:88px; border-radius:50%;
+  background:linear-gradient(135deg,var(--success),#16a34a);
+  margin:0 auto 24px; display:flex; align-items:center; justify-content:center;
+  font-size:40px; color:#fff; box-shadow:0 8px 24px rgba(34,197,94,0.4);
+  animation:popIn 0.5s cubic-bezier(0.34,1.56,0.64,1);
+}
+@keyframes popIn{from{transform:scale(0)}to{transform:scale(1)}}
+.success-title{font-size:24px; font-weight:900; color:var(--primary-dark); margin-bottom:10px}
+.success-sub{color:var(--text-muted); font-size:15px; line-height:1.7; margin-bottom:24px}
+.order-number{
+  display:inline-block; padding:12px 28px; border-radius:50px;
+  background:linear-gradient(135deg,rgba(10,92,138,0.08),rgba(0,194,168,0.06));
+  border:2px solid var(--border); font-size:18px; font-weight:900;
+  color:var(--primary); margin-bottom:24px;
+  letter-spacing:2px;
+}
+.success-actions{display:flex; gap:12px; justify-content:center; flex-wrap:wrap}
+.whatsapp-btn{
+  padding:13px 28px; border-radius:50px;
+  background:#25d366; color:#fff; border:none;
+  font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
+  display:flex; align-items:center; gap:8px; transition:all 0.2s;
+  box-shadow:0 4px 14px rgba(37,211,102,0.3);
+}
+.whatsapp-btn:hover{transform:translateY(-1px)}
+.track-btn{
+  padding:13px 28px; border-radius:50px;
+  background:transparent; color:var(--primary); border:2px solid var(--primary);
+  font-family:inherit; font-size:14px; font-weight:700; cursor:pointer;
+  transition:all 0.2s;
+}
+.track-btn:hover{background:var(--primary); color:#fff}
+
+/* ===== FEATURES ===== */
+.features-section{background:linear-gradient(135deg,var(--primary-dark) 0%,var(--primary) 100%); color:#fff}
+.features-grid{display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:24px}
+.feature-card{
+  padding:28px 24px; border-radius:var(--radius);
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  transition:all 0.25s; backdrop-filter:blur(8px);
+}
+.feature-card:hover{background:rgba(255,255,255,0.14); transform:translateY(-3px)}
+.feature-icon{
+  width:52px; height:52px; border-radius:14px;
+  background:rgba(0,194,168,0.25); display:flex; align-items:center; justify-content:center;
+  font-size:24px; margin-bottom:16px; color:var(--accent);
+}
+.feature-title{font-size:17px; font-weight:800; margin-bottom:8px}
+.feature-desc{font-size:14px; color:rgba(255,255,255,0.7); line-height:1.6}
+
+/* ===== FOOTER ===== */
+footer{
+  background:var(--primary-dark); color:#fff;
+  padding:56px 24px 28px;
+}
+.footer-inner{max-width:1320px; margin:0 auto}
+.footer-grid{display:grid; grid-template-columns:2fr 1fr 1fr 1fr; gap:40px; margin-bottom:48px}
+.footer-brand .logo-text{color:#fff; font-size:24px; margin-bottom:12px; display:block}
+.footer-brand .logo-text span{color:var(--accent)}
+.footer-desc{color:rgba(255,255,255,0.6); font-size:14px; line-height:1.7; margin-bottom:20px}
+.social-links{display:flex; gap:10px}
+.social-link{
+  width:38px; height:38px; border-radius:50%;
+  background:rgba(255,255,255,0.1); color:#fff; border:none;
+  display:flex; align-items:center; justify-content:center; font-size:15px;
+  cursor:pointer; transition:all 0.2s; text-decoration:none;
+}
+.social-link:hover{background:var(--accent); transform:scale(1.1)}
+.footer-col h4{font-size:15px; font-weight:800; margin-bottom:16px; color:rgba(255,255,255,0.9)}
+.footer-col ul{list-style:none}
+.footer-col ul li{margin-bottom:10px}
+.footer-col ul li a{color:rgba(255,255,255,0.6); text-decoration:none; font-size:14px; transition:color 0.2s}
+.footer-col ul li a:hover{color:var(--accent)}
+.footer-bottom{
+  border-top:1px solid rgba(255,255,255,0.1); padding-top:24px;
+  display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px;
+}
+.footer-bottom p{color:rgba(255,255,255,0.5); font-size:13px}
+.footer-payments{display:flex; gap:8px}
+.payment-icon{
+  padding:4px 10px; background:rgba(255,255,255,0.1); border-radius:6px;
+  font-size:12px; font-weight:700; color:rgba(255,255,255,0.7);
+}
+
+/* ===== TOAST ===== */
+.toast-container{position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px}
+body.en .toast-container{right:auto; left:24px}
+.toast{
+  padding:14px 20px; border-radius:var(--radius-sm);
+  background:var(--primary-dark); color:#fff;
+  font-size:14px; font-weight:600; box-shadow:var(--shadow-lg);
+  display:flex; align-items:center; gap:10px;
+  animation:toastIn 0.3s ease; min-width:260px;
+}
+.toast.success{background:var(--success)}
+.toast.error{background:var(--danger)}
+@keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
+body.en .toast{animation-name:toastInLTR}
+@keyframes toastInLTR{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:translateX(0)}}
+
+/* ===== PAGE SECTIONS HIDE/SHOW ===== */
+.page-section{display:none}
+.page-section.active{display:block}
+
+/* ===== RESPONSIVE ===== */
+@media(max-width:768px){
+  .header-inner{padding:12px 16px; gap:10px}
+  .header-search{max-width:none}
+  .hero{padding:48px 16px}
+  .hero-inner{flex-direction:column; gap:24px}
+  .hero-visual{display:none}
+  .hero-stats{gap:20px}
+  .form-row{grid-template-columns:1fr}
+  .footer-grid{grid-template-columns:1fr 1fr}
+  .modal-footer{flex-direction:column}
+  .btn-next,.btn-submit,.btn-back{width:100%; justify-content:center}
+}
+@media(max-width:480px){
+  .footer-grid{grid-template-columns:1fr}
+  .categories-grid{grid-template-columns:repeat(3,1fr)}
+  .products-grid{grid-template-columns:1fr 1fr}
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-inner">
+    <a href="#" class="logo" onclick="showPage('home')">
+      <div class="logo-icon">🦷</div>
+      <span class="logo-text">Denta<span>Pro</span></span>
+    </a>
+    <div class="header-search">
+      <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product...">
+      <button class="search-btn"><i class="fas fa-search"></i></button>
+    </div>
+    <div class="header-actions">
+      <button class="lang-btn" onclick="toggleLang()">
+        <i class="fas fa-globe"></i>
+        <span id="langLabel">EN</span>
+      </button>
+      <button class="cart-btn" onclick="openCart()">
+        <i class="fas fa-shopping-cart"></i>
+        <span class="cart-count" id="cartCount">0</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="page-section active" id="homePage">
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-content">
+      <div class="hero-badge"><i class="fas fa-certificate"></i> <span data-ar="متجر مستلزمات الأسنان #1" data-en="Dental Supplies Store #1">متجر مستلزمات الأسنان #1</span></div>
+      <h1 data-ar="كل ما تحتاجه<br>لعيادتك في مكان<br><span>واحد</span>" data-en="Everything Your Clinic<br>Needs In One<br><span>Place</span>">
+        كل ما تحتاجه<br>لعيادتك في مكان<br><span>واحد</span>
+      </h1>
+      <p data-ar="أجهزة، أدوات، مواد طبية — أفضل العلامات العالمية بأسعار الجملة. توصيل سريع لجميع مناطق الخليج." data-en="Devices, instruments, dental materials — top global brands at wholesale prices. Fast delivery across the Gulf region.">
+        أجهزة، أدوات، مواد طبية — أفضل العلامات العالمية بأسعار الجملة. توصيل سريع لجميع مناطق الخليج.
+      </p>
+      <div class="hero-btns">
+        <button class="btn-primary" onclick="scrollToProducts()">
+          <span data-ar="تسوّق الآن" data-en="Shop Now">تسوّق الآن</span>
+        </button>
+        <button class="btn-outline">
+          <span data-ar="طلب عرض سعر" data-en="Request a Quote">طلب عرض سعر</span>
+        </button>
+      </div>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">+2500</span><span class="stat-label" data-ar="منتج طبي" data-en="Medical Products">منتج طبي</span></div>
+        <div class="stat"><span class="stat-num">+850</span><span class="stat-label" data-ar="عيادة عميل" data-en="Clinic Clients">عيادة عميل</span></div>
+        <div class="stat"><span class="stat-num">24h</span><span class="stat-label" data-ar="توصيل سريع" data-en="Fast Delivery">توصيل سريع</span></div>
+        <div class="stat"><span class="stat-num">100%</span><span class="stat-label" data-ar="منتجات أصلية" data-en="Authentic Products">منتجات أصلية</span></div>
+      </div>
+    </div>
+    <div class="hero-visual">🦷</div>
+  </div>
+</section>
+
+<!-- CATEGORIES -->
+<section style="padding:56px 24px 32px">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-tag" data-ar="الأقسام" data-en="CATEGORIES">الأقسام</div>
+      <h2 class="section-title" data-ar="تصفح حسب الفئة" data-en="Browse by Category">تصفح حسب الفئة</h2>
+    </div>
+    <div class="categories-grid" id="categoriesGrid"></div>
+  </div>
+</section>
+
+<!-- PRODUCTS -->
+<section id="productsSection" style="padding:32px 24px 64px">
+  <div class="section-inner">
+    <div class="products-header">
+      <div>
+        <div class="section-tag" data-ar="المنتجات" data-en="PRODUCTS">المنتجات</div>
+        <h2 class="section-title" style="margin-bottom:0" data-ar="المنتجات المتاحة" data-en="Available Products">المنتجات المتاحة</h2>
+      </div>
+      <div class="filter-tabs" id="filterTabs"></div>
+    </div>
+    <div class="products-grid" id="productsGrid"></div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features-section">
+  <div class="section-inner">
+    <div class="section-header">
+      <div class="section-tag" style="background:rgba(255,255,255,0.15);color:#fff" data-ar="لماذا نحن؟" data-en="WHY US?">لماذا نحن؟</div>
+      <h2 class="section-title" style="color:#fff" data-ar="ثقة أكثر من 850 عيادة" data-en="Trusted by 850+ Clinics">ثقة أكثر من 850 عيادة</h2>
+    </div>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-shipping-fast"></i></div>
+        <div class="feature-title" data-ar="توصيل خلال 24 ساعة" data-en="24-Hour Delivery">توصيل خلال 24 ساعة</div>
+        <div class="feature-desc" data-ar="توصيل سريع لجميع مناطق الخليج مع تتبع الشحنة لحظة بلحظة" data-en="Fast delivery across all Gulf regions with real-time tracking">توصيل سريع لجميع مناطق الخليج مع تتبع الشحنة لحظة بلحظة</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-certificate"></i></div>
+        <div class="feature-title" data-ar="منتجات معتمدة 100%" data-en="100% Certified Products">منتجات معتمدة 100%</div>
+        <div class="feature-desc" data-ar="جميع المنتجات حاصلة على اعتمادات FDA وCE وهيئة الغذاء والدواء" data-en="All products hold FDA, CE and local regulatory certifications">جميع المنتجات حاصلة على اعتمادات FDA وCE وهيئة الغذاء والدواء</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-tags"></i></div>
+        <div class="feature-title" data-ar="أسعار الجملة للعيادات" data-en="Wholesale Prices for Clinics">أسعار الجملة للعيادات</div>
+        <div class="feature-desc" data-ar="أسعار خاصة للأطباء المسجلين والعيادات مع خصومات تصاعدية" data-en="Special pricing for registered doctors and clinics with tiered discounts">أسعار خاصة للأطباء المسجلين والعيادات مع خصومات تصاعدية</div>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon"><i class="fas fa-headset"></i></div>
+        <div class="feature-title" data-ar="دعم فني متخصص" data-en="Specialized Technical Support">دعم فني متخصص</div>
+        <div class="feature-desc" data-ar="فريق متخصص من أطباء الأسنان جاهز للإجابة على استفساراتك" data-en="A specialized team of dentists ready to answer your inquiries">فريق متخصص من أطباء الأسنان جاهز للإجابة على استفساراتك</div>
+      </div>
+    </div>
+  </div>
+</section>
+</div><!-- end homePage -->
+
+<!-- CART SIDEBAR -->
+<div class="cart-overlay" id="cartOverlay" onclick="closeCart()"></div>
+<div class="cart-sidebar" id="cartSidebar">
+  <div class="cart-header">
+    <div class="cart-title"><i class="fas fa-shopping-cart"></i> <span data-ar="سلة التسوق" data-en="Shopping Cart">سلة التسوق</span> <span id="cartItemsCount" style="font-size:14px;opacity:0.8">(0)</span></div>
+    <button class="close-btn" onclick="closeCart()"><i class="fas fa-times"></i></button>
+  </div>
+  <div class="cart-items" id="cartItems">
+    <div class="cart-empty" id="cartEmpty">
+      <i class="fas fa-shopping-basket"></i>
+      <p data-ar="السلة فارغة" data-en="Cart is empty">السلة فارغة</p>
+      <small data-ar="أضف منتجات للبدء" data-en="Add products to get started">أضف منتجات للبدء</small>
+    </div>
+  </div>
+  <div class="cart-footer">
+    <div class="cart-total-row">
+      <span class="cart-total-label" data-ar="الإجمالي" data-en="Total">الإجمالي</span>
+      <span class="cart-total-price" id="cartTotal">0.00 <small style="font-size:14px;font-weight:600">ر.س</small></span>
+    </div>
+    <button class="checkout-btn" onclick="openOrderModal()">
+      <i class="fas fa-arrow-left" id="checkoutArrow"></i>
+      <span data-ar="إتمام الطلب" data-en="Proceed to Order">إتمام الطلب</span>
+    </button>
+  </div>
+</div>
+
+<!-- ORDER MODAL -->
+<div class="modal-overlay" id="orderModal">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-clipboard-list"></i> <span data-ar="تفاصيل الطلب" data-en="Order Details">تفاصيل الطلب</span></div>
+      <button class="close-btn" onclick="closeOrderModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" id="modalBody">
+      <!-- Steps -->
+      <div class="modal-steps">
+        <div class="step active" id="step1"><div class="step-num">1</div><span data-ar="ملخص" data-en="Summary">ملخص</span></div>
+        <div class="step" id="step2"><div class="step-num">2</div><span data-ar="بياناتك" data-en="Your Info">بياناتك</span></div>
+        <div class="step" id="step3"><div class="step-num">3</div><span data-ar="الموقع" data-en="Location">الموقع</span></div>
+        <div class="step" id="step4"><div class="step-num">4</div><span data-ar="تأكيد" data-en="Confirm">تأكيد</span></div>
+      </div>
+
+      <!-- STEP 1: Order Summary -->
+      <div id="modalStep1">
+        <div class="order-summary">
+          <div class="order-summary-title"><i class="fas fa-list"></i> <span data-ar="مراجعة الطلب" data-en="Order Review">مراجعة الطلب</span></div>
+          <div id="modalSummaryItems"></div>
+        </div>
+      </div>
+
+      <!-- STEP 2: Customer Info -->
+      <div id="modalStep2" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-hospital" style="color:var(--primary-light)"></i> <span data-ar="اسم العيادة / المنشأة" data-en="Clinic / Business Name">اسم العيادة / المنشأة</span> <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <input type="text" class="form-input" id="clinicName" placeholder="عيادة الدكتور...">
+              <i class="fas fa-hospital input-icon"></i>
+            </div>
+            <div class="field-error" id="clinicNameError"><i class="fas fa-exclamation-circle"></i> <span data-ar="هذا الحقل مطلوب" data-en="This field is required">هذا الحقل مطلوب</span></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-user-md" style="color:var(--primary-light)"></i> <span data-ar="اسم الطبيب / المسؤول" data-en="Doctor / Contact Name">اسم الطبيب / المسؤول</span> <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <input type="text" class="form-input" id="doctorName" placeholder="د. محمد...">
+              <i class="fas fa-user-md input-icon"></i>
+            </div>
+            <div class="field-error" id="doctorNameError"><i class="fas fa-exclamation-circle"></i> <span data-ar="هذا الحقل مطلوب" data-en="This field is required">هذا الحقل مطلوب</span></div>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> <span data-ar="رقم الهاتف (واتساب)" data-en="Phone Number (WhatsApp)">رقم الهاتف (واتساب)</span> <span class="required">*</span></label>
+          <div class="phone-input-wrap">
+            <select class="country-code" id="countryCode">
+              <option value="+966">🇸🇦 +966</option>
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+965">🇰🇼 +965</option>
+              <option value="+973">🇧🇭 +973</option>
+              <option value="+974">🇶🇦 +974</option>
+              <option value="+968">🇴🇲 +968</option>
+              <option value="+962">🇯🇴 +962</option>
+              <option value="+213">🇩🇿 +213</option>
+              <option value="+216">🇹🇳 +216</option>
+              <option value="+212">🇲🇦 +212</option>
+            </select>
+            <div class="input-with-icon" style="flex:1">
+              <input type="tel" class="form-input" id="phoneNumber" placeholder="5xxxxxxxx">
+              <i class="fas fa-phone input-icon"></i>
+            </div>
+          </div>
+          <div class="field-error" id="phoneError"><i class="fas fa-exclamation-circle"></i> <span data-ar="رقم الهاتف غير صحيح" data-en="Invalid phone number">رقم الهاتف غير صحيح</span></div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-phone-alt" style="color:var(--text-muted)"></i> <span data-ar="رقم بديل (اختياري)" data-en="Alternate Phone (optional)">رقم بديل (اختياري)</span></label>
+          <div class="input-with-icon">
+            <input type="tel" class="form-input" id="altPhone" placeholder="5xxxxxxxx">
+            <i class="fas fa-phone-alt input-icon"></i>
+          </div>
+        </div>
+      </div>
+
+      <!-- STEP 3: Location -->
+      <div id="modalStep3" style="display:none">
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-map-marker-alt" style="color:var(--primary-light)"></i> <span data-ar="تحديد الموقع" data-en="Set Location">تحديد الموقع</span> <span class="required">*</span></label>
+          <div class="location-section">
+            <div class="location-methods">
+              <button class="loc-method-btn active" id="btnManual" onclick="switchLocMethod('manual')">
+                <i class="fas fa-keyboard"></i> <span data-ar="كتابة يدوية" data-en="Type Address">كتابة يدوية</span>
+              </button>
+              <button class="loc-method-btn" id="btnGPS" onclick="getGPSLocation()">
+                <i class="fas fa-crosshairs"></i> <span data-ar="موقعي الحالي" data-en="My Location">موقعي الحالي</span>
+              </button>
+              <button class="loc-method-btn" id="btnMap" onclick="openMapPicker()">
+                <i class="fas fa-map"></i> <span data-ar="اختر من الخريطة" data-en="Pick on Map">اختر من الخريطة</span>
+              </button>
+            </div>
+
+            <!-- Manual Input -->
+            <div id="manualInput">
+              <input type="text" class="form-input" id="addressInput"
+                placeholder="المدينة، الحي، الشارع، رقم المبنى / City, District, Street, Building No."
+                style="margin-bottom:10px" oninput="onAddressType()">
+            </div>
+
+            <!-- GPS Loading -->
+            <div class="gps-loading" id="gpsLoading">
+              <div class="spinner"></div>
+              <span data-ar="جاري تحديد موقعك..." data-en="Getting your location...">جاري تحديد موقعك...</span>
+            </div>
+
+            <!-- Map Preview -->
+            <div class="map-preview" id="mapPreview" onclick="openMapPicker()">
+              <i class="fas fa-map-marked-alt"></i>
+              <div class="map-placeholder-text" data-ar="انقر لاختيار الموقع على الخريطة" data-en="Click to pick location on map">انقر لاختيار الموقع على الخريطة</div>
+            </div>
+
+            <!-- Location Confirmed -->
+            <div class="location-confirm" id="locationConfirm">
+              <i class="fas fa-check-circle"></i>
+              <span id="locationConfirmText"></span>
+            </div>
+
+            <div class="field-error" id="locationError" style="margin-top:8px"><i class="fas fa-exclamation-circle"></i> <span data-ar="يرجى تحديد الموقع" data-en="Please set a location">يرجى تحديد الموقع</span></div>
+          </div>
+        </div>
+
+        <!-- Notes -->
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> <span data-ar="ملاحظات إضافية / تعليمات التسليم" data-en="Additional Notes / Delivery Instructions">ملاحظات إضافية / تعليمات التسليم</span> <small style="color:var(--text-muted);font-weight:500" data-ar="(اختياري)" data-en="(optional)">(اختياري)</small></label>
+          <textarea class="form-textarea" id="orderNotes" maxlength="500"
+            placeholder="مثال: التوصيل في الصباح فقط — الطابق الثالث — اتصل قبل الوصول بـ 30 دقيقة...&#10;e.g., Morning delivery only — 3rd floor — Call 30 mins before arrival..."
+            oninput="updateCharCount()"></textarea>
+          <div class="char-counter"><span id="charCount">0</span>/500</div>
+        </div>
+      </div>
+
+      <!-- STEP 4: Confirm -->
+      <div id="modalStep4" style="display:none">
+        <div class="order-summary">
+          <div class="order-summary-title"><i class="fas fa-check-double"></i> <span data-ar="تأكيد الطلب النهائي" data-en="Final Order Confirmation">تأكيد الطلب النهائي</span></div>
+          <div id="confirmDetails"></div>
+        </div>
+      </div>
+
+      <!-- SUCCESS -->
+      <div class="success-screen" id="successScreen">
+        <div class="success-icon"><i class="fas fa-check"></i></div>
+        <div class="success-title" data-ar="تم إرسال طلبك بنجاح! 🎉" data-en="Order Submitted Successfully! 🎉">تم إرسال طلبك بنجاح! 🎉</div>
+        <div class="success-sub" data-ar="سيتواصل معك فريقنا خلال 30 دقيقة لتأكيد الطلب والمتابعة" data-en="Our team will contact you within 30 minutes to confirm and follow up">سيتواصل معك فريقنا خلال 30 دقيقة لتأكيد الطلب والمتابعة</div>
+        <div class="order-number" id="orderNumberDisplay">#DP-000000</div>
+        <div class="success-actions">
+          <button class="whatsapp-btn" onclick="sendWhatsApp()">
+            <i class="fab fa-whatsapp"></i> <span data-ar="تواصل عبر واتساب" data-en="Contact via WhatsApp">تواصل عبر واتساب</span>
+          </button>
+          <button class="track-btn" onclick="closeOrderModal();clearCart()">
+            <span data-ar="متابعة التسوق" data-en="Continue Shopping">متابعة التسوق</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-footer" id="modalFooter">
+      <button class="btn-back" id="btnBack" onclick="prevStep()" style="display:none">
+        <i class="fas fa-arrow-right" id="backArrow"></i> <span data-ar="رجوع" data-en="Back">رجوع</span>
+      </button>
+      <button class="btn-next" id="btnNext" onclick="nextStep()">
+        <span data-ar="التالي" data-en="Next">التالي</span> <i class="fas fa-arrow-left" id="nextArrow"></i>
+      </button>
+      <button class="btn-submit" id="btnSubmit" onclick="submitOrder()" style="display:none">
+        <i class="fas fa-paper-plane"></i> <span data-ar="إرسال الطلب" data-en="Send Order">إرسال الطلب</span>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="footer-inner">
+    <div class="footer-grid">
+      <div class="footer-brand">
+        <span class="logo-text">Denta<span>Pro</span></span>
+        <p class="footer-desc" data-ar="المتجر المتخصص الأول لمستلزمات طب الأسنان في منطقة الخليج. نوفر أفضل المنتجات الطبية المعتمدة بأسعار تنافسية." data-en="The leading specialized dental supplies store in the Gulf region. We provide the best certified medical products at competitive prices.">المتجر المتخصص الأول لمستلزمات طب الأسنان في منطقة الخليج.</p>
+        <div class="social-links">
+          <a class="social-link" href="#"><i class="fab fa-whatsapp"></i></a>
+          <a class="social-link" href="#"><i class="fab fa-instagram"></i></a>
+          <a class="social-link" href="#"><i class="fab fa-twitter"></i></a>
+          <a class="social-link" href="#"><i class="fab fa-linkedin"></i></a>
+        </div>
+      </div>
+      <div class="footer-col">
+        <h4 data-ar="الأقسام" data-en="Categories">الأقسام</h4>
+        <ul>
+          <li><a href="#" data-ar="الأجهزة والمعدات" data-en="Devices & Equipment">الأجهزة والمعدات</a></li>
+          <li><a href="#" data-ar="الأدوات اليدوية" data-en="Hand Instruments">الأدوات اليدوية</a></li>
+          <li><a href="#" data-ar="المواد الطبية" data-en="Medical Materials">المواد الطبية</a></li>
+          <li><a href="#" data-ar="التقويم" data-en="Orthodontics">التقويم</a></li>
+          <li><a href="#" data-ar="زراعة الأسنان" data-en="Dental Implants">زراعة الأسنان</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 data-ar="الشركة" data-en="Company">الشركة</h4>
+        <ul>
+          <li><a href="#" data-ar="من نحن" data-en="About Us">من نحن</a></li>
+          <li><a href="#" data-ar="اتصل بنا" data-en="Contact Us">اتصل بنا</a></li>
+          <li><a href="#" data-ar="المدونة الطبية" data-en="Medical Blog">المدونة الطبية</a></li>
+          <li><a href="#" data-ar="برنامج العيادات" data-en="Clinic Program">برنامج العيادات</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4 data-ar="الدعم" data-en="Support">الدعم</h4>
+        <ul>
+          <li><a href="#" data-ar="الأسئلة الشائعة" data-en="FAQ">الأسئلة الشائعة</a></li>
+          <li><a href="#" data-ar="سياسة الإرجاع" data-en="Return Policy">سياسة الإرجاع</a></li>
+          <li><a href="#" data-ar="تتبع الطلب" data-en="Track Order">تتبع الطلب</a></li>
+          <li><a href="#" data-ar="الشحن والتوصيل" data-en="Shipping Info">الشحن والتوصيل</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p data-ar="© 2025 DentaPro — جميع الحقوق محفوظة" data-en="© 2025 DentaPro — All Rights Reserved">© 2025 DentaPro — جميع الحقوق محفوظة</p>
+      <div class="footer-payments">
+        <span class="payment-icon">VISA</span>
+        <span class="payment-icon">MC</span>
+        <span class="payment-icon">MADA</span>
+        <span class="payment-icon">APPLE PAY</span>
+        <span class="payment-icon">COD</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<!-- TOAST CONTAINER -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// =====================
+// DATA
+// =====================
+const categories = [
+  {id:'all',   icon:'🦷', ar:'الكل',              en:'All'},
+  {id:'dev',   icon:'🔬', ar:'أجهزة ومعدات',       en:'Devices'},
+  {id:'hand',  icon:'🛠️', ar:'أدوات يدوية',        en:'Instruments'},
+  {id:'mat',   icon:'💊', ar:'مواد طبية',           en:'Materials'},
+  {id:'prot',  icon:'🧤', ar:'الوقاية والتعقيم',    en:'Protection'},
+  {id:'ortho', icon:'🦷', ar:'التقويم',             en:'Orthodontics'},
+  {id:'impl',  icon:'🏥', ar:'زراعة الأسنان',       en:'Implants'},
+  {id:'home',  icon:'🌟', ar:'العناية المنزلية',     en:'Home Care'},
+];
+
+const products = [
+  {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً'},
+  {id:2,  cat:'dev',   icon:'📡', brand:'PLANMECA',   ar:'جهاز أشعة بانورامي ProMax',              en:'ProMax Panoramic X-Ray',                  price:32000, old:38000, desc_ar:'أشعة رقمية عالية الدقة بدون فيلم',         desc_en:'Digital high-resolution filmless X-ray',        badge:'جديد'},
+  {id:3,  cat:'dev',   icon:'⚡', brand:'SIRONA',     ar:'جهاز الأوتوكلاف DAC Premium',            en:'DAC Premium Autoclave',                   price:8900,  old:null,  desc_ar:'تعقيم بالبخار 17 لتر معتمد Class B',      desc_en:'17L Class B steam sterilizer',                  badge:null},
+  {id:4,  cat:'hand',  icon:'🔍', brand:'HU-FRIEDY',  ar:'مجموعة أدوات فحص كاملة',                en:'Complete Examination Kit',                price:480,   old:620,   desc_ar:'مرايا + مجس + ملقط ستانلس ستيل',          desc_en:'Mirrors + probe + stainless forceps',           badge:'خصم 22%'},
+  {id:5,  cat:'hand',  icon:'🔧', brand:'DENTSPLY',   ar:'ملفات قنوات روتاري ProTaper Gold',       en:'ProTaper Gold Rotary Files',              price:320,   old:null,  desc_ar:'طقم كامل 6 ملفات NiTi عالي المرونة',      desc_en:'6-file NiTi set, high flexibility',             badge:null},
+  {id:6,  cat:'mat',   icon:'💉', brand:'3M ESPE',    ar:'مادة حشو كومبوزيت Filtek Supreme',       en:'Filtek Supreme Composite',                price:185,   old:220,   desc_ar:'كومبوزيت نانو هايبرد شفاف وقوي',           desc_en:'Nano-hybrid composite, translucent & strong',   badge:'الأكثر مبيعاً'},
+  {id:7,  cat:'mat',   icon:'🧪', brand:'ULTRADENT',  ar:'جيل تبييض Opalescence 35%',              en:'Opalescence Whitening 35%',               price:145,   old:null,  desc_ar:'تبييض احترافي سريع نتائج فورية',           desc_en:'Professional fast whitening, instant results',  badge:null},
+  {id:8,  cat:'mat',   icon:'🧬', brand:'DENTSPLY',   ar:'مادة انطباع سيليكون Aquasil Ultra',      en:'Aquasil Ultra Impression Material',       price:265,   old:310,   desc_ar:'سيليكون VPS دقيق ومريح للمريض',            desc_en:'Precise VPS silicone, patient-friendly',        badge:null},
+  {id:9,  cat:'prot',  icon:'🧤', brand:'SEMPERMED',  ar:'قفازات لاتكس طبية - صندوق 100',          en:'Medical Latex Gloves - Box 100',          price:38,    old:null,  desc_ar:'قفازات فحص معقمة مقاس S/M/L/XL',          desc_en:'Sterile examination gloves S/M/L/XL',           badge:null},
+  {id:10, cat:'prot',  icon:'😷', brand:'3M',         ar:'كمامة N95 طبية معتمدة - علبة 20',        en:'Certified Medical N95 Mask - Box 20',     price:72,    old:90,    desc_ar:'كمامة N95 معتمدة NIOSH مريحة',             desc_en:'NIOSH-certified N95, comfortable fit',          badge:'خصم 20%'},
+  {id:11, cat:'ortho', icon:'🔩', brand:'3M UNITEK',  ar:'براكيت تقويم معدني Mini Diamond',        en:'Mini Diamond Metal Brackets',             price:155,   old:null,  desc_ar:'براكيت MBT/Roth مقاس .022 طقم كامل',      desc_en:'MBT/Roth .022 full kit',                        badge:null},
+  {id:12, cat:'impl',  icon:'🔬', brand:'STRAUMANN',  ar:'غرسة تيتانيوم Bone Level RC',           en:'Bone Level RC Titanium Implant',          price:1200,  old:1450,  desc_ar:'نظام BLT/BLC معتمد عالمياً مع أبتمنت',     desc_en:'Globally certified BLT/BLC with abutment',      badge:'الأكثر مبيعاً'},
+  {id:13, cat:'home',  icon:'⚡', brand:'ORAL-B',     ar:'فرشاة أسنان كهربائية iO Series 9',       en:'iO Series 9 Electric Toothbrush',         price:620,   old:780,   desc_ar:'تقنية ذكية مع شاشة تتبع النظافة',          desc_en:'Smart tech with cleaning tracker display',      badge:'جديد'},
+  {id:14, cat:'home',  icon:'💧', brand:'COLGATE',    ar:'غسول فم طبي Colgate Peroxyl',            en:'Colgate Peroxyl Medical Mouthwash',       price:28,    old:null,  desc_ar:'علاج قرح الفم وتطهير اللثة',               desc_en:'Treats mouth sores and gum disinfection',       badge:null},
+  {id:15, cat:'dev',   icon:'📷', brand:'CARESTREAM', ar:'كاميرا داخل الفم CS 1500',              en:'CS 1500 Intraoral Camera',                price:4200,  old:5100,  desc_ar:'كاميرا HD لاسلكية مع برنامج متكامل',       desc_en:'Wireless HD camera with integrated software',   badge:'جديد'},
+  {id:16, cat:'mat',   icon:'🩺', brand:'SEPTODONT',  ar:'تخدير موضعي Articaine 4%',              en:'Articaine 4% Local Anesthesia',           price:95,    old:null,  desc_ar:'أمبولات 1.7ml صندوق 50 أمبولة',            desc_en:'1.7ml cartridges, box of 50',                   badge:null},
+];
+
+// =====================
+// STATE
+// =====================
+let cart = [];
+let currentLang = 'ar';
+let currentCat = 'all';
+let currentStep = 1;
+let locationData = { lat: null, lng: null, address: '', method: '' };
+let orderSubmitted = false;
+
+// =====================
+// INIT
+// =====================
+document.addEventListener('DOMContentLoaded', () => {
+  renderCategories();
+  renderProducts();
+  updateCartUI();
+});
+
+// =====================
+// LANGUAGE
+// =====================
+function toggleLang() {
+  currentLang = currentLang === 'ar' ? 'en' : 'ar';
+  const body = document.body;
+  if (currentLang === 'en') {
+    body.classList.add('en');
+    body.setAttribute('dir','ltr');
+    document.documentElement.setAttribute('lang','en');
+    document.getElementById('langLabel').textContent = 'AR';
+    document.getElementById('checkoutArrow').className = 'fas fa-arrow-right';
+    document.getElementById('nextArrow').className = 'fas fa-arrow-right';
+    document.getElementById('backArrow').className = 'fas fa-arrow-left';
+  } else {
+    body.classList.remove('en');
+    body.setAttribute('dir','rtl');
+    document.documentElement.setAttribute('lang','ar');
+    document.getElementById('langLabel').textContent = 'EN';
+    document.getElementById('checkoutArrow').className = 'fas fa-arrow-left';
+    document.getElementById('nextArrow').className = 'fas fa-arrow-left';
+    document.getElementById('backArrow').className = 'fas fa-arrow-right';
+  }
+  // Update all data-ar / data-en elements
+  document.querySelectorAll('[data-ar]').forEach(el => {
+    const val = el.getAttribute('data-' + currentLang);
+    if (val) el.innerHTML = val;
+  });
+  // Re-render dynamic content
+  renderCategories();
+  renderProducts();
+  updateCartUI();
+}
+
+function t(ar, en) {
+  return currentLang === 'en' ? en : ar;
+}
+
+// =====================
+// CATEGORIES
+// =====================
+function renderCategories() {
+  const grid = document.getElementById('categoriesGrid');
+  grid.innerHTML = categories.map(c => `
+    <div class="cat-card ${currentCat===c.id?'active':''}" onclick="filterCat('${c.id}')">
+      <span class="cat-icon">${c.icon}</span>
+      <div class="cat-name">${currentLang==='en'?c.en:c.ar}</div>
+      <div class="cat-count">${c.id==='all'?products.length:products.filter(p=>p.cat===c.id).length} ${t('منتج','items')}</div>
+    </div>
+  `).join('');
+}
+
+function filterCat(id) {
+  currentCat = id;
+  renderCategories();
+  renderProducts();
+}
+
+// =====================
+// PRODUCTS
+// =====================
+function renderProducts() {
+  const list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
+  const searchVal = document.getElementById('searchInput').value.toLowerCase();
+  const filtered = searchVal ? list.filter(p =>
+    p.ar.toLowerCase().includes(searchVal) ||
+    p.en.toLowerCase().includes(searchVal) ||
+    p.brand.toLowerCase().includes(searchVal)
+  ) : list;
+
+  const grid = document.getElementById('productsGrid');
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)"><i class="fas fa-search" style="font-size:48px;opacity:0.3;margin-bottom:16px;display:block"></i>${t('لا توجد نتائج','No results found')}</div>`;
+    return;
+  }
+  grid.innerHTML = filtered.map(p => {
+    const inCart = cart.find(c => c.id === p.id);
+    return `
+    <div class="product-card">
+      ${p.badge ? `<div class="product-badge">${t(p.badge, p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':p.badge)}</div>` : ''}
+      <div class="product-img" onclick="addToCart(${p.id})" title="${t('أضف للسلة','Add to Cart')}">${p.icon}</div>
+      <div class="product-info">
+        <div class="product-brand">${p.brand}</div>
+        <div class="product-name">${currentLang==='en'?p.en:p.ar}</div>
+        <div class="product-stars">
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+          <span>(${Math.floor(Math.random()*80)+20})</span>
+        </div>
+        <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
+        <div class="product-price-row">
+          <div>
+            <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('ر.س','SAR')}</small></div>
+            ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('ر.س','SAR')}</div>` : ''}
+          </div>
+          <button class="add-to-cart ${inCart?'added':''}" onclick="addToCart(${p.id})" title="${t('أضف للسلة','Add to Cart')}">
+            <i class="fas ${inCart?'fa-check':'fa-plus'}"></i>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+document.getElementById('searchInput').addEventListener('input', renderProducts);
+
+// =====================
+// CART
+// =====================
+function addToCart(id) {
+  const p = products.find(x => x.id === id);
+  const existing = cart.find(x => x.id === id);
+  if (existing) {
+    existing.qty++;
+    showToast(`${currentLang==='en'?p.en:p.ar} — ${t('تم تحديث الكمية','Quantity updated')}`, 'success');
+  } else {
+    cart.push({...p, qty:1});
+    showToast(`✅ ${currentLang==='en'?p.en:p.ar} ${t('أُضيف للسلة','added to cart')}`, 'success');
+  }
+  updateCartUI();
+  renderProducts();
+}
+
+function removeFromCart(id) {
+  cart = cart.filter(x => x.id !== id);
+  updateCartUI();
+  renderProducts();
+}
+
+function changeQty(id, delta) {
+  const item = cart.find(x => x.id === id);
+  if (!item) return;
+  item.qty += delta;
+  if (item.qty <= 0) removeFromCart(id);
+  else updateCartUI();
+}
+
+function clearCart() {
+  cart = [];
+  updateCartUI();
+  renderProducts();
+}
+
+function getTotal() {
+  return cart.reduce((s, i) => s + i.price * i.qty, 0);
+}
+
+function updateCartUI() {
+  const count = cart.reduce((s, i) => s + i.qty, 0);
+  document.getElementById('cartCount').textContent = count;
+  document.getElementById('cartItemsCount').textContent = `(${count})`;
+  document.getElementById('cartTotal').innerHTML = `${getTotal().toLocaleString()} <small style="font-size:14px;font-weight:600">${t('ر.س','SAR')}</small>`;
+
+  const itemsDiv = document.getElementById('cartItems');
+  const empty = document.getElementById('cartEmpty');
+
+  if (!cart.length) {
+    empty.style.display = 'block';
+    // Remove any existing cart item elements
+    itemsDiv.querySelectorAll('.cart-item').forEach(e => e.remove());
+    return;
+  }
+  empty.style.display = 'none';
+  itemsDiv.querySelectorAll('.cart-item').forEach(e => e.remove());
+  cart.forEach(item => {
+    const el = document.createElement('div');
+    el.className = 'cart-item';
+    el.id = `cartItem-${item.id}`;
+    el.innerHTML = `
+      <div class="cart-item-img">${item.icon}</div>
+      <div class="cart-item-info">
+        <div class="cart-item-name">${currentLang==='en'?item.en:item.ar}</div>
+        <div class="cart-item-price">${(item.price*item.qty).toLocaleString()} ${t('ر.س','SAR')}</div>
+        <div class="cart-item-controls">
+          <button class="qty-btn" onclick="changeQty(${item.id},-1)"><i class="fas fa-minus"></i></button>
+          <span class="qty-num">${item.qty}</span>
+          <button class="qty-btn" onclick="changeQty(${item.id},1)"><i class="fas fa-plus"></i></button>
+          <button class="remove-item" onclick="removeFromCart(${item.id})"><i class="fas fa-trash-alt"></i></button>
+        </div>
+      </div>`;
+    itemsDiv.insertBefore(el, empty);
+  });
+}
+
+function openCart() {
+  document.getElementById('cartOverlay').classList.add('open');
+  document.getElementById('cartSidebar').classList.add('open');
+}
+function closeCart() {
+  document.getElementById('cartOverlay').classList.remove('open');
+  document.getElementById('cartSidebar').classList.remove('open');
+}
+
+// =====================
+// ORDER MODAL
+// =====================
+function openOrderModal() {
+  if (!cart.length) { showToast(t('السلة فارغة!','Cart is empty!'), 'error'); return; }
+  closeCart();
+  currentStep = 1;
+  orderSubmitted = false;
+  locationData = { lat: null, lng: null, address: '', method: '' };
+  document.getElementById('locationConfirm').classList.remove('show');
+  document.getElementById('mapPreview').classList.remove('located');
+  document.getElementById('gpsLoading').classList.remove('show');
+  ['clinicName','doctorName','phoneNumber','altPhone','addressInput','orderNotes'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ el.value=''; el.classList.remove('error'); }
+  });
+  document.getElementById('charCount').textContent = '0';
+  document.getElementById('successScreen').classList.remove('show');
+  document.getElementById('modalBody').querySelector('.modal-steps').style.display='flex';
+  renderModalStep();
+  document.getElementById('orderModal').classList.add('open');
+}
+function closeOrderModal() {
+  document.getElementById('orderModal').classList.remove('open');
+}
+
+function renderModalStep() {
+  ['modalStep1','modalStep2','modalStep3','modalStep4','successScreen'].forEach(id => {
+    document.getElementById(id).style.display = 'none';
+  });
+  document.getElementById(`modalStep${currentStep}`)?.style && (document.getElementById(`modalStep${currentStep}`).style.display = 'block');
+
+  // Steps highlight
+  for(let i=1;i<=4;i++){
+    const s = document.getElementById(`step${i}`);
+    s.classList.remove('active','done');
+    if(i < currentStep) s.classList.add('done');
+    else if(i === currentStep) s.classList.add('active');
+  }
+
+  // Buttons
+  document.getElementById('btnBack').style.display = currentStep > 1 ? 'flex' : 'none';
+  document.getElementById('btnNext').style.display = currentStep < 4 ? 'flex' : 'none';
+  document.getElementById('btnSubmit').style.display = currentStep === 4 ? 'flex' : 'none';
+
+  if (currentStep === 1) renderModalSummary();
+  if (currentStep === 4) renderConfirmDetails();
+}
+
+function renderModalSummary() {
+  const div = document.getElementById('modalSummaryItems');
+  div.innerHTML = cart.map(item => `
+    <div class="summary-item">
+      <span>${item.icon} ${currentLang==='en'?item.en:item.ar} × ${item.qty}</span>
+      <span>${(item.price*item.qty).toLocaleString()} ${t('ر.س','SAR')}</span>
+    </div>
+  `).join('') + `
+    <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
+      <span>${t('الإجمالي','Total')}</span>
+      <span>${getTotal().toLocaleString()} ${t('ر.س','SAR')}</span>
+    </div>`;
+}
+
+function renderConfirmDetails() {
+  const div = document.getElementById('confirmDetails');
+  const notes = document.getElementById('orderNotes').value;
+  div.innerHTML = `
+    <div class="summary-item"><span>🏥 ${t('العيادة','Clinic')}</span><span>${document.getElementById('clinicName').value}</span></div>
+    <div class="summary-item"><span>👨‍⚕️ ${t('الطبيب','Doctor')}</span><span>${document.getElementById('doctorName').value}</span></div>
+    <div class="summary-item"><span>📞 ${t('الهاتف','Phone')}</span><span>${document.getElementById('countryCode').value} ${document.getElementById('phoneNumber').value}</span></div>
+    <div class="summary-item"><span>📍 ${t('الموقع','Location')}</span><span style="max-width:200px;text-align:left">${locationData.address || document.getElementById('addressInput').value}</span></div>
+    ${notes ? `<div class="summary-item"><span>🗒️ ${t('ملاحظات','Notes')}</span><span style="max-width:200px">${notes}</span></div>` : ''}
+    <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
+      <span>${t('إجمالي الطلب','Order Total')}</span>
+      <span>${getTotal().toLocaleString()} ${t('ر.س','SAR')}</span>
+    </div>`;
+}
+
+function nextStep() {
+  if (!validateStep(currentStep)) return;
+  if (currentStep < 4) { currentStep++; renderModalStep(); }
+}
+function prevStep() {
+  if (currentStep > 1) { currentStep--; renderModalStep(); }
+}
+
+function validateStep(step) {
+  if (step === 2) {
+    let ok = true;
+    const cn = document.getElementById('clinicName');
+    const dn = document.getElementById('doctorName');
+    const ph = document.getElementById('phoneNumber');
+    if (!cn.value.trim()) { cn.classList.add('error'); document.getElementById('clinicNameError').classList.add('show'); ok=false; }
+    else { cn.classList.remove('error'); document.getElementById('clinicNameError').classList.remove('show'); }
+    if (!dn.value.trim()) { dn.classList.add('error'); document.getElementById('doctorNameError').classList.add('show'); ok=false; }
+    else { dn.classList.remove('error'); document.getElementById('doctorNameError').classList.remove('show'); }
+    const phoneVal = ph.value.replace(/\s/g,'');
+    if (!phoneVal || phoneVal.length < 7) { ph.classList.add('error'); document.getElementById('phoneError').classList.add('show'); ok=false; }
+    else { ph.classList.remove('error'); document.getElementById('phoneError').classList.remove('show'); }
+    return ok;
+  }
+  if (step === 3) {
+    const addr = document.getElementById('addressInput').value.trim();
+    const hasLocation = locationData.lat || addr;
+    if (!hasLocation) {
+      document.getElementById('locationError').classList.add('show');
+      return false;
+    }
+    document.getElementById('locationError').classList.remove('show');
+    return true;
+  }
+  return true;
+}
+
+// =====================
+// LOCATION
+// =====================
+function switchLocMethod(method) {
+  document.querySelectorAll('.loc-method-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('btn' + method.charAt(0).toUpperCase() + method.slice(1))?.classList.add('active');
+}
+
+function onAddressType() {
+  const val = document.getElementById('addressInput').value.trim();
+  if (val.length > 5) {
+    locationData.address = val;
+    locationData.method = 'manual';
+    document.getElementById('locationConfirm').classList.add('show');
+    document.getElementById('locationConfirmText').textContent = `📍 ${val}`;
+    document.getElementById('locationError').classList.remove('show');
+  }
+}
+
+function getGPSLocation() {
+  switchLocMethod('GPS');
+  if (!navigator.geolocation) {
+    showToast(t('المتصفح لا يدعم GPS','Browser does not support GPS'), 'error');
+    return;
+  }
+  document.getElementById('gpsLoading').classList.add('show');
+  document.getElementById('locationConfirm').classList.remove('show');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      locationData.lat = pos.coords.latitude.toFixed(5);
+      locationData.lng = pos.coords.longitude.toFixed(5);
+      locationData.address = `${t('خط العرض','Lat')}: ${locationData.lat}, ${t('خط الطول','Lng')}: ${locationData.lng}`;
+      locationData.method = 'gps';
+      document.getElementById('gpsLoading').classList.remove('show');
+      document.getElementById('mapPreview').classList.add('located');
+      document.getElementById('mapPreview').innerHTML = `
+        <i class="fas fa-map-marker-alt" style="color:var(--success)"></i>
+        <div class="map-placeholder-text" style="color:var(--primary-dark)">${t('تم تحديد الموقع','Location Detected')}</div>
+        <div class="map-coords">📍 ${locationData.lat}, ${locationData.lng}</div>`;
+      document.getElementById('locationConfirm').classList.add('show');
+      document.getElementById('locationConfirmText').textContent = `✅ ${t('تم تحديد موقعك بنجاح!','Location detected successfully!')}`;
+      document.getElementById('locationError').classList.remove('show');
+      showToast(t('✅ تم تحديد موقعك بنجاح','✅ Location detected!'), 'success');
+    },
+    err => {
+      document.getElementById('gpsLoading').classList.remove('show');
+      showToast(t('تعذر الحصول على الموقع. يرجى إدخاله يدوياً.','Could not get location. Please enter manually.'), 'error');
+    }
+  );
+}
+
+function openMapPicker() {
+  switchLocMethod('Map');
+  const lat = locationData.lat || 24.7136;
+  const lng = locationData.lng || 46.6753;
+  const url = `https://maps.google.com/?q=${lat},${lng}`;
+  // Open google maps - user selects and comes back
+  window.open(url, '_blank');
+  // Simulate the user confirming location from maps
+  setTimeout(() => {
+    if (!locationData.lat) {
+      locationData.lat = lat;
+      locationData.lng = lng;
+      locationData.address = t('موقع محدد من الخريطة','Location selected from map');
+      locationData.method = 'map';
+      document.getElementById('mapPreview').classList.add('located');
+      document.getElementById('mapPreview').innerHTML = `
+        <i class="fas fa-map-marker-alt" style="color:var(--success)"></i>
+        <div class="map-placeholder-text" style="color:var(--primary-dark)">${t('تم تحديد الموقع من الخريطة','Location set from map')}</div>
+        <div class="map-coords">🗺️ Google Maps</div>`;
+      document.getElementById('locationConfirm').classList.add('show');
+      document.getElementById('locationConfirmText').textContent = t('تم تحديد الموقع من الخريطة ✅','Location set from map ✅');
+      document.getElementById('locationError').classList.remove('show');
+    }
+  }, 1500);
+}
+
+function updateCharCount() {
+  const val = document.getElementById('orderNotes').value;
+  document.getElementById('charCount').textContent = val.length;
+}
+
+// =====================
+// SUBMIT ORDER
+// =====================
+function submitOrder() {
+  if (!validateStep(3)) { currentStep=3; renderModalStep(); return; }
+  const orderNum = 'DP-' + String(Math.floor(Math.random()*900000)+100000);
+  document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
+
+  // Hide steps UI
+  document.querySelector('.modal-steps').style.display = 'none';
+  ['modalStep1','modalStep2','modalStep3','modalStep4'].forEach(id => document.getElementById(id).style.display='none');
+  document.getElementById('modalFooter').style.display = 'none';
+  document.getElementById('successScreen').classList.add('show');
+
+  orderSubmitted = true;
+  showToast(t('🎉 تم إرسال طلبك بنجاح!','🎉 Order submitted successfully!'), 'success');
+}
+
+function sendWhatsApp() {
+  const clinic = document.getElementById('clinicName').value;
+  const doctor = document.getElementById('doctorName').value;
+  const phone = document.getElementById('countryCode').value + document.getElementById('phoneNumber').value;
+  const addr = locationData.address || document.getElementById('addressInput').value;
+  const notes = document.getElementById('orderNotes').value;
+  const items = cart.map(i=>`• ${currentLang==='en'?i.en:i.ar} × ${i.qty} = ${(i.price*i.qty).toLocaleString()} ${t('ر.س','SAR')}`).join('\n');
+  const msg = encodeURIComponent(
+    `🦷 *DentaPro - ${t('طلب جديد','New Order')}*\n\n` +
+    `🏥 ${t('العيادة','Clinic')}: ${clinic}\n` +
+    `👨‍⚕️ ${t('الطبيب','Doctor')}: ${doctor}\n` +
+    `📞 ${t('الهاتف','Phone')}: ${phone}\n` +
+    `📍 ${t('الموقع','Location')}: ${addr}\n` +
+    `${notes ? `🗒️ ${t('ملاحظات','Notes')}: ${notes}\n` : ''}` +
+    `\n📦 ${t('المنتجات','Products')}:\n${items}\n\n` +
+    `💰 ${t('الإجمالي','Total')}: ${getTotal().toLocaleString()} ${t('ر.س','SAR')}`
+  );
+  window.open(`https://wa.me/966500000000?text=${msg}`, '_blank');
+}
+
+// =====================
+// TOAST
+// =====================
+function showToast(msg, type='') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'}"></i> ${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(40px)'; setTimeout(()=>toast.remove(),300); }, 3000);
+}
+
+// =====================
+// HELPERS
+// =====================
+function scrollToProducts() {
+  document.getElementById('productsSection').scrollIntoView({behavior:'smooth', block:'start'});
+}
+function showPage(page) {
+  // future multi-page support
+}
+</script>
+</body>
+</html>
