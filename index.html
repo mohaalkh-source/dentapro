@@ -617,7 +617,173 @@ body.en .toast-container{right:auto; left:24px}
 @keyframes toastIn{from{opacity:0;transform:translateX(40px)}to{opacity:1;transform:translateX(0)}}
 body.en .toast{animation-name:toastInLTR}
 @keyframes toastInLTR{from{opacity:0;transform:translateX(-40px)}to{opacity:1;transform:translateX(0)}}
+/* ===== AUTH ===== */
+.auth-btn {
+  padding: 8px 18px; border-radius: 50px;
+  border: 2px solid var(--primary); background: transparent;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  color: var(--primary); cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+.auth-btn:hover { background: var(--primary); color: #fff; }
+.auth-btn.filled { background: var(--primary); color: #fff; }
 
+.user-chip {
+  display: flex; align-items: center; gap: 8px;
+  padding: 6px 14px 6px 8px; border-radius: 50px;
+  background: linear-gradient(135deg, rgba(10,92,138,0.08), rgba(0,194,168,0.06));
+  border: 2px solid var(--border); cursor: pointer;
+  transition: all 0.2s; position: relative;
+}
+.user-chip:hover { border-color: var(--primary-light); }
+.user-avatar {
+  width: 30px; height: 30px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 14px; font-weight: 800; color: #fff; flex-shrink: 0;
+}
+.user-chip-name { font-size: 13px; font-weight: 700; color: var(--primary-dark); max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-chip-role { font-size: 10px; color: var(--text-muted); line-height: 1; }
+
+.user-dropdown {
+  position: absolute; top: calc(100% + 10px); left: 0;
+  background: #fff; border-radius: 14px; border: 1px solid var(--border);
+  box-shadow: var(--shadow-lg); min-width: 200px; z-index: 9999;
+  overflow: hidden; display: none;
+}
+body.en .user-dropdown { left: auto; right: 0; }
+.user-chip:hover .user-dropdown { display: block; }
+.user-dropdown-item {
+  padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  font-size: 13px; font-weight: 600; color: var(--text);
+  cursor: pointer; transition: background 0.15s; border: none;
+  background: none; width: 100%; font-family: inherit; text-align: right;
+}
+body.en .user-dropdown-item { text-align: left; }
+.user-dropdown-item:hover { background: #f0f6fb; }
+.user-dropdown-item.danger { color: var(--danger); }
+.user-dropdown-item.danger:hover { background: #fff5f5; }
+.user-dropdown-divider { height: 1px; background: var(--border); margin: 4px 0; }
+
+/* Auth Modal Tabs */
+.auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+.auth-tab {
+  flex: 1; padding: 12px; text-align: center; font-family: inherit;
+  font-size: 14px; font-weight: 700; color: var(--text-muted);
+  background: none; border: none; cursor: pointer; transition: all 0.2s;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+}
+.auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.social-auth-btn {
+  width: 100%; padding: 12px; border-radius: 50px;
+  border: 2px solid var(--border); background: #fff;
+  font-family: inherit; font-size: 14px; font-weight: 600;
+  cursor: pointer; transition: all 0.2s; display: flex;
+  align-items: center; justify-content: center; gap: 8px; color: var(--text);
+}
+.social-auth-btn:hover { border-color: var(--primary-light); background: #f8fbfd; }
+.auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--text-muted); font-size: 13px; margin: 16px 0;
+}
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+/* Password strength */
+.pass-strength { margin-top: 6px; }
+.pass-strength-bar { height: 4px; border-radius: 2px; background: var(--border); overflow: hidden; margin-bottom: 4px; }
+.pass-strength-fill { height: 100%; border-radius: 2px; transition: all 0.3s; width: 0; }
+.pass-strength-text { font-size: 11px; font-weight: 700; }
+
+/* Welcome banner */
+.welcome-banner {
+  background: linear-gradient(135deg, rgba(0,194,168,0.1), rgba(10,92,138,0.06));
+  border: 1px solid rgba(0,194,168,0.3); border-radius: 12px;
+  padding: 14px 18px; margin-bottom: 20px;
+  display: flex; align-items: center; gap: 12px;
+}
+.welcome-banner i { font-size: 24px; color: var(--accent); }
+/* ===== ORDER TRACKING ===== */
+.orders-page {
+  min-height: 60vh; padding: 40px 24px;
+  max-width: 900px; margin: 0 auto;
+}
+.order-track-card {
+  background: #fff; border-radius: 18px;
+  border: 1px solid var(--border); margin-bottom: 20px;
+  overflow: hidden; box-shadow: 0 2px 12px rgba(10,92,138,0.06);
+  transition: box-shadow 0.2s;
+}
+.order-track-card:hover { box-shadow: var(--shadow); }
+.order-track-header {
+  padding: 18px 22px; display: flex;
+  align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 12px;
+  border-bottom: 1px solid var(--border);
+  background: linear-gradient(135deg, #f8fbfd, #f0f6fb);
+}
+.order-track-num {
+  font-size: 16px; font-weight: 900; color: var(--primary-dark);
+  display: flex; align-items: center; gap: 8px;
+}
+.order-track-date { font-size: 12px; color: var(--text-muted); margin-top: 2px; }
+.order-track-total {
+  font-size: 18px; font-weight: 900; color: var(--primary);
+}
+.order-track-body { padding: 22px; }
+
+/* Status Badge */
+.status-badge {
+  padding: 5px 14px; border-radius: 50px;
+  font-size: 12px; font-weight: 700; display: inline-flex;
+  align-items: center; gap: 5px;
+}
+.status-pending   { background:#fff7ed; color:#c2410c; border:1px solid #fed7aa; }
+.status-confirmed { background:#eff6ff; color:#1d4ed8; border:1px solid #bfdbfe; }
+.status-preparing { background:#fdf4ff; color:#7e22ce; border:1px solid #e9d5ff; }
+.status-shipped   { background:#f0fdf4; color:#15803d; border:1px solid #bbf7d0; }
+.status-delivered { background:#f0fdf4; color:#166534; border:1px solid #86efac; }
+.status-cancelled { background:#fff1f2; color:#be123c; border:1px solid #fecdd3; }
+
+/* Progress Steps */
+.track-steps {
+  display: flex; align-items: flex-start;
+  gap: 0; margin: 18px 0 10px; position: relative;
+}
+.track-step {
+  flex: 1; text-align: center; position: relative;
+  display: flex; flex-direction: column; align-items: center; gap: 6px;
+}
+.track-step::before {
+  content: ''; position: absolute;
+  top: 18px; right: 50%; width: 100%; height: 3px;
+  background: var(--border); z-index: 0;
+}
+body.en .track-step::before { right: auto; left: 50%; }
+.track-step:first-child::before { display: none; }
+.track-step.done::before  { background: var(--accent); }
+.track-step.active::before { background: linear-gradient(to left, var(--border), var(--accent)); }
+body.en .track-step.active::before { background: linear-gradient(to right, var(--border), var(--accent)); }
+
+.track-step-icon {
+  width: 38px; height: 38px; border-radius: 50%;
+  background: var(--border); color: #fff;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 15px; z-index: 1; position: relative;
+  transition: all 0.3s; border: 3px solid #fff;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+.track-step.done   .track-step-icon { background: var(--accent); }
+.track-step.active .track-step-icon {
+  background: var(--primary);
+  box-shadow: 0 0 0 4px rgba(10,92,138,0.15);
+  animation: pulse-ring 1.5s infinite;
+}
+.track-step.cancelled .track-step-icon { background: var(--danger); }
+@keyframes pulse-ring {
+  0%   { box-shadow: 0 0 0 0 rgba(10,92,138,0.3); }
+  70%  { box-shadow: 0 0 0
 /* ===== PAGE SECTIONS HIDE/SHOW ===== */
 .page-section{display:none}
 .page-section.active{display:block}
@@ -656,6 +822,9 @@ body.en .toast{animation-name:toastInLTR}
       <button class="search-btn"><i class="fas fa-search"></i></button>
     </div>
     <div class="header-actions">
+      <div id="authHeaderArea">
+        <!-- يُملأ بـ JS -->
+      </div>
       <button class="lang-btn" onclick="toggleLang()">
         <i class="fas fa-globe"></i>
         <span id="langLabel">EN</span>
@@ -1008,7 +1177,368 @@ body.en .toast{animation-name:toastInLTR}
     </div>
   </div>
 </footer>
+<!-- ===== CLIENT ORDERS PAGE ===== -->
+<div class="page-section" id="ordersPage">
+  <div class="orders-page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="section-tag">طلباتي</div>
+        <h2 class="section-title" style="margin-bottom:0">تتبع طلباتك</h2>
+      </div>
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
+    <div id="clientOrdersList">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
+<!-- ===== AUTH MODAL ===== -->
+<div class="modal-overlay" id="authModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header" id="authModalHeader" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title"><i class="fas fa-user-circle"></i> <span id="authModalTitle">تسجيل الدخول</span></div>
+      <button class="close-btn" onclick="closeAuthModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
 
+      <!-- TABS -->
+      <div class="auth-tabs" id="authTabs">
+        <button class="auth-tab active" onclick="switchAuthTab('login')">
+          <i class="fas fa-sign-in-alt"></i> دخول
+        </button>
+        <button class="auth-tab" onclick="switchAuthTab('register')">
+          <i class="fas fa-user-plus"></i> حساب جديد
+        </button>
+      </div>
+
+      <!-- LOGIN FORM -->
+      <div id="authLoginForm">
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-envelope" style="color:var(--primary-light)"></i> البريد الإلكتروني أو اسم المستخدم <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input type="text" class="form-input" id="loginIdentifier" placeholder="example@email.com أو admin">
+            <i class="fas fa-at input-icon"></i>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-lock" style="color:var(--primary-light)"></i> كلمة المرور <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
+            <i class="fas fa-eye input-icon" style="cursor:pointer;pointer-events:all" onclick="togglePassVis('loginPassword',this)"></i>
+          </div>
+        </div>
+        <div id="loginError" style="display:none" class="field-error show">
+          <i class="fas fa-exclamation-circle"></i> <span id="loginErrorMsg">بيانات الدخول غير صحيحة</span>
+        </div>
+        <button onclick="doLogin()" class="btn-next" style="width:100%;justify-content:center;margin-top:8px">
+          <i class="fas fa-sign-in-alt"></i> دخول
+        </button>
+        <div class="auth-divider">أو</div>
+        <button class="social-auth-btn" onclick="demoLogin('client')">
+          <span>👤</span> تجربة دخول كعميل
+        </button>
+        <button class="social-auth-btn" onclick="demoLogin('admin')" style="margin-top:8px">
+          <span>🔧</span> تجربة دخول كأدمن
+        </button>
+      </div>
+
+      <!-- REGISTER FORM -->
+      <div id="authRegisterForm" style="display:none">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">الاسم الأول <span class="required">*</span></label>
+            <input type="text" class="form-input" id="regFirstName" placeholder="محمد">
+          </div>
+          <div class="form-group">
+            <label class="form-label">اسم العيادة <span class="required">*</span></label>
+            <input type="text" class="form-input" id="regClinic" placeholder="عيادة الابتسامة">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-envelope" style="color:var(--primary-light)"></i> البريد الإلكتروني <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input type="email" class="form-input" id="regEmail" placeholder="doctor@clinic.com">
+            <i class="fas fa-envelope input-icon"></i>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> رقم الهاتف <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input type="tel" class="form-input" id="regPhone" placeholder="05xxxxxxxx">
+            <i class="fas fa-phone input-icon"></i>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-lock" style="color:var(--primary-light)"></i> كلمة المرور <span class="required">*</span></label>
+          <div class="input-with-icon">
+            <input type="password" class="form-input" id="regPassword" placeholder="8 أحرف على الأقل" oninput="checkPassStrength(this.value)">
+            <i class="fas fa-eye input-icon" style="cursor:pointer;pointer-events:all" onclick="togglePassVis('regPassword',this)"></i>
+          </div>
+          <div class="pass-strength">
+            <div class="pass-strength-bar"><div class="pass-strength-fill" id="passStrengthFill"></div></div>
+            <div class="pass-strength-text" id="passStrengthText"></div>
+          </div>
+        </div>
+        <div id="regError" style="display:none" class="field-error show">
+          <i class="fas fa-exclamation-circle"></i> <span id="regErrorMsg">يرجى ملء جميع الحقول</span>
+        </div>
+        <button onclick="doRegister()" class="btn-submit" style="width:100%;justify-content:center;margin-top:8px">
+          <i class="fas fa-user-plus"></i> إنشاء الحساب
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>
+<!-- ===== ADMIN PANEL ===== -->
+<div class="modal-overlay" id="adminLoginModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1a1a2e,#16213e)">
+      <div class="modal-title"><i class="fas fa-lock"></i> دخول الأدمن</div>
+      <button class="close-btn" onclick="closeAdminLogin()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-user"></i> اسم المستخدم</label>
+        <input type="text" class="form-input" id="adminUser" placeholder="admin">
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-key"></i> كلمة المرور</label>
+        <input type="password" class="form-input" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkAdminLogin()">
+      </div>
+      <div id="loginError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;padding:8px 12px;background:#fff5f5;border-radius:8px;margin-top:8px">
+        <i class="fas fa-exclamation-circle"></i> بيانات غير صحيحة
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:flex-end">
+      <button class="btn-next" style="background:linear-gradient(135deg,#1a1a2e,#2d3561)" onclick="checkAdminLogin()">
+        <i class="fas fa-sign-in-alt"></i> دخول
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ADMIN PANEL FULL -->
+<div class="modal-overlay" id="adminPanel" style="align-items:flex-start;padding:0;overflow-y:auto">
+  <div style="background:#f0f4f8;min-height:100vh;width:100%;max-width:100%">
+    
+    <!-- Admin Header -->
+    <div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
+      <div style="display:flex;align-items:center;gap:14px">
+        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:20px">🦷</div>
+        <div>
+          <div style="color:#fff;font-weight:900;font-size:17px">DentaPro — لوحة التحكم</div>
+          <div style="color:rgba(255,255,255,0.6);font-size:12px">إدارة المنتجات</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center">
+        <button onclick="openAddProduct()" style="padding:9px 20px;border-radius:50px;background:#00c2a8;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
+          <i class="fas fa-plus"></i> إضافة منتج
+        </button>
+        <button onclick="closeAdmin()" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;border:2px solid rgba(255,255,255,0.2);cursor:pointer;font-size:15px">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+    </div>
+<!-- Admin Nav Tabs -->
+    <div style="display:flex;gap:0;padding:0 28px;margin-top:20px;border-bottom:2px solid #e2eaf0">
+      <button onclick="switchAdminTab('products')" id="adminTabProducts"
+        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--primary);border-bottom:3px solid var(--primary);margin-bottom:-2px;transition:all 0.2s">
+        <i class="fas fa-box"></i> المنتجات
+      </button>
+      <button onclick="switchAdminTab('orders')" id="adminTabOrders"
+        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
+        <i class="fas fa-clipboard-list"></i> الطلبات <span id="adminOrdersBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
+      </button>
+    </div>
+    <!-- Stats Bar -->
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:24px 28px 0">
+      <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #e2eaf0;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#0a5c8a" id="adminStatTotal">0</div>
+        <div style="font-size:13px;color:#5a7a90;margin-top:4px">إجمالي المنتجات</div>
+      </div>
+      <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #e2eaf0;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#00c2a8" id="adminStatCats">0</div>
+        <div style="font-size:13px;color:#5a7a90;margin-top:4px">الفئات</div>
+      </div>
+      <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #e2eaf0;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#f59e0b" id="adminStatOffers">0</div>
+        <div style="font-size:13px;color:#5a7a90;margin-top:4px">منتجات بخصم</div>
+      </div>
+      <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #e2eaf0;text-align:center">
+        <div style="font-size:28px;font-weight:900;color:#22c55e" id="adminStatNew">0</div>
+        <div style="font-size:13px;color:#5a7a90;margin-top:4px">منتجات جديدة</div>
+      </div>
+    </div>
+
+    <!-- Filter & Search Bar -->
+    <div style="padding:20px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+      <div style="position:relative;flex:1;min-width:200px">
+        <input type="text" id="adminSearch" placeholder="🔍 ابحث في المنتجات..." oninput="renderAdminTable()"
+          style="width:100%;padding:11px 16px;border-radius:50px;border:2px solid #d0e4ef;background:#fff;font-family:inherit;font-size:14px;outline:none">
+      </div>
+      <select id="adminCatFilter" onchange="renderAdminTable()"
+        style="padding:11px 16px;border-radius:50px;border:2px solid #d0e4ef;background:#fff;font-family:inherit;font-size:14px;outline:none;cursor:pointer">
+        <option value="all">كل الفئات</option>
+        <option value="dev">أجهزة ومعدات</option>
+        <option value="hand">أدوات يدوية</option>
+        <option value="mat">مواد طبية</option>
+        <option value="prot">الوقاية</option>
+        <option value="ortho">التقويم</option>
+        <option value="impl">زراعة</option>
+        <option value="home">العناية المنزلية</option>
+      </select>
+    </div>
+<!-- Orders Table (Admin) -->
+    <div id="adminOrdersWrap" style="display:none" class="admin-orders-wrap">
+      <div style="background:#fff;border-radius:16px;border:1px solid #e2eaf0;overflow:hidden">
+        <!-- Header Row -->
+        <div class="admin-order-row header-row">
+          <div>رقم الطلب / العميل</div>
+          <div>المنتجات</div>
+          <div>الإجمالي</div>
+          <div>التاريخ</div>
+          <div>الحالة</div>
+          <div></div>
+        </div>
+        <div id="adminOrdersBody">
+          <!-- filled by JS -->
+        </div>
+      </div>
+    </div>
+    <!-- Products Table -->
+    <div style="padding:0 28px 28px">
+      <div style="background:#fff;border-radius:16px;border:1px solid #e2eaf0;overflow:hidden">
+        <div style="overflow-x:auto">
+          <table style="width:100%;border-collapse:collapse" id="adminTable">
+            <thead>
+              <tr style="background:#f8fbfd;border-bottom:2px solid #e2eaf0">
+                <th style="padding:14px 16px;text-align:right;font-size:13px;color:#5a7a90;font-weight:700">المنتج</th>
+                <th style="padding:14px 16px;text-align:right;font-size:13px;color:#5a7a90;font-weight:700">الفئة</th>
+                <th style="padding:14px 16px;text-align:right;font-size:13px;color:#5a7a90;font-weight:700">السعر</th>
+                <th style="padding:14px 16px;text-align:right;font-size:13px;color:#5a7a90;font-weight:700">السعر القديم</th>
+                <th style="padding:14px 16px;text-align:right;font-size:13px;color:#5a7a90;font-weight:700">الشارة</th>
+                <th style="padding:14px 16px;text-align:center;font-size:13px;color:#5a7a90;font-weight:700">إجراءات</th>
+              </tr>
+            </thead>
+            <tbody id="adminTableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ADD / EDIT PRODUCT MODAL -->
+<div class="modal-overlay" id="productFormModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1a1a2e,#2d3561)">
+      <div class="modal-title" id="productFormTitle"><i class="fas fa-box"></i> إضافة منتج جديد</div>
+      <button class="close-btn" onclick="closeProductForm()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editProductId">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">الاسم بالعربي <span class="required">*</span></label>
+          <input type="text" class="form-input" id="pAr" placeholder="اسم المنتج بالعربية">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الاسم بالإنجليزي <span class="required">*</span></label>
+          <input type="text" class="form-input" id="pEn" placeholder="Product name in English">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">الوصف بالعربي</label>
+          <input type="text" class="form-input" id="pDescAr" placeholder="وصف مختصر">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الوصف بالإنجليزي</label>
+          <input type="text" class="form-input" id="pDescEn" placeholder="Short description">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">الماركة (Brand) <span class="required">*</span></label>
+          <input type="text" class="form-input" id="pBrand" placeholder="مثال: 3M, DENTSPLY">
+        </div>
+        <div class="form-group">
+          <label class="form-label">الأيقونة (Emoji) <span class="required">*</span></label>
+          <input type="text" class="form-input" id="pIcon" placeholder="🦷" maxlength="4">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">السعر (ر.س) <span class="required">*</span></label>
+          <input type="number" class="form-input" id="pPrice" placeholder="0.00" min="0">
+        </div>
+        <div class="form-group">
+          <label class="form-label">السعر القديم (اختياري)</label>
+          <input type="number" class="form-input" id="pOldPrice" placeholder="السعر قبل الخصم" min="0">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">الفئة <span class="required">*</span></label>
+          <select class="form-input" id="pCat" style="cursor:pointer">
+            <option value="dev">أجهزة ومعدات</option>
+            <option value="hand">أدوات يدوية</option>
+            <option value="mat">مواد طبية</option>
+            <option value="prot">الوقاية والتعقيم</option>
+            <option value="ortho">التقويم</option>
+            <option value="impl">زراعة الأسنان</option>
+            <option value="home">العناية المنزلية</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">الشارة (Badge)</label>
+          <select class="form-input" id="pBadge" style="cursor:pointer">
+            <option value="">بدون شارة</option>
+            <option value="جديد">🆕 جديد</option>
+            <option value="الأكثر مبيعاً">🔥 الأكثر مبيعاً</option>
+            <option value="خصم 10%">🏷️ خصم 10%</option>
+            <option value="خصم 15%">🏷️ خصم 15%</option>
+            <option value="خصم 20%">🏷️ خصم 20%</option>
+            <option value="خصم 22%">🏷️ خصم 22%</option>
+            <option value="خصم 25%">🏷️ خصم 25%</option>
+            <option value="خصم 30%">🏷️ خصم 30%</option>
+          </select>
+        </div>
+      </div>
+      <div id="productFormError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
+        <i class="fas fa-exclamation-circle"></i> يرجى ملء جميع الحقول الإلزامية
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeProductForm()"><i class="fas fa-times"></i> إلغاء</button>
+      <button class="btn-submit" onclick="saveProduct()"><i class="fas fa-save"></i> حفظ المنتج</button>
+    </div>
+  </div>
+</div>
+
+<!-- DELETE CONFIRM MODAL -->
+<div class="modal-overlay" id="deleteConfirmModal">
+  <div class="modal" style="max-width:400px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#c53030,#e53e3e)">
+      <div class="modal-title"><i class="fas fa-trash-alt"></i> تأكيد الحذف</div>
+      <button class="close-btn" onclick="closeDeleteConfirm()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="text-align:center;padding:32px">
+      <div style="font-size:52px;margin-bottom:16px">⚠️</div>
+      <div style="font-size:16px;font-weight:700;color:#1a1a2e;margin-bottom:8px">هل أنت متأكد من حذف هذا المنتج؟</div>
+      <div style="font-size:14px;color:#5a7a90" id="deleteProductName"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeDeleteConfirm()">إلغاء</button>
+      <button onclick="confirmDelete()" style="padding:12px 28px;border-radius:50px;background:linear-gradient(135deg,#c53030,#e53e3e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-trash-alt"></i> نعم، احذف
+      </button>
+    </div>
+  </div>
+</div>
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -1461,12 +1991,29 @@ function submitOrder() {
   const orderNum = 'DP-' + String(Math.floor(Math.random()*900000)+100000);
   document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
 
-  // Hide steps UI
+  // Save order to localStorage
+  const order = {
+    id: orderNum,
+    clientName: currentUser ? currentUser.name : document.getElementById('doctorName').value,
+    clientEmail: currentUser ? currentUser.email : '',
+    clinic: document.getElementById('clinicName').value,
+    doctor: document.getElementById('doctorName').value,
+    phone: document.getElementById('countryCode').value + document.getElementById('phoneNumber').value,
+    address: locationData.address || document.getElementById('addressInput').value,
+    notes: document.getElementById('orderNotes').value,
+    items: cart.map(i => ({ id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty })),
+    total: getTotal(),
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  };
+  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+  orders.unshift(order);
+  localStorage.setItem('dentapro_orders', JSON.stringify(orders));
+
   document.querySelector('.modal-steps').style.display = 'none';
   ['modalStep1','modalStep2','modalStep3','modalStep4'].forEach(id => document.getElementById(id).style.display='none');
   document.getElementById('modalFooter').style.display = 'none';
   document.getElementById('successScreen').classList.add('show');
-
   orderSubmitted = true;
   showToast(t('🎉 تم إرسال طلبك بنجاح!','🎉 Order submitted successfully!'), 'success');
 }
@@ -1511,6 +2058,667 @@ function scrollToProducts() {
 }
 function showPage(page) {
   // future multi-page support
+}
+// =====================
+// AUTH SYSTEM
+// =====================
+const ADMIN_CREDENTIALS = { username: 'admin', password: 'dentapro2025', role: 'admin', name: 'المدير' };
+let currentUser = null;
+
+// Load session on page load
+document.addEventListener('DOMContentLoaded', () => {
+  const saved = localStorage.getItem('dentapro_session');
+  if (saved) {
+    try { currentUser = JSON.parse(saved); renderAuthHeader(); } catch(e) {}
+  } else { renderAuthHeader(); }
+});
+
+function renderAuthHeader() {
+  const area = document.getElementById('authHeaderArea');
+  if (!currentUser) {
+    area.innerHTML = `
+      <button class="auth-btn filled" onclick="openAuthModal('login')">
+        <i class="fas fa-sign-in-alt"></i>
+        <span>دخول</span>
+      </button>`;
+    return;
+  }
+  const isAdmin = currentUser.role === 'admin';
+  const avatarBg = isAdmin ? 'linear-gradient(135deg,#e53e3e,#c53030)' : 'linear-gradient(135deg,#0a5c8a,#00c2a8)';
+  const avatarIcon = isAdmin ? '🔧' : '👤';
+  area.innerHTML = `
+    <div class="user-chip" tabindex="0">
+      <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
+      <div>
+        <div class="user-chip-name">${currentUser.name}</div>
+        <div class="user-chip-role">${isAdmin ? 'مدير النظام' : 'عميل'}</div>
+      </div>
+      <i class="fas fa-chevron-down" style="font-size:11px;color:var(--text-muted);margin-right:4px"></i>
+      <div class="user-dropdown">
+        ${isAdmin ? `
+        <button class="user-dropdown-item" onclick="openAdminDirect()">
+          <i class="fas fa-cog" style="color:#e53e3e"></i> لوحة التحكم
+        </button>
+        <div class="user-dropdown-divider"></div>` : `
+        <button class="user-dropdown-item" onclick="openClientOrders()">
+          <i class="fas fa-shopping-bag" style="color:var(--primary)"></i> طلباتي
+        </button>
+        <button class="user-dropdown-item">
+          <i class="fas fa-heart" style="color:#e53e3e"></i> المفضلة
+        </button>
+        <button class="user-dropdown-item">
+          <i class="fas fa-user-edit" style="color:var(--accent)"></i> تعديل الملف
+        </button>
+        <div class="user-dropdown-divider"></div>`}
+        <button class="user-dropdown-item danger" onclick="doLogout()">
+          <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+        </button>
+      </div>
+    </div>`;
+}
+
+function openAuthModal(tab = 'login') {
+  switchAuthTab(tab);
+  document.getElementById('loginIdentifier').value = '';
+  document.getElementById('loginPassword').value = '';
+  document.getElementById('loginError').style.display = 'none';
+  document.getElementById('regError').style.display = 'none';
+  document.getElementById('authModal').classList.add('open');
+}
+function closeAuthModal() {
+  document.getElementById('authModal').classList.remove('open');
+}
+
+function switchAuthTab(tab) {
+  document.querySelectorAll('.auth-tab').forEach((t,i) => t.classList.toggle('active', (i===0&&tab==='login')||(i===1&&tab==='register')));
+  document.getElementById('authLoginForm').style.display = tab === 'login' ? 'block' : 'none';
+  document.getElementById('authRegisterForm').style.display = tab === 'register' ? 'block' : 'none';
+  document.getElementById('authModalTitle').textContent = tab === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
+}
+
+function doLogin() {
+  const id = document.getElementById('loginIdentifier').value.trim();
+  const pass = document.getElementById('loginPassword').value;
+  document.getElementById('loginError').style.display = 'none';
+
+  // Check admin
+  if ((id === ADMIN_CREDENTIALS.username || id === 'admin') && pass === ADMIN_CREDENTIALS.password) {
+    loginSuccess({ role: 'admin', name: 'المدير', email: 'admin@dentapro.com' });
+    return;
+  }
+
+  // Check registered clients
+  const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+  const user = users.find(u => (u.email === id || u.phone === id) && u.password === pass);
+  if (user) {
+    loginSuccess({ role: 'client', name: user.firstName, clinic: user.clinic, email: user.email, phone: user.phone });
+    return;
+  }
+
+  document.getElementById('loginErrorMsg').textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+  document.getElementById('loginError').style.display = 'flex';
+}
+
+function demoLogin(role) {
+  if (role === 'admin') {
+    loginSuccess({ role: 'admin', name: 'المدير', email: 'admin@dentapro.com' });
+  } else {
+    loginSuccess({ role: 'client', name: 'د. محمد', clinic: 'عيادة الابتسامة', email: 'demo@clinic.com', phone: '0512345678' });
+  }
+}
+
+function loginSuccess(user) {
+  currentUser = user;
+  localStorage.setItem('dentapro_session', JSON.stringify(user));
+  closeAuthModal();
+  renderAuthHeader();
+  showToast(`👋 أهلاً ${user.name}!`, 'success');
+  if (user.role === 'admin') {
+    setTimeout(() => {
+      document.getElementById('adminPanel').classList.add('open');
+      updateAdminStats();
+      renderAdminTable();
+    }, 400);
+  } else {
+    // Show welcome banner for client
+    showClientWelcome(user);
+  }
+}
+
+function showClientWelcome(user) {
+  const existing = document.getElementById('clientWelcomeBanner');
+  if (existing) existing.remove();
+  const hero = document.querySelector('.hero-content');
+  if (!hero) return;
+  const banner = document.createElement('div');
+  banner.id = 'clientWelcomeBanner';
+  banner.className = 'welcome-banner';
+  banner.innerHTML = `
+    <i class="fas fa-hand-sparkles"></i>
+    <div>
+      <div style="font-weight:800;font-size:15px;color:var(--primary-dark)">أهلاً بك ${user.name}! ${user.clinic ? '— ' + user.clinic : ''}</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:2px">تمتع بأسعار العيادات الحصرية وتتبع طلباتك</div>
+    </div>`;
+  hero.insertBefore(banner, hero.firstChild);
+}
+
+function doRegister() {
+  const firstName = document.getElementById('regFirstName').value.trim();
+  const clinic    = document.getElementById('regClinic').value.trim();
+  const email     = document.getElementById('regEmail').value.trim();
+  const phone     = document.getElementById('regPhone').value.trim();
+  const password  = document.getElementById('regPassword').value;
+
+  const showRegError = (msg) => {
+    document.getElementById('regErrorMsg').textContent = msg;
+    document.getElementById('regError').style.display = 'flex';
+  };
+
+  if (!firstName || !clinic || !email || !phone || !password) return showRegError('يرجى ملء جميع الحقول المطلوبة');
+  if (!/\S+@\S+\.\S+/.test(email)) return showRegError('البريد الإلكتروني غير صحيح');
+  if (password.length < 8) return showRegError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+
+  const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+  if (users.find(u => u.email === email)) return showRegError('هذا البريد مسجل مسبقاً');
+
+  users.push({ firstName, clinic, email, phone, password, role: 'client', createdAt: Date.now() });
+  localStorage.setItem('dentapro_users', JSON.stringify(users));
+  document.getElementById('regError').style.display = 'none';
+
+  loginSuccess({ role: 'client', name: firstName, clinic, email, phone });
+}
+
+function doLogout() {
+  currentUser = null;
+  localStorage.removeItem('dentapro_session');
+  renderAuthHeader();
+  const banner = document.getElementById('clientWelcomeBanner');
+  if (banner) banner.remove();
+  showToast('👋 تم تسجيل الخروج', '');
+}
+
+function openAdminDirect() {
+  if (!currentUser || currentUser.role !== 'admin') {
+    showToast('⛔ غير مصرح لك بالدخول', 'error'); return;
+  }
+  document.getElementById('adminPanel').classList.add('open');
+  updateAdminStats();
+  renderAdminTable();
+}
+
+function togglePassVis(fieldId, icon) {
+  const field = document.getElementById(fieldId);
+  const isPass = field.type === 'password';
+  field.type = isPass ? 'text' : 'password';
+  icon.className = `fas fa-${isPass ? 'eye-slash' : 'eye'} input-icon`;
+  icon.style.cssText = 'cursor:pointer;pointer-events:all';
+}
+
+function checkPassStrength(val) {
+  const fill = document.getElementById('passStrengthFill');
+  const text = document.getElementById('passStrengthText');
+  if (!val) { fill.style.width='0'; text.textContent=''; return; }
+  let score = 0;
+  if (val.length >= 8) score++;
+  if (/[A-Z]/.test(val)) score++;
+  if (/[0-9]/.test(val)) score++;
+  if (/[^A-Za-z0-9]/.test(val)) score++;
+  const levels = [
+    { w:'25%', color:'#e53e3e', label:'ضعيفة' },
+    { w:'50%', color:'#f59e0b', label:'مقبولة' },
+    { w:'75%', color:'#3b82f6', label:'جيدة' },
+    { w:'100%', color:'#22c55e', label:'قوية 💪' },
+  ];
+  const lvl = levels[score - 1] || levels[0];
+  fill.style.width = lvl.w;
+  fill.style.background = lvl.color;
+  text.textContent = `قوة كلمة المرور: ${lvl.label}`;
+  text.style.color = lvl.color;
+}
+// =====================
+// ADMIN PANEL
+// =====================
+const ADMIN_USER = 'admin';
+const ADMIN_PASS = 'dentapro2025';
+let deleteTargetId = null;
+let editingProductId = null;
+
+function openAdmin() {
+  document.getElementById('adminLoginModal').classList.add('open');
+  setTimeout(() => document.getElementById('adminUser').focus(), 300);
+}
+function closeAdminLogin() {
+  document.getElementById('adminLoginModal').classList.remove('open');
+  document.getElementById('adminUser').value = '';
+  document.getElementById('adminPass').value = '';
+  document.getElementById('loginError').style.display = 'none';
+}
+function checkAdminLogin() {
+  const u = document.getElementById('adminUser').value.trim();
+  const p = document.getElementById('adminPass').value;
+  if (u === ADMIN_USER && p === ADMIN_PASS) {
+    closeAdminLogin();
+    document.getElementById('adminPanel').classList.add('open');
+    updateAdminStats();
+    renderAdminTable();
+  } else {
+    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('adminPass').value = '';
+  }
+}
+function closeAdmin() {
+  document.getElementById('adminPanel').classList.remove('open');
+}
+
+function updateAdminStats() {
+  document.getElementById('adminStatTotal').textContent = products.length;
+  document.getElementById('adminStatCats').textContent = new Set(products.map(p => p.cat)).size;
+  document.getElementById('adminStatOffers').textContent = products.filter(p => p.old).length;
+  document.getElementById('adminStatNew').textContent = products.filter(p => p.badge === 'جديد').length;
+}
+
+function renderAdminTable() {
+  const search = document.getElementById('adminSearch').value.toLowerCase();
+  const catFilter = document.getElementById('adminCatFilter').value;
+  const catNames = {dev:'أجهزة',hand:'أدوات يدوية',mat:'مواد طبية',prot:'وقاية',ortho:'تقويم',impl:'زراعة',home:'منزلية'};
+  const badgeColors = {'جديد':'#0a5c8a','الأكثر مبيعاً':'#e53e3e','':''};
+
+  let list = products.filter(p => {
+    const matchSearch = !search || p.ar.includes(search) || p.en.toLowerCase().includes(search) || p.brand.toLowerCase().includes(search);
+    const matchCat = catFilter === 'all' || p.cat === catFilter;
+    return matchSearch && matchCat;
+  });
+
+  const tbody = document.getElementById('adminTableBody');
+  if (!list.length) {
+    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#5a7a90;font-size:15px">لا توجد منتجات</td></tr>`;
+    return;
+  }
+
+  tbody.innerHTML = list.map(p => `
+    <tr style="border-bottom:1px solid #f0f4f8;transition:background 0.15s" onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+      <td style="padding:14px 16px">
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${p.icon}</div>
+          <div>
+            <div style="font-weight:700;font-size:14px;color:#0f2133">${p.ar}</div>
+            <div style="font-size:12px;color:#5a7a90">${p.brand} · ${p.en.substring(0,30)}${p.en.length>30?'...':''}</div>
+          </div>
+        </div>
+      </td>
+      <td style="padding:14px 16px">
+        <span style="padding:4px 12px;border-radius:50px;background:#e8f3fb;color:#0a5c8a;font-size:12px;font-weight:700">${catNames[p.cat]||p.cat}</span>
+      </td>
+      <td style="padding:14px 16px;font-weight:800;color:#0a5c8a;font-size:15px">${p.price.toLocaleString()} ر.س</td>
+      <td style="padding:14px 16px;color:#5a7a90;font-size:13px;text-decoration:line-through">${p.old ? p.old.toLocaleString()+' ر.س' : '—'}</td>
+      <td style="padding:14px 16px">
+        ${p.badge ? `<span style="padding:4px 10px;border-radius:50px;background:${badgeColors[p.badge]||'#f59e0b'};color:#fff;font-size:11px;font-weight:700">${p.badge}</span>` : '<span style="color:#ccc;font-size:13px">—</span>'}
+      </td>
+      <td style="padding:14px 16px;text-align:center">
+        <div style="display:flex;gap:8px;justify-content:center">
+          <button onclick="openEditProduct(${p.id})" style="padding:7px 16px;border-radius:50px;background:#e8f3fb;color:#0a5c8a;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+            <i class="fas fa-edit"></i> تعديل
+          </button>
+          <button onclick="openDeleteConfirm(${p.id})" style="padding:7px 16px;border-radius:50px;background:#fff5f5;color:#e53e3e;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
+            <i class="fas fa-trash-alt"></i> حذف
+          </button>
+        </div>
+      </td>
+    </tr>
+  `).join('');
+}
+
+// Add / Edit Product
+function openAddProduct() {
+  editingProductId = null;
+  document.getElementById('productFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> إضافة منتج جديد';
+  ['pAr','pEn','pDescAr','pDescEn','pBrand','pIcon','pPrice','pOldPrice'].forEach(id => document.getElementById(id).value = '');
+  document.getElementById('pCat').value = 'dev';
+  document.getElementById('pBadge').value = '';
+  document.getElementById('productFormError').style.display = 'none';
+  document.getElementById('productFormModal').classList.add('open');
+}
+
+function openEditProduct(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  editingProductId = id;
+  document.getElementById('productFormTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل المنتج';
+  document.getElementById('pAr').value = p.ar;
+  document.getElementById('pEn').value = p.en;
+  document.getElementById('pDescAr').value = p.desc_ar;
+  document.getElementById('pDescEn').value = p.desc_en;
+  document.getElementById('pBrand').value = p.brand;
+  document.getElementById('pIcon').value = p.icon;
+  document.getElementById('pPrice').value = p.price;
+  document.getElementById('pOldPrice').value = p.old || '';
+  document.getElementById('pCat').value = p.cat;
+  document.getElementById('pBadge').value = p.badge || '';
+  document.getElementById('productFormError').style.display = 'none';
+  document.getElementById('productFormModal').classList.add('open');
+}
+
+function closeProductForm() {
+  document.getElementById('productFormModal').classList.remove('open');
+}
+
+function saveProduct() {
+  const ar = document.getElementById('pAr').value.trim();
+  const en = document.getElementById('pEn').value.trim();
+  const brand = document.getElementById('pBrand').value.trim();
+  const icon = document.getElementById('pIcon').value.trim();
+  const price = parseFloat(document.getElementById('pPrice').value);
+
+  if (!ar || !en || !brand || !icon || !price) {
+    document.getElementById('productFormError').style.display = 'block';
+    return;
+  }
+  document.getElementById('productFormError').style.display = 'none';
+
+  const oldPrice = parseFloat(document.getElementById('pOldPrice').value) || null;
+  const productData = {
+    cat: document.getElementById('pCat').value,
+    icon, brand, ar, en,
+    price, old: oldPrice,
+    desc_ar: document.getElementById('pDescAr').value.trim() || ar,
+    desc_en: document.getElementById('pDescEn').value.trim() || en,
+    badge: document.getElementById('pBadge').value || null,
+  };
+
+  if (editingProductId) {
+    const idx = products.findIndex(x => x.id === editingProductId);
+    if (idx !== -1) products[idx] = { ...products[idx], ...productData };
+    showToast('✅ تم تعديل المنتج بنجاح', 'success');
+  } else {
+    const newId = Math.max(...products.map(p => p.id)) + 1;
+    products.push({ id: newId, ...productData });
+    showToast('✅ تم إضافة المنتج بنجاح', 'success');
+  }
+
+  closeProductForm();
+  updateAdminStats();
+  renderAdminTable();
+  renderProducts();
+  renderCategories();
+}
+
+// Delete Product
+function openDeleteConfirm(id) {
+  deleteTargetId = id;
+  const p = products.find(x => x.id === id);
+  document.getElementById('deleteProductName').textContent = p ? `${p.icon} ${p.ar}` : '';
+  document.getElementById('deleteConfirmModal').classList.add('open');
+}
+function closeDeleteConfirm() {
+  document.getElementById('deleteConfirmModal').classList.remove('open');
+  deleteTargetId = null;
+}
+function confirmDelete() {
+  if (!deleteTargetId) return;
+  const p = products.find(x => x.id === deleteTargetId);
+  const idx = products.findIndex(x => x.id === deleteTargetId);
+  if (idx !== -1) products.splice(idx, 1);
+  cart = cart.filter(x => x.id !== deleteTargetId);
+  closeDeleteConfirm();
+  updateAdminStats();
+  renderAdminTable();
+  renderProducts();
+  renderCategories();
+  updateCartUI();
+  showToast(`🗑️ تم حذف "${p?.ar}" بنجاح`, 'success');
+}
+// =====================
+// ORDER TRACKING SYSTEM
+// =====================
+const ORDER_STATUSES = [
+  { key:'pending',   label:'في الانتظار',  icon:'fa-clock',          class:'status-pending'   },
+  { key:'confirmed', label:'تم التأكيد',   icon:'fa-check-circle',   class:'status-confirmed' },
+  { key:'preparing', label:'جاري التجهيز', icon:'fa-box-open',       class:'status-preparing' },
+  { key:'shipped',   label:'في الشحن',     icon:'fa-shipping-fast',  class:'status-shipped'   },
+  { key:'delivered', label:'تم التسليم',   icon:'fa-hand-holding',   class:'status-delivered' },
+  { key:'cancelled', label:'ملغي',          icon:'fa-times-circle',   class:'status-cancelled' },
+];
+
+const TRACK_FLOW = ['pending','confirmed','preparing','shipped','delivered'];
+
+function getStatusObj(key) {
+  return ORDER_STATUSES.find(s => s.key === key) || ORDER_STATUSES[0];
+}
+
+function statusBadgeHTML(key) {
+  const s = getStatusObj(key);
+  return `<span class="status-badge ${s.class}"><i class="fas ${s.icon}"></i> ${s.label}</span>`;
+}
+
+function trackStepsHTML(currentStatus) {
+  if (currentStatus === 'cancelled') {
+    return `<div style="text-align:center;padding:16px;color:var(--danger);font-weight:700">
+      <i class="fas fa-times-circle" style="font-size:28px;margin-bottom:6px;display:block"></i>
+      تم إلغاء الطلب
+    </div>`;
+  }
+  const currentIdx = TRACK_FLOW.indexOf(currentStatus);
+  return `<div class="track-steps">` +
+    TRACK_FLOW.map((key, i) => {
+      const s = getStatusObj(key);
+      const isDone   = i < currentIdx;
+      const isActive = i === currentIdx;
+      const cls = isDone ? 'done' : isActive ? 'active' : '';
+      return `<div class="track-step ${cls}">
+        <div class="track-step-icon"><i class="fas ${s.icon}"></i></div>
+        <div class="track-step-label">${s.label}</div>
+      </div>`;
+    }).join('') +
+  `</div>`;
+}
+
+// ── CLIENT ORDERS ──
+function openClientOrders() {
+  if (!currentUser) { openAuthModal('login'); return; }
+  showPage('orders');
+  renderClientOrders();
+}
+
+function renderClientOrders() {
+  const all = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+  const mine = currentUser.role === 'admin'
+    ? all
+    : all.filter(o => o.clientEmail === currentUser.email || o.clientName === currentUser.name);
+
+  const container = document.getElementById('clientOrdersList');
+  if (!mine.length) {
+    container.innerHTML = `
+      <div class="empty-orders">
+        <i class="fas fa-box-open"></i>
+        <h3>لا توجد طلبات بعد</h3>
+        <p>ابدأ تسوقك الآن وستجد طلباتك هنا</p>
+        <button class="btn-primary" style="margin-top:16px" onclick="showPage('home')">تسوّق الآن</button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = mine.map(order => {
+    const date = new Date(order.createdAt).toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
+    return `
+    <div class="order-track-card">
+      <div class="order-track-header">
+        <div>
+          <div class="order-track-num">
+            <i class="fas fa-receipt" style="color:var(--primary-light)"></i>
+            #${order.id}
+          </div>
+          <div class="order-track-date">📅 ${date} · ${order.clinic}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+          ${statusBadgeHTML(order.status)}
+          <div class="order-track-total">${order.total.toLocaleString()} ر.س</div>
+        </div>
+      </div>
+      <div class="order-track-body">
+        ${trackStepsHTML(order.status)}
+        <div class="order-items-list">
+          ${order.items.map(item => `
+            <div class="order-item-row">
+              <div class="order-item-icon">${item.icon}</div>
+              <div style="flex:1;font-weight:600;color:var(--primary-dark)">${item.ar}</div>
+              <div style="color:var(--text-muted)">× ${item.qty}</div>
+              <div style="font-weight:800;color:var(--primary)">${(item.price*item.qty).toLocaleString()} ر.س</div>
+            </div>`).join('')}
+        </div>
+        ${order.notes ? `<div style="margin-top:12px;padding:10px 14px;background:#f8fbfd;border-radius:10px;font-size:13px;color:var(--text-muted)"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${order.notes}</div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── ADMIN ORDERS ──
+function switchAdminTab(tab) {
+  const isProducts = tab === 'products';
+  // Tab buttons
+  document.getElementById('adminTabProducts').style.color        = isProducts ? 'var(--primary)' : 'var(--text-muted)';
+  document.getElementById('adminTabProducts').style.borderBottomColor = isProducts ? 'var(--primary)' : 'transparent';
+  document.getElementById('adminTabOrders').style.color          = !isProducts ? 'var(--primary)' : 'var(--text-muted)';
+  document.getElementById('adminTabOrders').style.borderBottomColor  = !isProducts ? 'var(--primary)' : 'transparent';
+  // Panels
+  document.getElementById('adminStatTotal').closest('div').parentElement.style.display = isProducts ? 'grid' : 'none';
+  document.querySelector('.admin-orders-wrap') && (document.getElementById('adminOrdersWrap').style.display = isProducts ? 'none' : 'block');
+  document.querySelector('[style*="padding:0 28px 28px"]') && null;
+  // Show/hide product table
+  const prodTable = document.querySelector('#adminTable')?.closest('div[style*="padding:0 28px"]');
+  if (prodTable) prodTable.style.display = isProducts ? 'block' : 'none';
+  const filterBar = document.querySelector('#adminSearch')?.closest('div[style*="padding:20px 28px"]');
+  if (filterBar) filterBar.style.display = isProducts ? 'flex' : 'none';
+
+  if (!isProducts) renderAdminOrders();
+}
+
+function renderAdminOrders() {
+  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+  const body = document.getElementById('adminOrdersBody');
+
+  // Update badge
+  const pending = orders.filter(o => o.status === 'pending').length;
+  document.getElementById('adminOrdersBadge').textContent = pending || '';
+
+  if (!orders.length) {
+    body.innerHTML = `<div class="empty-orders"><i class="fas fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>`;
+    return;
+  }
+
+  body.innerHTML = orders.map(order => {
+    const date = new Date(order.createdAt).toLocaleDateString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const itemsSummary = order.items.slice(0,2).map(i=>`${i.icon} ${i.ar.substring(0,14)}...`).join(' · ');
+    const statusOpts = ORDER_STATUSES.map(s =>
+      `<option value="${s.key}" ${order.status===s.key?'selected':''}>${s.label}</option>`
+    ).join('');
+
+    return `
+    <div class="admin-order-row">
+      <div>
+        <div style="font-weight:800;color:var(--primary-dark);font-size:13px">#${order.id}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">👤 ${order.clientName} · ${order.clinic}</div>
+        <div style="font-size:11px;color:var(--text-muted)">📞 ${order.phone}</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${itemsSummary}<br><span style="color:var(--primary-light);font-weight:700">${order.items.length} منتج</span></div>
+      <div style="font-weight:900;color:var(--primary)">${order.total.toLocaleString()} ر.س</div>
+      <div style="font-size:12px;color:var(--text-muted)">${date}</div>
+      <div>
+        <select class="status-select" onchange="updateOrderStatus('${order.id}', this.value)">
+          ${statusOpts}
+        </select>
+      </div>
+      <div>
+        <button onclick="showAdminOrderDetail('${order.id}')"
+          style="padding:6px 12px;border-radius:50px;background:#e8f3fb;color:var(--primary);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fas fa-eye"></i> عرض
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function updateOrderStatus(orderId, newStatus) {
+  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+  const idx = orders.findIndex(o => o.id === orderId);
+  if (idx === -1) return;
+  orders[idx].status = newStatus;
+  localStorage.setItem('dentapro_orders', JSON.stringify(orders));
+  const s = getStatusObj(newStatus);
+  showToast(`✅ طلب #${orderId} → ${s.label}`, 'success');
+  renderAdminOrders();
+}
+
+function showAdminOrderDetail(orderId) {
+  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  const date = new Date(order.createdAt).toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  // Reuse a simple alert-style modal — inject into deleteConfirm modal for now
+  document.getElementById('deleteProductName').innerHTML = '';
+  document.querySelector('#deleteConfirmModal .modal-header').style.background = 'linear-gradient(135deg,#0a5c8a,#1a8bbf)';
+  document.querySelector('#deleteConfirmModal .modal-title').innerHTML = `<i class="fas fa-receipt"></i> تفاصيل الطلب #${order.id}`;
+  document.querySelector('#deleteConfirmModal .modal-body').innerHTML = `
+    <div style="text-align:right">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">العميل</div>
+          <div style="font-weight:700;font-size:14px">${order.clientName}</div>
+        </div>
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">العيادة</div>
+          <div style="font-weight:700;font-size:14px">${order.clinic}</div>
+        </div>
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">الهاتف</div>
+          <div style="font-weight:700;font-size:14px">${order.phone}</div>
+        </div>
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">التاريخ</div>
+          <div style="font-weight:700;font-size:13px">${date}</div>
+        </div>
+      </div>
+      <div style="background:#f0f8ff;border-radius:10px;padding:12px;margin-bottom:12px">
+        <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:700">📍 الموقع</div>
+        <div style="font-size:13px;font-weight:600">${order.address}</div>
+      </div>
+      <div style="margin-bottom:12px">
+        ${order.items.map(item=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px">
+            <span style="font-size:22px">${item.icon}</span>
+            <span style="flex:1;font-weight:600">${item.ar}</span>
+            <span style="color:var(--text-muted)">× ${item.qty}</span>
+            <span style="font-weight:800;color:var(--primary)">${(item.price*item.qty).toLocaleString()} ر.س</span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
+          <span>الإجمالي</span><span>${order.total.toLocaleString()} ر.س</span>
+        </div>
+      </div>
+      ${order.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${order.notes}</div>`:''}
+      <div style="margin-top:16px;text-align:center">${statusBadgeHTML(order.status)}</div>
+      ${trackStepsHTML(order.status)}
+    </div>`;
+  document.querySelector('#deleteConfirmModal .modal-footer').innerHTML = `
+    <button class="btn-back" onclick="closeDeleteConfirm();renderAdminOrders()">
+      <i class="fas fa-arrow-right"></i> رجوع
+    </button>
+    <button onclick="sendWhatsAppAdmin('${order.id}')" style="padding:12px 20px;border-radius:50px;background:#25d366;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
+      <i class="fab fa-whatsapp"></i> تواصل مع العميل
+    </button>`;
+  document.getElementById('deleteConfirmModal').classList.add('open');
+}
+
+function sendWhatsAppAdmin(orderId) {
+  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+  const order = orders.find(o => o.id === orderId);
+  if (!order) return;
+  const s = getStatusObj(order.status);
+  const msg = encodeURIComponent(
+    `🦷 *DentaPro — تحديث طلبك*\n\nمرحباً ${order.clientName}،\n` +
+    `طلبك رقم *#${order.id}* الآن في مرحلة: *${s.label}*\n\n` +
+    `شكراً لثقتك بـ DentaPro 💙`
+  );
+  const clean = order.phone.replace(/\D/g,'');
+  window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
 }
 </script>
 </body>
