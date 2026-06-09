@@ -807,6 +807,51 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .products-grid{grid-template-columns:1fr 1fr}
 }
 </style>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy, onSnapshot }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyDVVEzXPlfJAD7NSV0tGHzzsx8LiyK2i4w",
+    authDomain: "dentapro-db2f6.firebaseapp.com",
+    projectId: "dentapro-db2f6",
+    storageBucket: "dentapro-db2f6.firebasestorage.app",
+    messagingSenderId: "834989089132",
+    appId: "1:834989089132:web:91172f8e00c616fa291349",
+    measurementId: "G-HTL7R7C59S"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db  = getFirestore(app);
+
+  window._db          = db;
+  window._fbOrdersRef = () => collection(db, 'orders');
+  window._fbAddDoc    = addDoc;
+  window._fbGetDocs   = getDocs;
+  window._fbDoc       = (id) => doc(db, 'orders', id);
+  window._fbUpdateDoc = updateDoc;
+  window._fbQuery     = query;
+  window._fbOrderBy   = orderBy;
+  window._fbOnSnapshot = onSnapshot;
+
+  window.addEventListener('load', () => {
+    try {
+      const q = query(collection(db,'orders'), orderBy('createdAt','desc'));
+      onSnapshot(q, () => {
+        const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
+        const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
+        if (adminOpen)  renderAdminOrders();
+        if (ordersOpen) renderClientOrders();
+        getDocs(collection(db,'orders')).then(snap => {
+          const pending = snap.docs.filter(d => d.data().status === 'pending').length;
+          const badge = document.getElementById('adminOrdersBadge');
+          if (badge) badge.textContent = pending > 0 ? pending : '';
+        });
+      });
+    } catch(e) { console.warn('Listener:', e); }
+  });
+</script>
 </head>
 <body>
 
@@ -1986,33 +2031,42 @@ function updateCharCount() {
 // =====================
 // SUBMIT ORDER
 // =====================
-function submitOrder() {
+async function submitOrder() {
   if (!validateStep(3)) { currentStep=3; renderModalStep(); return; }
+
   const orderNum = 'DP-' + String(Math.floor(Math.random()*900000)+100000);
-  document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
 
-  // Save order to localStorage
   const order = {
-    id: orderNum,
-    clientName: currentUser ? currentUser.name : document.getElementById('doctorName').value,
-    clientEmail: currentUser ? currentUser.email : '',
-    clinic: document.getElementById('clinicName').value,
-    doctor: document.getElementById('doctorName').value,
-    phone: document.getElementById('countryCode').value + document.getElementById('phoneNumber').value,
-    address: locationData.address || document.getElementById('addressInput').value,
-    notes: document.getElementById('orderNotes').value,
-    items: cart.map(i => ({ id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty })),
-    total: getTotal(),
-    status: 'pending',
-    createdAt: new Date().toISOString(),
+    id:          orderNum,
+    clientName:  document.getElementById('doctorName').value,
+    clientEmail: currentUser ? currentUser.email : 'guest',
+    clinic:      document.getElementById('clinicName').value,
+    doctor:      document.getElementById('doctorName').value,
+    phone:       document.getElementById('countryCode').value + document.getElementById('phoneNumber').value,
+    address:     locationData.address || document.getElementById('addressInput').value,
+    notes:       document.getElementById('orderNotes').value,
+    items:       cart.map(i => ({ id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty })),
+    total:       getTotal(),
+    status:      'pending',
+    createdAt:   new Date().toISOString(),
   };
-  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
-  orders.unshift(order);
-  localStorage.setItem('dentapro_orders', JSON.stringify(orders));
 
+  try {
+    await window._fbAddDoc(window._fbOrdersRef(), order);
+    console.log('✅ تم الحفظ في Firebase');
+  } catch(e) {
+    console.error('❌ Firebase error:', e);
+    const local = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+    local.unshift(order);
+    localStorage.setItem('dentapro_orders', JSON.stringify(local));
+  }
+
+  document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
   document.querySelector('.modal-steps').style.display = 'none';
-  ['modalStep1','modalStep2','modalStep3','modalStep4'].forEach(id => document.getElementById(id).style.display='none');
-  document.getElementById('modalFooter').style.display = 'none';
+  ['modalStep1','modalStep2','modalStep3','modalStep4'].forEach(id =>
+    document.getElementById(id).style.display = 'none'
+  );
+  document.getElementById('modalFooter').style.display  = 'none';
   document.getElementById('successScreen').classList.add('show');
   orderSubmitted = true;
   showToast(t('🎉 تم إرسال طلبك بنجاح!','🎉 Order submitted successfully!'), 'success');
@@ -2518,59 +2572,85 @@ function openClientOrders() {
   showPage('orders');
   renderClientOrders();
 }
-
-function renderClientOrders() {
-  const all = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
-  const mine = currentUser.role === 'admin'
-    ? all
-    : all.filter(o => o.clientEmail === currentUser.email || o.clientName === currentUser.name);
-
+async function renderClientOrders() {
   const container = document.getElementById('clientOrdersList');
-  if (!mine.length) {
-    container.innerHTML = `
-      <div class="empty-orders">
-        <i class="fas fa-box-open"></i>
-        <h3>لا توجد طلبات بعد</h3>
-        <p>ابدأ تسوقك الآن وستجد طلباتك هنا</p>
-        <button class="btn-primary" style="margin-top:16px" onclick="showPage('home')">تسوّق الآن</button>
-      </div>`;
-    return;
-  }
-
-  container.innerHTML = mine.map(order => {
-    const date = new Date(order.createdAt).toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric' });
-    return `
-    <div class="order-track-card">
-      <div class="order-track-header">
-        <div>
-          <div class="order-track-num">
-            <i class="fas fa-receipt" style="color:var(--primary-light)"></i>
-            #${order.id}
-          </div>
-          <div class="order-track-date">📅 ${date} · ${order.clinic}</div>
-        </div>
-        <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
-          ${statusBadgeHTML(order.status)}
-          <div class="order-track-total">${order.total.toLocaleString()} ر.س</div>
-        </div>
-      </div>
-      <div class="order-track-body">
-        ${trackStepsHTML(order.status)}
-        <div class="order-items-list">
-          ${order.items.map(item => `
-            <div class="order-item-row">
-              <div class="order-item-icon">${item.icon}</div>
-              <div style="flex:1;font-weight:600;color:var(--primary-dark)">${item.ar}</div>
-              <div style="color:var(--text-muted)">× ${item.qty}</div>
-              <div style="font-weight:800;color:var(--primary)">${(item.price*item.qty).toLocaleString()} ر.س</div>
-            </div>`).join('')}
-        </div>
-        ${order.notes ? `<div style="margin-top:12px;padding:10px 14px;background:#f8fbfd;border-radius:10px;font-size:13px;color:var(--text-muted)"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${order.notes}</div>` : ''}
-      </div>
+  container.innerHTML = `
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>
+      جاري تحميل طلباتك...
     </div>`;
-  }).join('');
-}
 
+  try {
+    const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
+    const snap = await window._fbGetDocs(q);
+    let orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+
+    if (currentUser.role !== 'admin') {
+      orders = orders.filter(o =>
+        o.clientEmail === currentUser.email ||
+        o.clientName  === currentUser.name
+      );
+    }
+
+    if (!orders.length) {
+      container.innerHTML = `
+        <div class="empty-orders">
+          <i class="fas fa-box-open"></i>
+          <h3>لا توجد طلبات بعد</h3>
+          <p>ابدأ تسوقك الآن وستجد طلباتك هنا</p>
+          <button class="btn-primary" style="margin-top:16px"
+            onclick="showPage('home')">تسوّق الآن</button>
+        </div>`;
+      return;
+    }
+
+    container.innerHTML = orders.map(order => {
+      const date = new Date(order.createdAt).toLocaleDateString('ar-SA',
+        { year:'numeric', month:'long', day:'numeric' });
+      return `
+      <div class="order-track-card">
+        <div class="order-track-header">
+          <div>
+            <div class="order-track-num">
+              <i class="fas fa-receipt" style="color:var(--primary-light)"></i> #${order.id}
+            </div>
+            <div class="order-track-date">📅 ${date} · ${order.clinic}</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
+            ${statusBadgeHTML(order.status)}
+            <div class="order-track-total">${order.total.toLocaleString()} ر.س</div>
+          </div>
+        </div>
+        <div class="order-track-body">
+          ${trackStepsHTML(order.status)}
+          <div class="order-items-list">
+            ${order.items.map(item => `
+              <div class="order-item-row">
+                <div class="order-item-icon">${item.icon}</div>
+                <div style="flex:1;font-weight:600;color:var(--primary-dark)">${item.ar}</div>
+                <div style="color:var(--text-muted)">× ${item.qty}</div>
+                <div style="font-weight:800;color:var(--primary)">
+                  ${(item.price*item.qty).toLocaleString()} ر.س
+                </div>
+              </div>`).join('')}
+          </div>
+          ${order.notes ? `
+            <div style="margin-top:12px;padding:10px 14px;background:#f8fbfd;
+                        border-radius:10px;font-size:13px;color:var(--text-muted)">
+              <i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${order.notes}
+            </div>` : ''}
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    console.error(e);
+    container.innerHTML = `
+      <div style="text-align:center;padding:32px;color:var(--danger)">
+        خطأ في تحميل الطلبات
+      </div>`;
+  }
+}
 // ── ADMIN ORDERS ──
 function switchAdminTab(tab) {
   const isProducts = tab === 'products';
@@ -2592,60 +2672,97 @@ function switchAdminTab(tab) {
   if (!isProducts) renderAdminOrders();
 }
 
-function renderAdminOrders() {
-  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
+async function renderAdminOrders() {
   const body = document.getElementById('adminOrdersBody');
+  if (!body) return;
 
-  // Update badge
-  const pending = orders.filter(o => o.status === 'pending').length;
-  document.getElementById('adminOrdersBadge').textContent = pending || '';
-
-  if (!orders.length) {
-    body.innerHTML = `<div class="empty-orders"><i class="fas fa-inbox"></i><h3>لا توجد طلبات بعد</h3></div>`;
-    return;
-  }
-
-  body.innerHTML = orders.map(order => {
-    const date = new Date(order.createdAt).toLocaleDateString('ar-SA', { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
-    const itemsSummary = order.items.slice(0,2).map(i=>`${i.icon} ${i.ar.substring(0,14)}...`).join(' · ');
-    const statusOpts = ORDER_STATUSES.map(s =>
-      `<option value="${s.key}" ${order.status===s.key?'selected':''}>${s.label}</option>`
-    ).join('');
-
-    return `
-    <div class="admin-order-row">
-      <div>
-        <div style="font-weight:800;color:var(--primary-dark);font-size:13px">#${order.id}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-top:2px">👤 ${order.clientName} · ${order.clinic}</div>
-        <div style="font-size:11px;color:var(--text-muted)">📞 ${order.phone}</div>
-      </div>
-      <div style="font-size:12px;color:var(--text-muted);line-height:1.6">${itemsSummary}<br><span style="color:var(--primary-light);font-weight:700">${order.items.length} منتج</span></div>
-      <div style="font-weight:900;color:var(--primary)">${order.total.toLocaleString()} ر.س</div>
-      <div style="font-size:12px;color:var(--text-muted)">${date}</div>
-      <div>
-        <select class="status-select" onchange="updateOrderStatus('${order.id}', this.value)">
-          ${statusOpts}
-        </select>
-      </div>
-      <div>
-        <button onclick="showAdminOrderDetail('${order.id}')"
-          style="padding:6px 12px;border-radius:50px;background:#e8f3fb;color:var(--primary);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
-          <i class="fas fa-eye"></i> عرض
-        </button>
-      </div>
+  body.innerHTML = `
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>
+      جاري تحميل الطلبات...
     </div>`;
-  }).join('');
-}
 
-function updateOrderStatus(orderId, newStatus) {
-  const orders = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
-  const idx = orders.findIndex(o => o.id === orderId);
-  if (idx === -1) return;
-  orders[idx].status = newStatus;
-  localStorage.setItem('dentapro_orders', JSON.stringify(orders));
-  const s = getStatusObj(newStatus);
-  showToast(`✅ طلب #${orderId} → ${s.label}`, 'success');
-  renderAdminOrders();
+  try {
+    const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
+    const snap = await window._fbGetDocs(q);
+    const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    window._cachedOrders = orders;
+
+    const pending = orders.filter(o => o.status === 'pending').length;
+    document.getElementById('adminOrdersBadge').textContent = pending > 0 ? pending : '';
+
+    if (!orders.length) {
+      body.innerHTML = `
+        <div style="text-align:center;padding:56px 24px;color:var(--text-muted)">
+          <i class="fas fa-inbox" style="font-size:52px;opacity:0.15;display:block;margin-bottom:16px"></i>
+          <h3 style="font-weight:800;font-size:17px;color:var(--text);margin-bottom:8px">لا توجد طلبات بعد</h3>
+          <p style="font-size:14px">ستظهر هنا فور إرسالها من العملاء</p>
+        </div>`;
+      return;
+    }
+
+    body.innerHTML = orders.map(order => {
+      const date = new Date(order.createdAt).toLocaleDateString('ar-SA',
+        { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+      const itemsSummary = order.items.slice(0,2)
+        .map(i => `${i.icon} ${i.ar.substring(0,12)}`).join(' · ')
+        + (order.items.length > 2 ? ` +${order.items.length - 2}` : '');
+      const statusOpts = ORDER_STATUSES.map(s =>
+        `<option value="${s.key}" ${order.status===s.key?'selected':''}>${s.label}</option>`
+      ).join('');
+
+      return `
+      <div class="admin-order-row">
+        <div>
+          <div style="font-weight:800;color:var(--primary-dark);font-size:13px">#${order.id}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">
+            👤 ${order.clientName} · ${order.clinic}
+          </div>
+          <div style="font-size:11px;color:var(--text-muted)">📞 ${order.phone}</div>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
+          ${itemsSummary}<br>
+          <span style="color:var(--primary-light);font-weight:700">${order.items.length} منتج</span>
+        </div>
+        <div style="font-weight:900;color:var(--primary)">${order.total.toLocaleString()} ر.س</div>
+        <div style="font-size:12px;color:var(--text-muted)">${date}</div>
+        <div>
+          <select class="status-select"
+            onchange="updateOrderStatus('${order._docId}','${order.id}',this.value)">
+            ${statusOpts}
+          </select>
+        </div>
+        <div>
+          <button onclick="showAdminOrderDetail('${order.id}')"
+            style="padding:6px 12px;border-radius:50px;background:#e8f3fb;color:var(--primary);
+                   border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+            <i class="fas fa-eye"></i> عرض
+          </button>
+        </div>
+      </div>`;
+    }).join('');
+
+  } catch(e) {
+    console.error(e);
+    body.innerHTML = `
+      <div style="text-align:center;padding:32px;color:var(--danger)">
+        <i class="fas fa-exclamation-circle" style="font-size:32px;display:block;margin-bottom:12px"></i>
+        خطأ في الاتصال بقاعدة البيانات
+      </div>`;
+  }
+}
+async function updateOrderStatus(docId, orderId, newStatus) {
+  try {
+    await window._fbUpdateDoc(window._fbDoc(docId), { status: newStatus });
+    const s = getStatusObj(newStatus);
+    showToast(`✅ طلب #${orderId} → ${s.label}`, 'success');
+    if (document.getElementById('ordersPage').classList.contains('active')) {
+      renderClientOrders();
+    }
+  } catch(e) {
+    console.error(e);
+    showToast('❌ فشل تحديث الحالة، تحقق من الاتصال', 'error');
+  }
 }
 
 function showAdminOrderDetail(orderId) {
