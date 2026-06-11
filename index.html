@@ -1538,6 +1538,10 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
             <option value="home">العناية المنزلية</option>
           </select>
         </div>
+        <div class="form-group" style="grid-column:1/-1">
+          <label class="form-label">بلد المنشأ</label>
+          <input type="text" class="form-input" id="pCountry" placeholder="مثال: 🇺🇸 أمريكا">
+        </div>
         <div class="form-group">
           <label class="form-label">الشارة (Badge)</label>
           <select class="form-input" id="pBadge" style="cursor:pointer">
@@ -1603,22 +1607,22 @@ const categories = [
 ];
 
 const products = [
-  {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً'},
-  {id:2,  cat:'dev',   icon:'📡', brand:'PLANMECA',   ar:'جهاز أشعة بانورامي ProMax',              en:'ProMax Panoramic X-Ray',                  price:32000, old:38000, desc_ar:'أشعة رقمية عالية الدقة بدون فيلم',         desc_en:'Digital high-resolution filmless X-ray',        badge:'جديد'},
-  {id:3,  cat:'dev',   icon:'⚡', brand:'SIRONA',     ar:'جهاز الأوتوكلاف DAC Premium',            en:'DAC Premium Autoclave',                   price:8900,  old:null,  desc_ar:'تعقيم بالبخار 17 لتر معتمد Class B',      desc_en:'17L Class B steam sterilizer',                  badge:null},
-  {id:4,  cat:'hand',  icon:'🔍', brand:'HU-FRIEDY',  ar:'مجموعة أدوات فحص كاملة',                en:'Complete Examination Kit',                price:480,   old:620,   desc_ar:'مرايا + مجس + ملقط ستانلس ستيل',          desc_en:'Mirrors + probe + stainless forceps',           badge:'خصم 22%'},
-  {id:5,  cat:'hand',  icon:'🔧', brand:'DENTSPLY',   ar:'ملفات قنوات روتاري ProTaper Gold',       en:'ProTaper Gold Rotary Files',              price:320,   old:null,  desc_ar:'طقم كامل 6 ملفات NiTi عالي المرونة',      desc_en:'6-file NiTi set, high flexibility',             badge:null},
-  {id:6,  cat:'mat',   icon:'💉', brand:'3M ESPE',    ar:'مادة حشو كومبوزيت Filtek Supreme',       en:'Filtek Supreme Composite',                price:185,   old:220,   desc_ar:'كومبوزيت نانو هايبرد شفاف وقوي',           desc_en:'Nano-hybrid composite, translucent & strong',   badge:'الأكثر مبيعاً'},
-  {id:7,  cat:'mat',   icon:'🧪', brand:'ULTRADENT',  ar:'جيل تبييض Opalescence 35%',              en:'Opalescence Whitening 35%',               price:145,   old:null,  desc_ar:'تبييض احترافي سريع نتائج فورية',           desc_en:'Professional fast whitening, instant results',  badge:null},
-  {id:8,  cat:'mat',   icon:'🧬', brand:'DENTSPLY',   ar:'مادة انطباع سيليكون Aquasil Ultra',      en:'Aquasil Ultra Impression Material',       price:265,   old:310,   desc_ar:'سيليكون VPS دقيق ومريح للمريض',            desc_en:'Precise VPS silicone, patient-friendly',        badge:null},
-  {id:9,  cat:'prot',  icon:'🧤', brand:'SEMPERMED',  ar:'قفازات لاتكس طبية - صندوق 100',          en:'Medical Latex Gloves - Box 100',          price:38,    old:null,  desc_ar:'قفازات فحص معقمة مقاس S/M/L/XL',          desc_en:'Sterile examination gloves S/M/L/XL',           badge:null},
-  {id:10, cat:'prot',  icon:'😷', brand:'3M',         ar:'كمامة N95 طبية معتمدة - علبة 20',        en:'Certified Medical N95 Mask - Box 20',     price:72,    old:90,    desc_ar:'كمامة N95 معتمدة NIOSH مريحة',             desc_en:'NIOSH-certified N95, comfortable fit',          badge:'خصم 20%'},
-  {id:11, cat:'ortho', icon:'🔩', brand:'3M UNITEK',  ar:'براكيت تقويم معدني Mini Diamond',        en:'Mini Diamond Metal Brackets',             price:155,   old:null,  desc_ar:'براكيت MBT/Roth مقاس .022 طقم كامل',      desc_en:'MBT/Roth .022 full kit',                        badge:null},
-  {id:12, cat:'impl',  icon:'🔬', brand:'STRAUMANN',  ar:'غرسة تيتانيوم Bone Level RC',           en:'Bone Level RC Titanium Implant',          price:1200,  old:1450,  desc_ar:'نظام BLT/BLC معتمد عالمياً مع أبتمنت',     desc_en:'Globally certified BLT/BLC with abutment',      badge:'الأكثر مبيعاً'},
-  {id:13, cat:'home',  icon:'⚡', brand:'ORAL-B',     ar:'فرشاة أسنان كهربائية iO Series 9',       en:'iO Series 9 Electric Toothbrush',         price:620,   old:780,   desc_ar:'تقنية ذكية مع شاشة تتبع النظافة',          desc_en:'Smart tech with cleaning tracker display',      badge:'جديد'},
-  {id:14, cat:'home',  icon:'💧', brand:'COLGATE',    ar:'غسول فم طبي Colgate Peroxyl',            en:'Colgate Peroxyl Medical Mouthwash',       price:28,    old:null,  desc_ar:'علاج قرح الفم وتطهير اللثة',               desc_en:'Treats mouth sores and gum disinfection',       badge:null},
-  {id:15, cat:'dev',   icon:'📷', brand:'CARESTREAM', ar:'كاميرا داخل الفم CS 1500',              en:'CS 1500 Intraoral Camera',                price:4200,  old:5100,  desc_ar:'كاميرا HD لاسلكية مع برنامج متكامل',       desc_en:'Wireless HD camera with integrated software',   badge:'جديد'},
-  {id:16, cat:'mat',   icon:'🩺', brand:'SEPTODONT',  ar:'تخدير موضعي Articaine 4%',              en:'Articaine 4% Local Anesthesia',           price:95,    old:null,  desc_ar:'أمبولات 1.7ml صندوق 50 أمبولة',            desc_en:'1.7ml cartridges, box of 50',                   badge:null},
+  {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً', country:'🇺🇸 أمريكا'},
+  {id:2,  cat:'dev',   icon:'📡', brand:'PLANMECA',   ar:'جهاز أشعة بانورامي ProMax',              en:'ProMax Panoramic X-Ray',                  price:32000, old:38000, desc_ar:'أشعة رقمية عالية الدقة بدون فيلم',         desc_en:'Digital high-resolution filmless X-ray',        badge:'جديد',          country:'🇫🇮 فنلندا'},
+  {id:3,  cat:'dev',   icon:'⚡', brand:'SIRONA',     ar:'جهاز الأوتوكلاف DAC Premium',            en:'DAC Premium Autoclave',                   price:8900,  old:null,  desc_ar:'تعقيم بالبخار 17 لتر معتمد Class B',      desc_en:'17L Class B steam sterilizer',                  badge:null,            country:'🇩🇪 ألمانيا'},
+  {id:4,  cat:'hand',  icon:'🔍', brand:'HU-FRIEDY',  ar:'مجموعة أدوات فحص كاملة',                en:'Complete Examination Kit',                price:480,   old:620,   desc_ar:'مرايا + مجس + ملقط ستانلس ستيل',          desc_en:'Mirrors + probe + stainless forceps',           badge:'خصم 22%',        country:'🇺🇸 أمريكا'},
+  {id:5,  cat:'hand',  icon:'🔧', brand:'DENTSPLY',   ar:'ملفات قنوات روتاري ProTaper Gold',       en:'ProTaper Gold Rotary Files',              price:320,   old:null,  desc_ar:'طقم كامل 6 ملفات NiTi عالي المرونة',      desc_en:'6-file NiTi set, high flexibility',             badge:null,            country:'🇺🇸 أمريكا'},
+  {id:6,  cat:'mat',   icon:'💉', brand:'3M ESPE',    ar:'مادة حشو كومبوزيت Filtek Supreme',       en:'Filtek Supreme Composite',                price:185,   old:220,   desc_ar:'كومبوزيت نانو هايبرد شفاف وقوي',           desc_en:'Nano-hybrid composite, translucent & strong',   badge:'الأكثر مبيعاً', country:'🇺🇸 أمريكا'},
+  {id:7,  cat:'mat',   icon:'🧪', brand:'ULTRADENT',  ar:'جيل تبييض Opalescence 35%',              en:'Opalescence Whitening 35%',               price:145,   old:null,  desc_ar:'تبييض احترافي سريع نتائج فورية',           desc_en:'Professional fast whitening, instant results',  badge:null,            country:'🇺🇸 أمريكا'},
+  {id:8,  cat:'mat',   icon:'🧬', brand:'DENTSPLY',   ar:'مادة انطباع سيليكون Aquasil Ultra',      en:'Aquasil Ultra Impression Material',       price:265,   old:310,   desc_ar:'سيليكون VPS دقيق ومريح للمريض',            desc_en:'Precise VPS silicone, patient-friendly',        badge:null,            country:'🇺🇸 أمريكا'},
+  {id:9,  cat:'prot',  icon:'🧤', brand:'SEMPERMED',  ar:'قفازات لاتكس طبية - صندوق 100',          en:'Medical Latex Gloves - Box 100',          price:38,    old:null,  desc_ar:'قفازات فحص معقمة مقاس S/M/L/XL',          desc_en:'Sterile examination gloves S/M/L/XL',           badge:null,            country:'🇦🇹 النمسا'},
+  {id:10, cat:'prot',  icon:'😷', brand:'3M',         ar:'كمامة N95 طبية معتمدة - علبة 20',        en:'Certified Medical N95 Mask - Box 20',     price:72,    old:90,    desc_ar:'كمامة N95 معتمدة NIOSH مريحة',             desc_en:'NIOSH-certified N95, comfortable fit',          badge:'خصم 20%',        country:'🇺🇸 أمريكا'},
+  {id:11, cat:'ortho', icon:'🔩', brand:'3M UNITEK',  ar:'براكيت تقويم معدني Mini Diamond',        en:'Mini Diamond Metal Brackets',             price:155,   old:null,  desc_ar:'براكيت MBT/Roth مقاس .022 طقم كامل',      desc_en:'MBT/Roth .022 full kit',                        badge:null,            country:'🇺🇸 أمريكا'},
+  {id:12, cat:'impl',  icon:'🔬', brand:'STRAUMANN',  ar:'غرسة تيتانيوم Bone Level RC',           en:'Bone Level RC Titanium Implant',          price:1200,  old:1450,  desc_ar:'نظام BLT/BLC معتمد عالمياً مع أبتمنت',     desc_en:'Globally certified BLT/BLC with abutment',      badge:'الأكثر مبيعاً', country:'🇨🇭 سويسرا'},
+  {id:13, cat:'home',  icon:'⚡', brand:'ORAL-B',     ar:'فرشاة أسنان كهربائية iO Series 9',       en:'iO Series 9 Electric Toothbrush',         price:620,   old:780,   desc_ar:'تقنية ذكية مع شاشة تتبع النظافة',          desc_en:'Smart tech with cleaning tracker display',      badge:'جديد',          country:'🇩🇪 ألمانيا'},
+  {id:14, cat:'home',  icon:'💧', brand:'COLGATE',    ar:'غسول فم طبي Colgate Peroxyl',            en:'Colgate Peroxyl Medical Mouthwash',       price:28,    old:null,  desc_ar:'علاج قرح الفم وتطهير اللثة',               desc_en:'Treats mouth sores and gum disinfection',       badge:null,            country:'🇺🇸 أمريكا'},
+  {id:15, cat:'dev',   icon:'📷', brand:'CARESTREAM', ar:'كاميرا داخل الفم CS 1500',              en:'CS 1500 Intraoral Camera',                price:4200,  old:5100,  desc_ar:'كاميرا HD لاسلكية مع برنامج متكامل',       desc_en:'Wireless HD camera with integrated software',   badge:'جديد',          country:'🇺🇸 أمريكا'},
+  {id:16, cat:'mat',   icon:'🩺', brand:'SEPTODONT',  ar:'تخدير موضعي Articaine 4%',              en:'Articaine 4% Local Anesthesia',           price:95,    old:null,  desc_ar:'أمبولات 1.7ml صندوق 50 أمبولة',            desc_en:'1.7ml cartridges, box of 50',                   badge:null,            country:'🇫🇷 فرنسا'},
 ];
 
 // =====================
@@ -1728,7 +1732,11 @@ function renderProducts() {
           <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
           <span>(${Math.floor(Math.random()*80)+20})</span>
         </div>
-        <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
+       <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
+        ${p.country ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:4px">
+          <i class="fas fa-globe-americas" style="color:var(--primary-light)"></i>
+          <span>${t('بلد المنشأ','Origin')}: <strong style="color:var(--primary-dark)">${p.country}</strong></span>
+        </div>` : ''}
         <div class="product-price-row">
           <div>
             <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('ر.س','SAR')}</small></div>
@@ -2435,6 +2443,7 @@ function openAddProduct() {
   ['pAr','pEn','pDescAr','pDescEn','pBrand','pIcon','pPrice','pOldPrice'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pCat').value = 'dev';
   document.getElementById('pBadge').value = '';
+  document.getElementById('pCountry').value = '';
   document.getElementById('productFormError').style.display = 'none';
   document.getElementById('productFormModal').classList.add('open');
 }
@@ -2454,6 +2463,7 @@ function openEditProduct(id) {
   document.getElementById('pOldPrice').value = p.old || '';
   document.getElementById('pCat').value = p.cat;
   document.getElementById('pBadge').value = p.badge || '';
+  document.getElementById('pCountry').value = p.country || '';
   document.getElementById('productFormError').style.display = 'none';
   document.getElementById('productFormModal').classList.add('open');
 }
@@ -2482,7 +2492,8 @@ function saveProduct() {
     price, old: oldPrice,
     desc_ar: document.getElementById('pDescAr').value.trim() || ar,
     desc_en: document.getElementById('pDescEn').value.trim() || en,
-    badge: document.getElementById('pBadge').value || null,
+    badge:   document.getElementById('pBadge').value || null,
+    country: document.getElementById('pCountry').value.trim() || '',
   };
 
   if (editingProductId) {
