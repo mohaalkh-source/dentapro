@@ -783,7 +783,113 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 .track-step.cancelled .track-step-icon { background: var(--danger); }
 @keyframes pulse-ring {
   0%   { box-shadow: 0 0 0 0 rgba(10,92,138,0.3); }
-  70%  { box-shadow: 0 0 0
+  70%  { box-shadow: 0 0 0 12px rgba(10,92,138,0); }
+  100% { box-shadow: 0 0 0 0 rgba(10,92,138,0); }
+}
+  /* ===== PRODUCT IMAGE ===== */
+.product-img-wrap {
+  width:100%; height:200px;
+  background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+  display:flex; align-items:center; justify-content:center;
+  font-size:72px; padding:16px; cursor:pointer;
+  position:relative; overflow:hidden;
+}
+.product-img-wrap img {
+  width:100%; height:100%; object-fit:contain;
+  position:absolute; inset:0;
+}
+.product-img-wrap .emoji-fallback {
+  font-size:72px; z-index:1;
+}
+
+/* Image Upload Preview */
+.img-upload-area {
+  border:2px dashed var(--border); border-radius:var(--radius);
+  padding:20px; text-align:center; cursor:pointer;
+  transition:all 0.2s; background:#f8fbfd; position:relative;
+}
+.img-upload-area:hover { border-color:var(--primary-light); background:#f0f8ff; }
+.img-upload-area.has-image { border-color:var(--success); background:#f0fff4; }
+.img-upload-area input[type="file"] {
+  position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
+}
+.img-preview-box {
+  width:100%; height:160px; border-radius:var(--radius-sm);
+  object-fit:contain; margin-bottom:8px; display:none;
+}
+.img-preview-box.show { display:block; }
+.img-upload-icon { font-size:36px; margin-bottom:8px; display:block; }
+.img-upload-text { font-size:14px; font-weight:600; color:var(--text-muted); }
+.img-upload-hint { font-size:12px; color:var(--text-muted); margin-top:4px; }
+/* ===== POINTS SYSTEM ===== */
+.points-badge {
+  display: inline-flex; align-items: center; gap: 5px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff; padding: 4px 12px; border-radius: 50px;
+  font-size: 12px; font-weight: 800;
+  box-shadow: 0 2px 8px rgba(245,158,11,0.3);
+}
+.points-chip {
+  display: flex; align-items: center; gap: 6px;
+  padding: 5px 12px; border-radius: 50px;
+  background: linear-gradient(135deg, rgba(245,158,11,0.15), rgba(245,158,11,0.05));
+  border: 1.5px solid rgba(245,158,11,0.4);
+  font-size: 13px; font-weight: 800; color: #d97706;
+}
+.pay-method-wrap {
+  display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap;
+}
+.pay-method-btn {
+  flex: 1; min-width: 140px; padding: 16px;
+  border-radius: var(--radius); border: 2px solid var(--border);
+  background: #fff; cursor: pointer; font-family: inherit;
+  transition: all 0.2s; text-align: center;
+}
+.pay-method-btn:hover { border-color: var(--primary-light); }
+.pay-method-btn.active {
+  border-color: var(--primary);
+  background: linear-gradient(135deg, rgba(10,92,138,0.06), rgba(0,194,168,0.04));
+}
+.pay-method-btn.points-btn.active {
+  border-color: #f59e0b;
+  background: linear-gradient(135deg, rgba(245,158,11,0.08), rgba(245,158,11,0.03));
+}
+.pay-method-btn.disabled {
+  opacity: 0.5; cursor: not-allowed;
+}
+.pay-method-icon { font-size: 28px; margin-bottom: 8px; display: block; }
+.pay-method-label { font-size: 14px; font-weight: 800; color: var(--primary-dark); }
+.pay-method-sub { font-size: 12px; color: var(--text-muted); margin-top: 4px; }
+.points-balance-box {
+  background: linear-gradient(135deg, #fffbeb, #fef3c7);
+  border: 1.5px solid #f59e0b; border-radius: var(--radius-sm);
+  padding: 14px 18px; display: flex; align-items: center;
+  justify-content: space-between; margin-bottom: 16px;
+}
+.points-balance-label { font-size: 13px; color: #92400e; font-weight: 600; }
+.points-balance-num { font-size: 22px; font-weight: 900; color: #d97706; }
+.points-insufficient {
+  background: #fff1f2; border: 1.5px solid #fecdd3;
+  border-radius: var(--radius-sm); padding: 10px 14px;
+  font-size: 13px; color: #be123c; font-weight: 600;
+  display: flex; align-items: center; gap: 8px;
+}
+.points-admin-card {
+  background: #fff; border-radius: 14px;
+  border: 1px solid #e2eaf0; padding: 18px;
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 12px; margin-bottom: 10px; transition: box-shadow 0.2s;
+}
+.points-admin-card:hover { box-shadow: var(--shadow); }
+.add-points-btn {
+  padding: 8px 18px; border-radius: 50px;
+  background: linear-gradient(135deg, #f59e0b, #d97706);
+  color: #fff; border: none; font-family: inherit;
+  font-size: 13px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; gap: 6px;
+  transition: all 0.2s;
+}
+.add-points-btn:hover { transform: translateY(-1px); }
 /* ===== PAGE SECTIONS HIDE/SHOW ===== */
 .page-section{display:none}
 .page-section.active{display:block}
@@ -806,11 +912,73 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .categories-grid{grid-template-columns:repeat(3,1fr)}
   .products-grid{grid-template-columns:1fr 1fr}
 }
+/* ===== ADMIN ORDERS TABLE ===== */
+.admin-orders-wrap{padding:0 28px 28px}
+.admin-order-row{
+  display:grid;
+  grid-template-columns:2fr 2fr 1fr 1.2fr 1.4fr 0.6fr;
+  gap:12px; padding:14px 18px;
+  align-items:center; border-bottom:1px solid #f0f4f8;
+  transition:background 0.15s;
+}
+.admin-order-row:hover{background:#f8fbfd}
+.admin-order-row.header-row{
+  background:#f8fbfd; font-size:12px; font-weight:700;
+  color:var(--text-muted); border-bottom:2px solid #e2eaf0;
+  padding:12px 18px;
+}
+.status-select{
+  padding:7px 12px; border-radius:50px;
+  border:2px solid var(--border); background:#fff;
+  font-family:inherit; font-size:12px; font-weight:700;
+  cursor:pointer; outline:none; color:var(--text);
+  transition:border-color 0.2s; width:100%;
+}
+.status-select:focus{border-color:var(--primary-light)}
+
+/* ===== TRACK STEPS LABELS ===== */
+.track-step-label{font-size:11px;color:var(--text-muted);font-weight:600;text-align:center}
+.track-step.done .track-step-label{color:var(--accent)}
+.track-step.active .track-step-label{color:var(--primary);font-weight:700}
+.track-step.cancelled .track-step-label{color:var(--danger)}
+
+/* ===== CLIENT ORDER ITEMS ===== */
+.order-items-list{margin-top:16px}
+.order-item-row{
+  display:flex; align-items:center; gap:10px;
+  padding:9px 0; border-bottom:1px dashed var(--border);
+  font-size:13px;
+}
+.order-item-row:last-child{border:none}
+.order-item-icon{
+  width:38px; height:38px; border-radius:9px;
+  background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px; flex-shrink:0;
+}
+
+/* ===== EMPTY ORDERS ===== */
+.empty-orders{
+  text-align:center; padding:80px 24px;
+  color:var(--text-muted);
+}
+.empty-orders i{
+  font-size:64px; opacity:0.15;
+  display:block; margin-bottom:20px;
+}
+.empty-orders h3{
+  font-weight:800; font-size:18px;
+  color:var(--text); margin-bottom:8px;
+}
+.empty-orders p{font-size:14px}
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, updateDoc, query, orderBy, onSnapshot }
+  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, onSnapshot }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+window._fbGetDoc  = getDoc;
+  window._fbSetDoc  = setDoc;
+  window._fbDoc2    = (col, id) => doc(db, col, id);
 
   const firebaseConfig = {
     apiKey: "AIzaSyDVVEzXPlfJAD7NSV0tGHzzsx8LiyK2i4w",
@@ -837,17 +1005,15 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 
   window.addEventListener('load', () => {
     try {
-      const q = query(collection(db,'orders'), orderBy('createdAt','desc'));
-      onSnapshot(q, () => {
+      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+      onSnapshot(q, (snap) => {
         const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
         const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
-        if (adminOpen)  renderAdminOrders();
-        if (ordersOpen) renderClientOrders();
-        getDocs(collection(db,'orders')).then(snap => {
-          const pending = snap.docs.filter(d => d.data().status === 'pending').length;
-          const badge = document.getElementById('adminOrdersBadge');
-          if (badge) badge.textContent = pending > 0 ? pending : '';
-        });
+        if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
+        if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
+        const pending = snap.docs.filter(d => d.data().status === 'pending').length;
+        const badge = document.getElementById('adminOrdersBadge');
+        if (badge) badge.textContent = pending > 0 ? pending : '';
       });
     } catch(e) { console.warn('Listener:', e); }
   });
@@ -1353,7 +1519,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
         <label class="form-label"><i class="fas fa-key"></i> كلمة المرور</label>
         <input type="password" class="form-input" id="adminPass" placeholder="••••••••" onkeydown="if(event.key==='Enter')checkAdminLogin()">
       </div>
-      <div id="loginError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;padding:8px 12px;background:#fff5f5;border-radius:8px;margin-top:8px">
+      <div id="adminLoginError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;padding:8px 12px;background:#fff5f5;border-radius:8px;margin-top:8px">
         <i class="fas fa-exclamation-circle"></i> بيانات غير صحيحة
       </div>
     </div>
@@ -1397,6 +1563,10 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
         style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
         <i class="fas fa-clipboard-list"></i> الطلبات <span id="adminOrdersBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
       </button>
+      <button onclick="switchAdminTab('points')" id="adminTabPoints"
+        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
+        <i class="fas fa-star" style="color:#f59e0b"></i> النقاط
+      </button>
     </div>
     <!-- Stats Bar -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:24px 28px 0">
@@ -1419,7 +1589,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
     </div>
 
     <!-- Filter & Search Bar -->
-    <div style="padding:20px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
+    <div id="adminFilterBar" style="padding:20px 28px;display:flex;gap:12px;align-items:center;flex-wrap:wrap">
       <div style="position:relative;flex:1;min-width:200px">
         <input type="text" id="adminSearch" placeholder="🔍 ابحث في المنتجات..." oninput="renderAdminTable()"
           style="width:100%;padding:11px 16px;border-radius:50px;border:2px solid #d0e4ef;background:#fff;font-family:inherit;font-size:14px;outline:none">
@@ -1435,6 +1605,18 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
         <option value="impl">زراعة</option>
         <option value="home">العناية المنزلية</option>
       </select>
+    </div>
+    <!-- Points Panel (Admin) -->
+    <div id="adminPointsWrap" style="display:none;padding:0 28px 28px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+        <div>
+          <div style="font-size:17px;font-weight:900;color:var(--primary-dark)">إدارة نقاط العملاء</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:4px">أضف نقاط لأي عميل مسجل</div>
+        </div>
+      </div>
+      <div id="adminPointsList">
+        <!-- filled by JS -->
+      </div>
     </div>
 <!-- Orders Table (Admin) -->
     <div id="adminOrdersWrap" style="display:none" class="admin-orders-wrap">
@@ -1454,7 +1636,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
       </div>
     </div>
     <!-- Products Table -->
-    <div style="padding:0 28px 28px">
+    <div id="adminProductsWrap" style="padding:0 28px 28px">
       <div style="background:#fff;border-radius:16px;border:1px solid #e2eaf0;overflow:hidden">
         <div style="overflow-x:auto">
           <table style="width:100%;border-collapse:collapse" id="adminTable">
@@ -1513,6 +1695,29 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
         <div class="form-group">
           <label class="form-label">الأيقونة (Emoji) <span class="required">*</span></label>
           <input type="text" class="form-input" id="pIcon" placeholder="🦷" maxlength="4">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+            <i class="fas fa-info-circle"></i> تُستخدم إذا لم تُرفع صورة
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fas fa-image" style="color:var(--primary-light)"></i>
+            صورة المنتج (اختياري)
+          </label>
+          <div class="img-upload-area" id="imgUploadArea" onclick="triggerImgUpload()">
+            <input type="file" id="pImageFile" accept="image/*"
+              onchange="handleImageUpload(event)" onclick="event.stopPropagation()">
+            <img class="img-preview-box" id="imgPreviewBox" src="" alt="preview">
+            <span class="img-upload-icon">📷</span>
+            <div class="img-upload-text">انقر لاختيار صورة</div>
+            <div class="img-upload-hint">PNG، JPG، WEBP — بحد أقصى 2MB</div>
+          </div>
+          <button type="button" id="removeImgBtn" onclick="removeProductImage()"
+            style="display:none;margin-top:8px;padding:6px 16px;border-radius:50px;
+                   background:#fff5f5;color:var(--danger);border:2px solid #fecaca;
+                   font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+            <i class="fas fa-trash-alt"></i> حذف الصورة
+          </button>
         </div>
       </div>
       <div class="form-row">
@@ -1538,10 +1743,6 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
             <option value="home">العناية المنزلية</option>
           </select>
         </div>
-        <div class="form-group" style="grid-column:1/-1">
-          <label class="form-label">بلد المنشأ</label>
-          <input type="text" class="form-input" id="pCountry" placeholder="مثال: 🇺🇸 أمريكا">
-        </div>
         <div class="form-group">
           <label class="form-label">الشارة (Badge)</label>
           <select class="form-input" id="pBadge" style="cursor:pointer">
@@ -1557,6 +1758,21 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
           </select>
         </div>
       </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-globe" style="color:var(--primary-light)"></i>
+          بلد المنشأ (اختياري)
+        </label>
+        <input type="text" class="form-input" id="pCountry" placeholder="مثال: 🇺🇸 أمريكا">
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-star" style="color:var(--accent2)"></i>
+          نقاط الشراء
+          <small style="color:var(--text-muted);font-weight:500">(كم نقطة يحتاج العميل لشراء هذا المنتج)</small>
+        </label>
+        <input type="number" class="form-input" id="pPoints" placeholder="مثال: 100" min="0">
+      </div>
       <div id="productFormError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
         <i class="fas fa-exclamation-circle"></i> يرجى ملء جميع الحقول الإلزامية
       </div>
@@ -1567,7 +1783,52 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
     </div>
   </div>
 </div>
-
+<!-- ADD POINTS MODAL -->
+<div class="modal-overlay" id="addPointsModal">
+  <div class="modal" style="max-width:420px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#d97706,#f59e0b)">
+      <div class="modal-title"><i class="fas fa-star"></i> إضافة نقاط للعميل</div>
+      <button class="close-btn" onclick="closeAddPointsModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="pointsTargetEmail">
+      <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:28px">👤</span>
+        <div>
+          <div style="font-weight:800;font-size:15px;color:var(--primary-dark)" id="pointsTargetName"></div>
+          <div style="font-size:12px;color:var(--text-muted)" id="pointsTargetEmail2"></div>
+        </div>
+      </div>
+      <div style="background:#f8fbfd;border-radius:var(--radius-sm);padding:12px;margin-bottom:20px;display:flex;justify-content:space-between;align-items:center">
+        <span style="font-size:13px;color:var(--text-muted);font-weight:600">الرصيد الحالي</span>
+        <span style="font-size:20px;font-weight:900;color:#d97706" id="pointsCurrentBalance">0 🏆</span>
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-plus-circle" style="color:#f59e0b"></i>
+          عدد النقاط المضافة <span class="required">*</span>
+        </label>
+        <input type="number" class="form-input" id="pointsAmount" placeholder="مثال: 100" min="1">
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-sticky-note" style="color:var(--accent2)"></i>
+          سبب الإضافة (اختياري)
+        </label>
+        <input type="text" class="form-input" id="pointsReason" placeholder="مثال: مكافأة على الولاء">
+      </div>
+      <div id="pointsModalError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px;background:#fff5f5;border-radius:8px">
+        <i class="fas fa-exclamation-circle"></i> يرجى إدخال عدد النقاط
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeAddPointsModal()">إلغاء</button>
+      <button onclick="confirmAddPoints()" style="padding:12px 28px;border-radius:50px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px">
+        <i class="fas fa-star"></i> إضافة النقاط
+      </button>
+    </div>
+  </div>
+</div>
 <!-- DELETE CONFIRM MODAL -->
 <div class="modal-overlay" id="deleteConfirmModal">
   <div class="modal" style="max-width:400px">
@@ -1607,22 +1868,22 @@ const categories = [
 ];
 
 const products = [
-  {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً', country:'🇺🇸 أمريكا'},
-  {id:2,  cat:'dev',   icon:'📡', brand:'PLANMECA',   ar:'جهاز أشعة بانورامي ProMax',              en:'ProMax Panoramic X-Ray',                  price:32000, old:38000, desc_ar:'أشعة رقمية عالية الدقة بدون فيلم',         desc_en:'Digital high-resolution filmless X-ray',        badge:'جديد',          country:'🇫🇮 فنلندا'},
-  {id:3,  cat:'dev',   icon:'⚡', brand:'SIRONA',     ar:'جهاز الأوتوكلاف DAC Premium',            en:'DAC Premium Autoclave',                   price:8900,  old:null,  desc_ar:'تعقيم بالبخار 17 لتر معتمد Class B',      desc_en:'17L Class B steam sterilizer',                  badge:null,            country:'🇩🇪 ألمانيا'},
-  {id:4,  cat:'hand',  icon:'🔍', brand:'HU-FRIEDY',  ar:'مجموعة أدوات فحص كاملة',                en:'Complete Examination Kit',                price:480,   old:620,   desc_ar:'مرايا + مجس + ملقط ستانلس ستيل',          desc_en:'Mirrors + probe + stainless forceps',           badge:'خصم 22%',        country:'🇺🇸 أمريكا'},
-  {id:5,  cat:'hand',  icon:'🔧', brand:'DENTSPLY',   ar:'ملفات قنوات روتاري ProTaper Gold',       en:'ProTaper Gold Rotary Files',              price:320,   old:null,  desc_ar:'طقم كامل 6 ملفات NiTi عالي المرونة',      desc_en:'6-file NiTi set, high flexibility',             badge:null,            country:'🇺🇸 أمريكا'},
-  {id:6,  cat:'mat',   icon:'💉', brand:'3M ESPE',    ar:'مادة حشو كومبوزيت Filtek Supreme',       en:'Filtek Supreme Composite',                price:185,   old:220,   desc_ar:'كومبوزيت نانو هايبرد شفاف وقوي',           desc_en:'Nano-hybrid composite, translucent & strong',   badge:'الأكثر مبيعاً', country:'🇺🇸 أمريكا'},
-  {id:7,  cat:'mat',   icon:'🧪', brand:'ULTRADENT',  ar:'جيل تبييض Opalescence 35%',              en:'Opalescence Whitening 35%',               price:145,   old:null,  desc_ar:'تبييض احترافي سريع نتائج فورية',           desc_en:'Professional fast whitening, instant results',  badge:null,            country:'🇺🇸 أمريكا'},
-  {id:8,  cat:'mat',   icon:'🧬', brand:'DENTSPLY',   ar:'مادة انطباع سيليكون Aquasil Ultra',      en:'Aquasil Ultra Impression Material',       price:265,   old:310,   desc_ar:'سيليكون VPS دقيق ومريح للمريض',            desc_en:'Precise VPS silicone, patient-friendly',        badge:null,            country:'🇺🇸 أمريكا'},
-  {id:9,  cat:'prot',  icon:'🧤', brand:'SEMPERMED',  ar:'قفازات لاتكس طبية - صندوق 100',          en:'Medical Latex Gloves - Box 100',          price:38,    old:null,  desc_ar:'قفازات فحص معقمة مقاس S/M/L/XL',          desc_en:'Sterile examination gloves S/M/L/XL',           badge:null,            country:'🇦🇹 النمسا'},
-  {id:10, cat:'prot',  icon:'😷', brand:'3M',         ar:'كمامة N95 طبية معتمدة - علبة 20',        en:'Certified Medical N95 Mask - Box 20',     price:72,    old:90,    desc_ar:'كمامة N95 معتمدة NIOSH مريحة',             desc_en:'NIOSH-certified N95, comfortable fit',          badge:'خصم 20%',        country:'🇺🇸 أمريكا'},
-  {id:11, cat:'ortho', icon:'🔩', brand:'3M UNITEK',  ar:'براكيت تقويم معدني Mini Diamond',        en:'Mini Diamond Metal Brackets',             price:155,   old:null,  desc_ar:'براكيت MBT/Roth مقاس .022 طقم كامل',      desc_en:'MBT/Roth .022 full kit',                        badge:null,            country:'🇺🇸 أمريكا'},
-  {id:12, cat:'impl',  icon:'🔬', brand:'STRAUMANN',  ar:'غرسة تيتانيوم Bone Level RC',           en:'Bone Level RC Titanium Implant',          price:1200,  old:1450,  desc_ar:'نظام BLT/BLC معتمد عالمياً مع أبتمنت',     desc_en:'Globally certified BLT/BLC with abutment',      badge:'الأكثر مبيعاً', country:'🇨🇭 سويسرا'},
-  {id:13, cat:'home',  icon:'⚡', brand:'ORAL-B',     ar:'فرشاة أسنان كهربائية iO Series 9',       en:'iO Series 9 Electric Toothbrush',         price:620,   old:780,   desc_ar:'تقنية ذكية مع شاشة تتبع النظافة',          desc_en:'Smart tech with cleaning tracker display',      badge:'جديد',          country:'🇩🇪 ألمانيا'},
-  {id:14, cat:'home',  icon:'💧', brand:'COLGATE',    ar:'غسول فم طبي Colgate Peroxyl',            en:'Colgate Peroxyl Medical Mouthwash',       price:28,    old:null,  desc_ar:'علاج قرح الفم وتطهير اللثة',               desc_en:'Treats mouth sores and gum disinfection',       badge:null,            country:'🇺🇸 أمريكا'},
-  {id:15, cat:'dev',   icon:'📷', brand:'CARESTREAM', ar:'كاميرا داخل الفم CS 1500',              en:'CS 1500 Intraoral Camera',                price:4200,  old:5100,  desc_ar:'كاميرا HD لاسلكية مع برنامج متكامل',       desc_en:'Wireless HD camera with integrated software',   badge:'جديد',          country:'🇺🇸 أمريكا'},
-  {id:16, cat:'mat',   icon:'🩺', brand:'SEPTODONT',  ar:'تخدير موضعي Articaine 4%',              en:'Articaine 4% Local Anesthesia',           price:95,    old:null,  desc_ar:'أمبولات 1.7ml صندوق 50 أمبولة',            desc_en:'1.7ml cartridges, box of 50',                   badge:null,            country:'🇫🇷 فرنسا'},
+  {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً'},
+  {id:2,  cat:'dev',   icon:'📡', brand:'PLANMECA',   ar:'جهاز أشعة بانورامي ProMax',              en:'ProMax Panoramic X-Ray',                  price:32000, old:38000, desc_ar:'أشعة رقمية عالية الدقة بدون فيلم',         desc_en:'Digital high-resolution filmless X-ray',        badge:'جديد'},
+  {id:3,  cat:'dev',   icon:'⚡', brand:'SIRONA',     ar:'جهاز الأوتوكلاف DAC Premium',            en:'DAC Premium Autoclave',                   price:8900,  old:null,  desc_ar:'تعقيم بالبخار 17 لتر معتمد Class B',      desc_en:'17L Class B steam sterilizer',                  badge:null},
+  {id:4,  cat:'hand',  icon:'🔍', brand:'HU-FRIEDY',  ar:'مجموعة أدوات فحص كاملة',                en:'Complete Examination Kit',                price:480,   old:620,   desc_ar:'مرايا + مجس + ملقط ستانلس ستيل',          desc_en:'Mirrors + probe + stainless forceps',           badge:'خصم 22%'},
+  {id:5,  cat:'hand',  icon:'🔧', brand:'DENTSPLY',   ar:'ملفات قنوات روتاري ProTaper Gold',       en:'ProTaper Gold Rotary Files',              price:320,   old:null,  desc_ar:'طقم كامل 6 ملفات NiTi عالي المرونة',      desc_en:'6-file NiTi set, high flexibility',             badge:null},
+  {id:6,  cat:'mat',   icon:'💉', brand:'3M ESPE',    ar:'مادة حشو كومبوزيت Filtek Supreme',       en:'Filtek Supreme Composite',                price:185,   old:220,   desc_ar:'كومبوزيت نانو هايبرد شفاف وقوي',           desc_en:'Nano-hybrid composite, translucent & strong',   badge:'الأكثر مبيعاً'},
+  {id:7,  cat:'mat',   icon:'🧪', brand:'ULTRADENT',  ar:'جيل تبييض Opalescence 35%',              en:'Opalescence Whitening 35%',               price:145,   old:null,  desc_ar:'تبييض احترافي سريع نتائج فورية',           desc_en:'Professional fast whitening, instant results',  badge:null},
+  {id:8,  cat:'mat',   icon:'🧬', brand:'DENTSPLY',   ar:'مادة انطباع سيليكون Aquasil Ultra',      en:'Aquasil Ultra Impression Material',       price:265,   old:310,   desc_ar:'سيليكون VPS دقيق ومريح للمريض',            desc_en:'Precise VPS silicone, patient-friendly',        badge:null},
+  {id:9,  cat:'prot',  icon:'🧤', brand:'SEMPERMED',  ar:'قفازات لاتكس طبية - صندوق 100',          en:'Medical Latex Gloves - Box 100',          price:38,    old:null,  desc_ar:'قفازات فحص معقمة مقاس S/M/L/XL',          desc_en:'Sterile examination gloves S/M/L/XL',           badge:null},
+  {id:10, cat:'prot',  icon:'😷', brand:'3M',         ar:'كمامة N95 طبية معتمدة - علبة 20',        en:'Certified Medical N95 Mask - Box 20',     price:72,    old:90,    desc_ar:'كمامة N95 معتمدة NIOSH مريحة',             desc_en:'NIOSH-certified N95, comfortable fit',          badge:'خصم 20%'},
+  {id:11, cat:'ortho', icon:'🔩', brand:'3M UNITEK',  ar:'براكيت تقويم معدني Mini Diamond',        en:'Mini Diamond Metal Brackets',             price:155,   old:null,  desc_ar:'براكيت MBT/Roth مقاس .022 طقم كامل',      desc_en:'MBT/Roth .022 full kit',                        badge:null},
+  {id:12, cat:'impl',  icon:'🔬', brand:'STRAUMANN',  ar:'غرسة تيتانيوم Bone Level RC',           en:'Bone Level RC Titanium Implant',          price:1200,  old:1450,  desc_ar:'نظام BLT/BLC معتمد عالمياً مع أبتمنت',     desc_en:'Globally certified BLT/BLC with abutment',      badge:'الأكثر مبيعاً'},
+  {id:13, cat:'home',  icon:'⚡', brand:'ORAL-B',     ar:'فرشاة أسنان كهربائية iO Series 9',       en:'iO Series 9 Electric Toothbrush',         price:620,   old:780,   desc_ar:'تقنية ذكية مع شاشة تتبع النظافة',          desc_en:'Smart tech with cleaning tracker display',      badge:'جديد'},
+  {id:14, cat:'home',  icon:'💧', brand:'COLGATE',    ar:'غسول فم طبي Colgate Peroxyl',            en:'Colgate Peroxyl Medical Mouthwash',       price:28,    old:null,  desc_ar:'علاج قرح الفم وتطهير اللثة',               desc_en:'Treats mouth sores and gum disinfection',       badge:null},
+  {id:15, cat:'dev',   icon:'📷', brand:'CARESTREAM', ar:'كاميرا داخل الفم CS 1500',              en:'CS 1500 Intraoral Camera',                price:4200,  old:5100,  desc_ar:'كاميرا HD لاسلكية مع برنامج متكامل',       desc_en:'Wireless HD camera with integrated software',   badge:'جديد'},
+  {id:16, cat:'mat',   icon:'🩺', brand:'SEPTODONT',  ar:'تخدير موضعي Articaine 4%',              en:'Articaine 4% Local Anesthesia',           price:95,    old:null,  desc_ar:'أمبولات 1.7ml صندوق 50 أمبولة',            desc_en:'1.7ml cartridges, box of 50',                   badge:null},
 ];
 
 // =====================
@@ -1724,19 +1985,20 @@ function renderProducts() {
     return `
     <div class="product-card">
       ${p.badge ? `<div class="product-badge">${t(p.badge, p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':p.badge)}</div>` : ''}
-      <div class="product-img" onclick="addToCart(${p.id})" title="${t('أضف للسلة','Add to Cart')}">${p.icon}</div>
+      <div class="product-img-wrap" onclick="addToCart(${p.id})" title="${t('أضف للسلة','Add to Cart')}">
+        ${p.image
+          ? `<img src="${p.image}" alt="${p.ar}" loading="lazy" />`
+          : `<span class="emoji-fallback">${p.icon}</span>`
+        }
+      </div>
       <div class="product-info">
         <div class="product-brand">${p.brand}</div>
         <div class="product-name">${currentLang==='en'?p.en:p.ar}</div>
         <div class="product-stars">
           <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
-          <span>(${Math.floor(Math.random()*80)+20})</span>
+          <span>(${20 + (p.id * 17 % 80)})</span>
         </div>
-       <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
-        ${p.country ? `<div style="font-size:12px;color:var(--text-muted);margin-bottom:8px;display:flex;align-items:center;gap:4px">
-          <i class="fas fa-globe-americas" style="color:var(--primary-light)"></i>
-          <span>${t('بلد المنشأ','Origin')}: <strong style="color:var(--primary-dark)">${p.country}</strong></span>
-        </div>` : ''}
+        <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
         <div class="product-price-row">
           <div>
             <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('ر.س','SAR')}</small></div>
@@ -1859,6 +2121,7 @@ function openOrderModal() {
   document.getElementById('charCount').textContent = '0';
   document.getElementById('successScreen').classList.remove('show');
   document.getElementById('modalBody').querySelector('.modal-steps').style.display='flex';
+  window._selectedPayMethod = 'money';
   renderModalStep();
   document.getElementById('orderModal').classList.add('open');
 }
@@ -1903,9 +2166,20 @@ function renderModalSummary() {
     </div>`;
 }
 
-function renderConfirmDetails() {
+async function renderConfirmDetails() {
   const div = document.getElementById('confirmDetails');
   const notes = document.getElementById('orderNotes').value;
+
+  const totalPoints = cart.reduce((s, i) => s + ((i.points || 0) * i.qty), 0);
+
+  let clientPoints = 0;
+  if (currentUser && currentUser.role === 'client') {
+    clientPoints = await getClientPoints(currentUser.email);
+  }
+
+  const canPayPoints = (currentUser?.role === 'client') && totalPoints > 0 && clientPoints >= totalPoints;
+  const hasPoints    = (currentUser?.role === 'client') && totalPoints > 0;
+
   div.innerHTML = `
     <div class="summary-item"><span>🏥 ${t('العيادة','Clinic')}</span><span>${document.getElementById('clinicName').value}</span></div>
     <div class="summary-item"><span>👨‍⚕️ ${t('الطبيب','Doctor')}</span><span>${document.getElementById('doctorName').value}</span></div>
@@ -1915,7 +2189,43 @@ function renderConfirmDetails() {
     <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
       <span>${t('إجمالي الطلب','Order Total')}</span>
       <span>${getTotal().toLocaleString()} ${t('ر.س','SAR')}</span>
-    </div>`;
+    </div>
+
+    ${hasPoints ? `
+    <div style="margin-top:20px">
+      <div style="font-weight:800;font-size:14px;color:var(--primary-dark);margin-bottom:12px">
+        <i class="fas fa-credit-card" style="color:var(--primary-light)"></i>
+        طريقة الدفع
+      </div>
+      <div class="points-balance-box">
+        <span class="points-balance-label">🏆 رصيد نقاطك</span>
+        <span class="points-balance-num">${clientPoints} نقطة</span>
+      </div>
+      <div class="pay-method-wrap">
+        <button class="pay-method-btn ${window._selectedPayMethod==='money'?'active':''}"
+          onclick="selectPayMethod('money')">
+          <span class="pay-method-icon">💵</span>
+          <div class="pay-method-label">الدفع بالمال</div>
+          <div class="pay-method-sub">${getTotal().toLocaleString()} ر.س</div>
+        </button>
+        <button class="pay-method-btn points-btn ${window._selectedPayMethod==='points'?'active':''} ${!canPayPoints?'disabled':''}"
+          onclick="${canPayPoints ? "selectPayMethod('points')" : ''}">
+          <span class="pay-method-icon">🏆</span>
+          <div class="pay-method-label">الدفع بالنقاط</div>
+          <div class="pay-method-sub">${totalPoints} نقطة مطلوبة</div>
+        </button>
+      </div>
+      ${!canPayPoints ? `
+      <div class="points-insufficient">
+        <i class="fas fa-exclamation-circle"></i>
+        نقاطك (${clientPoints}) أقل من المطلوب (${totalPoints} نقطة)
+      </div>` : ''}
+    </div>` : ''}`;
+}
+
+function selectPayMethod(method) {
+  window._selectedPayMethod = method;
+  renderConfirmDetails();
 }
 
 function nextStep() {
@@ -2007,28 +2317,18 @@ function getGPSLocation() {
 
 function openMapPicker() {
   switchLocMethod('Map');
-  const lat = locationData.lat || 24.7136;
-  const lng = locationData.lng || 46.6753;
-  const url = `https://maps.google.com/?q=${lat},${lng}`;
-  // Open google maps - user selects and comes back
-  window.open(url, '_blank');
-  // Simulate the user confirming location from maps
-  setTimeout(() => {
-    if (!locationData.lat) {
-      locationData.lat = lat;
-      locationData.lng = lng;
-      locationData.address = t('موقع محدد من الخريطة','Location selected from map');
-      locationData.method = 'map';
-      document.getElementById('mapPreview').classList.add('located');
-      document.getElementById('mapPreview').innerHTML = `
-        <i class="fas fa-map-marker-alt" style="color:var(--success)"></i>
-        <div class="map-placeholder-text" style="color:var(--primary-dark)">${t('تم تحديد الموقع من الخريطة','Location set from map')}</div>
-        <div class="map-coords">🗺️ Google Maps</div>`;
-      document.getElementById('locationConfirm').classList.add('show');
-      document.getElementById('locationConfirmText').textContent = t('تم تحديد الموقع من الخريطة ✅','Location set from map ✅');
-      document.getElementById('locationError').classList.remove('show');
-    }
-  }, 1500);
+  window.open('https://maps.google.com/', '_blank');
+  const addrInput = document.getElementById('addressInput');
+  addrInput.placeholder = t(
+    'بعد تحديد موقعك في الخريطة، اكتب العنوان هنا...',
+    'After selecting on the map, type the address here...'
+  );
+  addrInput.focus();
+  showToast(
+    t('📍 حدد موقعك في الخريطة ثم اكتب العنوان في الحقل أدناه',
+      '📍 Select your location on the map then type the address below'),
+    ''
+  );
 }
 
 function updateCharCount() {
@@ -2042,7 +2342,27 @@ function updateCharCount() {
 async function submitOrder() {
   if (!validateStep(3)) { currentStep=3; renderModalStep(); return; }
 
-  const orderNum = 'DP-' + String(Math.floor(Math.random()*900000)+100000);
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+  const orderNum = `DP-${ts}-${rand}`;
+
+  const totalPoints = cart.reduce((s, i) => s + ((i.points || 0) * i.qty), 0);
+  const payWithPoints = window._selectedPayMethod === 'points';
+
+  // خصم النقاط إذا اختار الدفع بالنقاط
+  if (payWithPoints && currentUser && currentUser.role === 'client') {
+    const currentBalance = await getClientPoints(currentUser.email);
+    const newBalance = currentBalance - totalPoints;
+    const log = {
+      type: 'spend',
+      amount: totalPoints,
+      reason: `شراء بالنقاط — طلب #${orderNum}`,
+      balance: newBalance,
+      date: new Date().toISOString(),
+    };
+    await saveClientPoints(currentUser.email, newBalance, log);
+    await renderPointsInHeader();
+  }
 
   const order = {
     id:          orderNum,
@@ -2055,6 +2375,8 @@ async function submitOrder() {
     notes:       document.getElementById('orderNotes').value,
     items:       cart.map(i => ({ id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty })),
     total:       getTotal(),
+    totalPoints: totalPoints,
+    payMethod:   payWithPoints ? 'points' : 'money',
     status:      'pending',
     createdAt:   new Date().toISOString(),
   };
@@ -2099,7 +2421,15 @@ function sendWhatsApp() {
   );
   window.open(`https://wa.me/966500000000?text=${msg}`, '_blank');
 }
-
+// =====================
+// XSS PROTECTION
+// =====================
+function escHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = String(str);
+  return d.innerHTML;
+}
 // =====================
 // TOAST
 // =====================
@@ -2248,8 +2578,8 @@ function loginSuccess(user) {
       renderAdminTable();
     }, 400);
   } else {
-    // Show welcome banner for client
     showClientWelcome(user);
+    renderPointsInHeader();
   }
 }
 
@@ -2370,7 +2700,7 @@ function checkAdminLogin() {
     updateAdminStats();
     renderAdminTable();
   } else {
-    document.getElementById('loginError').style.display = 'block';
+    document.getElementById('adminLoginError').style.display = 'block';
     document.getElementById('adminPass').value = '';
   }
 }
@@ -2407,7 +2737,11 @@ function renderAdminTable() {
     <tr style="border-bottom:1px solid #f0f4f8;transition:background 0.15s" onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
       <td style="padding:14px 16px">
         <div style="display:flex;align-items:center;gap:10px">
-          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">${p.icon}</div>
+          <div style="width:42px;height:42px;border-radius:10px;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden">
+            ${p.image
+              ? `<img src="${p.image}" style="width:100%;height:100%;object-fit:contain">`
+              : p.icon}
+          </div>
           <div>
             <div style="font-weight:700;font-size:14px;color:#0f2133">${p.ar}</div>
             <div style="font-size:12px;color:#5a7a90">${p.brand} · ${p.en.substring(0,30)}${p.en.length>30?'...':''}</div>
@@ -2437,6 +2771,76 @@ function renderAdminTable() {
 }
 
 // Add / Edit Product
+// =====================
+// IMAGE HANDLING
+// =====================
+let currentProductImage = null;
+
+function triggerImgUpload() {
+  document.getElementById('pImageFile').click();
+}
+
+function handleImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+
+  if (file.size > 2 * 1024 * 1024) {
+    showToast('❌ حجم الصورة يتجاوز 2MB', 'error');
+    return;
+  }
+
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    currentProductImage = e.target.result;
+    const preview = document.getElementById('imgPreviewBox');
+    const area    = document.getElementById('imgUploadArea');
+    const removeBtn = document.getElementById('removeImgBtn');
+    preview.src = currentProductImage;
+    preview.classList.add('show');
+    area.classList.add('has-image');
+    area.querySelector('.img-upload-icon').style.display = 'none';
+    area.querySelector('.img-upload-text').textContent = '✅ تم تحميل الصورة';
+    area.querySelector('.img-upload-hint').textContent = file.name;
+    removeBtn.style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function removeProductImage() {
+  currentProductImage = null;
+  const preview   = document.getElementById('imgPreviewBox');
+  const area      = document.getElementById('imgUploadArea');
+  const removeBtn = document.getElementById('removeImgBtn');
+  const fileInput = document.getElementById('pImageFile');
+  preview.src = '';
+  preview.classList.remove('show');
+  area.classList.remove('has-image');
+  area.querySelector('.img-upload-icon').style.display = 'block';
+  area.querySelector('.img-upload-text').textContent = 'انقر لاختيار صورة';
+  area.querySelector('.img-upload-hint').textContent = 'PNG، JPG، WEBP — بحد أقصى 2MB';
+  removeBtn.style.display = 'none';
+  fileInput.value = '';
+}
+
+function resetImageUpload() {
+  currentProductImage = null;
+  removeProductImage();
+}
+
+function loadImagePreview(imageUrl) {
+  if (!imageUrl) { resetImageUpload(); return; }
+  currentProductImage = imageUrl;
+  const preview   = document.getElementById('imgPreviewBox');
+  const area      = document.getElementById('imgUploadArea');
+  const removeBtn = document.getElementById('removeImgBtn');
+  preview.src = imageUrl;
+  preview.classList.add('show');
+  area.classList.add('has-image');
+  area.querySelector('.img-upload-icon').style.display = 'none';
+  area.querySelector('.img-upload-text').textContent = '✅ صورة محفوظة';
+  area.querySelector('.img-upload-hint').textContent = 'انقر لتغييرها';
+  removeBtn.style.display = 'inline-flex';
+}
 function openAddProduct() {
   editingProductId = null;
   document.getElementById('productFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> إضافة منتج جديد';
@@ -2444,7 +2848,9 @@ function openAddProduct() {
   document.getElementById('pCat').value = 'dev';
   document.getElementById('pBadge').value = '';
   document.getElementById('pCountry').value = '';
+  document.getElementById('pPoints').value = 0;
   document.getElementById('productFormError').style.display = 'none';
+  resetImageUpload();
   document.getElementById('productFormModal').classList.add('open');
 }
 
@@ -2464,7 +2870,9 @@ function openEditProduct(id) {
   document.getElementById('pCat').value = p.cat;
   document.getElementById('pBadge').value = p.badge || '';
   document.getElementById('pCountry').value = p.country || '';
+  document.getElementById('pPoints').value = p.points || 0;
   document.getElementById('productFormError').style.display = 'none';
+  loadImagePreview(p.image || null);
   document.getElementById('productFormModal').classList.add('open');
 }
 
@@ -2494,6 +2902,8 @@ function saveProduct() {
     desc_en: document.getElementById('pDescEn').value.trim() || en,
     badge:   document.getElementById('pBadge').value || null,
     country: document.getElementById('pCountry').value.trim() || '',
+    image:   currentProductImage || null,
+    points:  parseInt(document.getElementById('pPoints').value) || 0,
   };
 
   if (editingProductId) {
@@ -2537,6 +2947,146 @@ function confirmDelete() {
   renderCategories();
   updateCartUI();
   showToast(`🗑️ تم حذف "${p?.ar}" بنجاح`, 'success');
+}
+// =====================
+// POINTS SYSTEM
+// =====================
+
+// جلب نقاط عميل معين
+async function getClientPoints(email) {
+  try {
+    const key = email.replace(/[.@]/g, '_');
+    const ref = window._fbDoc2('points', key);
+    const snap = await window._fbGetDoc(ref);
+    if (snap.exists()) return snap.data().balance || 0;
+    return 0;
+  } catch(e) {
+    const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
+    return saved[email] || 0;
+  }
+}
+
+// حفظ نقاط عميل
+async function saveClientPoints(email, balance, log) {
+  const key = email.replace(/[.@]/g, '_');
+  try {
+    const ref = window._fbDoc2('points', key);
+    const snap = await window._fbGetDoc(ref);
+    const logs = snap.exists() ? (snap.data().logs || []) : [];
+    logs.unshift(log);
+    await window._fbSetDoc(ref, { email, balance, logs });
+  } catch(e) {
+    const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
+    saved[email] = balance;
+    localStorage.setItem('dentapro_points', JSON.stringify(saved));
+  }
+}
+
+// عرض رصيد النقاط في الهيدر
+async function renderPointsInHeader() {
+  if (!currentUser || currentUser.role !== 'client') return;
+  const balance = await getClientPoints(currentUser.email);
+  currentUser.points = balance;
+  const chip = document.querySelector('.user-chip-role');
+  if (chip) {
+    chip.innerHTML = `عميل &nbsp;|&nbsp; <span style="color:#d97706;font-weight:800">🏆 ${balance} نقطة</span>`;
+  }
+}
+
+// ── ADMIN: عرض قائمة العملاء ونقاطهم ──
+async function renderAdminPoints() {
+  const container = document.getElementById('adminPointsList');
+  container.innerHTML = `
+    <div style="text-align:center;padding:32px;color:var(--text-muted)">
+      <div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>
+      جاري تحميل العملاء...
+    </div>`;
+
+  try {
+    const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+
+    if (!users.length) {
+      container.innerHTML = `
+        <div style="text-align:center;padding:48px;color:var(--text-muted)">
+          <i class="fas fa-users" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px"></i>
+          <h3 style="font-weight:800;margin-bottom:8px">لا يوجد عملاء مسجلون بعد</h3>
+        </div>`;
+      return;
+    }
+
+    const usersWithPoints = await Promise.all(users.map(async u => ({
+      ...u,
+      balance: await getClientPoints(u.email)
+    })));
+
+    container.innerHTML = usersWithPoints.map(u => `
+      <div class="points-admin-card">
+        <div style="display:flex;align-items:center;gap:14px">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;flex-shrink:0">
+            ${u.firstName.charAt(0)}
+          </div>
+          <div>
+            <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">${u.firstName}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${u.clinic} · ${u.email}</div>
+            <div style="margin-top:6px">
+              <span class="points-badge"><i class="fas fa-star"></i> ${u.balance} نقطة</span>
+            </div>
+          </div>
+        </div>
+        <button class="add-points-btn" onclick="openAddPointsModal('${u.email}','${u.firstName}','${u.clinic}',${u.balance})">
+          <i class="fas fa-plus"></i> إضافة نقاط
+        </button>
+      </div>
+    `).join('');
+
+  } catch(e) {
+    console.error(e);
+    container.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger)">خطأ في تحميل البيانات</div>`;
+  }
+}
+
+function openAddPointsModal(email, name, clinic, currentBalance) {
+  document.getElementById('pointsTargetEmail').value = email;
+  document.getElementById('pointsTargetName').textContent = `${name} — ${clinic}`;
+  document.getElementById('pointsTargetEmail2').textContent = email;
+  document.getElementById('pointsCurrentBalance').textContent = `${currentBalance} 🏆`;
+  document.getElementById('pointsAmount').value = '';
+  document.getElementById('pointsReason').value = '';
+  document.getElementById('pointsModalError').style.display = 'none';
+  document.getElementById('addPointsModal').classList.add('open');
+}
+
+function closeAddPointsModal() {
+  document.getElementById('addPointsModal').classList.remove('open');
+}
+
+async function confirmAddPoints() {
+  const email   = document.getElementById('pointsTargetEmail').value;
+  const amount  = parseInt(document.getElementById('pointsAmount').value);
+  const reason  = document.getElementById('pointsReason').value.trim() || 'إضافة يدوية من الأدمن';
+
+  if (!amount || amount < 1) {
+    document.getElementById('pointsModalError').style.display = 'flex';
+    return;
+  }
+  document.getElementById('pointsModalError').style.display = 'none';
+
+  const currentBalance = await getClientPoints(email);
+  const newBalance = currentBalance + amount;
+
+  const log = {
+    type: 'add',
+    amount,
+    reason,
+    balance: newBalance,
+    date: new Date().toISOString(),
+    by: 'admin'
+  };
+
+  await saveClientPoints(email, newBalance, log);
+  closeAddPointsModal();
+  showToast(`✅ تم إضافة ${amount} نقطة بنجاح`, 'success');
+  renderAdminPoints();
 }
 // =====================
 // ORDER TRACKING SYSTEM
@@ -2671,22 +3221,33 @@ async function renderClientOrders() {
 // ── ADMIN ORDERS ──
 function switchAdminTab(tab) {
   const isProducts = tab === 'products';
-  // Tab buttons
-  document.getElementById('adminTabProducts').style.color        = isProducts ? 'var(--primary)' : 'var(--text-muted)';
+  const isOrders   = tab === 'orders';
+  const isPoints   = tab === 'points';
+
+  document.getElementById('adminTabProducts').style.color = isProducts ? 'var(--primary)' : 'var(--text-muted)';
   document.getElementById('adminTabProducts').style.borderBottomColor = isProducts ? 'var(--primary)' : 'transparent';
-  document.getElementById('adminTabOrders').style.color          = !isProducts ? 'var(--primary)' : 'var(--text-muted)';
-  document.getElementById('adminTabOrders').style.borderBottomColor  = !isProducts ? 'var(--primary)' : 'transparent';
-  // Panels
-  document.getElementById('adminStatTotal').closest('div').parentElement.style.display = isProducts ? 'grid' : 'none';
-  document.querySelector('.admin-orders-wrap') && (document.getElementById('adminOrdersWrap').style.display = isProducts ? 'none' : 'block');
-  document.querySelector('[style*="padding:0 28px 28px"]') && null;
-  // Show/hide product table
-  const prodTable = document.querySelector('#adminTable')?.closest('div[style*="padding:0 28px"]');
-  if (prodTable) prodTable.style.display = isProducts ? 'block' : 'none';
-  const filterBar = document.querySelector('#adminSearch')?.closest('div[style*="padding:20px 28px"]');
+  document.getElementById('adminTabOrders').style.color = isOrders ? 'var(--primary)' : 'var(--text-muted)';
+  document.getElementById('adminTabOrders').style.borderBottomColor = isOrders ? 'var(--primary)' : 'transparent';
+  document.getElementById('adminTabPoints').style.color = isPoints ? '#d97706' : 'var(--text-muted)';
+  document.getElementById('adminTabPoints').style.borderBottomColor = isPoints ? '#f59e0b' : 'transparent';
+
+  const statsGrid = document.getElementById('adminStatTotal').closest('div[style*="grid"]');
+  if (statsGrid) statsGrid.style.display = isProducts ? 'grid' : 'none';
+
+  const filterBar = document.getElementById('adminFilterBar');
   if (filterBar) filterBar.style.display = isProducts ? 'flex' : 'none';
 
-  if (!isProducts) renderAdminOrders();
+  const prodWrap = document.getElementById('adminProductsWrap');
+  if (prodWrap) prodWrap.style.display = isProducts ? 'block' : 'none';
+
+  const ordersWrap = document.getElementById('adminOrdersWrap');
+  if (ordersWrap) ordersWrap.style.display = isOrders ? 'block' : 'none';
+
+  const pointsWrap = document.getElementById('adminPointsWrap');
+  if (pointsWrap) pointsWrap.style.display = isPoints ? 'block' : 'none';
+
+  if (isOrders) renderAdminOrders();
+  if (isPoints) renderAdminPoints();
 }
 
 async function renderAdminOrders() {
@@ -2796,15 +3357,15 @@ function showAdminOrderDetail(orderId) {
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
         <div style="background:#f8fbfd;border-radius:10px;padding:12px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">العميل</div>
-          <div style="font-weight:700;font-size:14px">${order.clientName}</div>
+          <div style="font-weight:700;font-size:14px">${escHtml(order.clientName)}</div>
         </div>
         <div style="background:#f8fbfd;border-radius:10px;padding:12px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">العيادة</div>
-          <div style="font-weight:700;font-size:14px">${order.clinic}</div>
+          <div style="font-weight:700;font-size:14px">${escHtml(order.clinic)}</div>
         </div>
         <div style="background:#f8fbfd;border-radius:10px;padding:12px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">الهاتف</div>
-          <div style="font-weight:700;font-size:14px">${order.phone}</div>
+          <div style="font-weight:700;font-size:14px">${escHtml(order.phone)}</div>
         </div>
         <div style="background:#f8fbfd;border-radius:10px;padding:12px">
           <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">التاريخ</div>
@@ -2813,7 +3374,7 @@ function showAdminOrderDetail(orderId) {
       </div>
       <div style="background:#f0f8ff;border-radius:10px;padding:12px;margin-bottom:12px">
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:700">📍 الموقع</div>
-        <div style="font-size:13px;font-weight:600">${order.address}</div>
+        <div style="font-size:13px;font-weight:600">${escHtml(order.address)}</div>
       </div>
       <div style="margin-bottom:12px">
         ${order.items.map(item=>`
