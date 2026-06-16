@@ -3241,7 +3241,7 @@ async function getClientPoints(email) {
     await new Promise(r => setTimeout(r, 200));
   }
   try {
-    const key = email.replace(/[.@]/g, '_');
+    const key = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
     const ref = window._fbDoc2('points', key);
     const snap = await window._fbGetDoc(ref);
     if (snap.exists()) {
@@ -3260,7 +3260,7 @@ async function getClientPoints(email) {
 
 // حفظ نقاط عميل
 async function saveClientPoints(email, balance, log) {
-  const key = email.replace(/[.@]/g, '_');
+  const key = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
   try {
     const ref = window._fbDoc2('points', key);
     const snap = await window._fbGetDoc(ref);
