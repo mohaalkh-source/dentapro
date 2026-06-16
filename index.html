@@ -1941,10 +1941,12 @@ function loadCategories() {
 
 async function loadCategoriesFromFirebase() {
   try {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 30; i++) {
       if (window._fbDoc2 && window._fbGetDoc) break;
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 300));
     }
+    if (!window._fbDoc2 || !window._fbGetDoc) return;
+
     const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'categories'));
     if (snap.exists()) {
       const list = snap.data().list;
@@ -1953,8 +1955,13 @@ async function loadCategoriesFromFirebase() {
         list.forEach(c => categories.push(c));
         localStorage.setItem('dentapro_categories', JSON.stringify(categories));
         renderCategories();
-        console.log('✅ تم تحميل الأقسام من Firebase');
+        renderProducts();
+        console.log('✅ تم تحميل الأقسام من Firebase:', categories.length);
       }
+    } else {
+      // لا توجد بيانات في Firebase — ارفع البيانات المحلية
+      console.log('⬆️ رفع الأقسام المحلية إلى Firebase...');
+      await saveCategories();
     }
   } catch(e) {
     console.warn('Firebase loadCategories:', e.message);
@@ -2013,9 +2020,13 @@ function loadProducts() {
 
 async function loadProductsFromFirebase() {
   try {
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 30; i++) {
       if (window._fbDoc2 && window._fbGetDoc) break;
-      await new Promise(r => setTimeout(r, 200));
+      await new Promise(r => setTimeout(r, 300));
+    }
+    if (!window._fbDoc2 || !window._fbGetDoc) {
+      console.warn('Firebase غير جاهز');
+      return;
     }
     const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'products'));
     if (snap.exists()) {
@@ -2026,9 +2037,17 @@ async function loadProductsFromFirebase() {
         localStorage.setItem('dentapro_products', JSON.stringify(products));
         renderProducts();
         renderCategories();
-        updateAdminStats && updateAdminStats();
-        console.log('✅ تم تحميل المنتجات من Firebase');
+        if (typeof updateAdminStats === 'function') updateAdminStats();
+        if (typeof renderAdminTable === 'function' &&
+            document.getElementById('adminPanel')?.classList.contains('open')) {
+          renderAdminTable();
+        }
+        console.log('✅ تم تحميل المنتجات من Firebase:', products.length);
       }
+    } else {
+      // لا توجد بيانات في Firebase — ارفع البيانات المحلية
+      console.log('⬆️ رفع المنتجات المحلية إلى Firebase...');
+      await saveProducts();
     }
   } catch(e) {
     console.warn('Firebase loadProducts:', e.message);
@@ -2083,15 +2102,16 @@ let orderSubmitted = false;
 // =====================
 // INIT
 // =====================
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
   renderCategories();
   renderProducts();
   updateCartUI();
-  // تحميل البيانات من Firebase بعد التحميل المحلي
-  setTimeout(() => {
-    loadProductsFromFirebase();
-    loadCategoriesFromFirebase();
-  }, 1000);
+
+  // تحميل البيانات من Firebase
+  await Promise.all([
+    loadProductsFromFirebase(),
+    loadCategoriesFromFirebase()
+  ]);
 });
 
 // =====================
