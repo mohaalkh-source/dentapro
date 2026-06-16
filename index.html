@@ -1154,7 +1154,7 @@ window._fbGetDoc  = getDoc;
   <div class="cart-footer">
     <div class="cart-total-row">
       <span class="cart-total-label" data-ar="الإجمالي" data-en="Total">الإجمالي</span>
-      <span class="cart-total-price" id="cartTotal">0.00 <small style="font-size:14px;font-weight:600">ر.س</small></span>
+      <span class="cart-total-price" id="cartTotal">0.00 <small style="font-size:14px;font-weight:600">د.أ</small></span>
     </div>
     <button class="checkout-btn" onclick="openOrderModal()">
       <i class="fas fa-arrow-left" id="checkoutArrow"></i>
@@ -1722,7 +1722,7 @@ window._fbGetDoc  = getDoc;
       </div>
       <div class="form-row">
         <div class="form-group">
-          <label class="form-label">السعر (ر.س) <span class="required">*</span></label>
+          <label class="form-label">السعر (د.أ) <span class="required">*</span></label>
           <input type="number" class="form-input" id="pPrice" placeholder="0.00" min="0">
         </div>
         <div class="form-group">
@@ -2001,8 +2001,8 @@ function renderProducts() {
         <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
         <div class="product-price-row">
           <div>
-            <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('ر.س','SAR')}</small></div>
-            ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('ر.س','SAR')}</div>` : ''}
+            <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+            ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
           </div>
           <button class="add-to-cart ${inCart?'added':''}" onclick="addToCart(${p.id})" title="${t('أضف للسلة','Add to Cart')}">
             <i class="fas ${inCart?'fa-check':'fa-plus'}"></i>
@@ -2060,7 +2060,7 @@ function updateCartUI() {
   const count = cart.reduce((s, i) => s + i.qty, 0);
   document.getElementById('cartCount').textContent = count;
   document.getElementById('cartItemsCount').textContent = `(${count})`;
-  document.getElementById('cartTotal').innerHTML = `${getTotal().toLocaleString()} <small style="font-size:14px;font-weight:600">${t('ر.س','SAR')}</small>`;
+  document.getElementById('cartTotal').innerHTML = `${getTotal().toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small>`;
 
   const itemsDiv = document.getElementById('cartItems');
   const empty = document.getElementById('cartEmpty');
@@ -2081,7 +2081,7 @@ function updateCartUI() {
       <div class="cart-item-img">${item.icon}</div>
       <div class="cart-item-info">
         <div class="cart-item-name">${currentLang==='en'?item.en:item.ar}</div>
-        <div class="cart-item-price">${(item.price*item.qty).toLocaleString()} ${t('ر.س','SAR')}</div>
+        <div class="cart-item-price">${(item.price*item.qty).toLocaleString()} ${t('د.أ','SAR')}</div>
         <div class="cart-item-controls">
           <button class="qty-btn" onclick="changeQty(${item.id},-1)"><i class="fas fa-minus"></i></button>
           <span class="qty-num">${item.qty}</span>
@@ -2157,12 +2157,12 @@ function renderModalSummary() {
   div.innerHTML = cart.map(item => `
     <div class="summary-item">
       <span>${item.icon} ${currentLang==='en'?item.en:item.ar} × ${item.qty}</span>
-      <span>${(item.price*item.qty).toLocaleString()} ${t('ر.س','SAR')}</span>
+      <span>${(item.price*item.qty).toLocaleString()} ${t('د.أ','SAR')}</span>
     </div>
   `).join('') + `
     <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
       <span>${t('الإجمالي','Total')}</span>
-      <span>${getTotal().toLocaleString()} ${t('ر.س','SAR')}</span>
+      <span>${getTotal().toLocaleString()} ${t('د.أ','SAR')}</span>
     </div>`;
 }
 
@@ -2188,7 +2188,7 @@ async function renderConfirmDetails() {
     ${notes ? `<div class="summary-item"><span>🗒️ ${t('ملاحظات','Notes')}</span><span style="max-width:200px">${notes}</span></div>` : ''}
     <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
       <span>${t('إجمالي الطلب','Order Total')}</span>
-      <span>${getTotal().toLocaleString()} ${t('ر.س','SAR')}</span>
+      <span>${getTotal().toLocaleString()} ${t('د.أ','SAR')}</span>
     </div>
 
     ${hasPoints ? `
@@ -2206,7 +2206,7 @@ async function renderConfirmDetails() {
           onclick="selectPayMethod('money')">
           <span class="pay-method-icon">💵</span>
           <div class="pay-method-label">الدفع بالمال</div>
-          <div class="pay-method-sub">${getTotal().toLocaleString()} ر.س</div>
+          <div class="pay-method-sub">${getTotal().toLocaleString()} د.أ</div>
         </button>
         <button class="pay-method-btn points-btn ${window._selectedPayMethod==='points'?'active':''} ${!canPayPoints?'disabled':''}"
           onclick="${canPayPoints ? "selectPayMethod('points')" : ''}">
@@ -2408,7 +2408,7 @@ function sendWhatsApp() {
   const phone = document.getElementById('countryCode').value + document.getElementById('phoneNumber').value;
   const addr = locationData.address || document.getElementById('addressInput').value;
   const notes = document.getElementById('orderNotes').value;
-  const items = cart.map(i=>`• ${currentLang==='en'?i.en:i.ar} × ${i.qty} = ${(i.price*i.qty).toLocaleString()} ${t('ر.س','SAR')}`).join('\n');
+  const items = cart.map(i=>`• ${currentLang==='en'?i.en:i.ar} × ${i.qty} = ${(i.price*i.qty).toLocaleString()} ${t('د.أ','SAR')}`).join('\n');
   const msg = encodeURIComponent(
     `🦷 *DentaPro - ${t('طلب جديد','New Order')}*\n\n` +
     `🏥 ${t('العيادة','Clinic')}: ${clinic}\n` +
@@ -2417,7 +2417,7 @@ function sendWhatsApp() {
     `📍 ${t('الموقع','Location')}: ${addr}\n` +
     `${notes ? `🗒️ ${t('ملاحظات','Notes')}: ${notes}\n` : ''}` +
     `\n📦 ${t('المنتجات','Products')}:\n${items}\n\n` +
-    `💰 ${t('الإجمالي','Total')}: ${getTotal().toLocaleString()} ${t('ر.س','SAR')}`
+    `💰 ${t('الإجمالي','Total')}: ${getTotal().toLocaleString()} ${t('د.أ','SAR')}`
   );
   window.open(`https://wa.me/966500000000?text=${msg}`, '_blank');
 }
@@ -2751,8 +2751,8 @@ function renderAdminTable() {
       <td style="padding:14px 16px">
         <span style="padding:4px 12px;border-radius:50px;background:#e8f3fb;color:#0a5c8a;font-size:12px;font-weight:700">${catNames[p.cat]||p.cat}</span>
       </td>
-      <td style="padding:14px 16px;font-weight:800;color:#0a5c8a;font-size:15px">${p.price.toLocaleString()} ر.س</td>
-      <td style="padding:14px 16px;color:#5a7a90;font-size:13px;text-decoration:line-through">${p.old ? p.old.toLocaleString()+' ر.س' : '—'}</td>
+      <td style="padding:14px 16px;font-weight:800;color:#0a5c8a;font-size:15px">${p.price.toLocaleString()} د.أ</td>
+      <td style="padding:14px 16px;color:#5a7a90;font-size:13px;text-decoration:line-through">${p.old ? p.old.toLocaleString()+' د.أ' : '—'}</td>
       <td style="padding:14px 16px">
         ${p.badge ? `<span style="padding:4px 10px;border-radius:50px;background:${badgeColors[p.badge]||'#f59e0b'};color:#fff;font-size:11px;font-weight:700">${p.badge}</span>` : '<span style="color:#ccc;font-size:13px">—</span>'}
       </td>
@@ -3185,7 +3185,7 @@ async function renderClientOrders() {
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             ${statusBadgeHTML(order.status)}
-            <div class="order-track-total">${order.total.toLocaleString()} ر.س</div>
+            <div class="order-track-total">${order.total.toLocaleString()} د.أ</div>
           </div>
         </div>
         <div class="order-track-body">
@@ -3197,7 +3197,7 @@ async function renderClientOrders() {
                 <div style="flex:1;font-weight:600;color:var(--primary-dark)">${item.ar}</div>
                 <div style="color:var(--text-muted)">× ${item.qty}</div>
                 <div style="font-weight:800;color:var(--primary)">
-                  ${(item.price*item.qty).toLocaleString()} ر.س
+                  ${(item.price*item.qty).toLocaleString()} د.أ
                 </div>
               </div>`).join('')}
           </div>
@@ -3302,7 +3302,7 @@ async function renderAdminOrders() {
           ${itemsSummary}<br>
           <span style="color:var(--primary-light);font-weight:700">${order.items.length} منتج</span>
         </div>
-        <div style="font-weight:900;color:var(--primary)">${order.total.toLocaleString()} ر.س</div>
+        <div style="font-weight:900;color:var(--primary)">${order.total.toLocaleString()} د.أ</div>
         <div style="font-size:12px;color:var(--text-muted)">${date}</div>
         <div>
           <select class="status-select"
@@ -3382,10 +3382,10 @@ function showAdminOrderDetail(orderId) {
             <span style="font-size:22px">${item.icon}</span>
             <span style="flex:1;font-weight:600">${item.ar}</span>
             <span style="color:var(--text-muted)">× ${item.qty}</span>
-            <span style="font-weight:800;color:var(--primary)">${(item.price*item.qty).toLocaleString()} ر.س</span>
+            <span style="font-weight:800;color:var(--primary)">${(item.price*item.qty).toLocaleString()} د.أ</span>
           </div>`).join('')}
         <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
-          <span>الإجمالي</span><span>${order.total.toLocaleString()} ر.س</span>
+          <span>الإجمالي</span><span>${order.total.toLocaleString()} د.أ</span>
         </div>
       </div>
       ${order.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${order.notes}</div>`:''}
