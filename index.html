@@ -979,6 +979,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 window._fbGetDoc  = getDoc;
   window._fbSetDoc  = setDoc;
   window._fbDoc2    = (col, id) => doc(db, col, id);
+  window._fbCollection = collection;
 
   const firebaseConfig = {
     apiKey: "AIzaSyDVVEzXPlfJAD7NSV0tGHzzsx8LiyK2i4w",
@@ -1938,11 +1939,43 @@ function loadCategories() {
   return DEFAULT_CATEGORIES.map(c => ({...c}));
 }
 
-function saveCategories() {
+async function loadCategoriesFromFirebase() {
+  try {
+    for (let i = 0; i < 20; i++) {
+      if (window._fbDoc2 && window._fbGetDoc) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'categories'));
+    if (snap.exists()) {
+      const list = snap.data().list;
+      if (Array.isArray(list) && list.length > 0) {
+        categories.length = 0;
+        list.forEach(c => categories.push(c));
+        localStorage.setItem('dentapro_categories', JSON.stringify(categories));
+        renderCategories();
+        console.log('✅ تم تحميل الأقسام من Firebase');
+      }
+    }
+  } catch(e) {
+    console.warn('Firebase loadCategories:', e.message);
+  }
+}
+
+async function saveCategories() {
   try {
     localStorage.setItem('dentapro_categories', JSON.stringify(categories));
+  } catch(e) {}
+  try {
+    for (let i = 0; i < 15; i++) {
+      if (window._fbDoc2 && window._fbSetDoc) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    await window._fbSetDoc(
+      window._fbDoc2('store_data', 'categories'),
+      { list: categories, updatedAt: new Date().toISOString() }
+    );
   } catch(e) {
-    console.warn('saveCategories error:', e);
+    console.warn('Firebase saveCategories:', e.message);
   }
 }
 
@@ -1970,16 +2003,55 @@ const DEFAULT_PRODUCTS = [
 function loadProducts() {
   try {
     const saved = localStorage.getItem('dentapro_products');
-    if (saved) return JSON.parse(saved);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
   } catch(e) {}
   return DEFAULT_PRODUCTS.map(p => ({...p}));
 }
 
-function saveProducts() {
+async function loadProductsFromFirebase() {
+  try {
+    for (let i = 0; i < 20; i++) {
+      if (window._fbDoc2 && window._fbGetDoc) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'products'));
+    if (snap.exists()) {
+      const list = snap.data().list;
+      if (Array.isArray(list) && list.length > 0) {
+        products.length = 0;
+        list.forEach(p => products.push(p));
+        localStorage.setItem('dentapro_products', JSON.stringify(products));
+        renderProducts();
+        renderCategories();
+        updateAdminStats && updateAdminStats();
+        console.log('✅ تم تحميل المنتجات من Firebase');
+      }
+    }
+  } catch(e) {
+    console.warn('Firebase loadProducts:', e.message);
+  }
+}
+
+async function saveProducts() {
+  // حفظ محلي دائماً
   try {
     localStorage.setItem('dentapro_products', JSON.stringify(products));
+  } catch(e) {}
+  // حفظ في Firebase
+  try {
+    for (let i = 0; i < 15; i++) {
+      if (window._fbDoc2 && window._fbSetDoc) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    await window._fbSetDoc(
+      window._fbDoc2('store_data', 'products'),
+      { list: products, updatedAt: new Date().toISOString() }
+    );
   } catch(e) {
-    console.warn('localStorage full:', e);
+    console.warn('Firebase saveProducts:', e.message);
   }
 }
 
@@ -2015,6 +2087,11 @@ document.addEventListener('DOMContentLoaded', () => {
   renderCategories();
   renderProducts();
   updateCartUI();
+  // تحميل البيانات من Firebase بعد التحميل المحلي
+  setTimeout(() => {
+    loadProductsFromFirebase();
+    loadCategoriesFromFirebase();
+  }, 1000);
 });
 
 // =====================
@@ -3266,42 +3343,54 @@ function confirmDelete() {
 
 // جلب نقاط عميل معين
 async function getClientPoints(email) {
-  // انتظر حتى يتحمل Firebase
-  for (let i = 0; i < 20; i++) {
-    if (window._fbDoc2 && window._fbGetDoc) break;
-    await new Promise(r => setTimeout(r, 200));
-  }
+  // قراءة محلية فورية كقيمة مبدئية
+  const localSaved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
+  const localBalance = localSaved[email] || 0;
+
   try {
+    for (let i = 0; i < 20; i++) {
+      if (window._fbDoc2 && window._fbGetDoc) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
     const key = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
     const ref = window._fbDoc2('points', key);
     const snap = await window._fbGetDoc(ref);
     if (snap.exists()) {
-      const balance = snap.data().balance;
-      console.log('✅ نقاط Firebase:', email, balance);
-      return balance || 0;
+      const balance = snap.data().balance || 0;
+      // حدّث localStorage بقيمة Firebase
+      localSaved[email] = balance;
+      localStorage.setItem('dentapro_points', JSON.stringify(localSaved));
+      return balance;
     }
-    console.log('⚠️ لا توجد نقاط في Firebase لـ', email);
-    return 0;
+    return localBalance;
   } catch(e) {
-    console.warn('❌ خطأ Firebase points:', e);
-    const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
-    return saved[email] || 0;
+    console.warn('❌ خطأ Firebase points:', e.message);
+    return localBalance;
   }
 }
 
 // حفظ نقاط عميل
 async function saveClientPoints(email, balance, log) {
-  const key = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
+  // حفظ محلي فوري دائماً
+  const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
+  saved[email] = balance;
+  localStorage.setItem('dentapro_points', JSON.stringify(saved));
+
+  // حفظ في Firebase
   try {
+    for (let i = 0; i < 15; i++) {
+      if (window._fbDoc2 && window._fbGetDoc && window._fbSetDoc) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    const key = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
     const ref = window._fbDoc2('points', key);
     const snap = await window._fbGetDoc(ref);
     const logs = snap.exists() ? (snap.data().logs || []) : [];
     logs.unshift(log);
     await window._fbSetDoc(ref, { email, balance, logs });
+    console.log('✅ تم حفظ النقاط في Firebase:', email, balance);
   } catch(e) {
-    const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
-    saved[email] = balance;
-    localStorage.setItem('dentapro_points', JSON.stringify(saved));
+    console.warn('⚠️ Firebase فشل، محفوظ محلياً فقط:', e.message);
   }
 }
 
