@@ -1916,7 +1916,7 @@ window._fbGetDoc  = getDoc;
 // =====================
 // DATA
 // =====================
-const categories = [
+const DEFAULT_CATEGORIES = [
   {id:'all',   icon:'🦷', ar:'الكل',              en:'All'},
   {id:'dev',   icon:'🔬', ar:'أجهزة ومعدات',       en:'Devices'},
   {id:'hand',  icon:'🛠️', ar:'أدوات يدوية',        en:'Instruments'},
@@ -1926,6 +1926,27 @@ const categories = [
   {id:'impl',  icon:'🏥', ar:'زراعة الأسنان',       en:'Implants'},
   {id:'home',  icon:'🌟', ar:'العناية المنزلية',     en:'Home Care'},
 ];
+
+function loadCategories() {
+  try {
+    const saved = localStorage.getItem('dentapro_categories');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch(e) {}
+  return DEFAULT_CATEGORIES.map(c => ({...c}));
+}
+
+function saveCategories() {
+  try {
+    localStorage.setItem('dentapro_categories', JSON.stringify(categories));
+  } catch(e) {
+    console.warn('saveCategories error:', e);
+  }
+}
+
+let categories = loadCategories();
 
 const DEFAULT_PRODUCTS = [
   {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً'},
@@ -2646,6 +2667,7 @@ function deleteCategory(id) {
   }
   const idx = categories.findIndex(c => c.id === id);
   if (idx !== -1) categories.splice(idx, 1);
+  saveCategories();
   renderCurrentCatList();
   renderCategories();
   showToast('🗑️ تم حذف القسم بنجاح', 'success');
@@ -2667,35 +2689,45 @@ function saveCategory() {
   if (!/^[a-z0-9]+$/.test(id)) return showErr('المعرّف يجب أن يحتوي على حروف إنجليزية صغيرة وأرقام فقط');
 
   if (editId) {
-    // تعديل
     const idx = categories.findIndex(c => c.id === editId);
     if (idx !== -1) { categories[idx] = { ...categories[idx], ar, en, icon }; }
+    saveCategories();
+    document.getElementById('catFormError').style.display = 'none';
+    document.getElementById('editCatId').value = '';
+    document.getElementById('catId').disabled  = false;
+    document.getElementById('catNameAr').value = '';
+    document.getElementById('catNameEn').value = '';
+    document.getElementById('catIcon').value   = '';
+    document.getElementById('catId').value     = '';
+    document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-folder-plus"></i> إضافة قسم جديد';
+    renderCurrentCatList();
+    renderCategories();
+    renderProducts();
+    closeAddCategory();
     showToast('✅ تم تعديل القسم بنجاح', 'success');
   } else {
-    // إضافة
     if (categories.find(c => c.id === id)) return showErr('هذا المعرّف مستخدم مسبقاً');
     categories.push({ id, icon, ar, en });
-    // أضف خيار القسم الجديد في select المنتج
-    const pCat   = document.getElementById('pCat');
-    const aCat   = document.getElementById('adminCatFilter');
+    const pCat = document.getElementById('pCat');
+    const aCat = document.getElementById('adminCatFilter');
     const newOpt = new Option(ar, id);
     pCat.add(newOpt.cloneNode(true));
     aCat.add(new Option(ar, id));
+    saveCategories();
+    document.getElementById('catFormError').style.display = 'none';
+    document.getElementById('editCatId').value = '';
+    document.getElementById('catId').disabled  = false;
+    document.getElementById('catNameAr').value = '';
+    document.getElementById('catNameEn').value = '';
+    document.getElementById('catIcon').value   = '';
+    document.getElementById('catId').value     = '';
+    document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-folder-plus"></i> إضافة قسم جديد';
+    renderCurrentCatList();
+    renderCategories();
+    renderProducts();
+    closeAddCategory();
     showToast('✅ تم إضافة القسم بنجاح', 'success');
   }
-
-  document.getElementById('catFormError').style.display = 'none';
-  document.getElementById('editCatId').value = '';
-  document.getElementById('catId').disabled  = false;
-  document.getElementById('catNameAr').value = '';
-  document.getElementById('catNameEn').value = '';
-  document.getElementById('catIcon').value   = '';
-  document.getElementById('catId').value     = '';
-  document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-folder-plus"></i> إضافة قسم جديد';
-
-  renderCurrentCatList();
-  renderCategories();
-  renderProducts();
 }
 
 // =====================
