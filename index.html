@@ -3235,13 +3235,24 @@ function confirmDelete() {
 
 // جلب نقاط عميل معين
 async function getClientPoints(email) {
+  // انتظر حتى يتحمل Firebase
+  for (let i = 0; i < 20; i++) {
+    if (window._fbDoc2 && window._fbGetDoc) break;
+    await new Promise(r => setTimeout(r, 200));
+  }
   try {
     const key = email.replace(/[.@]/g, '_');
     const ref = window._fbDoc2('points', key);
     const snap = await window._fbGetDoc(ref);
-    if (snap.exists()) return snap.data().balance || 0;
+    if (snap.exists()) {
+      const balance = snap.data().balance;
+      console.log('✅ نقاط Firebase:', email, balance);
+      return balance || 0;
+    }
+    console.log('⚠️ لا توجد نقاط في Firebase لـ', email);
     return 0;
   } catch(e) {
+    console.warn('❌ خطأ Firebase points:', e);
     const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
     return saved[email] || 0;
   }
