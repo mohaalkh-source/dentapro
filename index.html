@@ -1548,6 +1548,12 @@ window._fbGetDoc  = getDoc;
         <button onclick="openAddProduct()" style="padding:9px 20px;border-radius:50px;background:#00c2a8;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
           <i class="fas fa-plus"></i> إضافة منتج
         </button>
+        <button onclick="openAddCategory()" style="padding:9px 20px;border-radius:50px;background:rgba(255,255,255,0.15);color:#fff;border:2px solid rgba(255,255,255,0.25);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
+          <i class="fas fa-folder-plus"></i> إضافة قسم
+        </button>
+        <button onclick="resetProducts()" style="padding:9px 20px;border-radius:50px;background:rgba(229,62,62,0.2);color:#fff;border:2px solid rgba(229,62,62,0.4);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(229,62,62,0.35)'" onmouseout="this.style.background='rgba(229,62,62,0.2)'" title="إعادة تعيين المنتجات للبيانات الأصلية">
+          <i class="fas fa-undo"></i> إعادة تعيين
+        </button>
         <button onclick="closeAdmin()" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;border:2px solid rgba(255,255,255,0.2);cursor:pointer;font-size:15px">
           <i class="fas fa-times"></i>
         </button>
@@ -1829,8 +1835,63 @@ window._fbGetDoc  = getDoc;
     </div>
   </div>
 </div>
+<!-- ADD CATEGORY MODAL -->
+<div class="modal-overlay" id="addCategoryModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#1a1a2e,#2d3561)">
+      <div class="modal-title" id="catFormTitle"><i class="fas fa-folder-plus"></i> إضافة قسم جديد</div>
+      <button class="close-btn" onclick="closeAddCategory()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="editCatId">
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">اسم القسم بالعربي <span class="required">*</span></label>
+          <input type="text" class="form-input" id="catNameAr" placeholder="مثال: التخدير">
+        </div>
+        <div class="form-group">
+          <label class="form-label">اسم القسم بالإنجليزي <span class="required">*</span></label>
+          <input type="text" class="form-input" id="catNameEn" placeholder="e.g. Anesthesia">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">الأيقونة (Emoji) <span class="required">*</span></label>
+          <input type="text" class="form-input" id="catIcon" placeholder="💉" maxlength="4">
+        </div>
+        <div class="form-group">
+          <label class="form-label">المعرّف (ID) <span class="required">*</span></label>
+          <input type="text" class="form-input" id="catId" placeholder="مثال: anes" maxlength="10">
+          <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
+            <i class="fas fa-info-circle"></i> حروف إنجليزية صغيرة فقط بدون مسافات
+          </div>
+        </div>
+      </div>
+      <div id="catFormError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;
+           padding:10px 14px;background:#fff5f5;border-radius:8px;margin-top:8px">
+        <i class="fas fa-exclamation-circle"></i>
+        <span id="catFormErrorMsg">يرجى ملء جميع الحقول المطلوبة</span>
+      </div>
+
+      <!-- قائمة الأقسام الحالية -->
+      <div style="margin-top:24px">
+        <div style="font-weight:800;font-size:14px;color:var(--primary-dark);margin-bottom:12px;
+                    display:flex;align-items:center;gap:8px">
+          <i class="fas fa-list" style="color:var(--primary-light)"></i> الأقسام الحالية
+        </div>
+        <div id="catCurrentList" style="display:flex;flex-direction:column;gap:8px"></div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeAddCategory()"><i class="fas fa-times"></i> إلغاء</button>
+      <button class="btn-submit" onclick="saveCategory()"><i class="fas fa-save"></i> حفظ القسم</button>
+    </div>
+  </div>
+</div>
+
 <!-- DELETE CONFIRM MODAL -->
 <div class="modal-overlay" id="deleteConfirmModal">
+="deleteConfirmModal">
   <div class="modal" style="max-width:400px">
     <div class="modal-header" style="background:linear-gradient(135deg,#c53030,#e53e3e)">
       <div class="modal-title"><i class="fas fa-trash-alt"></i> تأكيد الحذف</div>
@@ -1867,7 +1928,7 @@ const categories = [
   {id:'home',  icon:'🌟', ar:'العناية المنزلية',     en:'Home Care'},
 ];
 
-const products = [
+const DEFAULT_PRODUCTS = [
   {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً'},
   {id:2,  cat:'dev',   icon:'📡', brand:'PLANMECA',   ar:'جهاز أشعة بانورامي ProMax',              en:'ProMax Panoramic X-Ray',                  price:32000, old:38000, desc_ar:'أشعة رقمية عالية الدقة بدون فيلم',         desc_en:'Digital high-resolution filmless X-ray',        badge:'جديد'},
   {id:3,  cat:'dev',   icon:'⚡', brand:'SIRONA',     ar:'جهاز الأوتوكلاف DAC Premium',            en:'DAC Premium Autoclave',                   price:8900,  old:null,  desc_ar:'تعقيم بالبخار 17 لتر معتمد Class B',      desc_en:'17L Class B steam sterilizer',                  badge:null},
@@ -1885,6 +1946,37 @@ const products = [
   {id:15, cat:'dev',   icon:'📷', brand:'CARESTREAM', ar:'كاميرا داخل الفم CS 1500',              en:'CS 1500 Intraoral Camera',                price:4200,  old:5100,  desc_ar:'كاميرا HD لاسلكية مع برنامج متكامل',       desc_en:'Wireless HD camera with integrated software',   badge:'جديد'},
   {id:16, cat:'mat',   icon:'🩺', brand:'SEPTODONT',  ar:'تخدير موضعي Articaine 4%',              en:'Articaine 4% Local Anesthesia',           price:95,    old:null,  desc_ar:'أمبولات 1.7ml صندوق 50 أمبولة',            desc_en:'1.7ml cartridges, box of 50',                   badge:null},
 ];
+
+function loadProducts() {
+  try {
+    const saved = localStorage.getItem('dentapro_products');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return DEFAULT_PRODUCTS.map(p => ({...p}));
+}
+
+function saveProducts() {
+  try {
+    localStorage.setItem('dentapro_products', JSON.stringify(products));
+  } catch(e) {
+    console.warn('localStorage full:', e);
+  }
+}
+
+function resetProducts() {
+  if (!confirm('هل أنت متأكد؟ سيتم حذف جميع التعديلات والعودة للمنتجات الأصلية.')) return;
+  localStorage.removeItem('dentapro_products');
+  products.length = 0;
+  DEFAULT_PRODUCTS.forEach(p => products.push({...p}));
+  saveProducts();
+  updateAdminStats();
+  renderAdminTable();
+  renderProducts();
+  renderCategories();
+  showToast('✅ تم إعادة تعيين المنتجات بنجاح', 'success');
+}
+
+let products = loadProducts();
 
 // =====================
 // STATE
@@ -1999,6 +2091,16 @@ function renderProducts() {
           <span>(${20 + (p.id * 17 % 80)})</span>
         </div>
         <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
+        ${p.points ? `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;
+                    padding:6px 12px;border-radius:50px;
+                    background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(245,158,11,0.05));
+                    border:1.5px solid rgba(245,158,11,0.35);width:fit-content">
+          <span style="font-size:14px">🏆</span>
+          <span style="font-size:12px;font-weight:800;color:#d97706">
+            ${p.points} ${t('نقطة للشراء','pts to buy')}
+          </span>
+        </div>` : ''}
         <div class="product-price-row">
           <div>
             <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
@@ -2171,56 +2273,104 @@ async function renderConfirmDetails() {
   const notes = document.getElementById('orderNotes').value;
 
   const totalPoints = cart.reduce((s, i) => s + ((i.points || 0) * i.qty), 0);
+  const hasAnyPoints = cart.some(i => i.points > 0);
 
   let clientPoints = 0;
   if (currentUser && currentUser.role === 'client') {
     clientPoints = await getClientPoints(currentUser.email);
   }
 
-  const canPayPoints = (currentUser?.role === 'client') && totalPoints > 0 && clientPoints >= totalPoints;
-  const hasPoints    = (currentUser?.role === 'client') && totalPoints > 0;
+  const isClient     = currentUser?.role === 'client';
+  const canPayPoints = isClient && totalPoints > 0 && clientPoints >= totalPoints;
+  const hasPoints    = isClient && totalPoints > 0;
+  const someNoPoints = isClient && hasAnyPoints && cart.some(i => !i.points || i.points === 0);
+
+  // إذا اختار الدفع بالنقاط وتغيرت المنتجات نعيد لدفع بالمال
+  if (window._selectedPayMethod === 'points' && !canPayPoints) {
+    window._selectedPayMethod = 'money';
+  }
 
   div.innerHTML = `
-    <div class="summary-item"><span>🏥 ${t('العيادة','Clinic')}</span><span>${document.getElementById('clinicName').value}</span></div>
-    <div class="summary-item"><span>👨‍⚕️ ${t('الطبيب','Doctor')}</span><span>${document.getElementById('doctorName').value}</span></div>
-    <div class="summary-item"><span>📞 ${t('الهاتف','Phone')}</span><span>${document.getElementById('countryCode').value} ${document.getElementById('phoneNumber').value}</span></div>
-    <div class="summary-item"><span>📍 ${t('الموقع','Location')}</span><span style="max-width:200px;text-align:left">${locationData.address || document.getElementById('addressInput').value}</span></div>
-    ${notes ? `<div class="summary-item"><span>🗒️ ${t('ملاحظات','Notes')}</span><span style="max-width:200px">${notes}</span></div>` : ''}
-    <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
-      <span>${t('إجمالي الطلب','Order Total')}</span>
-      <span>${getTotal().toLocaleString()} ${t('د.أ','SAR')}</span>
+    <div class="summary-item"><span>🏥 ${t('العيادة','Clinic')}</span><span>${escHtml(document.getElementById('clinicName').value)}</span></div>
+    <div class="summary-item"><span>👨‍⚕️ ${t('الطبيب','Doctor')}</span><span>${escHtml(document.getElementById('doctorName').value)}</span></div>
+    <div class="summary-item"><span>📞 ${t('الهاتف','Phone')}</span><span>${document.getElementById('countryCode').value} ${escHtml(document.getElementById('phoneNumber').value)}</span></div>
+    <div class="summary-item"><span>📍 ${t('الموقع','Location')}</span><span style="max-width:200px;text-align:left">${escHtml(locationData.address || document.getElementById('addressInput').value)}</span></div>
+    ${notes ? `<div class="summary-item"><span>🗒️ ${t('ملاحظات','Notes')}</span><span style="max-width:200px">${escHtml(notes)}</span></div>` : ''}
+
+    <!-- ملخص المنتجات مع النقاط -->
+    <div style="margin:12px 0;background:#f8fbfd;border-radius:10px;padding:12px">
+      ${cart.map(i => `
+        <div style="display:flex;align-items:center;justify-content:space-between;
+                    padding:6px 0;border-bottom:1px dashed var(--border);font-size:13px">
+          <span>${i.icon} ${currentLang==='en'?i.en:i.ar} × ${i.qty}</span>
+          <div style="text-align:left">
+            <div style="font-weight:800;color:var(--primary)">${(i.price*i.qty).toLocaleString()} ${t('د.أ','SAR')}</div>
+            ${i.points ? `<div style="font-size:11px;color:#d97706;font-weight:700">🏆 ${i.points * i.qty} نقطة</div>` : ''}
+          </div>
+        </div>`).join('')}
+      <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:15px;color:var(--primary)">
+        <span>${t('الإجمالي','Total')}</span>
+        <div style="text-align:left">
+          <div>${getTotal().toLocaleString()} ${t('د.أ','SAR')}</div>
+          ${totalPoints > 0 ? `<div style="font-size:12px;color:#d97706;font-weight:700">🏆 ${totalPoints} نقطة مطلوبة</div>` : ''}
+        </div>
+      </div>
     </div>
 
-    ${hasPoints ? `
+    <!-- طريقة الدفع -->
     <div style="margin-top:20px">
       <div style="font-weight:800;font-size:14px;color:var(--primary-dark);margin-bottom:12px">
         <i class="fas fa-credit-card" style="color:var(--primary-light)"></i>
-        طريقة الدفع
+        ${t('طريقة الدفع','Payment Method')}
       </div>
+
+      ${isClient ? `
       <div class="points-balance-box">
-        <span class="points-balance-label">🏆 رصيد نقاطك</span>
-        <span class="points-balance-num">${clientPoints} نقطة</span>
-      </div>
+        <span class="points-balance-label">🏆 ${t('رصيد نقاطك','Your Points Balance')}</span>
+        <span class="points-balance-num">${clientPoints} ${t('نقطة','pts')}</span>
+      </div>` : ''}
+
       <div class="pay-method-wrap">
         <button class="pay-method-btn ${window._selectedPayMethod==='money'?'active':''}"
           onclick="selectPayMethod('money')">
           <span class="pay-method-icon">💵</span>
-          <div class="pay-method-label">الدفع بالمال</div>
-          <div class="pay-method-sub">${getTotal().toLocaleString()} د.أ</div>
+          <div class="pay-method-label">${t('الدفع بالمال','Pay with Money')}</div>
+          <div class="pay-method-sub">${getTotal().toLocaleString()} ${t('د.أ','SAR')}</div>
         </button>
-        <button class="pay-method-btn points-btn ${window._selectedPayMethod==='points'?'active':''} ${!canPayPoints?'disabled':''}"
-          onclick="${canPayPoints ? "selectPayMethod('points')" : ''}">
+
+        ${isClient && hasPoints ? `
+        <button class="pay-method-btn points-btn
+          ${window._selectedPayMethod==='points'?'active':''}
+          ${!canPayPoints?'disabled':''}"
+          onclick="${canPayPoints ? "selectPayMethod('points')" : 'void(0)'}">
           <span class="pay-method-icon">🏆</span>
-          <div class="pay-method-label">الدفع بالنقاط</div>
-          <div class="pay-method-sub">${totalPoints} نقطة مطلوبة</div>
-        </button>
+          <div class="pay-method-label">${t('الدفع بالنقاط','Pay with Points')}</div>
+          <div class="pay-method-sub">${totalPoints} ${t('نقطة مطلوبة','pts needed')}</div>
+        </button>` : ''}
       </div>
-      ${!canPayPoints ? `
+
+      ${isClient && hasPoints && !canPayPoints ? `
       <div class="points-insufficient">
         <i class="fas fa-exclamation-circle"></i>
-        نقاطك (${clientPoints}) أقل من المطلوب (${totalPoints} نقطة)
+        ${t('نقاطك','Your points')} (${clientPoints}) ${t('أقل من المطلوب','less than required')} (${totalPoints} ${t('نقطة','pts')})
       </div>` : ''}
-    </div>` : ''}`;
+
+      ${isClient && window._selectedPayMethod === 'points' && someNoPoints ? `
+      <div style="margin-top:10px;padding:10px 14px;background:#fffbeb;border:1.5px solid #f59e0b;
+                  border-radius:var(--radius-sm);font-size:13px;color:#92400e;font-weight:600;
+                  display:flex;align-items:center;gap:8px">
+        <i class="fas fa-info-circle"></i>
+        ${t('بعض المنتجات في سلتك لا تدعم الشراء بالنقاط','Some cart items do not support points payment')}
+      </div>` : ''}
+
+      ${!isClient ? `
+      <div style="padding:12px 14px;background:#f0f8ff;border-radius:var(--radius-sm);
+                  font-size:13px;color:var(--primary);font-weight:600;
+                  display:flex;align-items:center;gap:8px;border:1.5px solid var(--border)">
+        <i class="fas fa-info-circle"></i>
+        ${t('سجّل دخولك للاستفادة من نظام النقاط','Login to use the points system')}
+      </div>` : ''}
+    </div>`;
 }
 
 function selectPayMethod(method) {
@@ -2421,6 +2571,134 @@ function sendWhatsApp() {
   );
   window.open(`https://wa.me/966500000000?text=${msg}`, '_blank');
 }
+// =====================
+// CATEGORY MANAGEMENT
+// =====================
+function openAddCategory() {
+  document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-folder-plus"></i> إضافة قسم جديد';
+  document.getElementById('catNameAr').value = '';
+  document.getElementById('catNameEn').value = '';
+  document.getElementById('catIcon').value   = '';
+  document.getElementById('catId').value     = '';
+  document.getElementById('catId').disabled  = false;
+  document.getElementById('editCatId').value = '';
+  document.getElementById('catFormError').style.display = 'none';
+  renderCurrentCatList();
+  document.getElementById('addCategoryModal').classList.add('open');
+}
+
+function closeAddCategory() {
+  document.getElementById('addCategoryModal').classList.remove('open');
+}
+
+function renderCurrentCatList() {
+  const list = document.getElementById('catCurrentList');
+  // استثنِ "الكل"
+  const filtered = categories.filter(c => c.id !== 'all');
+  if (!filtered.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:12px">لا توجد أقسام</div>`;
+    return;
+  }
+  list.innerHTML = filtered.map(c => `
+    <div style="display:flex;align-items:center;justify-content:space-between;
+                padding:10px 14px;background:#f8fbfd;border-radius:10px;
+                border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-size:22px">${c.icon}</span>
+        <div>
+          <div style="font-weight:700;font-size:13px;color:var(--primary-dark)">${c.ar}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${c.en} · ID: ${c.id}</div>
+        </div>
+      </div>
+      <div style="display:flex;gap:6px">
+        <button onclick="editCategory('${c.id}')"
+          style="padding:5px 12px;border-radius:50px;background:#e8f3fb;color:var(--primary);
+                 border:none;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="deleteCategory('${c.id}')"
+          style="padding:5px 12px;border-radius:50px;background:#fff5f5;color:var(--danger);
+                 border:none;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>
+    </div>`).join('');
+}
+
+function editCategory(id) {
+  const c = categories.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل القسم';
+  document.getElementById('catNameAr').value = c.ar;
+  document.getElementById('catNameEn').value = c.en;
+  document.getElementById('catIcon').value   = c.icon;
+  document.getElementById('catId').value     = c.id;
+  document.getElementById('catId').disabled  = true;
+  document.getElementById('editCatId').value = c.id;
+  document.getElementById('catFormError').style.display = 'none';
+}
+
+function deleteCategory(id) {
+  const inUse = products.some(p => p.cat === id);
+  if (inUse) {
+    document.getElementById('catFormErrorMsg').textContent = 'لا يمكن حذف قسم يحتوي على منتجات';
+    document.getElementById('catFormError').style.display = 'flex';
+    return;
+  }
+  const idx = categories.findIndex(c => c.id === id);
+  if (idx !== -1) categories.splice(idx, 1);
+  renderCurrentCatList();
+  renderCategories();
+  showToast('🗑️ تم حذف القسم بنجاح', 'success');
+}
+
+function saveCategory() {
+  const ar   = document.getElementById('catNameAr').value.trim();
+  const en   = document.getElementById('catNameEn').value.trim();
+  const icon = document.getElementById('catIcon').value.trim();
+  const id   = document.getElementById('catId').value.trim().toLowerCase().replace(/\s/g,'');
+  const editId = document.getElementById('editCatId').value;
+
+  const showErr = (msg) => {
+    document.getElementById('catFormErrorMsg').textContent = msg;
+    document.getElementById('catFormError').style.display = 'flex';
+  };
+
+  if (!ar || !en || !icon || !id) return showErr('يرجى ملء جميع الحقول المطلوبة');
+  if (!/^[a-z0-9]+$/.test(id)) return showErr('المعرّف يجب أن يحتوي على حروف إنجليزية صغيرة وأرقام فقط');
+
+  if (editId) {
+    // تعديل
+    const idx = categories.findIndex(c => c.id === editId);
+    if (idx !== -1) { categories[idx] = { ...categories[idx], ar, en, icon }; }
+    showToast('✅ تم تعديل القسم بنجاح', 'success');
+  } else {
+    // إضافة
+    if (categories.find(c => c.id === id)) return showErr('هذا المعرّف مستخدم مسبقاً');
+    categories.push({ id, icon, ar, en });
+    // أضف خيار القسم الجديد في select المنتج
+    const pCat   = document.getElementById('pCat');
+    const aCat   = document.getElementById('adminCatFilter');
+    const newOpt = new Option(ar, id);
+    pCat.add(newOpt.cloneNode(true));
+    aCat.add(new Option(ar, id));
+    showToast('✅ تم إضافة القسم بنجاح', 'success');
+  }
+
+  document.getElementById('catFormError').style.display = 'none';
+  document.getElementById('editCatId').value = '';
+  document.getElementById('catId').disabled  = false;
+  document.getElementById('catNameAr').value = '';
+  document.getElementById('catNameEn').value = '';
+  document.getElementById('catIcon').value   = '';
+  document.getElementById('catId').value     = '';
+  document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-folder-plus"></i> إضافة قسم جديد';
+
+  renderCurrentCatList();
+  renderCategories();
+  renderProducts();
+}
+
 // =====================
 // XSS PROTECTION
 // =====================
@@ -2745,6 +3023,7 @@ function renderAdminTable() {
           <div>
             <div style="font-weight:700;font-size:14px;color:#0f2133">${p.ar}</div>
             <div style="font-size:12px;color:#5a7a90">${p.brand} · ${p.en.substring(0,30)}${p.en.length>30?'...':''}</div>
+            ${p.points ? `<div style="margin-top:4px"><span style="background:rgba(245,158,11,0.15);color:#d97706;border-radius:50px;padding:2px 10px;font-size:11px;font-weight:800">🏆 ${p.points} نقطة</span></div>` : ''}
           </div>
         </div>
       </td>
@@ -2916,6 +3195,7 @@ function saveProduct() {
     showToast('✅ تم إضافة المنتج بنجاح', 'success');
   }
 
+  saveProducts();
   closeProductForm();
   updateAdminStats();
   renderAdminTable();
@@ -2940,6 +3220,7 @@ function confirmDelete() {
   const idx = products.findIndex(x => x.id === deleteTargetId);
   if (idx !== -1) products.splice(idx, 1);
   cart = cart.filter(x => x.id !== deleteTargetId);
+  saveProducts();
   closeDeleteConfirm();
   updateAdminStats();
   renderAdminTable();
@@ -2991,6 +3272,55 @@ async function renderPointsInHeader() {
   if (chip) {
     chip.innerHTML = `عميل &nbsp;|&nbsp; <span style="color:#d97706;font-weight:800">🏆 ${balance} نقطة</span>`;
   }
+
+  // إظهار بطاقة النقاط في صفحة طلباتي
+  const existing = document.getElementById('clientPointsCard');
+  if (existing) { existing.remove(); }
+
+  const ordersPage = document.getElementById('ordersPage');
+  if (!ordersPage || !ordersPage.classList.contains('active')) return;
+
+  const card = document.createElement('div');
+  card.id = 'clientPointsCard';
+  card.style.cssText = `
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border: 2px solid #f59e0b;
+    border-radius: 18px;
+    padding: 22px 28px;
+    margin-bottom: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 16px;
+    box-shadow: 0 4px 16px rgba(245,158,11,0.15);
+  `;
+  card.innerHTML = `
+    <div style="display:flex;align-items:center;gap:16px">
+      <div style="width:56px;height:56px;border-radius:50%;
+                  background:linear-gradient(135deg,#f59e0b,#d97706);
+                  display:flex;align-items:center;justify-content:center;
+                  font-size:26px;box-shadow:0 4px 12px rgba(245,158,11,0.35)">🏆</div>
+      <div>
+        <div style="font-size:13px;color:#92400e;font-weight:600;margin-bottom:4px">رصيد نقاطك الحالي</div>
+        <div style="font-size:30px;font-weight:900;color:#d97706;line-height:1">${balance} <span style="font-size:15px;font-weight:600">نقطة</span></div>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div style="font-size:12px;color:#92400e;font-weight:600;margin-bottom:6px">يمكنك استخدام نقاطك عند الشراء</div>
+      <button onclick="showPage('home')" class="btn-primary" style="padding:10px 24px;font-size:13px">
+        <i class="fas fa-shopping-cart"></i> تسوّق الآن
+      </button>
+    </div>
+  `;
+
+  const ordersInner = ordersPage.querySelector('.orders-page');
+  const firstChild  = ordersInner?.querySelector('[style*="display:flex"]');
+  if (firstChild) {
+    ordersInner.insertBefore(card, firstChild.nextSibling);
+  } else if (ordersInner) {
+    ordersInner.appendChild(card);
+  }
 }
 
 // ── ADMIN: عرض قائمة العملاء ونقاطهم ──
@@ -3033,9 +3363,14 @@ async function renderAdminPoints() {
             </div>
           </div>
         </div>
-        <button class="add-points-btn" onclick="openAddPointsModal('${u.email}','${u.firstName}','${u.clinic}',${u.balance})">
-          <i class="fas fa-plus"></i> إضافة نقاط
-        </button>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="add-points-btn" onclick="openAddPointsModal('${u.email}','${u.firstName}','${u.clinic}',${u.balance},'add')">
+            <i class="fas fa-plus"></i> إضافة نقاط
+          </button>
+          <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);box-shadow:0 2px 8px rgba(229,62,62,0.3)" onclick="openAddPointsModal('${u.email}','${u.firstName}','${u.clinic}',${u.balance},'deduct')">
+            <i class="fas fa-minus"></i> تنقيص نقاط
+          </button>
+        </div>
       </div>
     `).join('');
 
@@ -3045,7 +3380,8 @@ async function renderAdminPoints() {
   }
 }
 
-function openAddPointsModal(email, name, clinic, currentBalance) {
+function openAddPointsModal(email, name, clinic, currentBalance, mode = 'add') {
+  window._pointsMode = mode;
   document.getElementById('pointsTargetEmail').value = email;
   document.getElementById('pointsTargetName').textContent = `${name} — ${clinic}`;
   document.getElementById('pointsTargetEmail2').textContent = email;
@@ -3053,6 +3389,18 @@ function openAddPointsModal(email, name, clinic, currentBalance) {
   document.getElementById('pointsAmount').value = '';
   document.getElementById('pointsReason').value = '';
   document.getElementById('pointsModalError').style.display = 'none';
+
+  const modalHeader = document.querySelector('#addPointsModal .modal-header');
+  const modalTitle  = document.querySelector('#addPointsModal .modal-title');
+  if (mode === 'deduct') {
+    modalHeader.style.background = 'linear-gradient(135deg,#c53030,#e53e3e)';
+    modalTitle.innerHTML = '<i class="fas fa-minus-circle"></i> تنقيص نقاط من العميل';
+    document.getElementById('pointsAmount').placeholder = 'عدد النقاط المخصومة';
+  } else {
+    modalHeader.style.background = 'linear-gradient(135deg,#d97706,#f59e0b)';
+    modalTitle.innerHTML = '<i class="fas fa-star"></i> إضافة نقاط للعميل';
+    document.getElementById('pointsAmount').placeholder = 'مثال: 100';
+  }
   document.getElementById('addPointsModal').classList.add('open');
 }
 
@@ -3063,7 +3411,9 @@ function closeAddPointsModal() {
 async function confirmAddPoints() {
   const email   = document.getElementById('pointsTargetEmail').value;
   const amount  = parseInt(document.getElementById('pointsAmount').value);
-  const reason  = document.getElementById('pointsReason').value.trim() || 'إضافة يدوية من الأدمن';
+  const mode    = window._pointsMode || 'add';
+  const defaultReason = mode === 'deduct' ? 'خصم يدوي من الأدمن' : 'إضافة يدوية من الأدمن';
+  const reason  = document.getElementById('pointsReason').value.trim() || defaultReason;
 
   if (!amount || amount < 1) {
     document.getElementById('pointsModalError').style.display = 'flex';
@@ -3072,10 +3422,18 @@ async function confirmAddPoints() {
   document.getElementById('pointsModalError').style.display = 'none';
 
   const currentBalance = await getClientPoints(email);
-  const newBalance = currentBalance + amount;
+
+  if (mode === 'deduct' && amount > currentBalance) {
+    document.getElementById('pointsModalError').style.display = 'flex';
+    document.getElementById('pointsModalError').innerHTML =
+      '<i class="fas fa-exclamation-circle"></i> لا يمكن خصم أكثر من الرصيد الحالي (' + currentBalance + ' نقطة)';
+    return;
+  }
+
+  const newBalance = mode === 'deduct' ? currentBalance - amount : currentBalance + amount;
 
   const log = {
-    type: 'add',
+    type: mode === 'deduct' ? 'deduct' : 'add',
     amount,
     reason,
     balance: newBalance,
@@ -3085,7 +3443,12 @@ async function confirmAddPoints() {
 
   await saveClientPoints(email, newBalance, log);
   closeAddPointsModal();
-  showToast(`✅ تم إضافة ${amount} نقطة بنجاح`, 'success');
+  showToast(
+    mode === 'deduct'
+      ? `✅ تم خصم ${amount} نقطة بنجاح`
+      : `✅ تم إضافة ${amount} نقطة بنجاح`,
+    'success'
+  );
   renderAdminPoints();
 }
 // =====================
@@ -3138,6 +3501,7 @@ function openClientOrders() {
   if (!currentUser) { openAuthModal('login'); return; }
   showPage('orders');
   renderClientOrders();
+  renderPointsInHeader();
 }
 async function renderClientOrders() {
   const container = document.getElementById('clientOrdersList');
