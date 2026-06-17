@@ -1958,11 +1958,8 @@ async function loadCategoriesFromFirebase() {
         renderProducts();
         console.log('✅ تم تحميل الأقسام من Firebase:', categories.length);
       }
-    } else {
-      // لا توجد بيانات في Firebase — ارفع البيانات المحلية
-      console.log('⬆️ رفع الأقسام المحلية إلى Firebase...');
-      await saveCategories();
     }
+    // لا نرفع تلقائياً أي شيء؛ فقط نقرأ. الكتابة تتم فقط عند تعديل فعلي من الأدمن.
   } catch(e) {
     console.warn('Firebase loadCategories:', e.message);
   }
@@ -2044,11 +2041,8 @@ async function loadProductsFromFirebase() {
         }
         console.log('✅ تم تحميل المنتجات من Firebase:', products.length);
       }
-    } else {
-      // لا توجد بيانات في Firebase — ارفع البيانات المحلية
-      console.log('⬆️ رفع المنتجات المحلية إلى Firebase...');
-      await saveProducts();
     }
+    // لا نرفع تلقائياً أي شيء؛ فقط نقرأ. الكتابة تتم فقط عند تعديل فعلي من الأدمن.
   } catch(e) {
     console.warn('Firebase loadProducts:', e.message);
   }
