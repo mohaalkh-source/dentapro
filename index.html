@@ -2868,7 +2868,6 @@ function showPage(page) {
 // =====================
 // AUTH SYSTEM
 // =====================
-const ADMIN_CREDENTIALS = { email: ADMIN_EMAIL, role: 'admin', name: 'المدير' };
 let currentUser = null;
 
 // مراقب حالة الجلسة - Firebase Auth
@@ -2971,7 +2970,7 @@ function switchAuthTab(tab) {
   document.getElementById('authRegisterForm').style.display = tab === 'register' ? 'block' : 'none';
   document.getElementById('authModalTitle').textContent = tab === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
 }
-
+const ADMIN_CREDENTIALS = { email: ADMIN_EMAIL, role: 'admin', name: 'المدير' };
 const ADMIN_EMAIL = 'moh.a.alkh@gmail.com';
 
 async function doLogin() {
