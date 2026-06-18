@@ -4163,8 +4163,7 @@ async function saveProfile() {
     if (currentUser.uid && window._fbDoc2 && window._fbSetDoc) {
       await window._fbSetDoc(
         window._fbDoc2('users', currentUser.uid),
-        { firstName: name, clinic, phone, email: currentUser.email, role: 'client' },
-        { merge: true }
+        { firstName: name, clinic, phone, email: currentUser.email, role: 'client', updatedAt: new Date().toISOString() }
       );
     }
     // حفظ محلي
