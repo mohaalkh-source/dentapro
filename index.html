@@ -1204,6 +1204,32 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 
       <!-- STEP 2: Customer Info -->
       <div id="modalStep2" style="display:none">
+        <div id="autoFillBanner" style="display:none;margin-bottom:16px;padding:12px 16px;
+          background:linear-gradient(135deg,rgba(0,194,168,0.1),rgba(10,92,138,0.06));
+          border:1.5px solid rgba(0,194,168,0.4);border-radius:12px;
+          display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap">
+          <div style="display:flex;align-items:center;gap:10px">
+            <i class="fas fa-magic" style="color:var(--accent);font-size:18px"></i>
+            <div>
+              <div style="font-weight:700;font-size:13px;color:var(--primary-dark)">ملء تلقائي من ملفك الشخصي</div>
+              <div style="font-size:12px;color:var(--text-muted)">اضغط لملء البيانات تلقائياً</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap">
+            <button onclick="autoFillFromProfile()" style="padding:8px 18px;border-radius:50px;
+              background:linear-gradient(135deg,var(--accent),#00a896);color:#fff;border:none;
+              font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+              display:flex;align-items:center;gap:6px">
+              <i class="fas fa-magic"></i> ملء تلقائي
+            </button>
+            <button onclick="openEditProfile()" style="padding:8px 18px;border-radius:50px;
+              background:transparent;color:var(--primary);border:2px solid var(--border);
+              font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
+              display:flex;align-items:center;gap:6px">
+              <i class="fas fa-user-edit"></i> تعديل الملف
+            </button>
+          </div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label"><i class="fas fa-hospital" style="color:var(--primary-light)"></i> <span data-ar="اسم العيادة / المنشأة" data-en="Clinic / Business Name">اسم العيادة / المنشأة</span> <span class="required">*</span></label>
@@ -2373,6 +2399,10 @@ function renderModalStep() {
   document.getElementById('btnSubmit').style.display = currentStep === 4 ? 'flex' : 'none';
 
   if (currentStep === 1) renderModalSummary();
+  if (currentStep === 2) {
+    const banner = document.getElementById('autoFillBanner');
+    if (banner) banner.style.display = (currentUser && currentUser.role === 'client') ? 'flex' : 'none';
+  }
   if (currentStep === 4) renderConfirmDetails();
 }
 
@@ -3559,9 +3589,21 @@ async function renderAdminPoints() {
       <div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>
       جاري تحميل العملاء...
     </div>`;
-
   try {
-    const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+    // جلب العملاء من Firestore مباشرة
+    for (let i = 0; i < 20; i++) {
+      if (window._fbCollection && window._fbGetDocs) break;
+      await new Promise(r => setTimeout(r, 300));
+    }
+    const usersSnap = await window._fbGetDocs(window._fbCollection(window._db, 'users'));
+    let users = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() }))
+      .filter(u => u.role === 'client');
+
+    // دمج مع localStorage للمستخدمين القدامى
+    const localUsers = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+    localUsers.forEach(lu => {
+      if (!users.find(u => u.email === lu.email)) users.push(lu);
+    });
 
     if (!users.length) {
       container.innerHTML = `
@@ -3572,31 +3614,51 @@ async function renderAdminPoints() {
       return;
     }
 
-    const usersWithPoints = await Promise.all(users.map(async u => ({
-      ...u,
-      balance: await getClientPoints(u.email)
-    })));
+    // جلب الطلبات لحساب إجمالي المشتريات
+    const ordersSnap = await window._fbGetDocs(window._fbOrdersRef());
+    const allOrders  = ordersSnap.docs.map(d => d.data());
 
-    container.innerHTML = usersWithPoints.map(u => `
+    const usersWithData = await Promise.all(users.map(async u => {
+      const balance    = await getClientPoints(u.email);
+      const userOrders = allOrders.filter(o => o.clientEmail === u.email);
+      const totalSpent = userOrders.reduce((s, o) => s + (o.total || 0), 0);
+      return { ...u, balance, orderCount: userOrders.length, totalSpent };
+    }));
+
+    container.innerHTML = usersWithData.map(u => `
       <div class="points-admin-card">
-        <div style="display:flex;align-items:center;gap:14px">
-          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;flex-shrink:0">
-            ${u.firstName.charAt(0)}
+        <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
+          <div style="width:44px;height:44px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));
+            display:flex;align-items:center;justify-content:center;color:#fff;font-size:18px;font-weight:800;flex-shrink:0">
+            ${(u.firstName||u.name||'؟').charAt(0)}
           </div>
-          <div>
-            <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">${u.firstName}</div>
-            <div style="font-size:12px;color:var(--text-muted)">${u.clinic} · ${u.email}</div>
-            <div style="margin-top:6px">
+          <div style="flex:1;min-width:0">
+            <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">${u.firstName || u.name || 'عميل'}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${u.clinic || ''} · ${u.email}</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center">
               <span class="points-badge"><i class="fas fa-star"></i> ${u.balance} نقطة</span>
+              <span style="font-size:12px;color:var(--text-muted)">
+                <i class="fas fa-shopping-bag" style="color:var(--primary-light)"></i> ${u.orderCount} طلب
+              </span>
+              <span style="font-size:12px;font-weight:800;color:var(--primary)">
+                ${u.totalSpent.toLocaleString()} د.أ
+              </span>
             </div>
           </div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="add-points-btn" onclick="openAddPointsModal('${u.email}','${u.firstName}','${u.clinic}',${u.balance},'add')">
-            <i class="fas fa-plus"></i> إضافة نقاط
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+          <button onclick="showClientRecord('${u.email}')"
+            style="padding:8px 16px;border-radius:50px;background:#e8f3fb;color:var(--primary);
+            border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
+            display:flex;align-items:center;gap:5px">
+            <i class="fas fa-folder-open"></i> السجل
           </button>
-          <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);box-shadow:0 2px 8px rgba(229,62,62,0.3)" onclick="openAddPointsModal('${u.email}','${u.firstName}','${u.clinic}',${u.balance},'deduct')">
-            <i class="fas fa-minus"></i> تنقيص نقاط
+          <button class="add-points-btn" onclick="openAddPointsModal('${u.email}','${u.firstName||u.name||'عميل'}','${u.clinic||''}',${u.balance},'add')">
+            <i class="fas fa-plus"></i> نقاط
+          </button>
+          <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);box-shadow:0 2px 8px rgba(229,62,62,0.3)"
+            onclick="openAddPointsModal('${u.email}','${u.firstName||u.name||'عميل'}','${u.clinic||''}',${u.balance},'deduct')">
+            <i class="fas fa-minus"></i>
           </button>
         </div>
       </div>
@@ -3604,7 +3666,7 @@ async function renderAdminPoints() {
 
   } catch(e) {
     console.error(e);
-    container.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger)">خطأ في تحميل البيانات</div>`;
+    container.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger)">خطأ في تحميل البيانات: ${e.message}</div>`;
   }
 }
 
@@ -3740,6 +3802,12 @@ async function renderClientOrders() {
     </div>`;
 
   try {
+    // انتظر حتى يصبح Firebase جاهزاً
+    for (let i = 0; i < 30; i++) {
+      if (window._fbQuery && window._fbOrdersRef && window._fbGetDocs) break;
+      await new Promise(r => setTimeout(r, 300));
+    }
+    if (!window._fbQuery) throw new Error('Firebase غير جاهز');
     const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
     const snap = await window._fbGetDocs(q);
     let orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
@@ -4006,6 +4074,232 @@ function sendWhatsAppAdmin(orderId) {
   );
   const clean = order.phone.replace(/\D/g,'');
   window.open(`https://wa.me/${clean}?text=${msg}`, '_blank');
+}
+// =====================
+// AUTO FILL FROM PROFILE
+// =====================
+function autoFillFromProfile() {
+  if (!currentUser) return;
+  if (currentUser.clinic)  document.getElementById('clinicName').value  = currentUser.clinic;
+  if (currentUser.name)    document.getElementById('doctorName').value   = currentUser.name;
+  if (currentUser.phone)   document.getElementById('phoneNumber').value  = currentUser.phone.replace(/^\+\d+/, '');
+  // إزالة أي أخطاء تحقق
+  ['clinicName','doctorName','phoneNumber'].forEach(id => {
+    document.getElementById(id).classList.remove('error');
+  });
+  ['clinicNameError','doctorNameError','phoneError'].forEach(id => {
+    document.getElementById(id).classList.remove('show');
+  });
+  showToast('✅ تم ملء البيانات من ملفك الشخصي', 'success');
+}
+
+// =====================
+// EDIT PROFILE MODAL
+// =====================
+function openEditProfile() {
+  // أغلق modal الطلب مؤقتاً وافتح modal التعديل
+  const existing = document.getElementById('editProfileModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'editProfileModal';
+  modal.className = 'modal-overlay open';
+  modal.style.zIndex = '4000';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:460px">
+      <div class="modal-header" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary))">
+        <div class="modal-title"><i class="fas fa-user-edit"></i> تعديل الملف الشخصي</div>
+        <button class="close-btn" onclick="document.getElementById('editProfileModal').remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">الاسم <span class="required">*</span></label>
+            <input type="text" class="form-input" id="epName" value="${escHtml(currentUser.name||'')}" placeholder="اسمك">
+          </div>
+          <div class="form-group">
+            <label class="form-label">اسم العيادة <span class="required">*</span></label>
+            <input type="text" class="form-input" id="epClinic" value="${escHtml(currentUser.clinic||'')}" placeholder="عيادة...">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">رقم الهاتف</label>
+          <input type="tel" class="form-input" id="epPhone" value="${escHtml(currentUser.phone||'')}" placeholder="05xxxxxxxx">
+        </div>
+        <div id="epError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;
+          padding:10px;background:#fff5f5;border-radius:8px;margin-top:8px">
+          <i class="fas fa-exclamation-circle"></i> يرجى ملء الحقول المطلوبة
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between">
+        <button class="btn-back" onclick="document.getElementById('editProfileModal').remove()">
+          <i class="fas fa-times"></i> إلغاء
+        </button>
+        <button class="btn-submit" onclick="saveProfile()">
+          <i class="fas fa-save"></i> حفظ التعديلات
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function saveProfile() {
+  const name   = document.getElementById('epName').value.trim();
+  const clinic = document.getElementById('epClinic').value.trim();
+  const phone  = document.getElementById('epPhone').value.trim();
+  if (!name || !clinic) {
+    document.getElementById('epError').style.display = 'flex';
+    return;
+  }
+  currentUser.name   = name;
+  currentUser.clinic = clinic;
+  currentUser.phone  = phone;
+  localStorage.setItem('dentapro_session', JSON.stringify(currentUser));
+
+  // حفظ في Firestore
+  try {
+    if (currentUser.uid && window._fbDoc2 && window._fbSetDoc) {
+      await window._fbSetDoc(
+        window._fbDoc2('users', currentUser.uid),
+        { firstName: name, clinic, phone, email: currentUser.email, role: 'client' },
+        { merge: true }
+      );
+    }
+    // حفظ محلي
+    const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+    const idx = users.findIndex(u => u.email === currentUser.email);
+    if (idx !== -1) { users[idx] = { ...users[idx], firstName: name, clinic, phone }; }
+    else { users.push({ firstName: name, clinic, phone, email: currentUser.email }); }
+    localStorage.setItem('dentapro_users', JSON.stringify(users));
+  } catch(e) { console.warn('saveProfile Firebase:', e); }
+
+  document.getElementById('editProfileModal').remove();
+  renderAuthHeader();
+  showToast('✅ تم حفظ الملف الشخصي', 'success');
+}
+
+// =====================
+// CLIENT RECORD (ADMIN)
+// =====================
+async function showClientRecord(email) {
+  const existing = document.getElementById('clientRecordModal');
+  if (existing) existing.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'clientRecordModal';
+  modal.className = 'modal-overlay open';
+  modal.style.cssText = 'z-index:4000;align-items:flex-start;padding:20px;overflow-y:auto';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:620px">
+      <div class="modal-header" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary))">
+        <div class="modal-title"><i class="fas fa-folder-open"></i> سجل العميل</div>
+        <button class="close-btn" onclick="document.getElementById('clientRecordModal').remove()">
+          <i class="fas fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body" id="clientRecordBody">
+        <div style="text-align:center;padding:32px;color:var(--text-muted)">
+          <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>
+          جاري تحميل السجل...
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+
+  try {
+    // جلب بيانات العميل
+    const usersSnap = await window._fbGetDocs(window._fbCollection(window._db, 'users'));
+    const userDoc   = usersSnap.docs.map(d => ({ uid: d.id, ...d.data() })).find(u => u.email === email);
+    const localUsers = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+    const localUser  = localUsers.find(u => u.email === email);
+    const u = userDoc || localUser || { email, firstName: 'عميل', clinic: '', phone: '' };
+
+    // جلب طلباته
+    const ordersSnap = await window._fbGetDocs(window._fbOrdersRef());
+    const orders = ordersSnap.docs.map(d => d.data())
+      .filter(o => o.clientEmail === email)
+      .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+    const totalSpent  = orders.reduce((s, o) => s + (o.total || 0), 0);
+    const balance     = await getClientPoints(email);
+
+    document.getElementById('clientRecordBody').innerHTML = `
+      <!-- بطاقة العميل -->
+      <div style="display:flex;align-items:center;gap:16px;padding:16px;
+        background:linear-gradient(135deg,rgba(10,92,138,0.06),rgba(0,194,168,0.04));
+        border-radius:14px;border:1px solid var(--border);margin-bottom:20px">
+        <div style="width:56px;height:56px;border-radius:50%;
+          background:linear-gradient(135deg,var(--primary),var(--accent));
+          display:flex;align-items:center;justify-content:center;
+          color:#fff;font-size:24px;font-weight:900;flex-shrink:0">
+          ${(u.firstName||u.name||'؟').charAt(0)}
+        </div>
+        <div style="flex:1">
+          <div style="font-weight:900;font-size:16px;color:var(--primary-dark)">${u.firstName||u.name||'عميل'}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${u.clinic||''}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${u.email} ${u.phone ? '· '+u.phone : ''}</div>
+        </div>
+      </div>
+
+      <!-- إحصائيات -->
+      <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px">
+        <div style="background:#f0f8ff;border-radius:12px;padding:16px;text-align:center;border:1px solid #cce4f6">
+          <div style="font-size:24px;font-weight:900;color:var(--primary)">${orders.length}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">إجمالي الطلبات</div>
+        </div>
+        <div style="background:#f0fff4;border-radius:12px;padding:16px;text-align:center;border:1px solid #bbf7d0">
+          <div style="font-size:22px;font-weight:900;color:#15803d">${totalSpent.toLocaleString()}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">إجمالي المشتريات (د.أ)</div>
+        </div>
+        <div style="background:#fffbeb;border-radius:12px;padding:16px;text-align:center;border:1px solid #fde68a">
+          <div style="font-size:24px;font-weight:900;color:#d97706">${balance}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:4px">🏆 رصيد النقاط</div>
+        </div>
+      </div>
+
+      <!-- قائمة الطلبات -->
+      <div style="font-weight:800;font-size:14px;color:var(--primary-dark);margin-bottom:12px;
+        display:flex;align-items:center;gap:8px">
+        <i class="fas fa-history" style="color:var(--primary-light)"></i> سجل الطلبات
+      </div>
+      ${!orders.length ? `
+        <div style="text-align:center;padding:32px;color:var(--text-muted)">
+          <i class="fas fa-box-open" style="font-size:36px;opacity:0.2;display:block;margin-bottom:12px"></i>
+          لا توجد طلبات بعد
+        </div>` :
+        orders.map(o => {
+          const date = new Date(o.createdAt).toLocaleDateString('ar-SA',
+            { year:'numeric', month:'short', day:'numeric' });
+          const s = getStatusObj(o.status);
+          return `
+          <div style="padding:12px 14px;border-radius:12px;border:1px solid var(--border);
+            margin-bottom:8px;background:#fafcfe">
+            <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px">
+              <div>
+                <div style="font-weight:800;font-size:13px;color:var(--primary-dark)">#${o.id}</div>
+                <div style="font-size:11px;color:var(--text-muted);margin-top:2px">📅 ${date}</div>
+              </div>
+              <div style="display:flex;align-items:center;gap:10px">
+                <span class="status-badge ${s.class}"><i class="fas ${s.icon}"></i> ${s.label}</span>
+                <span style="font-weight:900;color:var(--primary);font-size:14px">
+                  ${o.total.toLocaleString()} د.أ
+                </span>
+              </div>
+            </div>
+            <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">
+              ${o.items.map(i => `${i.icon} ${i.ar} ×${i.qty}`).join(' &nbsp;·&nbsp; ')}
+            </div>
+          </div>`;
+        }).join('')
+      }`;
+  } catch(e) {
+    document.getElementById('clientRecordBody').innerHTML = `
+      <div style="text-align:center;padding:32px;color:var(--danger)">
+        خطأ في تحميل البيانات: ${e.message}
+      </div>`;
+  }
 }
 </script>
 </body>
