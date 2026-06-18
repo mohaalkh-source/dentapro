@@ -1018,7 +1018,21 @@ window._fbGetDoc  = getDoc;
   window.addEventListener('load', () => {
     try {
       const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-      onSnapshot(q, (snap) => {
+      window._fbAuthState(window._auth, (fbUser) => {
+  if (!fbUser) return;
+  try {
+    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+    onSnapshot(q, (snap) => {
+      const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
+      const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
+      if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
+      if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
+      const pending = snap.docs.filter(d => d.data().status === 'pending').length;
+      const badge = document.getElementById('adminOrdersBadge');
+      if (badge) badge.textContent = pending > 0 ? pending : '';
+    });
+  } catch(e) { console.warn('Listener:', e); }
+});
         const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
         const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
         if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
@@ -2970,8 +2984,8 @@ function switchAuthTab(tab) {
   document.getElementById('authRegisterForm').style.display = tab === 'register' ? 'block' : 'none';
   document.getElementById('authModalTitle').textContent = tab === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
 }
-const ADMIN_CREDENTIALS = { email: ADMIN_EMAIL, role: 'admin', name: 'المدير' };
 const ADMIN_EMAIL = 'moh.a.alkh@gmail.com';
+const ADMIN_CREDENTIALS = { email: ADMIN_EMAIL, role: 'admin', name: 'المدير' };
 
 async function doLogin() {
   const id = document.getElementById('loginIdentifier').value.trim();
