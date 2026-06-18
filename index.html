@@ -979,10 +979,6 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
            signOut, onAuthStateChanged, updateProfile }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
-window._fbGetDoc  = getDoc;
-  window._fbSetDoc  = setDoc;
-  window._fbDoc2    = (col, id) => doc(db, col, id);
-  window._fbCollection = collection;
 
   const firebaseConfig = {
     apiKey: "AIzaSyDVVEzXPlfJAD7NSV0tGHzzsx8LiyK2i4w",
@@ -998,50 +994,43 @@ window._fbGetDoc  = getDoc;
   const db   = getFirestore(app);
   const auth = getAuth(app);
 
-  window._auth = auth;
-  window._fbCreateUser = createUserWithEmailAndPassword;
-  window._fbSignIn     = signInWithEmailAndPassword;
-  window._fbSignOut    = signOut;
-  window._fbAuthState   = onAuthStateChanged;
+  window._auth            = auth;
+  window._fbCreateUser    = createUserWithEmailAndPassword;
+  window._fbSignIn        = signInWithEmailAndPassword;
+  window._fbSignOut       = signOut;
+  window._fbAuthState     = onAuthStateChanged;
   window._fbUpdateProfile = updateProfile;
 
-  window._db          = db;
-  window._fbOrdersRef = () => collection(db, 'orders');
-  window._fbAddDoc    = addDoc;
-  window._fbGetDocs   = getDocs;
-  window._fbDoc       = (id) => doc(db, 'orders', id);
-  window._fbUpdateDoc = updateDoc;
-  window._fbQuery     = query;
-  window._fbOrderBy   = orderBy;
+  window._db           = db;
+  window._fbGetDoc     = getDoc;
+  window._fbSetDoc     = setDoc;
+  window._fbDoc2       = (col, id) => doc(db, col, id);
+  window._fbCollection = collection;
+  window._fbOrdersRef  = () => collection(db, 'orders');
+  window._fbAddDoc     = addDoc;
+  window._fbGetDocs    = getDocs;
+  window._fbDoc        = (id) => doc(db, 'orders', id);
+  window._fbUpdateDoc  = updateDoc;
+  window._fbQuery      = query;
+  window._fbOrderBy    = orderBy;
   window._fbOnSnapshot = onSnapshot;
 
   window.addEventListener('load', () => {
-    try {
-      const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-      window._fbAuthState(window._auth, (fbUser) => {
-  if (!fbUser) return;
-  try {
-    const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
-    onSnapshot(q, (snap) => {
-      const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
-      const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
-      if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
-      if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
-      const pending = snap.docs.filter(d => d.data().status === 'pending').length;
-      const badge = document.getElementById('adminOrdersBadge');
-      if (badge) badge.textContent = pending > 0 ? pending : '';
+    onAuthStateChanged(auth, (fbUser) => {
+      if (!fbUser) return;
+      try {
+        const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        onSnapshot(q, (snap) => {
+          const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
+          const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
+          if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
+          if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
+          const pending = snap.docs.filter(d => d.data().status === 'pending').length;
+          const badge = document.getElementById('adminOrdersBadge');
+          if (badge) badge.textContent = pending > 0 ? pending : '';
+        });
+      } catch(e) { console.warn('Listener:', e); }
     });
-  } catch(e) { console.warn('Listener:', e); }
-});
-        const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
-        const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
-        if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
-        if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
-        const pending = snap.docs.filter(d => d.data().status === 'pending').length;
-        const badge = document.getElementById('adminOrdersBadge');
-        if (badge) badge.textContent = pending > 0 ? pending : '';
-      });
-    } catch(e) { console.warn('Listener:', e); }
   });
 </script>
 </head>
