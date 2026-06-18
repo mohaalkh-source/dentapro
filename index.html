@@ -976,6 +976,9 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, onSnapshot }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+           signOut, onAuthStateChanged, updateProfile }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 window._fbGetDoc  = getDoc;
   window._fbSetDoc  = setDoc;
   window._fbDoc2    = (col, id) => doc(db, col, id);
@@ -991,8 +994,16 @@ window._fbGetDoc  = getDoc;
     measurementId: "G-HTL7R7C59S"
   };
 
-  const app = initializeApp(firebaseConfig);
-  const db  = getFirestore(app);
+  const app  = initializeApp(firebaseConfig);
+  const db   = getFirestore(app);
+  const auth = getAuth(app);
+
+  window._auth = auth;
+  window._fbCreateUser = createUserWithEmailAndPassword;
+  window._fbSignIn     = signInWithEmailAndPassword;
+  window._fbSignOut    = signOut;
+  window._fbAuthState   = onAuthStateChanged;
+  window._fbUpdateProfile = updateProfile;
 
   window._db          = db;
   window._fbOrdersRef = () => collection(db, 'orders');
@@ -1450,9 +1461,6 @@ window._fbGetDoc  = getDoc;
         <div class="auth-divider">أو</div>
         <button class="social-auth-btn" onclick="demoLogin('client')">
           <span>👤</span> تجربة دخول كعميل
-        </button>
-        <button class="social-auth-btn" onclick="demoLogin('admin')" style="margin-top:8px">
-          <span>🔧</span> تجربة دخول كأدمن
         </button>
       </div>
 
@@ -2860,10 +2868,40 @@ function showPage(page) {
 // =====================
 // AUTH SYSTEM
 // =====================
-const ADMIN_CREDENTIALS = { username: 'admin', password: 'dentapro2025', role: 'admin', name: 'المدير' };
+const ADMIN_CREDENTIALS = { email: ADMIN_EMAIL, role: 'admin', name: 'المدير' };
 let currentUser = null;
 
-// Load session on page load
+// مراقب حالة الجلسة - Firebase Auth
+window.addEventListener('load', () => {
+  window._fbAuthState(window._auth, async (fbUser) => {
+    if (fbUser) {
+      const isAdmin = fbUser.email === ADMIN_EMAIL;
+      if (isAdmin) {
+        currentUser = { role: 'admin', name: 'المدير', email: fbUser.email, uid: fbUser.uid };
+      } else {
+        const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+        const profile = users.find(u => u.email === fbUser.email) || {};
+        currentUser = {
+          role: 'client',
+          name: profile.firstName || fbUser.displayName || 'عميل',
+          clinic: profile.clinic || '',
+          email: fbUser.email,
+          phone: profile.phone || '',
+          uid: fbUser.uid
+        };
+      }
+      localStorage.setItem('dentapro_session', JSON.stringify(currentUser));
+      renderAuthHeader();
+      if (currentUser.role === 'client') renderPointsInHeader();
+    } else {
+      currentUser = null;
+      localStorage.removeItem('dentapro_session');
+      renderAuthHeader();
+    }
+  });
+});
+
+// تحميل الجلسة المحلية فوراً (لتجنب الوميض)
 document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('dentapro_session');
   if (saved) {
@@ -2934,27 +2972,45 @@ function switchAuthTab(tab) {
   document.getElementById('authModalTitle').textContent = tab === 'login' ? 'تسجيل الدخول' : 'إنشاء حساب جديد';
 }
 
-function doLogin() {
+const ADMIN_EMAIL = 'moh.a.alkh@gmail.com';
+
+async function doLogin() {
   const id = document.getElementById('loginIdentifier').value.trim();
   const pass = document.getElementById('loginPassword').value;
   document.getElementById('loginError').style.display = 'none';
 
-  // Check admin
-  if ((id === ADMIN_CREDENTIALS.username || id === 'admin') && pass === ADMIN_CREDENTIALS.password) {
-    loginSuccess({ role: 'admin', name: 'المدير', email: 'admin@dentapro.com' });
+  if (!id || !pass) {
+    document.getElementById('loginErrorMsg').textContent = 'يرجى إدخال البريد الإلكتروني وكلمة المرور';
+    document.getElementById('loginError').style.display = 'flex';
     return;
   }
 
-  // Check registered clients
-  const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
-  const user = users.find(u => (u.email === id || u.phone === id) && u.password === pass);
-  if (user) {
-    loginSuccess({ role: 'client', name: user.firstName, clinic: user.clinic, email: user.email, phone: user.phone });
-    return;
-  }
+  try {
+    const cred = await window._fbSignIn(window._auth, id, pass);
+    const fbUser = cred.user;
+    const isAdmin = fbUser.email === ADMIN_EMAIL;
 
-  document.getElementById('loginErrorMsg').textContent = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-  document.getElementById('loginError').style.display = 'flex';
+    if (isAdmin) {
+      loginSuccess({ role: 'admin', name: 'المدير', email: fbUser.email, uid: fbUser.uid });
+    } else {
+      const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+      const profile = users.find(u => u.email === fbUser.email) || {};
+      loginSuccess({
+        role: 'client',
+        name: profile.firstName || fbUser.displayName || 'عميل',
+        clinic: profile.clinic || '',
+        email: fbUser.email,
+        phone: profile.phone || '',
+        uid: fbUser.uid
+      });
+    }
+  } catch(e) {
+    console.error('Login error:', e.code);
+    let msg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
+    if (e.code === 'auth/too-many-requests') msg = 'محاولات كثيرة، حاول لاحقاً';
+    document.getElementById('loginErrorMsg').textContent = msg;
+    document.getElementById('loginError').style.display = 'flex';
+  }
 }
 
 function demoLogin(role) {
@@ -3000,7 +3056,7 @@ function showClientWelcome(user) {
   hero.insertBefore(banner, hero.firstChild);
 }
 
-function doRegister() {
+async function doRegister() {
   const firstName = document.getElementById('regFirstName').value.trim();
   const clinic    = document.getElementById('regClinic').value.trim();
   const email     = document.getElementById('regEmail').value.trim();
@@ -3016,17 +3072,42 @@ function doRegister() {
   if (!/\S+@\S+\.\S+/.test(email)) return showRegError('البريد الإلكتروني غير صحيح');
   if (password.length < 8) return showRegError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
 
-  const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
-  if (users.find(u => u.email === email)) return showRegError('هذا البريد مسجل مسبقاً');
+  try {
+    const cred = await window._fbCreateUser(window._auth, email, password);
+    const fbUser = cred.user;
 
-  users.push({ firstName, clinic, email, phone, password, role: 'client', createdAt: Date.now() });
-  localStorage.setItem('dentapro_users', JSON.stringify(users));
-  document.getElementById('regError').style.display = 'none';
+    await window._fbUpdateProfile(fbUser, { displayName: firstName });
 
-  loginSuccess({ role: 'client', name: firstName, clinic, email, phone });
+    // حفظ بيانات العميل الإضافية في Firestore
+    await window._fbSetDoc(
+      window._fbDoc2('users', fbUser.uid),
+      { firstName, clinic, email, phone, role: 'client', createdAt: new Date().toISOString() }
+    );
+
+    // حفظ محلي أيضاً للتوافق
+    const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+    if (!users.find(u => u.email === email)) {
+      users.push({ firstName, clinic, email, phone, role: 'client', uid: fbUser.uid, createdAt: Date.now() });
+      localStorage.setItem('dentapro_users', JSON.stringify(users));
+    }
+
+    document.getElementById('regError').style.display = 'none';
+    loginSuccess({ role: 'client', name: firstName, clinic, email, phone, uid: fbUser.uid });
+
+  } catch(e) {
+    console.error('Register error:', e.code);
+    let msg = 'حدث خطأ، حاول مرة أخرى';
+    if (e.code === 'auth/email-already-in-use') msg = 'هذا البريد مسجل مسبقاً';
+    if (e.code === 'auth/weak-password') msg = 'كلمة المرور ضعيفة جداً';
+    if (e.code === 'auth/invalid-email') msg = 'البريد الإلكتروني غير صحيح';
+    showRegError(msg);
+  }
 }
 
-function doLogout() {
+async function doLogout() {
+  try {
+    await window._fbSignOut(window._auth);
+  } catch(e) { console.warn('Signout error:', e); }
   currentUser = null;
   localStorage.removeItem('dentapro_session');
   renderAuthHeader();
