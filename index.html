@@ -2658,20 +2658,7 @@ async function submitOrder() {
   const totalPoints = cart.reduce((s, i) => s + ((i.points || 0) * i.qty), 0);
   const payWithPoints = window._selectedPayMethod === 'points';
 
-  // خصم النقاط إذا اختار الدفع بالنقاط
-  if (payWithPoints && currentUser && currentUser.role === 'client') {
-    const currentBalance = await getClientPoints(currentUser.email);
-    const newBalance = currentBalance - totalPoints;
-    const log = {
-      type: 'spend',
-      amount: totalPoints,
-      reason: `شراء بالنقاط — طلب #${orderNum}`,
-      balance: newBalance,
-      date: new Date().toISOString(),
-    };
-    await saveClientPoints(currentUser.email, newBalance, log);
-    await renderPointsInHeader();
-  }
+  // ملاحظة: لم نعد نخصم النقاط هنا — تُخصم تلقائياً فقط عند تأكيد التسليم من الأدمن
 
   const order = {
     id:          orderNum,
@@ -2686,6 +2673,7 @@ async function submitOrder() {
     total:       getTotal(),
     totalPoints: totalPoints,
     payMethod:   payWithPoints ? 'points' : 'money',
+    pointsDeducted: false,
     status:      'pending',
     createdAt:   new Date().toISOString(),
   };
@@ -3980,7 +3968,11 @@ async function renderAdminOrders() {
           ${itemsSummary}<br>
           <span style="color:var(--primary-light);font-weight:700">${order.items.length} منتج</span>
         </div>
-        <div style="font-weight:900;color:var(--primary)">${order.total.toLocaleString()} د.أ</div>
+        <div style="font-weight:900;color:${order.payMethod==='points'?'#d97706':'var(--primary)'}">
+          ${order.payMethod==='points'
+            ? `🏆 ${order.totalPoints||0} نقطة`
+            : `${order.total.toLocaleString()} د.أ`}
+        </div>
         <div style="font-size:12px;color:var(--text-muted)">${date}</div>
         <div>
           <select class="status-select"
@@ -4009,7 +4001,24 @@ async function renderAdminOrders() {
 }
 async function updateOrderStatus(docId, orderId, newStatus) {
   try {
+    const order = (window._cachedOrders || []).find(o => o._docId === docId) || {};
     await window._fbUpdateDoc(window._fbDoc(docId), { status: newStatus });
+
+    // خصم النقاط تلقائياً فقط عند التسليم، وفقط إذا لم تُخصم من قبل
+    if (newStatus === 'delivered' && order.payMethod === 'points' && !order.pointsDeducted) {
+      const currentBalance = await getClientPoints(order.clientEmail);
+      const newBalance = currentBalance - (order.totalPoints || 0);
+      const log = {
+        type: 'spend',
+        amount: order.totalPoints || 0,
+        reason: `شراء بالنقاط — طلب #${order.id || orderId}`,
+        balance: newBalance,
+        date: new Date().toISOString(),
+      };
+      await saveClientPoints(order.clientEmail, newBalance, log);
+      await window._fbUpdateDoc(window._fbDoc(docId), { pointsDeducted: true });
+    }
+
     const s = getStatusObj(newStatus);
     showToast(`✅ طلب #${orderId} → ${s.label}`, 'success');
     if (document.getElementById('ordersPage').classList.contains('active')) {
@@ -4054,16 +4063,27 @@ function showAdminOrderDetail(orderId) {
         <div style="font-size:11px;color:var(--text-muted);margin-bottom:6px;font-weight:700">📍 الموقع</div>
         <div style="font-size:13px;font-weight:600">${escHtml(order.address)}</div>
       </div>
+      ${order.payMethod === 'points' ? `
+      <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 14px;margin-bottom:12px;
+                  font-weight:800;color:#92400e;text-align:center">
+        🏆 الدفع بالنقاط — ${order.totalPoints || 0} نقطة
+        ${order.pointsDeducted ? ' (تم الخصم)' : ' (سيتم الخصم عند التسليم)'}
+      </div>` : ''}
       <div style="margin-bottom:12px">
         ${order.items.map(item=>`
           <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px">
             <span style="font-size:22px">${item.icon}</span>
             <span style="flex:1;font-weight:600">${item.ar}</span>
             <span style="color:var(--text-muted)">× ${item.qty}</span>
-            <span style="font-weight:800;color:var(--primary)">${(item.price*item.qty).toLocaleString()} د.أ</span>
+            <span style="font-weight:800;color:${order.payMethod==='points'?'#d97706':'var(--primary)'}">
+              ${order.payMethod==='points'
+                ? `🏆 ${(item.points||0)*item.qty} نقطة`
+                : `${(item.price*item.qty).toLocaleString()} د.أ`}
+            </span>
           </div>`).join('')}
         <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
-          <span>الإجمالي</span><span>${order.total.toLocaleString()} د.أ</span>
+          <span>الإجمالي</span>
+          <span>${order.payMethod==='points' ? `🏆 ${order.totalPoints||0} نقطة` : `${order.total.toLocaleString()} د.أ`}</span>
         </div>
       </div>
       ${order.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${order.notes}</div>`:''}
