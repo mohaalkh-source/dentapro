@@ -1016,15 +1016,18 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   window._fbWhere      = where;
   window._fbOnSnapshot = onSnapshot;
 
+  let _ordersUnsub = null;
+
   window.addEventListener('load', () => {
     onAuthStateChanged(auth, (fbUser) => {
+      if (_ordersUnsub) { _ordersUnsub(); _ordersUnsub = null; }
       if (!fbUser) return;
       try {
         const isAdminUser = fbUser.email === 'moh.a.alkh@gmail.com';
         const q = isAdminUser
           ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
           : query(collection(db, 'orders'), where('clientEmail', '==', fbUser.email));
-        onSnapshot(q, (snap) => {
+        _ordersUnsub = onSnapshot(q, (snap) => {
           const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
           const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
           if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
