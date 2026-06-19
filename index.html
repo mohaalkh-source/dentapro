@@ -1020,7 +1020,10 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
     onAuthStateChanged(auth, (fbUser) => {
       if (!fbUser) return;
       try {
-        const q = query(collection(db, 'orders'), orderBy('createdAt', 'desc'));
+        const isAdminUser = fbUser.email === 'moh.a.alkh@gmail.com';
+        const q = isAdminUser
+          ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
+          : query(collection(db, 'orders'), where('clientEmail', '==', fbUser.email));
         onSnapshot(q, (snap) => {
           const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
           const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
