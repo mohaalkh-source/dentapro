@@ -1259,13 +1259,13 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
           <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> <span data-ar="رقم الهاتف (واتساب)" data-en="Phone Number (WhatsApp)">رقم الهاتف (واتساب)</span> <span class="required">*</span></label>
           <div class="phone-input-wrap">
             <select class="country-code" id="countryCode">
+              <option value="+962" selected>🇯🇴 +962</option>
               <option value="+966">🇸🇦 +966</option>
               <option value="+971">🇦🇪 +971</option>
               <option value="+965">🇰🇼 +965</option>
               <option value="+973">🇧🇭 +973</option>
               <option value="+974">🇶🇦 +974</option>
               <option value="+968">🇴🇲 +968</option>
-              <option value="+962">🇯🇴 +962</option>
               <option value="+213">🇩🇿 +213</option>
               <option value="+216">🇹🇳 +216</option>
               <option value="+212">🇲🇦 +212</option>
@@ -2682,7 +2682,7 @@ async function submitOrder() {
     phone:       document.getElementById('countryCode').value + document.getElementById('phoneNumber').value,
     address:     locationData.address || document.getElementById('addressInput').value,
     notes:       document.getElementById('orderNotes').value,
-    items:       cart.map(i => ({ id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty })),
+    items:       cart.map(i => ({ id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty, points:i.points||0 })),
     total:       getTotal(),
     totalPoints: totalPoints,
     payMethod:   payWithPoints ? 'points' : 'money',
@@ -3846,7 +3846,7 @@ async function renderClientOrders() {
     }
 
     container.innerHTML = orders.map(order => {
-      const date = new Date(order.createdAt).toLocaleDateString('ar-SA',
+      const date = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
         { year:'numeric', month:'long', day:'numeric' });
       return `
       <div class="order-track-card">
@@ -3859,7 +3859,9 @@ async function renderClientOrders() {
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             ${statusBadgeHTML(order.status)}
-            <div class="order-track-total">${order.total.toLocaleString()} د.أ</div>
+            ${order.payMethod === 'points'
+              ? `<div class="order-track-total" style="background:#fffbeb;color:#92400e;border:1.5px solid #f59e0b">🏆 ${t('دُفع بالنقاط','Paid with Points')} (${order.totalPoints || 0})</div>`
+              : `<div class="order-track-total">${order.total.toLocaleString()} د.أ</div>`}
           </div>
         </div>
         <div class="order-track-body">
@@ -3870,8 +3872,10 @@ async function renderClientOrders() {
                 <div class="order-item-icon">${item.icon}</div>
                 <div style="flex:1;font-weight:600;color:var(--primary-dark)">${item.ar}</div>
                 <div style="color:var(--text-muted)">× ${item.qty}</div>
-                <div style="font-weight:800;color:var(--primary)">
-                  ${(item.price*item.qty).toLocaleString()} د.أ
+                <div style="font-weight:800;color:${order.payMethod === 'points' ? '#d97706' : 'var(--primary)'}">
+                  ${order.payMethod === 'points'
+                    ? `🏆 ${(item.points||0)*item.qty} نقطة`
+                    : `${(item.price*item.qty).toLocaleString()} د.أ`}
                 </div>
               </div>`).join('')}
           </div>
@@ -3954,7 +3958,7 @@ async function renderAdminOrders() {
     }
 
     body.innerHTML = orders.map(order => {
-      const date = new Date(order.createdAt).toLocaleDateString('ar-SA',
+      const date = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
         { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
       const itemsSummary = order.items.slice(0,2)
         .map(i => `${i.icon} ${i.ar.substring(0,12)}`).join(' · ')
@@ -4021,7 +4025,7 @@ function showAdminOrderDetail(orderId) {
   const orders = window._cachedOrders || [];
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
-  const date = new Date(order.createdAt).toLocaleDateString('ar-SA', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const date = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
   // Reuse a simple alert-style modal — inject into deleteConfirm modal for now
   document.getElementById('deleteProductName').innerHTML = '';
   document.querySelector('#deleteConfirmModal .modal-header').style.background = 'linear-gradient(135deg,#0a5c8a,#1a8bbf)';
@@ -4283,7 +4287,7 @@ async function showClientRecord(email) {
           لا توجد طلبات بعد
         </div>` :
         orders.map(o => {
-          const date = new Date(o.createdAt).toLocaleDateString('ar-SA',
+          const date = new Date(o.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
             { year:'numeric', month:'short', day:'numeric' });
           const s = getStatusObj(o.status);
           return `
