@@ -974,7 +974,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, onSnapshot }
+  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, where, onSnapshot }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
            signOut, onAuthStateChanged, updateProfile }
@@ -1013,6 +1013,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   window._fbUpdateDoc  = updateDoc;
   window._fbQuery      = query;
   window._fbOrderBy    = orderBy;
+  window._fbWhere      = where;
   window._fbOnSnapshot = onSnapshot;
 
   window.addEventListener('load', () => {
@@ -3808,15 +3809,22 @@ async function renderClientOrders() {
       await new Promise(r => setTimeout(r, 300));
     }
     if (!window._fbQuery) throw new Error('Firebase غير جاهز');
-    const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
+
+    let q;
+    if (currentUser.role === 'admin') {
+      q = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
+    } else {
+      // لازم نفلتر من السيرفر عبر where() حتى تتوافق مع قواعد Firestore
+      q = window._fbQuery(
+        window._fbOrdersRef(),
+        window._fbWhere('clientEmail', '==', currentUser.email)
+      );
+    }
     const snap = await window._fbGetDocs(q);
     let orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
 
     if (currentUser.role !== 'admin') {
-      orders = orders.filter(o =>
-        o.clientEmail === currentUser.email ||
-        o.clientName  === currentUser.name
-      );
+      orders.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
     }
 
     if (!orders.length) {
