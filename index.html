@@ -3295,13 +3295,30 @@ function renderAdminTable() {
 // =====================
 // IMAGE HANDLING
 // =====================
+const CLOUDINARY_CLOUD_NAME = 'dssbu3ooo';
+const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append('file', file);
+  formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
+    method: 'POST',
+    body: formData,
+  });
+  if (!res.ok) throw new Error('Cloudinary upload failed');
+  const data = await res.json();
+  return data.secure_url;
+}
+
 let currentProductImage = null;
 
 function triggerImgUpload() {
   document.getElementById('pImageFile').click();
 }
 
-function handleImageUpload(event) {
+async function handleImageUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
@@ -3310,21 +3327,30 @@ function handleImageUpload(event) {
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    currentProductImage = e.target.result;
-    const preview = document.getElementById('imgPreviewBox');
-    const area    = document.getElementById('imgUploadArea');
-    const removeBtn = document.getElementById('removeImgBtn');
-    preview.src = currentProductImage;
+  const preview = document.getElementById('imgPreviewBox');
+  const area    = document.getElementById('imgUploadArea');
+  const removeBtn = document.getElementById('removeImgBtn');
+
+  area.querySelector('.img-upload-icon').style.display = 'block';
+  area.querySelector('.img-upload-text').textContent = '⏳ جاري رفع الصورة...';
+  area.querySelector('.img-upload-hint').textContent = '';
+
+  try {
+    const url = await uploadToCloudinary(file);
+    currentProductImage = url;
+    preview.src = url;
     preview.classList.add('show');
     area.classList.add('has-image');
     area.querySelector('.img-upload-icon').style.display = 'none';
     area.querySelector('.img-upload-text').textContent = '✅ تم تحميل الصورة';
     area.querySelector('.img-upload-hint').textContent = file.name;
     removeBtn.style.display = 'inline-flex';
-  };
-  reader.readAsDataURL(file);
+  } catch (e) {
+    console.error(e);
+    showToast('❌ فشل رفع الصورة، تحقق من الاتصال', 'error');
+    area.querySelector('.img-upload-text').textContent = 'انقر لاختيار صورة';
+    area.querySelector('.img-upload-hint').textContent = 'PNG، JPG، WEBP — بحد أقصى 2MB';
+  }
 }
 
 function removeProductImage() {
@@ -3354,7 +3380,7 @@ function triggerCatImgUpload() {
   document.getElementById('catImageFile').click();
 }
 
-function handleCatImageUpload(event) {
+async function handleCatImageUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
 
@@ -3363,21 +3389,30 @@ function handleCatImageUpload(event) {
     return;
   }
 
-  const reader = new FileReader();
-  reader.onload = (e) => {
-    currentCategoryImage = e.target.result;
-    const preview = document.getElementById('catImgPreviewBox');
-    const area    = document.getElementById('catImgUploadArea');
-    const removeBtn = document.getElementById('removeCatImgBtn');
-    preview.src = currentCategoryImage;
+  const preview = document.getElementById('catImgPreviewBox');
+  const area    = document.getElementById('catImgUploadArea');
+  const removeBtn = document.getElementById('removeCatImgBtn');
+
+  area.querySelector('.img-upload-icon').style.display = 'block';
+  area.querySelector('.img-upload-text').textContent = '⏳ جاري رفع الصورة...';
+  area.querySelector('.img-upload-hint').textContent = '';
+
+  try {
+    const url = await uploadToCloudinary(file);
+    currentCategoryImage = url;
+    preview.src = url;
     preview.classList.add('show');
     area.classList.add('has-image');
     area.querySelector('.img-upload-icon').style.display = 'none';
     area.querySelector('.img-upload-text').textContent = '✅ تم تحميل الصورة';
     area.querySelector('.img-upload-hint').textContent = file.name;
     removeBtn.style.display = 'inline-flex';
-  };
-  reader.readAsDataURL(file);
+  } catch (e) {
+    console.error(e);
+    showToast('❌ فشل رفع الصورة، تحقق من الاتصال', 'error');
+    area.querySelector('.img-upload-text').textContent = 'انقر لاختيار صورة';
+    area.querySelector('.img-upload-hint').textContent = 'PNG، JPG، WEBP — بحد أقصى 2MB';
+  }
 }
 
 function removeCategoryImage() {
