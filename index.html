@@ -1462,6 +1462,19 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
     </div>
   </div>
 </div>
+<!-- ===== PRODUCT DETAIL PAGE ===== -->
+<div class="page-section" id="productDetailPage">
+  <div class="orders-page">
+    <div style="margin-bottom:24px">
+      <button onclick="closeProductDetail()" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> رجوع
+      </button>
+    </div>
+    <div id="productDetailContent">
+      <!-- filled by JS -->
+    </div>
+  </div>
+</div>
 <!-- ===== AUTH MODAL ===== -->
 <div class="modal-overlay" id="authModal">
   <div class="modal" style="max-width:460px">
@@ -2252,7 +2265,7 @@ function renderProducts() {
     return `
     <div class="product-card">
       ${p.badge ? `<div class="product-badge">${t(p.badge, p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':p.badge)}</div>` : ''}
-      <div class="product-img-wrap" onclick="addToCart(${p.id})" title="${t('أضف للسلة','Add to Cart')}">
+      <div class="product-img-wrap" onclick="openProductDetail(${p.id})" title="${t('عرض التفاصيل','View details')}">
         ${p.image
           ? `<img src="${cldOptimize(p.image, 400)}" alt="${p.ar}" loading="lazy" decoding="async" />`
           : `<span class="emoji-fallback">${p.icon}</span>`
@@ -2260,7 +2273,7 @@ function renderProducts() {
       </div>
       <div class="product-info">
         <div class="product-brand">${p.brand}</div>
-        <div class="product-name">${currentLang==='en'?p.en:p.ar}</div>
+        <div class="product-name" onclick="openProductDetail(${p.id})" style="cursor:pointer">${currentLang==='en'?p.en:p.ar}</div>
         <div class="product-stars">
           <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
           <span>(${20 + (p.id * 17 % 80)})</span>
@@ -2291,6 +2304,105 @@ function renderProducts() {
 }
 
 document.getElementById('searchInput').addEventListener('input', renderProducts);
+
+// =====================
+// PRODUCT DETAIL PAGE
+// =====================
+let lastPageBeforeDetail = 'home';
+
+function openProductDetail(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  const activeSection = document.querySelector('.page-section.active');
+  lastPageBeforeDetail = activeSection ? activeSection.id : 'homePage';
+
+  const inCart = cart.find(x => x.id === id);
+  const container = document.getElementById('productDetailContent');
+  container.innerHTML = `
+    <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px">
+      <div class="product-img-wrap" style="height:340px;border-radius:var(--radius)">
+        ${p.badge ? `<div class="product-badge">${t(p.badge, p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':p.badge)}</div>` : ''}
+        ${p.image
+          ? `<img src="${cldOptimize(p.image, 600)}" alt="${p.ar}" loading="lazy" decoding="async" />`
+          : `<span class="emoji-fallback">${p.icon}</span>`}
+      </div>
+      <div>
+        <div class="product-name" style="font-size:22px;margin-bottom:8px">${currentLang==='en'?p.en:p.ar}</div>
+        <div class="product-stars" style="margin-bottom:12px">
+          <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+          <span>(${20 + (p.id * 17 % 80)})</span>
+        </div>
+        <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">
+          <strong>${t('الماركة','Brand')}:</strong> ${p.brand}
+        </div>
+        ${p.country ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">
+          <strong>${t('بلد المنشأ','Origin')}:</strong> ${p.country}
+        </div>` : ''}
+        <div class="product-desc" style="font-size:14px;margin-bottom:16px">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
+        ${p.points ? `
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;
+                    padding:6px 12px;border-radius:50px;
+                    background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(245,158,11,0.05));
+                    border:1.5px solid rgba(245,158,11,0.35);width:fit-content">
+          <span style="font-size:14px">🏆</span>
+          <span style="font-size:12px;font-weight:800;color:#d97706">
+            ${p.points} ${t('نقطة للشراء','pts to buy')}
+          </span>
+        </div>` : ''}
+        <div class="product-price-row" style="margin-bottom:18px">
+          <div>
+            <div class="product-price" style="font-size:26px">${p.price.toLocaleString()} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
+            ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
+          </div>
+        </div>
+        <button class="btn-primary" style="width:100%;display:flex;align-items:center;justify-content:center;gap:8px"
+          onclick="addToCart(${p.id}); openProductDetail(${p.id})">
+          <i class="fas ${inCart?'fa-trash-alt':'fa-cart-plus'}"></i>
+          ${inCart ? t('إزالة من السلة','Remove from cart') : t('أضف للسلة','Add to cart')}
+        </button>
+      </div>
+    </div>
+  `;
+  showPage('productDetail');
+}
+
+function closeProductDetail() {
+  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  document.getElementById(lastPageBeforeDetail).classList.add('active');
+  window.scrollTo(0, 0);
+}
+
+// =====================
+// إشعار الأدمن بالطلبات المعلّقة عند الدخول
+// =====================
+async function notifyPendingOrdersOnLogin() {
+  try {
+    const q = window._fbQuery(window._fbOrdersRef(), window._fbWhere('status', '==', 'pending'));
+    const snap = await window._fbGetDocs(q);
+    const count = snap.size;
+    if (count === 0) return;
+
+    showToast(`🔔 لديك ${count} طلب قيد الانتظار`, 'success');
+
+    if (!('Notification' in window)) return;
+    if (Notification.permission === 'granted') {
+      new Notification('🔔 طلبات قيد الانتظار', {
+        body: `لديك ${count} طلب يحتاج للمراجعة في DentaPro`,
+        icon: '🦷'
+      });
+    } else if (Notification.permission !== 'denied') {
+      const perm = await Notification.requestPermission();
+      if (perm === 'granted') {
+        new Notification('🔔 طلبات قيد الانتظار', {
+          body: `لديك ${count} طلب يحتاج للمراجعة في DentaPro`,
+          icon: '🦷'
+        });
+      }
+    }
+  } catch (e) {
+    console.warn('notifyPendingOrdersOnLogin:', e);
+  }
+}
 
 // =====================
 // CART
@@ -2926,6 +3038,9 @@ function showPage(page) {
   } else if (page === 'orders') {
     document.getElementById('ordersPage').classList.add('active');
     window.scrollTo(0, 0);
+  } else if (page === 'productDetail') {
+    document.getElementById('productDetailPage').classList.add('active');
+    window.scrollTo(0, 0);
   }
 }
 // =====================
@@ -2940,6 +3055,7 @@ window.addEventListener('load', () => {
       const isAdmin = fbUser.email === ADMIN_EMAIL;
       if (isAdmin) {
         currentUser = { role: 'admin', name: 'المدير', email: fbUser.email, uid: fbUser.uid };
+        notifyPendingOrdersOnLogin();
       } else {
         const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
         const profile = users.find(u => u.email === fbUser.email) || {};
