@@ -1129,7 +1129,17 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
         <div class="section-tag" data-ar="المنتجات" data-en="PRODUCTS">المنتجات</div>
         <h2 class="section-title" style="margin-bottom:0" data-ar="المنتجات المتاحة" data-en="Available Products">المنتجات المتاحة</h2>
       </div>
-      <div class="filter-tabs" id="filterTabs"></div>
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <div class="filter-tabs" id="filterTabs"></div>
+        <select id="sortSelect" onchange="renderProducts()"
+          style="padding:8px 14px;border-radius:50px;border:2px solid var(--border);background:#fff;
+                 font-family:inherit;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;outline:none">
+          <option value="default">الترتيب الافتراضي</option>
+          <option value="price_asc">السعر: من الأقل للأعلى</option>
+          <option value="price_desc">السعر: من الأعلى للأقل</option>
+          <option value="newest">الأحدث أولاً</option>
+        </select>
+      </div>
     </div>
     <div class="products-grid" id="productsGrid"></div>
   </div>
@@ -1417,8 +1427,8 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
       <div class="footer-col">
         <h4 data-ar="الشركة" data-en="Company">الشركة</h4>
         <ul>
-          <li><a href="#" data-ar="من نحن" data-en="About Us">من نحن</a></li>
-          <li><a href="#" data-ar="اتصل بنا" data-en="Contact Us">اتصل بنا</a></li>
+          <li><a href="#" onclick="showPage('about')" data-ar="من نحن" data-en="About Us">من نحن</a></li>
+          <li><a href="#" onclick="showPage('about')" data-ar="اتصل بنا" data-en="Contact Us">اتصل بنا</a></li>
           <li><a href="#" data-ar="المدونة الطبية" data-en="Medical Blog">المدونة الطبية</a></li>
           <li><a href="#" data-ar="برنامج العيادات" data-en="Clinic Program">برنامج العيادات</a></li>
         </ul>
@@ -1473,6 +1483,81 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
     <div id="productDetailContent">
       <!-- filled by JS -->
     </div>
+  </div>
+</div>
+<!-- ===== ABOUT / CONTACT PAGE ===== -->
+<div class="page-section" id="aboutPage">
+  <div class="orders-page" style="max-width:760px">
+    <div style="margin-bottom:24px">
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
+
+    <div class="section-tag">من نحن</div>
+    <h2 class="section-title">DentaPro — شريكك الموثوق في مستلزمات طب الأسنان</h2>
+    <p style="color:var(--text-muted);font-size:15px;line-height:1.8;margin:16px 0 32px">
+      DentaPro هو متجر متخصص في توفير أجهزة وأدوات ومواد طب الأسنان لعيادات وأطباء الأسنان في المنطقة.
+      نوفر منتجات أصلية 100% من أفضل العلامات العالمية، بأسعار جملة تنافسية، وتوصيل سريع لجميع العيادات المسجلة لدينا.
+    </p>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:16px;margin-bottom:40px">
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">📦</div>
+        <div style="font-weight:800;color:var(--primary-dark)">+2500 منتج</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">🏥</div>
+        <div style="font-weight:800;color:var(--primary-dark)">+850 عيادة عميل</div>
+      </div>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:20px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">🚚</div>
+        <div style="font-weight:800;color:var(--primary-dark)">توصيل خلال 24 ساعة</div>
+      </div>
+    </div>
+
+    <div class="section-tag">تواصل معنا</div>
+    <h2 class="section-title" style="margin-bottom:20px">نحن هنا لمساعدتك</h2>
+
+    <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:16px;margin-bottom:32px">
+      <a href="https://wa.me/962500000000" target="_blank" style="text-decoration:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:12px;color:inherit">
+        <div style="width:44px;height:44px;border-radius:50%;background:#25d366;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px"><i class="fab fa-whatsapp"></i></div>
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">واتساب</div>
+          <div style="font-size:13px;color:var(--text-muted)">+962 5 00 000 00</div>
+        </div>
+      </a>
+      <a href="mailto:support@dentapro.com" style="text-decoration:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:12px;color:inherit">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="fas fa-envelope"></i></div>
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">البريد الإلكتروني</div>
+          <div style="font-size:13px;color:var(--text-muted)">support@dentapro.com</div>
+        </div>
+      </a>
+      <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:12px">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--accent2);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="fas fa-clock"></i></div>
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">ساعات العمل</div>
+          <div style="font-size:13px;color:var(--text-muted)">9 صباحًا - 9 مساءً</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">الاسم</label>
+      <input type="text" class="form-input" id="contactName" placeholder="اسمك الكامل">
+    </div>
+    <div class="form-group">
+      <label class="form-label">البريد الإلكتروني</label>
+      <input type="email" class="form-input" id="contactEmail" placeholder="example@email.com">
+    </div>
+    <div class="form-group">
+      <label class="form-label">رسالتك</label>
+      <textarea class="form-textarea" id="contactMessage" placeholder="اكتب رسالتك هنا..."></textarea>
+    </div>
+    <button class="btn-primary" onclick="sendContactMessage()">
+      <i class="fas fa-paper-plane"></i> إرسال الرسالة
+    </button>
   </div>
 </div>
 <!-- ===== AUTH MODAL ===== -->
@@ -2169,7 +2254,22 @@ let products = loadProducts();
 // =====================
 // STATE
 // =====================
-let cart = [];
+function loadCart() {
+  try {
+    const saved = localStorage.getItem('dentapro_cart');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      if (Array.isArray(parsed)) return parsed;
+    }
+  } catch(e) {}
+  return [];
+}
+
+function saveCart() {
+  try { localStorage.setItem('dentapro_cart', JSON.stringify(cart)); } catch(e) {}
+}
+
+let cart = loadCart();
 let currentLang = 'ar';
 let currentCat = 'all';
 let currentStep = 1;
@@ -2189,7 +2289,28 @@ document.addEventListener('DOMContentLoaded', async () => {
     loadProductsFromFirebase(),
     loadCategoriesFromFirebase()
   ]);
+
+  // مزامنة السلة المحفوظة مع بيانات المنتجات الحالية (أسعار/توفر محدّثة)
+  syncCartWithProducts();
 });
+
+function syncCartWithProducts() {
+  if (!cart.length) return;
+  let changed = false;
+  cart = cart.filter(item => {
+    const p = products.find(x => x.id === item.id);
+    if (!p) { changed = true; return false; } // المنتج محذوف
+    if (p.price !== item.price || p.icon !== item.icon || p.image !== item.image) {
+      item.price = p.price; item.icon = p.icon; item.image = p.image; item.points = p.points;
+      changed = true;
+    }
+    return true;
+  });
+  if (changed) {
+    updateCartUI();
+    renderProducts();
+  }
+}
 
 // =====================
 // LANGUAGE
@@ -2254,14 +2375,33 @@ function filterCat(id) {
 // =====================
 // PRODUCTS
 // =====================
+// تطبيع النص العربي: يوحّد أشكال الألف والهمزة والتاء المربوطة لتحسين دقة البحث
+function normalizeArabic(str) {
+  if (!str) return '';
+  return str.toString().toLowerCase()
+    .replace(/[إأآا]/g, 'ا')
+    .replace(/ى/g, 'ي')
+    .replace(/ة/g, 'ه')
+    .replace(/ؤ/g, 'و')
+    .replace(/ئ/g, 'ي')
+    .replace(/[ًٌٍَُِّْ]/g, '') // إزالة التشكيل
+    .trim();
+}
+
 function renderProducts() {
-  const list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
-  const searchVal = document.getElementById('searchInput').value.toLowerCase();
-  const filtered = searchVal ? list.filter(p =>
-    p.ar.toLowerCase().includes(searchVal) ||
-    p.en.toLowerCase().includes(searchVal) ||
-    p.brand.toLowerCase().includes(searchVal)
+  let list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
+  const searchValRaw = document.getElementById('searchInput').value;
+  const searchVal = normalizeArabic(searchValRaw);
+  let filtered = searchVal ? list.filter(p =>
+    normalizeArabic(p.ar).includes(searchVal) ||
+    p.en.toLowerCase().includes(searchValRaw.toLowerCase()) ||
+    normalizeArabic(p.brand).includes(searchVal)
   ) : list;
+
+  const sortVal = document.getElementById('sortSelect')?.value || 'default';
+  if (sortVal === 'price_asc')  filtered = [...filtered].sort((a,b) => a.price - b.price);
+  if (sortVal === 'price_desc') filtered = [...filtered].sort((a,b) => b.price - a.price);
+  if (sortVal === 'newest')     filtered = [...filtered].sort((a,b) => b.id - a.id);
 
   const grid = document.getElementById('productsGrid');
   if (!filtered.length) {
@@ -2475,6 +2615,7 @@ function getTotal() {
 }
 
 function updateCartUI() {
+  saveCart();
   const count = cart.reduce((s, i) => s + i.qty, 0);
   document.getElementById('cartCount').textContent = count;
   document.getElementById('cartItemsCount').textContent = `(${count})`;
@@ -3059,6 +3200,32 @@ function showToast(msg, type='') {
 function scrollToProducts() {
   document.getElementById('productsSection').scrollIntoView({behavior:'smooth', block:'start'});
 }
+
+async function sendContactMessage() {
+  const name = document.getElementById('contactName').value.trim();
+  const email = document.getElementById('contactEmail').value.trim();
+  const message = document.getElementById('contactMessage').value.trim();
+
+  if (!name || !email || !message) {
+    showToast('❌ يرجى ملء جميع الحقول', 'error');
+    return;
+  }
+
+  try {
+    if (window._fbAddDoc && window._fbCollection && window._db) {
+      await window._fbAddDoc(window._fbCollection(window._db, 'contact_messages'), {
+        name, email, message, createdAt: new Date().toISOString()
+      });
+    }
+    showToast('✅ تم إرسال رسالتك بنجاح، سنتواصل معك قريبًا', 'success');
+    document.getElementById('contactName').value = '';
+    document.getElementById('contactEmail').value = '';
+    document.getElementById('contactMessage').value = '';
+  } catch (e) {
+    console.error(e);
+    showToast('❌ فشل إرسال الرسالة، تحقق من الاتصال', 'error');
+  }
+}
 function showPage(page) {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
   if (page === 'home') {
@@ -3068,6 +3235,9 @@ function showPage(page) {
     window.scrollTo(0, 0);
   } else if (page === 'productDetail') {
     document.getElementById('productDetailPage').classList.add('active');
+    window.scrollTo(0, 0);
+  } else if (page === 'about') {
+    document.getElementById('aboutPage').classList.add('active');
     window.scrollTo(0, 0);
   }
 }
