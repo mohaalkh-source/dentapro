@@ -1164,14 +1164,13 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
         <h2 class="section-title" style="margin-bottom:0" data-ar="المنتجات المتاحة" data-en="Available Products">المنتجات المتاحة</h2>
       </div>
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
-        <div class="filter-tabs" id="filterTabs"></div>
         <select id="sortSelect" onchange="renderProducts()"
           style="padding:8px 14px;border-radius:50px;border:2px solid var(--border);background:#fff;
                  font-family:inherit;font-size:13px;font-weight:600;color:var(--text-muted);cursor:pointer;outline:none">
-          <option value="default">الترتيب الافتراضي</option>
-          <option value="price_asc">السعر: من الأقل للأعلى</option>
-          <option value="price_desc">السعر: من الأعلى للأقل</option>
-          <option value="newest">الأحدث أولاً</option>
+          <option value="default" data-ar="الترتيب الافتراضي" data-en="Default Sorting">الترتيب الافتراضي</option>
+          <option value="price_asc" data-ar="السعر: من الأقل للأعلى" data-en="Price: Low to High">السعر: من الأقل للأعلى</option>
+          <option value="price_desc" data-ar="السعر: من الأعلى للأقل" data-en="Price: High to Low">السعر: من الأعلى للأقل</option>
+          <option value="newest" data-ar="الأحدث أولاً" data-en="Newest First">الأحدث أولاً</option>
         </select>
       </div>
     </div>
@@ -2012,6 +2011,8 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
     </div>
     <div class="modal-body">
       <input type="hidden" id="pointsTargetEmail">
+      <input type="hidden" id="pointsTargetEmail">
+      <input type="hidden" id="pointsTargetUid">
       <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
         <span style="font-size:28px">👤</span>
         <div>
@@ -2617,56 +2618,6 @@ function activityLabelHTML(type) {
   return `<i class="fas ${a.icon}" style="color:${a.color}"></i> ${a.label}`;
 }
 // =====================
-// NEW PRODUCTS NOTIFICATION
-// =====================
-function getLastVisitDate() {
-  return localStorage.getItem('dentapro_last_visit') || null;
-}
-
-function setLastVisitDate() {
-  localStorage.setItem('dentapro_last_visit', new Date().toISOString());
-}
-
-function getNewProductsSinceLastVisit() {
-  const lastVisit = getLastVisitDate();
-  if (!lastVisit) return [];
-  return products.filter(p => p.createdAt && new Date(p.createdAt) > new Date(lastVisit));
-}
-
-function showNewProductsNotification() {
-  const newOnes = getNewProductsSinceLastVisit();
-  if (!newOnes.length) return;
-
-  const banner = document.createElement('div');
-  banner.id = 'newProductsBanner';
-  banner.style.cssText = `
-    position: fixed; top: 90px; left: 50%; transform: translateX(-50%);
-    z-index: 1800; background: linear-gradient(135deg, var(--accent), #00a896);
-    color: #fff; padding: 14px 24px; border-radius: 50px;
-    box-shadow: 0 8px 24px rgba(0,194,168,0.4);
-    display: flex; align-items: center; gap: 12px; cursor: pointer;
-    animation: slideIn 0.4s ease; font-weight: 700; font-size: 14px;
-  `;
-  banner.innerHTML = `
-    <i class="fas fa-bell" style="font-size:18px"></i>
-    <span>🎉 ${newOnes.length} منتج جديد أُضيف! اضغط للتصفح</span>
-    <i class="fas fa-times" style="margin-right:4px;opacity:0.8" onclick="event.stopPropagation();document.getElementById('newProductsBanner').remove()"></i>
-  `;
-  banner.onclick = () => {
-    banner.remove();
-    scrollToProducts();
-  };
-  document.body.appendChild(banner);
-
-  setTimeout(() => { if (document.getElementById('newProductsBanner')) banner.remove(); }, 8000);
-}
-
-function isNewProduct(p) {
-  const lastVisit = getLastVisitDate();
-  if (!lastVisit || !p.createdAt) return false;
-  return new Date(p.createdAt) > new Date(lastVisit);
-}
-// =====================
 // PRODUCT COMPARE
 // =====================
 function loadCompareList() {
@@ -3097,7 +3048,7 @@ async function renderConfirmDetails() {
 
   let clientPoints = 0;
   if (currentUser && currentUser.role === 'client') {
-    clientPoints = await getClientPoints(currentUser.email);
+    clientPoints = await getClientPoints(currentUser.uid);
   }
 
   const isClient     = currentUser?.role === 'client';
@@ -3333,6 +3284,7 @@ async function submitOrder() {
     id:          orderNum,
     clientName:  document.getElementById('doctorName').value,
     clientEmail: currentUser ? currentUser.email : 'guest',
+    clientUid:   currentUser ? currentUser.uid : null,
     clinic:      document.getElementById('clinicName').value,
     doctor:      document.getElementById('doctorName').value,
     phone:       document.getElementById('countryCode').value + document.getElementById('phoneNumber').value,
@@ -4323,23 +4275,22 @@ function confirmDelete() {
 // =====================
 
 // جلب نقاط عميل معين
-async function getClientPoints(email) {
+async function getClientPoints(uid) {
+  if (!uid) return 0;
   // قراءة محلية فورية كقيمة مبدئية
   const localSaved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
-  const localBalance = localSaved[email] || 0;
+  const localBalance = localSaved[uid] || 0;
 
   try {
     for (let i = 0; i < 20; i++) {
       if (window._fbDoc2 && window._fbGetDoc) break;
       await new Promise(r => setTimeout(r, 200));
     }
-    const key = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const ref = window._fbDoc2('points', key);
+    const ref = window._fbDoc2('points', uid);
     const snap = await window._fbGetDoc(ref);
     if (snap.exists()) {
       const balance = snap.data().balance || 0;
-      // حدّث localStorage بقيمة Firebase
-      localSaved[email] = balance;
+      localSaved[uid] = balance;
       localStorage.setItem('dentapro_points', JSON.stringify(localSaved));
       return balance;
     }
@@ -4351,10 +4302,11 @@ async function getClientPoints(email) {
 }
 
 // حفظ نقاط عميل
-async function saveClientPoints(email, balance, log) {
+async function saveClientPoints(uid, email, balance, log) {
+  if (!uid) { console.warn('saveClientPoints: uid مفقود'); return; }
   // حفظ محلي فوري دائماً
   const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
-  saved[email] = balance;
+  saved[uid] = balance;
   localStorage.setItem('dentapro_points', JSON.stringify(saved));
 
   // حفظ في Firebase
@@ -4363,12 +4315,11 @@ async function saveClientPoints(email, balance, log) {
       if (window._fbDoc2 && window._fbGetDoc && window._fbSetDoc) break;
       await new Promise(r => setTimeout(r, 200));
     }
-    const key = email.trim().toLowerCase().replace(/[^a-z0-9]/g, '_');
-    const ref = window._fbDoc2('points', key);
+    const ref = window._fbDoc2('points', uid);
     const snap = await window._fbGetDoc(ref);
     const logs = snap.exists() ? (snap.data().logs || []) : [];
     logs.unshift(log);
-    await window._fbSetDoc(ref, { email, balance, logs });
+    await window._fbSetDoc(ref, { email, uid, balance, logs });
     console.log('✅ تم حفظ النقاط في Firebase:', email, balance);
   } catch(e) {
     console.warn('⚠️ Firebase فشل، محفوظ محلياً فقط:', e.message);
@@ -4378,7 +4329,7 @@ async function saveClientPoints(email, balance, log) {
 // عرض رصيد النقاط في الهيدر
 async function renderPointsInHeader() {
   if (!currentUser || currentUser.role !== 'client') return;
-  const balance = await getClientPoints(currentUser.email);
+  const balance = await getClientPoints(currentUser.uid);
   currentUser.points = balance;
   const chip = document.querySelector('.user-chip-role');
   if (chip) {
@@ -4473,7 +4424,7 @@ async function renderAdminPoints() {
     const allOrders  = ordersSnap.docs.map(d => d.data());
 
     const usersWithData = await Promise.all(users.map(async u => {
-      const balance    = await getClientPoints(u.email);
+      const balance    = await getClientPoints(u.uid);
       const userOrders = allOrders.filter(o => o.clientEmail === u.email);
       const totalSpent = userOrders.reduce((s, o) => s + (o.total || 0), 0);
       return { ...u, balance, orderCount: userOrders.length, totalSpent };
@@ -4501,17 +4452,17 @@ async function renderAdminPoints() {
           </div>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-          <button onclick="showClientRecord('${u.email}')"
+          <button onclick="showClientRecord('${u.uid}','${u.email}')"
             style="padding:8px 16px;border-radius:50px;background:#e8f3fb;color:var(--primary);
             border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;
             display:flex;align-items:center;gap:5px">
             <i class="fas fa-folder-open"></i> السجل
           </button>
-          <button class="add-points-btn" onclick="openAddPointsModal('${u.email}','${u.firstName||u.name||'عميل'}','${u.clinic||''}',${u.balance},'add')">
+          <button class="add-points-btn" onclick="openAddPointsModal('${u.uid}','${u.email}','${u.firstName||u.name||'عميل'}','${u.clinic||''}',${u.balance},'add')">
             <i class="fas fa-plus"></i> نقاط
           </button>
           <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030);box-shadow:0 2px 8px rgba(229,62,62,0.3)"
-            onclick="openAddPointsModal('${u.email}','${u.firstName||u.name||'عميل'}','${u.clinic||''}',${u.balance},'deduct')">
+            onclick="openAddPointsModal('${u.uid}','${u.email}','${u.firstName||u.name||'عميل'}','${u.clinic||''}',${u.balance},'deduct')">
             <i class="fas fa-minus"></i>
           </button>
         </div>
@@ -4524,8 +4475,9 @@ async function renderAdminPoints() {
   }
 }
 
-function openAddPointsModal(email, name, clinic, currentBalance, mode = 'add') {
+function openAddPointsModal(uid, email, name, clinic, currentBalance, mode = 'add') {
   window._pointsMode = mode;
+  document.getElementById('pointsTargetUid').value = uid;
   document.getElementById('pointsTargetEmail').value = email;
   document.getElementById('pointsTargetName').textContent = `${name} — ${clinic}`;
   document.getElementById('pointsTargetEmail2').textContent = email;
@@ -4553,6 +4505,7 @@ function closeAddPointsModal() {
 }
 
 async function confirmAddPoints() {
+  const uid     = document.getElementById('pointsTargetUid').value;
   const email   = document.getElementById('pointsTargetEmail').value;
   const amount  = parseInt(document.getElementById('pointsAmount').value);
   const mode    = window._pointsMode || 'add';
@@ -4565,7 +4518,7 @@ async function confirmAddPoints() {
   }
   document.getElementById('pointsModalError').style.display = 'none';
 
-  const currentBalance = await getClientPoints(email);
+  const currentBalance = await getClientPoints(uid);
 
   if (mode === 'deduct' && amount > currentBalance) {
     document.getElementById('pointsModalError').style.display = 'flex';
@@ -4585,7 +4538,7 @@ async function confirmAddPoints() {
     by: 'admin'
   };
 
-  await saveClientPoints(email, newBalance, log);
+  await saveClientPoints(uid, email, newBalance, log);
   closeAddPointsModal();
   showToast(
     mode === 'deduct'
@@ -4898,7 +4851,7 @@ async function updateOrderStatus(docId, orderId, newStatus) {
     }
     // خصم النقاط تلقائياً فقط عند التسليم، وفقط إذا لم تُخصم من قبل
     if (newStatus === 'delivered' && order.payMethod === 'points' && !order.pointsDeducted) {
-      const currentBalance = await getClientPoints(order.clientEmail);
+      const currentBalance = await getClientPoints(order.clientUid);
       const newBalance = currentBalance - (order.totalPoints || 0);
       const log = {
         type: 'spend',
@@ -4907,7 +4860,7 @@ async function updateOrderStatus(docId, orderId, newStatus) {
         balance: newBalance,
         date: new Date().toISOString(),
       };
-      await saveClientPoints(order.clientEmail, newBalance, log);
+      await saveClientPoints(order.clientUid, order.clientEmail, newBalance, log);
       await window._fbUpdateDoc(window._fbDoc(docId), { pointsDeducted: true });
     }
 
@@ -5185,7 +5138,7 @@ async function saveProfile() {
 // =====================
 // CLIENT RECORD (ADMIN)
 // =====================
-async function showClientRecord(email) {
+async function showClientRecord(uid, email) {
   const existing = document.getElementById('clientRecordModal');
   if (existing) existing.remove();
 
@@ -5225,7 +5178,7 @@ async function showClientRecord(email) {
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     const totalSpent  = orders.reduce((s, o) => s + (o.total || 0), 0);
-    const balance     = await getClientPoints(email);
+    const balance     = await getClientPoints(uid);
 
     document.getElementById('clientRecordBody').innerHTML = `
       <!-- بطاقة العميل -->
