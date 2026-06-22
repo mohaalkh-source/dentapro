@@ -1915,23 +1915,32 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
           <input type="number" class="form-input" id="pOldPrice" placeholder="السعر قبل الخصم" min="0">
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">
-          <i class="fas fa-box" style="color:var(--primary-light)"></i>
-          وحدة البيع <span class="required">*</span>
-        </label>
-        <select class="form-input" id="pUnit" style="cursor:pointer">
-          <option value="قطعة">قطعة</option>
-          <option value="علبة">علبة</option>
-          <option value="صندوق">صندوق</option>
-          <option value="أنبوب">أنبوب</option>
-          <option value="كغم">كغم</option>
-          <option value="غرام">غرام</option>
-          <option value="لتر">لتر</option>
-          <option value="مل">مل</option>
-          <option value="طقم">طقم</option>
-          <option value="زوج">زوج</option>
-        </select>
+      <div class="form-row">
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fas fa-hashtag" style="color:var(--primary-light)"></i>
+            عدد الوحدة <span class="required">*</span>
+          </label>
+          <input type="number" class="form-input" id="pUnitQty" placeholder="مثال: 1, 2, 3" min="1" value="1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">
+            <i class="fas fa-box" style="color:var(--primary-light)"></i>
+            وحدة البيع <span class="required">*</span>
+          </label>
+          <select class="form-input" id="pUnit" style="cursor:pointer">
+            <option value="قطعة">قطعة</option>
+            <option value="علبة">علبة</option>
+            <option value="صندوق">صندوق</option>
+            <option value="أنبوب">أنبوب</option>
+            <option value="كغم">كغم</option>
+            <option value="غرام">غرام</option>
+            <option value="لتر">لتر</option>
+            <option value="مل">مل</option>
+            <option value="طقم">طقم</option>
+            <option value="زوج">زوج</option>
+          </select>
+        </div>
       </div>
       <div class="form-row">
         <div class="form-group">
@@ -2509,7 +2518,7 @@ function renderProducts() {
         <div class="product-price-row">
           <div>
             <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            ${p.unit ? `<div style="font-size:11px;color:var(--text-muted);font-weight:600">${t('لكل','per')} ${p.unit}</div>` : ''}
+            ${p.unit ? `<div style="font-size:11px;color:var(--text-muted);font-weight:600">${t('لكل','per')} ${p.unitQty||1} ${p.unit}</div>` : ''}
             ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
           </div>
           <button class="add-to-cart ${inCart?'added':''}" onclick="${outOfStock?'':`addToCart(${p.id})`}"
@@ -2738,7 +2747,7 @@ function renderCompareTable() {
     { label: 'الماركة', render: p => p.brand },
     { label: 'السعر', render: p => `<strong style="color:var(--primary)">${p.price.toLocaleString()} د.أ</strong>` },
     { label: 'السعر القديم', render: p => p.old ? `${p.old.toLocaleString()} د.أ` : '—' },
-    { label: 'وحدة البيع', render: p => p.unit || 'قطعة' },
+    { label: 'وحدة البيع', render: p => `${p.unitQty||1} ${p.unit || 'قطعة'}` },
     { label: 'بلد المنشأ', render: p => p.country || '—' },
     { label: 'نقاط الشراء', render: p => p.points ? `🏆 ${p.points}` : '—' },
     { label: 'المخزون', render: p => (p.stock !== undefined && p.stock !== null) ? p.stock : 'غير محدد' },
@@ -2823,7 +2832,7 @@ function openProductDetail(id, _isRefresh) {
         <div class="product-price-row" style="margin-bottom:18px">
           <div>
             <div class="product-price" style="font-size:26px">${p.price.toLocaleString()} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
-            ${p.unit ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px">${t('السعر لكل','Price per')} ${p.unit}</div>` : ''}
+            ${p.unit ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px">${t('السعر لكل','Price per')} ${p.unitQty||1} ${p.unit}</div>` : ''}
             ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
           </div>
         </div>
@@ -4194,6 +4203,7 @@ function openAddProduct() {
   document.getElementById('productFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> إضافة منتج جديد';
   ['pAr','pEn','pDescAr','pDescEn','pBrand','pPrice','pOldPrice'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pCat').value = 'dev';
+  document.getElementById('pUnitQty').value = 1;
   document.getElementById('pUnit').value = 'قطعة';
   document.getElementById('pBadge').value = '';
   document.getElementById('pCountry').value = '';
@@ -4217,6 +4227,7 @@ function openEditProduct(id) {
   document.getElementById('pPrice').value = p.price;
   document.getElementById('pOldPrice').value = p.old || '';
   document.getElementById('pCat').value = p.cat;
+  document.getElementById('pUnitQty').value = p.unitQty || 1;
   document.getElementById('pUnit').value = p.unit || 'قطعة';
   document.getElementById('pBadge').value = p.badge || '';
   document.getElementById('pCountry').value = p.country || '';
@@ -4245,10 +4256,11 @@ function saveProduct() {
 
   const oldPrice = parseFloat(document.getElementById('pOldPrice').value) || null;
   const unit = document.getElementById('pUnit').value || 'قطعة';
+  const unitQty = parseInt(document.getElementById('pUnitQty').value) || 1;
   const productData = {
     cat: document.getElementById('pCat').value,
     brand, ar, en,
-    price, old: oldPrice, unit,
+    price, old: oldPrice, unit, unitQty,
     desc_ar: document.getElementById('pDescAr').value.trim() || ar,
     desc_en: document.getElementById('pDescEn').value.trim() || en,
     badge:   document.getElementById('pBadge').value || null,
