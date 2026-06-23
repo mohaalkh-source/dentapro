@@ -906,10 +906,26 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 .offers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
 .offer-bundle-card{border:2px solid #f59e0b}
 .tier-row{display:flex;gap:8px;align-items:center}
-/* ===== OFFERS ===== */
-.offers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
-.offer-bundle-card{border:2px solid #f59e0b}
-.tier-row{display:flex;gap:8px;align-items:center}
+
+/* ===== QUICK ACCESS SHORTCUTS ===== */
+.quick-access-wrap{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px}
+.quick-access-card{
+  flex:1; min-width:220px; display:flex; align-items:center; gap:14px;
+  padding:18px 22px; border-radius:var(--radius); cursor:pointer;
+  border:2px solid var(--border); background:#fff; transition:all 0.25s;
+  text-decoration:none; color:inherit;
+}
+.quick-access-card:hover{transform:translateY(-3px); box-shadow:var(--shadow)}
+.quick-access-card.bundles{border-color:#f59e0b; background:linear-gradient(135deg,rgba(245,158,11,0.06),rgba(245,158,11,0.02))}
+.quick-access-card.qtyoffers{border-color:var(--primary-light); background:linear-gradient(135deg,rgba(10,92,138,0.06),rgba(0,194,168,0.04))}
+.quick-access-icon{
+  width:52px; height:52px; border-radius:14px; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center; font-size:26px;
+}
+.quick-access-card.bundles .quick-access-icon{background:linear-gradient(135deg,#f59e0b,#d97706); color:#fff}
+.quick-access-card.qtyoffers .quick-access-icon{background:linear-gradient(135deg,var(--primary),var(--accent)); color:#fff}
+.quick-access-title{font-weight:800; font-size:15px; color:var(--primary-dark); margin-bottom:2px}
+.quick-access-sub{font-size:12px; color:var(--text-muted)}
 /* ===== RESPONSIVE ===== */
 @media(max-width:768px){
   .header-inner{padding:12px 16px; gap:10px}
@@ -998,6 +1014,15 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 }
 body.en .compare-toggle-btn { left: auto; right: 12px; }
 .compare-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
+.favorite-toggle-btn {
+  width: 32px; height: 32px; border-radius: 50%;
+  border: 2px solid var(--border); background: #fff;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.2s; font-size: 13px; color: var(--text-muted);
+  position: absolute; top: 52px; left: 12px; z-index: 2;
+}
+body.en .favorite-toggle-btn { left: auto; right: 12px; }
+.favorite-toggle-btn.active { background: #e53e3e; color: #fff; border-color: #e53e3e; }
 .compare-table-wrap { overflow-x: auto; }
 .compare-table { width: 100%; border-collapse: collapse; min-width: 600px; }
 .compare-table th, .compare-table td {
@@ -1159,14 +1184,37 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
       <h2 class="section-title" data-ar="تصفح حسب الفئة" data-en="Browse by Category">تصفح حسب الفئة</h2>
     </div>
     <div class="categories-grid" id="categoriesGrid"></div>
+
+    <div class="quick-access-wrap" id="quickAccessWrap" style="display:none">
+      <div class="quick-access-card bundles" onclick="goToOffersFiltered('bundle')">
+        <div class="quick-access-icon">🎁</div>
+        <div>
+          <div class="quick-access-title"><span data-ar="الباقات" data-en="Bundles">الباقات</span></div>
+          <div class="quick-access-sub" data-ar="شاهد كل الباقات المتاحة" data-en="View all available bundles">شاهد كل الباقات المتاحة</div>
+        </div>
+      </div>
+      <div class="quick-access-card qtyoffers" onclick="goToOffersFiltered('qty')">
+        <div class="quick-access-icon">🏷️</div>
+        <div>
+          <div class="quick-access-title"><span data-ar="عروض الكمية" data-en="Quantity Offers">عروض الكمية</span></div>
+          <div class="quick-access-sub" data-ar="وفّر أكثر عند شراء كمية أكبر" data-en="Save more when buying in bulk">وفّر أكثر عند شراء كمية أكبر</div>
+        </div>
+      </div>
+    </div>
   </div>
 </section>
 <!-- OFFERS -->
 <section id="offersSection" style="padding:32px 24px 16px;display:none">
   <div class="section-inner">
-    <div class="section-header">
-      <div class="section-tag" style="background:rgba(245,158,11,0.12);color:#d97706">🎁 عروض خاصة</div>
-      <h2 class="section-title">أفضل العروض والباقات</h2>
+    <div class="section-header" style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px;text-align:right">
+      <div>
+        <div class="section-tag" style="background:rgba(245,158,11,0.12);color:#d97706">🎁 عروض خاصة</div>
+        <h2 class="section-title" style="margin-bottom:0">أفضل العروض والباقات</h2>
+      </div>
+      <button onclick="goToOffersFiltered('all')" style="padding:8px 18px;border-radius:50px;border:2px solid var(--border);
+        background:#fff;font-family:inherit;font-size:13px;font-weight:700;color:var(--text-muted);cursor:pointer">
+        عرض الكل
+      </button>
     </div>
     <div class="offers-grid" id="offersGrid"></div>
   </div>
@@ -1545,6 +1593,22 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
     <div class="section-tag">مقارنة المنتجات</div>
     <h2 class="section-title">قارن بين المنتجات المختارة</h2>
     <div id="compareTableWrap" style="margin-top:24px"></div>
+  </div>
+</div>
+
+<!-- ===== FAVORITES PAGE ===== -->
+<div class="page-section" id="favoritesPage">
+  <div class="orders-page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="section-tag">❤️ المفضلة</div>
+        <h2 class="section-title" style="margin-bottom:0">منتجاتك المفضلة</h2>
+      </div>
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
+    <div class="products-grid" id="favoritesGrid"></div>
   </div>
 </div>
 
@@ -2088,40 +2152,6 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
     </div>
   </div>
 </div>
-<!-- QTY OFFER MODAL -->
-<div class="modal-overlay" id="qtyOfferModal">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
-      <div class="modal-title" id="qtyOfferTitle"><i class="fas fa-tag"></i> إضافة عرض كمية</div>
-      <button class="close-btn" onclick="closeQtyOfferModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="qtyOfferId">
-      <div class="form-group">
-        <label class="form-label">المنتج <span class="required">*</span></label>
-        <select class="form-input" id="qtyOfferProduct" style="cursor:pointer"></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">
-          مستويات الكمية <span class="required">*</span>
-          <small style="color:var(--text-muted);font-weight:500">(كمية ← السعر الإجمالي)</small>
-        </label>
-        <div id="qtyTiersList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:10px"></div>
-        <button type="button" onclick="addTierRow()" style="padding:8px 16px;border-radius:50px;background:#f0f8ff;color:var(--primary);border:1.5px solid var(--border);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
-          <i class="fas fa-plus"></i> إضافة مستوى
-        </button>
-      </div>
-      <div id="qtyOfferError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px;background:#fff5f5;border-radius:8px">
-        <i class="fas fa-exclamation-circle"></i> <span id="qtyOfferErrorMsg">يرجى ملء الحقول بشكل صحيح</span>
-      </div>
-    </div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn-back" onclick="closeQtyOfferModal()">إلغاء</button>
-      <button class="btn-submit" onclick="saveQtyOffer()"><i class="fas fa-save"></i> حفظ العرض</button>
-    </div>
-  </div>
-</div>
-<!-- ADD CATEGORY MODAL -->
 <!-- BUNDLE MODAL -->
 <div class="modal-overlay" id="bundleModal">
   <div class="modal" style="max-width:640px">
@@ -2173,8 +2203,11 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
           <select class="form-input" id="bundleAddProductSelect" style="flex:2;cursor:pointer"></select>
           <input type="number" class="form-input" id="bundleAddProductQty" placeholder="الكمية" min="1" value="1" style="flex:1">
           <button type="button" onclick="addBundleItemRow()" style="padding:0 18px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">
-            <i class="fas fa-plus"></i>
+            <i class="fas fa-plus"></i> إضافة
           </button>
+        </div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
+          <i class="fas fa-info-circle"></i> اختر المادة وحدد كميتها ثم اضغط "إضافة" — كرر لكل مادة تريد إضافتها للباقة
         </div>
         <div id="bundleItemsList" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
@@ -2205,6 +2238,7 @@ body.en .compare-toggle-btn { left: auto; right: 12px; }
     </div>
   </div>
 </div>
+<!-- ADD CATEGORY MODAL -->
 <div class="modal-overlay" id="addCategoryModal">
   <div class="modal" style="max-width:480px">
     <div class="modal-header" style="background:linear-gradient(135deg,#1a1a2e,#2d3561)">
@@ -2564,9 +2598,21 @@ function getActiveBundles() {
 }
 
 function getActiveQtyOfferProducts() {
-  return offers.filter(o => o.type === 'qty' && o.active)
-    .map(o => products.find(p => p.id === o.productId))
+  const activeQtyOffers = offers.filter(o => o.type === 'qty' && o.active);
+  console.log('🔍 عروض الكمية الفعّالة:', activeQtyOffers);
+  const result = activeQtyOffers
+    .map(o => {
+      const match = products.find(p => p.id === o.productId);
+      if (!match) {
+        console.warn('⚠️ عرض كمية بدون منتج مطابق! productId المطلوب:', o.productId,
+          'typeof:', typeof o.productId,
+          '— الـ IDs المتوفرة في المنتجات:', products.map(p => p.id));
+      }
+      return match;
+    })
     .filter(p => p && !(p.stock !== undefined && p.stock !== null && p.stock <= 0));
+  console.log('✅ منتجات عروض الكمية النهائية:', result);
+  return result;
 }
 
 function renderQtyOfferTableHTML(p) {
@@ -2631,14 +2677,16 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderCompareBar();
 
   // تحميل البيانات من Firebase
+  // المنتجات أولاً لضمان توافرها قبل فلترة العروض المرتبطة بها
   await Promise.all([
     loadProductsFromFirebase(),
-    loadCategoriesFromFirebase(),
-    loadOffersFromFirebase()
+    loadCategoriesFromFirebase()
   ]);
+  await loadOffersFromFirebase();
 
   // مزامنة السلة المحفوظة مع بيانات المنتجات الحالية (أسعار/توفر محدّثة)
   syncCartWithProducts();
+  renderProducts();
   renderOffers();
 
   // دعم فتح منتج مباشرة من رابط مشاركة
@@ -2780,6 +2828,10 @@ function renderProducts() {
         onclick="toggleCompare(${p.id})" title="${t('أضف للمقارنة','Add to compare')}">
         <i class="fas fa-balance-scale"></i>
       </button>
+      <button class="favorite-toggle-btn ${isFavorite(p.id)?'active':''}"
+        onclick="event.stopPropagation();toggleFavorite(${p.id})" title="${t('أضف للمفضلة','Add to favorites')}">
+        <i class="fas ${isFavorite(p.id)?'fa-heart':'fa-heart'}"></i>
+      </button>
       ${isNewProduct(p)
         ? `<div class="product-badge" style="background:linear-gradient(135deg,var(--accent),#00a896)">🆕 ${t('وصل حديثاً','Just Arrived')}</div>`
         : (outOfStock
@@ -2837,13 +2889,32 @@ document.getElementById('searchInput').addEventListener('input', renderProducts)
 // =====================
 // RENDER OFFERS SECTION
 // =====================
+let offersFilterMode = 'all'; // 'all' | 'bundle' | 'qty'
+
+function goToOffersFiltered(mode) {
+  offersFilterMode = mode;
+  renderOffers();
+  const section = document.getElementById('offersSection');
+  if (section) section.scrollIntoView({behavior:'smooth', block:'start'});
+}
+
 function renderOffers() {
   const section = document.getElementById('offersSection');
   const grid = document.getElementById('offersGrid');
+  const quickAccess = document.getElementById('quickAccessWrap');
   if (!section || !grid) return;
 
   const bundles = getActiveBundles();
   const qtyProducts = getActiveQtyOfferProducts();
+
+  // إظهار/إخفاء أزرار الوصول السريع حسب توفر كل نوع
+  if (quickAccess) {
+    quickAccess.style.display = (bundles.length || qtyProducts.length) ? 'flex' : 'none';
+    const bundleCard = quickAccess.querySelector('.bundles');
+    const qtyCard = quickAccess.querySelector('.qtyoffers');
+    if (bundleCard) bundleCard.style.display = bundles.length ? 'flex' : 'none';
+    if (qtyCard) qtyCard.style.display = qtyProducts.length ? 'flex' : 'none';
+  }
 
   if (!bundles.length && !qtyProducts.length) {
     section.style.display = 'none';
@@ -2851,9 +2922,12 @@ function renderOffers() {
   }
   section.style.display = 'block';
 
+  const showBundles = offersFilterMode === 'all' || offersFilterMode === 'bundle';
+  const showQty = offersFilterMode === 'all' || offersFilterMode === 'qty';
+
   let html = '';
 
-  html += bundles.map(b => {
+  html += (showBundles ? bundles : []).map(b => {
     const original = getBundleOriginalPrice(b);
     const savings = original - b.bundlePrice;
     const miniIcons = (b.items || []).map(it => {
@@ -2887,7 +2961,7 @@ function renderOffers() {
     </div>`;
   }).join('');
 
-  html += qtyProducts.map(p => {
+  html += (showQty ? qtyProducts : []).map(p => {
     const offer = getActiveQtyOffer(p.id);
     const bestTier = offer.tiers[offer.tiers.length-1];
     const unitPrice = bestTier.price / bestTier.qty;
@@ -3142,6 +3216,93 @@ function renderCompareTable() {
           </tr>`).join('')}
       </table>
     </div>`;
+}
+
+// =====================
+// FAVORITES
+// =====================
+function loadFavoritesList() {
+  try {
+    const saved = localStorage.getItem('dentapro_favorites');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return [];
+}
+let favoritesList = loadFavoritesList();
+
+function saveFavoritesList() {
+  localStorage.setItem('dentapro_favorites', JSON.stringify(favoritesList));
+}
+
+function isFavorite(id) {
+  return favoritesList.includes(id);
+}
+
+function toggleFavorite(id) {
+  if (isFavorite(id)) {
+    favoritesList = favoritesList.filter(x => x !== id);
+    showToast('💔 تمت الإزالة من المفضلة', '');
+  } else {
+    favoritesList.push(id);
+    showToast('❤️ تمت الإضافة للمفضلة', 'success');
+  }
+  saveFavoritesList();
+  renderProducts();
+  if (document.getElementById('favoritesPage')?.classList.contains('active')) {
+    renderFavoritesPage();
+  }
+}
+
+function openFavoritesPage() {
+  showPage('favorites');
+  renderFavoritesPage();
+}
+
+function renderFavoritesPage() {
+  const wrap = document.getElementById('favoritesGrid');
+  if (!wrap) return;
+  const items = favoritesList.map(id => products.find(x => x.id === id)).filter(Boolean);
+  if (!items.length) {
+    wrap.innerHTML = `
+      <div class="empty-orders" style="grid-column:1/-1">
+        <i class="fas fa-heart"></i>
+        <h3>${t('لا توجد منتجات في المفضلة','No favorite products yet')}</h3>
+        <p>${t('أضف منتجات للمفضلة بالضغط على القلب','Tap the heart icon to add favorites')}</p>
+        <button class="btn-primary" style="margin-top:16px" onclick="showPage('home')">${t('تسوّق الآن','Shop Now')}</button>
+      </div>`;
+    return;
+  }
+  wrap.innerHTML = items.map(p => {
+    const inCart = cart.find(c => c.id === p.id);
+    const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+    return `
+    <div class="product-card">
+      <button class="favorite-toggle-btn active" style="top:12px"
+        onclick="toggleFavorite(${p.id})" title="${t('إزالة من المفضلة','Remove from favorites')}">
+        <i class="fas fa-heart"></i>
+      </button>
+      <div class="product-img-wrap" onclick="openProductDetail(${p.id})" style="${outOfStock?'opacity:0.5':''}">
+        ${p.image
+          ? `<img src="${cldOptimize(p.image, 400)}" alt="${p.ar}" loading="lazy" decoding="async" />`
+          : `<span class="emoji-fallback">${p.icon}</span>`}
+      </div>
+      <div class="product-info">
+        <div class="product-brand">${p.brand}</div>
+        <div class="product-name" onclick="openProductDetail(${p.id})" style="cursor:pointer">${currentLang==='en'?p.en:p.ar}</div>
+        <div class="product-desc">${currentLang==='en'?p.desc_en:p.desc_ar}</div>
+        <div class="product-price-row">
+          <div>
+            <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+            ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
+          </div>
+          <button class="add-to-cart ${inCart?'added':''}" onclick="${outOfStock?'':`addToCart(${p.id})`}"
+            ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
+            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-plus')}"></i>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
 }
 // =====================
 // PRODUCT DETAIL PAGE
@@ -3815,7 +3976,7 @@ function sendWhatsApp() {
     `\n📦 ${t('المنتجات','Products')}:\n${items}\n\n` +
     `💰 ${t('الإجمالي','Total')}: ${getTotal().toLocaleString()} ${t('د.أ','SAR')}`
   );
-  window.open(`https://wa.me/966500000000?text=${msg}`, '_blank');
+  window.open(`https://wa.me/962500000000?text=${msg}`, '_blank');
 }
 // =====================
 // CATEGORY MANAGEMENT
@@ -3896,6 +4057,16 @@ function deleteCategory(id) {
   const idx = categories.findIndex(c => c.id === id);
   if (idx !== -1) categories.splice(idx, 1);
   saveCategories();
+
+  // تحديث القوائم المنسدلة لإزالة القسم المحذوف
+  const pCatSelect = document.getElementById('pCat');
+  const adminCatFilterSelect = document.getElementById('adminCatFilter');
+  [pCatSelect, adminCatFilterSelect].forEach(sel => {
+    if (!sel) return;
+    const opt = Array.from(sel.options).find(o => o.value === id);
+    if (opt) opt.remove();
+  });
+
   renderCurrentCatList();
   renderCategories();
   showToast('🗑️ تم حذف القسم بنجاح', 'success');
@@ -4026,6 +4197,9 @@ function showPage(page) {
   } else if (page === 'compare') {
     document.getElementById('comparePage').classList.add('active');
     window.scrollTo(0, 0);
+  } else if (page === 'favorites') {
+    document.getElementById('favoritesPage').classList.add('active');
+    window.scrollTo(0, 0);
   }
 }
 // =====================
@@ -4102,7 +4276,7 @@ function renderAuthHeader() {
         <button class="user-dropdown-item" onclick="openClientOrders()">
           <i class="fas fa-shopping-bag" style="color:var(--primary)"></i> طلباتي
         </button>
-        <button class="user-dropdown-item">
+        <button class="user-dropdown-item" onclick="openFavoritesPage()">
           <i class="fas fa-heart" style="color:#e53e3e"></i> المفضلة
         </button>
         <button class="user-dropdown-item" onclick="openEditProfile()">
@@ -4993,6 +5167,10 @@ function renderAdminOffers() {
       </div>`;
     } else {
       const original = getBundleOriginalPrice(o);
+      const itemsDetailHtml = (o.items || []).map(it => {
+        const ip = products.find(x => x.id === it.productId);
+        return ip ? `<span style="background:#f0f8ff;border-radius:50px;padding:2px 10px;font-size:11px;font-weight:700;color:var(--primary);margin-left:4px;display:inline-block;margin-top:4px">${ip.ar} × ${it.qty}</span>` : '';
+      }).join('');
       return `
       <div class="points-admin-card">
         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
@@ -5001,7 +5179,8 @@ function renderAdminOffers() {
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">🎁 ${o.name_ar}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${(o.items||[]).length} منتجات · ${original.toLocaleString()} ← ${o.bundlePrice.toLocaleString()} د.أ</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${original.toLocaleString()} ← ${o.bundlePrice.toLocaleString()} د.أ</div>
+            <div style="margin-top:4px">${itemsDetailHtml}</div>
             <div style="margin-top:6px"><span style="font-size:11px;font-weight:800;color:${o.active?'#15803d':'#94a3b8'}">${o.active?'● فعّال':'○ متوقف'}</span></div>
           </div>
         </div>
@@ -5117,13 +5296,25 @@ let currentBundleItems = [];
 let currentBundleImage = null;
 
 function addBundleItemRow() {
-  const productId = parseInt(document.getElementById('bundleAddProductSelect').value);
+  const select = document.getElementById('bundleAddProductSelect');
+  const productId = parseInt(select.value);
   const qty = parseInt(document.getElementById('bundleAddProductQty').value) || 1;
-  if (!productId) return;
+  if (!productId) {
+    showToast('⚠️ يرجى اختيار مادة أولاً', 'error');
+    return;
+  }
+  const p = products.find(x => x.id === productId);
   const existing = currentBundleItems.find(it => it.productId === productId);
-  if (existing) existing.qty = qty;
-  else currentBundleItems.push({ productId, qty });
+  if (existing) {
+    existing.qty = qty;
+    showToast(`✏️ تم تحديث كمية "${p ? p.ar : 'المادة'}" إلى ${qty}`, 'success');
+  } else {
+    currentBundleItems.push({ productId, qty });
+    showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}" بكمية ${qty}`, 'success');
+  }
   document.getElementById('bundleAddProductQty').value = 1;
+  // إعادة ضبط القائمة المنسدلة لفرض اختيار صريح للمادة التالية
+  select.selectedIndex = 0;
   renderBundleItemsList();
 }
 
@@ -5141,16 +5332,27 @@ function renderBundleItemsList() {
       const p = products.find(x => x.id === it.productId);
       if (!p) return '';
       return `
-      <div style="display:flex;align-items:center;justify-content:space-between;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
-        <div style="display:flex;align-items:center;gap:8px">
-          <span style="font-size:18px">${p.icon}</span>
-          <span style="font-weight:700;font-size:13px">${p.ar}</span>
-          <span style="font-size:12px;color:var(--text-muted)">× ${it.qty}</span>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
+        <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+          <span style="font-size:18px;flex-shrink:0">${p.icon}</span>
+          <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</span>
         </div>
-        <button onclick="removeBundleItemRow(${it.productId})" style="background:none;border:none;color:var(--danger);cursor:pointer"><i class="fas fa-times-circle"></i></button>
+        <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+          <span style="font-size:12px;color:var(--text-muted)">الكمية:</span>
+          <input type="number" min="1" value="${it.qty}" style="width:56px;padding:5px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center"
+            onchange="updateBundleItemQty(${it.productId}, this.value)">
+        </div>
+        <button onclick="removeBundleItemRow(${it.productId})" style="background:none;border:none;color:var(--danger);cursor:pointer;flex-shrink:0"><i class="fas fa-times-circle"></i></button>
       </div>`;
     }).join('');
   }
+  updateBundleOriginalPreview();
+}
+
+function updateBundleItemQty(productId, newQty) {
+  const qty = parseInt(newQty) || 1;
+  const item = currentBundleItems.find(it => it.productId === productId);
+  if (item) item.qty = qty;
   updateBundleOriginalPreview();
 }
 
@@ -5223,7 +5425,9 @@ function openAddBundle() {
   currentBundleItems = [];
   removeBundleImage();
   const sel = document.getElementById('bundleAddProductSelect');
-  sel.innerHTML = products.map(p => `<option value="${p.id}">${p.ar}</option>`).join('');
+  sel.innerHTML = `<option value="">— اختر مادة —</option>` +
+    products.map(p => `<option value="${p.id}">${p.ar} (${p.price.toLocaleString()} د.أ)</option>`).join('');
+  document.getElementById('bundleAddProductQty').value = 1;
   renderBundleItemsList();
   document.getElementById('bundleModal').classList.add('open');
 }
@@ -5481,7 +5685,7 @@ async function renderClientOrders() {
             <div class="order-track-num">
               <i class="fas fa-receipt" style="color:var(--primary-light)"></i> #${order.id}
             </div>
-            <div class="order-track-date">📅 ${date} · ${order.clinic}</div>
+            <div class="order-track-date">📅 ${date} · ${escHtml(order.clinic)}</div>
           </div>
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             ${statusBadgeHTML(order.status)}
