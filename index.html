@@ -218,6 +218,34 @@ section{padding:64px 24px}
   display:flex; align-items:center; justify-content:space-between;
   margin-bottom:24px; gap:16px; flex-wrap:wrap;
 }
+.filters-bar{
+  display:flex; gap:12px; flex-wrap:wrap; align-items:center;
+  margin-bottom:20px; padding:16px; background:#fff;
+  border-radius:var(--radius-sm); border:1px solid var(--border);
+}
+.filter-group{display:flex; align-items:center; gap:6px}
+.filter-group label{font-size:12px; font-weight:700; color:var(--text-muted); white-space:nowrap}
+.filter-price-input{
+  width:80px; padding:7px 10px; border-radius:8px;
+  border:2px solid var(--border); font-family:inherit; font-size:13px; outline:none;
+}
+.filter-price-input:focus{border-color:var(--primary-light)}
+.filter-select{
+  padding:7px 12px; border-radius:50px; border:2px solid var(--border);
+  background:#fff; font-family:inherit; font-size:13px; font-weight:600;
+  color:var(--text-muted); cursor:pointer; outline:none;
+}
+.filter-checkbox-wrap{display:flex; align-items:center; gap:6px; cursor:pointer}
+.filter-checkbox-wrap input{cursor:pointer; width:16px; height:16px}
+.filter-checkbox-wrap label{font-size:13px; font-weight:600; color:var(--text); cursor:pointer}
+.filter-clear-btn{
+  padding:7px 16px; border-radius:50px; border:2px solid var(--danger);
+  background:#fff5f5; color:var(--danger); font-family:inherit;
+  font-size:12px; font-weight:700; cursor:pointer; transition:all 0.2s;
+}
+.filter-clear-btn:hover{background:var(--danger); color:#fff}
+.filter-results-count{font-size:13px; color:var(--text-muted); font-weight:600; margin-right:auto}
+body.en .filter-results-count{margin-right:0; margin-left:auto}
 .filter-tabs{display:flex; gap:8px; flex-wrap:wrap}
 .filter-tab{
   padding:7px 18px; border-radius:50px; border:2px solid var(--border);
@@ -1235,9 +1263,33 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
           <option value="price_asc" data-ar="السعر: من الأقل للأعلى" data-en="Price: Low to High">السعر: من الأقل للأعلى</option>
           <option value="price_desc" data-ar="السعر: من الأعلى للأقل" data-en="Price: High to Low">السعر: من الأعلى للأقل</option>
           <option value="newest" data-ar="الأحدث أولاً" data-en="Newest First">الأحدث أولاً</option>
+          <option value="bestselling" data-ar="الأكثر مبيعاً" data-en="Best Selling">الأكثر مبيعاً</option>
         </select>
       </div>
     </div>
+
+    <!-- شريط الفلاتر -->
+    <div class="filters-bar">
+      <div class="filter-group">
+        <label data-ar="السعر من" data-en="Price from">السعر من</label>
+        <input type="number" class="filter-price-input" id="filterPriceMin" placeholder="0" min="0" oninput="renderProducts()">
+        <label data-ar="إلى" data-en="to">إلى</label>
+        <input type="number" class="filter-price-input" id="filterPriceMax" placeholder="∞" min="0" oninput="renderProducts()">
+      </div>
+      <div class="filter-group">
+        <label data-ar="الماركة" data-en="Brand">الماركة</label>
+        <select class="filter-select" id="filterBrand" onchange="renderProducts()">
+          <option value="all" data-ar="كل الماركات" data-en="All Brands">كل الماركات</option>
+        </select>
+      </div>
+      <div class="filter-checkbox-wrap">
+        <input type="checkbox" id="filterInStock" onchange="renderProducts()">
+        <label for="filterInStock" data-ar="المتوفر فقط" data-en="In Stock Only">المتوفر فقط</label>
+      </div>
+      <span class="filter-results-count" id="filterResultsCount"></span>
+      <button class="filter-clear-btn" onclick="clearFilters()" data-ar="إلغاء الفلاتر" data-en="Clear Filters">إلغاء الفلاتر</button>
+    </div>
+
     <div class="products-grid" id="productsGrid"></div>
   </div>
 </section>
@@ -2832,7 +2884,28 @@ function normalizeArabic(str) {
     .trim();
 }
 
+function populateBrandFilter() {
+  const sel = document.getElementById('filterBrand');
+  if (!sel) return;
+  const currentVal = sel.value || 'all';
+  const brands = [...new Set(products.map(p => p.brand))].sort();
+  sel.innerHTML = `<option value="all">${t('كل الماركات','All Brands')}</option>` +
+    brands.map(b => `<option value="${escHtml(b)}">${escHtml(b)}</option>`).join('');
+  if (brands.includes(currentVal)) sel.value = currentVal;
+}
+
+function clearFilters() {
+  document.getElementById('filterPriceMin').value = '';
+  document.getElementById('filterPriceMax').value = '';
+  document.getElementById('filterBrand').value = 'all';
+  document.getElementById('filterInStock').checked = false;
+  document.getElementById('sortSelect').value = 'default';
+  renderProducts();
+}
+
 function renderProducts() {
+  populateBrandFilter();
+
   let list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
   const searchValRaw = document.getElementById('searchInput').value;
   const searchVal = normalizeArabic(searchValRaw);
@@ -2842,10 +2915,28 @@ function renderProducts() {
     normalizeArabic(p.brand).includes(searchVal)
   ) : list;
 
+  // فلتر السعر
+  const priceMin = parseFloat(document.getElementById('filterPriceMin')?.value);
+  const priceMax = parseFloat(document.getElementById('filterPriceMax')?.value);
+  if (!isNaN(priceMin)) filtered = filtered.filter(p => p.price >= priceMin);
+  if (!isNaN(priceMax)) filtered = filtered.filter(p => p.price <= priceMax);
+
+  // فلتر الماركة
+  const brandVal = document.getElementById('filterBrand')?.value;
+  if (brandVal && brandVal !== 'all') filtered = filtered.filter(p => p.brand === brandVal);
+
+  // فلتر التوفر بالمخزون
+  const inStockOnly = document.getElementById('filterInStock')?.checked;
+  if (inStockOnly) filtered = filtered.filter(p => !(p.stock !== undefined && p.stock !== null && p.stock <= 0));
+
   const sortVal = document.getElementById('sortSelect')?.value || 'default';
-  if (sortVal === 'price_asc')  filtered = [...filtered].sort((a,b) => a.price - b.price);
-  if (sortVal === 'price_desc') filtered = [...filtered].sort((a,b) => b.price - a.price);
-  if (sortVal === 'newest')     filtered = [...filtered].sort((a,b) => b.id - a.id);
+  if (sortVal === 'price_asc')    filtered = [...filtered].sort((a,b) => a.price - b.price);
+  if (sortVal === 'price_desc')   filtered = [...filtered].sort((a,b) => b.price - a.price);
+  if (sortVal === 'newest')       filtered = [...filtered].sort((a,b) => b.id - a.id);
+  if (sortVal === 'bestselling')  filtered = [...filtered].sort((a,b) => (b.badge==='الأكثر مبيعاً'?1:0) - (a.badge==='الأكثر مبيعاً'?1:0));
+
+  const countEl = document.getElementById('filterResultsCount');
+  if (countEl) countEl.textContent = `${filtered.length} ${t('نتيجة','results')}`;
 
   const grid = document.getElementById('productsGrid');
   if (!filtered.length) {
@@ -5128,8 +5219,8 @@ async function renderAdminPoints() {
             ${(u.firstName||u.name||'؟').charAt(0)}
           </div>
           <div style="flex:1;min-width:0">
-            <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">${u.firstName || u.name || 'عميل'}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${u.clinic || ''} · ${u.email}</div>
+            <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">${escHtml(u.firstName || u.name || 'عميل')}</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${escHtml(u.clinic || '')} · ${escHtml(u.email)}</div>
             <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:6px;align-items:center">
               <span class="points-badge"><i class="fas fa-star"></i> ${u.balance} نقطة</span>
               <span style="font-size:12px;color:var(--text-muted)">
@@ -6257,9 +6348,9 @@ async function showClientRecord(uid, email) {
           ${(u.firstName||u.name||'؟').charAt(0)}
         </div>
         <div style="flex:1">
-          <div style="font-weight:900;font-size:16px;color:var(--primary-dark)">${u.firstName||u.name||'عميل'}</div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${u.clinic||''}</div>
-          <div style="font-size:12px;color:var(--text-muted)">${u.email} ${u.phone ? '· '+u.phone : ''}</div>
+          <div style="font-weight:900;font-size:16px;color:var(--primary-dark)">${escHtml(u.firstName||u.name||'عميل')}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${escHtml(u.clinic||'')}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${escHtml(u.email)} ${u.phone ? '· '+escHtml(u.phone) : ''}</div>
         </div>
       </div>
 
@@ -6309,7 +6400,7 @@ async function showClientRecord(uid, email) {
               </div>
             </div>
             <div style="margin-top:8px;font-size:12px;color:var(--text-muted)">
-              ${o.items.map(i => `${i.icon} ${i.ar} ×${i.qty}`).join(' &nbsp;·&nbsp; ')}
+              ${o.items.map(i => `${i.icon} ${escHtml(i.ar)} ×${i.qty}`).join(' &nbsp;·&nbsp; ')}
             </div>
           </div>`;
         }).join('')
