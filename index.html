@@ -3722,7 +3722,15 @@ async function renderMyQuotesPage() {
           </button>
         </div>`;
     } else if (q.status === 'accepted') {
-      actionsHtml = `<div style="margin-top:10px;font-size:13px;color:#15803d;font-weight:700"><i class="fas fa-check-circle"></i> تمت الموافقة وإضافة الطلب — تابعه من صفحة "طلباتي"</div>`;
+      const orderStatus = q.orderStatus || 'pending';
+      actionsHtml = `
+        <div style="margin-top:14px">
+          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
+            <div style="font-size:13px;color:#15803d;font-weight:700"><i class="fas fa-check-circle"></i> تمت الموافقة على العرض</div>
+            ${statusBadgeHTML(orderStatus)}
+          </div>
+          ${trackStepsHTML(orderStatus)}
+        </div>`;
     } else if (q.status === 'rejected') {
       actionsHtml = `<div style="margin-top:10px;font-size:13px;color:var(--danger);font-weight:700"><i class="fas fa-times-circle"></i> تم رفض هذا العرض</div>`;
     } else if (q.status === 'pending') {
@@ -3771,7 +3779,7 @@ async function acceptQuote(docId) {
   updateCartUI();
 
   try {
-    await updateQuote(docId, { status: 'accepted' });
+    await updateQuote(docId, { status: 'accepted', orderStatus: 'pending' });
     showToast('✅ تمت الموافقة على العرض وإضافة المواد للسلة', 'success');
     renderMyQuotesPage();
     openCart();
@@ -6718,6 +6726,13 @@ async function renderAdminQuotes() {
       </div>
       <div style="background:#f8fbfd;border-radius:10px;padding:10px 14px">${itemsHtml}</div>
       ${q.notes ? `<div style="font-size:13px;color:var(--text-muted);background:#fffbeb;padding:8px 12px;border-radius:8px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>` : ''}
+      ${q.status === 'accepted' ? `
+      <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12px;font-weight:700;color:var(--text-muted)">حالة تنفيذ الطلب:</span>
+        <select class="status-select" style="width:auto" onchange="updateQuoteOrderStatus('${q._docId}','${q.id}',this.value)">
+          ${ORDER_STATUSES.map(s => `<option value="${s.key}" ${((q.orderStatus||'pending')===s.key)?'selected':''}>${s.label}</option>`).join('')}
+        </select>
+      </div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${(q.status === 'pending' || q.status === 'priced') ? `
         <button onclick="openPriceQuoteModal('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
@@ -6726,9 +6741,25 @@ async function renderAdminQuotes() {
         <button onclick="sendWhatsAppQuote('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:#e8fdf2;color:#16a34a;border:1.5px solid #bbf7d0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
           <i class="fab fa-whatsapp"></i> تواصل مع العميل
         </button>
+        ${q.status === 'accepted' ? `
+        <button onclick="showQuoteOrderDetail('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:#e8f3fb;color:var(--primary);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fas fa-eye"></i> عرض التفاصيل
+        </button>` : ''}
       </div>
     </div>`;
   }).join('');
+}
+
+async function updateQuoteOrderStatus(docId, quoteIdStr, newStatus) {
+  try {
+    await updateQuote(docId, { orderStatus: newStatus });
+    const cached = (window._cachedAdminQuotes || []).find(x => x._docId === docId);
+    if (cached) cached.orderStatus = newStatus;
+    const s = getStatusObj(newStatus);
+    showToast(`✅ طلب العرض #${quoteIdStr} → ${s.label}`, 'success');
+  } catch(e) {
+    showToast('❌ فشل تحديث الحالة، تحقق من الاتصال', 'error');
+  }
 }
 
 function openPriceQuoteModal(docId) {
@@ -6803,7 +6834,72 @@ function sendWhatsAppQuote(docId) {
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
 }
 
-function sendWhatsAppAdmin(orderId) {
+function getQuoteTotal(q) {
+  return q.items.reduce((s,i) => s + ((i.unitPrice||0) * (i.qty||1)), 0);
+}
+
+function showQuoteOrderDetail(docId) {
+  const quotes = window._cachedAdminQuotes || [];
+  const q = quotes.find(x => x._docId === docId);
+  if (!q) return;
+  const date = new Date(q.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const total = getQuoteTotal(q);
+  const orderStatus = q.orderStatus || 'pending';
+
+  document.querySelector('#deleteConfirmModal .modal-header').style.background = 'linear-gradient(135deg,#0a5c8a,#1a8bbf)';
+  document.querySelector('#deleteConfirmModal .modal-title').innerHTML = `<i class="fas fa-file-invoice-dollar"></i> تفاصيل طلب عرض السعر #${q.id}`;
+  document.querySelector('#deleteConfirmModal .modal-body').innerHTML = `
+    <div style="text-align:right">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">العميل</div>
+          <div style="font-weight:700;font-size:14px">${escHtml(q.clientName)}</div>
+        </div>
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">العيادة</div>
+          <div style="font-weight:700;font-size:14px">${escHtml(q.clinic||'—')}</div>
+        </div>
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">الهاتف</div>
+          <div style="font-weight:700;font-size:14px">${escHtml(q.phone||'—')}</div>
+        </div>
+        <div style="background:#f8fbfd;border-radius:10px;padding:12px">
+          <div style="font-size:11px;color:var(--text-muted);margin-bottom:3px">التاريخ</div>
+          <div style="font-weight:700;font-size:13px">${date}</div>
+        </div>
+      </div>
+      <div style="margin-bottom:12px">
+        ${q.items.map(i=>`
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px">
+            <span style="font-size:22px">${i.icon}</span>
+            <span style="flex:1;font-weight:600">${escHtml(i.ar)}</span>
+            <span style="color:var(--text-muted)">× ${i.qty||1}</span>
+            <span style="font-weight:800;color:var(--primary)">${((i.unitPrice||0)*(i.qty||1)).toLocaleString()} د.أ</span>
+          </div>`).join('')}
+        <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
+          <span>الإجمالي</span>
+          <span>${total.toLocaleString()} د.أ</span>
+        </div>
+      </div>
+      ${q.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>`:''}
+      <div style="margin-top:16px;text-align:center">${statusBadgeHTML(orderStatus)}</div>
+      ${trackStepsHTML(orderStatus)}
+    </div>`;
+  document.querySelector('#deleteConfirmModal .modal-footer').innerHTML = `
+    <button class="btn-back" onclick="closeDeleteConfirm();renderAdminQuotes()">
+      <i class="fas fa-arrow-right"></i> رجوع
+    </button>
+    <button onclick="sendWhatsAppQuote('${q._docId}')" style="padding:12px 20px;border-radius:50px;background:#25d366;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
+      <i class="fab fa-whatsapp"></i> تواصل مع العميل
+    </button>
+    <button onclick="printQuoteInvoice('${q._docId}')" style="padding:12px 20px;border-radius:50px;background:#0a5c8a;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
+      <i class="fas fa-print"></i> طباعة الفاتورة
+    </button>`;
+  document.getElementById('deleteConfirmModal').classList.add('open');
+}
+
+function printQuoteInvoice(docId) {
+  const quotes = w
   const orders = window._cachedOrders || [];
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
