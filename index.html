@@ -1004,8 +1004,8 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .offers-grid{grid-template-columns:1fr 1fr; gap:10px}
   .product-img{height:120px; font-size:44px; padding:10px}
   .product-img-wrap{height:110px; font-size:36px; padding:8px}
-  .compare-toggle-btn{width:24px; height:24px; font-size:11px; top:8px}
-  .favorite-toggle-btn{width:24px; height:24px; font-size:11px; top:36px}
+  .compare-toggle-btn{width:32px; height:32px; font-size:13px; top:8px}
+  .favorite-toggle-btn{width:32px; height:32px; font-size:13px; top:44px}
   .product-info{padding:10px}
   .product-brand{font-size:9px}
   .product-name{font-size:13px; margin-bottom:4px}
@@ -1079,20 +1079,22 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 .compare-bar-chip img, .compare-bar-chip span.emoji-mini { width: 28px; height: 28px; border-radius: 6px; object-fit: cover; font-size: 18px; display:flex; align-items:center; justify-content:center; }
 .compare-bar-chip button { background: none; border: none; color: var(--danger); cursor: pointer; font-size: 13px; }
 .compare-toggle-btn {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 42px; height: 42px; border-radius: 50%;
   border: 2px solid var(--border); background: #fff;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.2s; font-size: 13px; color: var(--text-muted);
+  cursor: pointer; transition: all 0.2s; font-size: 17px; color: var(--text-muted);
   position: absolute; top: 12px; left: 12px; z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 body.en .compare-toggle-btn { left: auto; right: 12px; }
 .compare-toggle-btn.active { background: var(--primary); color: #fff; border-color: var(--primary); }
 .favorite-toggle-btn {
-  width: 32px; height: 32px; border-radius: 50%;
+  width: 42px; height: 42px; border-radius: 50%;
   border: 2px solid var(--border); background: #fff;
   display: flex; align-items: center; justify-content: center;
-  cursor: pointer; transition: all 0.2s; font-size: 13px; color: var(--text-muted);
-  position: absolute; top: 52px; left: 12px; z-index: 2;
+  cursor: pointer; transition: all 0.2s; font-size: 17px; color: var(--text-muted);
+  position: absolute; top: 60px; left: 12px; z-index: 2;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
 }
 body.en .favorite-toggle-btn { left: auto; right: 12px; }
 .favorite-toggle-btn.active { background: #e53e3e; color: #fff; border-color: #e53e3e; }
@@ -1235,7 +1237,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         <button class="btn-primary" onclick="scrollToProducts()">
           <span data-ar="تسوّق الآن" data-en="Shop Now">تسوّق الآن</span>
         </button>
-        <button class="btn-outline">
+        <button class="btn-outline" onclick="openQuoteRequestModal()">
           <span data-ar="طلب عرض سعر" data-en="Request a Quote">طلب عرض سعر</span>
         </button>
       </div>
@@ -1512,9 +1514,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
               <button class="loc-method-btn" id="btnGPS" onclick="getGPSLocation()">
                 <i class="fas fa-crosshairs"></i> <span data-ar="موقعي الحالي" data-en="My Location">موقعي الحالي</span>
               </button>
-              <button class="loc-method-btn" id="btnMap" onclick="openMapPicker()">
-                <i class="fas fa-map"></i> <span data-ar="اختر من الخريطة" data-en="Pick on Map">اختر من الخريطة</span>
-              </button>
             </div>
 
             <!-- Manual Input -->
@@ -1531,9 +1530,9 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
             </div>
 
             <!-- Map Preview -->
-            <div class="map-preview" id="mapPreview" onclick="openMapPicker()">
+            <div class="map-preview" id="mapPreview">
               <i class="fas fa-map-marked-alt"></i>
-              <div class="map-placeholder-text" data-ar="انقر لاختيار الموقع على الخريطة" data-en="Click to pick location on map">انقر لاختيار الموقع على الخريطة</div>
+              <div class="map-placeholder-text" data-ar="حدد موقعك عبر GPS أو اكتب العنوان يدوياً" data-en="Set your location via GPS or type it manually">حدد موقعك عبر GPS أو اكتب العنوان يدوياً</div>
             </div>
 
             <!-- Location Confirmed -->
@@ -1710,6 +1709,22 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   </div>
 </div>
 
+<!-- ===== MY QUOTES PAGE ===== -->
+<div class="page-section" id="myQuotesPage">
+  <div class="orders-page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="section-tag">عروض أسعاري</div>
+        <h2 class="section-title" style="margin-bottom:0">طلبات عروض الأسعار</h2>
+      </div>
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
+    <div id="myQuotesList"></div>
+  </div>
+</div>
+
 <!-- ===== PRODUCT DETAIL PAGE ===== -->
 <!-- ===== PRODUCT DETAIL PAGE ===== -->
 <div class="page-section" id="productDetailPage">
@@ -1840,10 +1855,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         <button onclick="doLogin()" class="btn-next" style="width:100%;justify-content:center;margin-top:8px">
           <i class="fas fa-sign-in-alt"></i> دخول
         </button>
-        <div class="auth-divider">أو</div>
-        <button class="social-auth-btn" onclick="demoLogin('client')">
-          <span>👤</span> تجربة دخول كعميل
-        </button>
       </div>
 
       <!-- REGISTER FORM -->
@@ -1899,8 +1910,11 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   <div style="background:#f0f4f8;min-height:100vh;width:100%;max-width:100%">
     
     <!-- Admin Header -->
-    <div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10">
+    <div style="background:linear-gradient(135deg,#1a1a2e,#2d3561);padding:18px 28px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:10;flex-wrap:wrap;gap:12px">
       <div style="display:flex;align-items:center;gap:14px">
+        <button onclick="closeAdmin()" style="padding:9px 16px;border-radius:50px;background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.2);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
+          <i class="fas fa-arrow-right"></i> الرئيسية
+        </button>
         <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:20px">🦷</div>
         <div>
           <div style="color:#fff;font-weight:900;font-size:17px">DentaPro — لوحة التحكم</div>
@@ -1939,6 +1953,10 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
       <button onclick="switchAdminTab('offers')" id="adminTabOffers"
         style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
         <i class="fas fa-gift" style="color:#f59e0b"></i> العروض
+      </button>
+      <button onclick="switchAdminTab('quotes')" id="adminTabQuotes"
+        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
+        <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض الأسعار <span id="adminQuotesBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
       </button>
     </div>
     <!-- Stats Bar -->
@@ -2008,6 +2026,16 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     </div>
   </div>
   <div id="adminOffersList"></div>
+</div>
+<!-- Quotes Panel (Admin) -->
+<div id="adminQuotesWrap" style="display:none;padding:0 28px 28px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:17px;font-weight:900;color:var(--primary-dark)">طلبات عروض الأسعار</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px">حدد السعر لكل مادة وأرسل العرض للعميل</div>
+    </div>
+  </div>
+  <div id="adminQuotesList"></div>
 </div>
 <!-- Orders Table (Admin) -->
     <div id="adminOrdersWrap" style="display:none" class="admin-orders-wrap">
@@ -2369,6 +2397,67 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     </div>
   </div>
 </div>
+
+<!-- QUOTE REQUEST MODAL (طلب عرض سعر من العميل) -->
+<div class="modal-overlay" id="quoteRequestModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title"><i class="fas fa-file-invoice-dollar"></i> طلب عرض سعر</div>
+      <button class="close-btn" onclick="closeQuoteRequestModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f0f8ff;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--text-muted);display:flex;align-items:flex-start;gap:10px">
+        <i class="fas fa-info-circle" style="color:var(--primary);margin-top:2px"></i>
+        <span>اختر المادة (أو أكثر) وحدد الكمية المطلوبة إن وُجدت — يمكنك ترك الكمية فارغة إن لم تكن محددة بعد. سنرسل لك عرض السعر النهائي خلال وقت قصير.</span>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:14px">
+        <select class="form-input" id="quoteAddProductSelect" style="flex:2;cursor:pointer"></select>
+        <input type="number" class="form-input" id="quoteAddProductQty" placeholder="الكمية (اختياري)" min="1" style="flex:1">
+        <button type="button" onclick="addQuoteItemRow()" style="padding:0 18px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">
+          <i class="fas fa-plus"></i> إضافة
+        </button>
+      </div>
+
+      <div id="quoteItemsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ملاحظات إضافية (اختياري)</label>
+        <textarea class="form-textarea" id="quoteNotes" maxlength="500" placeholder="مثال: أحتاج توصيل عاجل، أو استفسار عن بديل لهذه المادة..."></textarea>
+      </div>
+
+      <div id="quoteFormError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
+        <i class="fas fa-exclamation-circle"></i> <span id="quoteFormErrorMsg">يرجى إضافة مادة واحدة على الأقل</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeQuoteRequestModal()">إلغاء</button>
+      <button class="btn-submit" onclick="submitQuoteRequest()"><i class="fas fa-paper-plane"></i> إرسال طلب عرض السعر</button>
+    </div>
+  </div>
+</div>
+
+<!-- PRICE QUOTE MODAL (ADMIN) -->
+<div class="modal-overlay" id="priceQuoteModal">
+  <div class="modal" style="max-width:600px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title"><i class="fas fa-tag"></i> تحديد سعر العرض</div>
+      <button class="close-btn" onclick="closePriceQuoteModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="priceQuoteDocId">
+      <div id="priceQuoteItemsForm" style="display:flex;flex-direction:column;gap:12px"></div>
+      <div id="priceQuoteError" style="display:none;margin-top:14px;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
+        <i class="fas fa-exclamation-circle"></i> يرجى تحديد سعر صحيح لكل المواد
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closePriceQuoteModal()">إلغاء</button>
+      <button class="btn-submit" onclick="sendQuotePricing()"><i class="fas fa-paper-plane"></i> إرسال العرض للعميل</button>
+    </div>
+  </div>
+</div>
+
 <!-- ADD CATEGORY MODAL -->
 <div class="modal-overlay" id="addCategoryModal">
   <div class="modal" style="max-width:480px">
@@ -2617,8 +2706,20 @@ async function saveProducts() {
   }
 }
 
-function resetProducts() {
+async function resetProducts() {
   if (!confirm('هل أنت متأكد؟ سيتم حذف جميع التعديلات والعودة للمنتجات الأصلية.')) return;
+
+  const password = prompt('🔒 لتأكيد هذا الإجراء الحساس، أدخل كلمة مرور حساب الأدمن:');
+  if (!password) { showToast('❌ تم إلغاء العملية', 'error'); return; }
+
+  try {
+    const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
+    await signInWithEmailAndPassword(window._auth, ADMIN_EMAIL, password);
+  } catch(e) {
+    showToast('❌ كلمة المرور غير صحيحة، تم إلغاء العملية', 'error');
+    return;
+  }
+
   localStorage.removeItem('dentapro_products');
   products.length = 0;
   DEFAULT_PRODUCTS.forEach(p => products.push({...p}));
@@ -2689,6 +2790,74 @@ async function saveOffers() {
 }
 
 let offers = loadOffers();
+
+// =====================
+// QUOTE REQUESTS (عروض الأسعار)
+// =====================
+function quotesRef() {
+  return window._fbCollection(window._db, 'quotes');
+}
+
+async function createQuoteRequest(quote) {
+  try {
+    const docRef = await window._fbAddDoc(quotesRef(), quote);
+    return docRef.id;
+  } catch(e) {
+    console.error('createQuoteRequest:', e);
+    throw e;
+  }
+}
+
+async function getClientQuotes(email) {
+  try {
+    for (let i = 0; i < 20; i++) {
+      if (window._fbQuery && window._fbWhere && window._fbGetDocs) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    const q = window._fbQuery(quotesRef(), window._fbWhere('clientEmail', '==', email));
+    const snap = await window._fbGetDocs(q);
+    const list = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    list.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return list;
+  } catch(e) {
+    console.error('getClientQuotes:', e);
+    return [];
+  }
+}
+
+async function getAllQuotes() {
+  try {
+    const q = window._fbQuery(quotesRef(), window._fbOrderBy('createdAt','desc'));
+    const snap = await window._fbGetDocs(q);
+    return snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+  } catch(e) {
+    console.error('getAllQuotes:', e);
+    return [];
+  }
+}
+
+async function updateQuote(docId, data) {
+  try {
+    await window._fbUpdateDoc(window._fbDoc2('quotes', docId), data);
+  } catch(e) {
+    console.error('updateQuote:', e);
+    throw e;
+  }
+}
+
+const QUOTE_STATUSES = {
+  pending:   { label:'قيد المراجعة',     icon:'fa-clock',          color:'#c2410c', bg:'#fff7ed' },
+  priced:    { label:'تم تحديد السعر',   icon:'fa-tag',            color:'#1d4ed8', bg:'#eff6ff' },
+  accepted:  { label:'تم القبول',        icon:'fa-check-circle',   color:'#15803d', bg:'#f0fdf4' },
+  rejected:  { label:'مرفوض',            icon:'fa-times-circle',   color:'#be123c', bg:'#fff1f2' },
+  saved:     { label:'محفوظ بالمفضلة',   icon:'fa-bookmark',       color:'#7e22ce', bg:'#fdf4ff' },
+};
+
+function quoteStatusBadge(status) {
+  const s = QUOTE_STATUSES[status] || QUOTE_STATUSES.pending;
+  return `<span class="status-badge" style="background:${s.bg};color:${s.color};border:1px solid ${s.color}33">
+    <i class="fas ${s.icon}"></i> ${s.label}</span>`;
+}
 
 // =====================
 // OFFERS HELPERS
@@ -3061,8 +3230,11 @@ document.getElementById('searchInput').addEventListener('input', renderProducts)
 // =====================
 let offersFilterMode = 'all'; // 'all' | 'bundle' | 'qty'
 
+let offersSectionRevealed = false;
+
 function goToOffersFiltered(mode) {
   offersFilterMode = mode;
+  offersSectionRevealed = true;
   renderOffers();
   const section = document.getElementById('offersSection');
   if (section) section.scrollIntoView({behavior:'smooth', block:'start'});
@@ -3087,6 +3259,12 @@ function renderOffers() {
   }
 
   if (!bundles.length && !qtyProducts.length) {
+    section.style.display = 'none';
+    return;
+  }
+
+  // لا تُظهر قسم العروض إلا بعد ضغط المستخدم على بطاقة الباقات/العروض
+  if (!offersSectionRevealed) {
     section.style.display = 'none';
     return;
   }
@@ -3474,6 +3652,155 @@ function renderFavoritesPage() {
     </div>`;
   }).join('');
 }
+
+// =====================
+// MY QUOTES PAGE (CLIENT)
+// =====================
+async function openMyQuotesPage() {
+  if (!currentUser) { openAuthModal('login'); return; }
+  showPage('myQuotes');
+  renderMyQuotesPage();
+}
+
+async function renderMyQuotesPage() {
+  const container = document.getElementById('myQuotesList');
+  container.innerHTML = `
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>
+      جاري تحميل عروض الأسعار...
+    </div>`;
+
+  const quotes = await getClientQuotes(currentUser.email);
+  window._cachedMyQuotes = quotes;
+
+  if (!quotes.length) {
+    container.innerHTML = `
+      <div class="empty-orders">
+        <i class="fas fa-file-invoice-dollar"></i>
+        <h3>لا توجد طلبات عروض أسعار بعد</h3>
+        <p>اطلب عرض سعر لأي مادة من الصفحة الرئيسية</p>
+        <button class="btn-primary" style="margin-top:16px" onclick="showPage('home')">تسوّق الآن</button>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = quotes.map(q => {
+    const date = new Date(q.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric' });
+    const isPriced = q.status === 'priced';
+    const totalPriced = isPriced ? q.items.reduce((s,i) => s + ((i.unitPrice||0) * (i.qty||1)), 0) : 0;
+
+    const itemsHtml = q.items.map(i => `
+      <div class="order-item-row">
+        <div class="order-item-icon">${i.image ? `<img src="${cldOptimize(i.image,60)}" style="width:100%;height:100%;object-fit:contain">` : i.icon}</div>
+        <div style="flex:1;font-weight:600;color:var(--primary-dark)">${i.ar}</div>
+        <div style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : t('الكمية غير محددة','Qty not specified')}</div>
+        ${isPriced ? `<div style="font-weight:800;color:var(--primary)">${(i.unitPrice||0).toLocaleString()} د.أ${i.qty?` × ${i.qty} = ${((i.unitPrice||0)*i.qty).toLocaleString()} د.أ`:''}</div>` : ''}
+      </div>`).join('');
+
+    let actionsHtml = '';
+    if (q.status === 'priced') {
+      actionsHtml = `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn-primary" style="padding:9px 20px;font-size:13px" onclick="acceptQuote('${q._docId}')">
+            <i class="fas fa-check"></i> أوافق وأكمل الطلب
+          </button>
+          <button onclick="rejectQuote('${q._docId}')" style="padding:9px 20px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+            <i class="fas fa-times"></i> رفض العرض
+          </button>
+          <button onclick="saveQuoteToFavorites('${q._docId}')" style="padding:9px 20px;border-radius:50px;background:#fdf4ff;color:#7e22ce;border:2px solid #e9d5ff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+            <i class="fas fa-bookmark"></i> حفظ بالمفضلة لاحقاً
+          </button>
+        </div>`;
+    } else if (q.status === 'saved') {
+      actionsHtml = `
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
+          <button class="btn-primary" style="padding:9px 20px;font-size:13px" onclick="acceptQuote('${q._docId}')">
+            <i class="fas fa-check"></i> أوافق وأكمل الطلب الآن
+          </button>
+          <button onclick="rejectQuote('${q._docId}')" style="padding:9px 20px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+            <i class="fas fa-times"></i> رفض العرض
+          </button>
+        </div>`;
+    } else if (q.status === 'accepted') {
+      actionsHtml = `<div style="margin-top:10px;font-size:13px;color:#15803d;font-weight:700"><i class="fas fa-check-circle"></i> تمت الموافقة وإضافة الطلب — تابعه من صفحة "طلباتي"</div>`;
+    } else if (q.status === 'rejected') {
+      actionsHtml = `<div style="margin-top:10px;font-size:13px;color:var(--danger);font-weight:700"><i class="fas fa-times-circle"></i> تم رفض هذا العرض</div>`;
+    } else if (q.status === 'pending') {
+      actionsHtml = `<div style="margin-top:10px;font-size:13px;color:#c2410c;font-weight:700"><i class="fas fa-clock"></i> سيتم الرد على طلبك بعرض السعر قريباً</div>`;
+    }
+
+    return `
+    <div class="order-track-card">
+      <div class="order-track-header">
+        <div>
+          <div class="order-track-num"><i class="fas fa-file-invoice-dollar" style="color:var(--primary-light)"></i> #${q.id}</div>
+          <div class="order-track-date">📅 ${date}</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:12px">
+          ${quoteStatusBadge(q.status)}
+          ${isPriced || q.status==='saved' ? `<div class="order-track-total">${totalPriced.toLocaleString()} د.أ</div>` : ''}
+        </div>
+      </div>
+      <div class="order-track-body">
+        <div class="order-items-list">${itemsHtml}</div>
+        ${q.notes ? `<div style="margin-top:12px;padding:10px 14px;background:#f8fbfd;border-radius:10px;font-size:13px;color:var(--text-muted)"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>` : ''}
+        ${actionsHtml}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function acceptQuote(docId) {
+  const quotes = window._cachedMyQuotes || [];
+  const q = quotes.find(x => x._docId === docId);
+  if (!q) return;
+  if (!confirm('سيتم إضافة مواد العرض إلى سلة التسوق لإكمال إجراءات الطلب. هل تريد المتابعة؟')) return;
+
+  q.items.forEach(item => {
+    const p = products.find(x => x.id === item.productId);
+    if (!p) return;
+    const qty = item.qty || 1;
+    const existing = cart.find(c => String(c.id) === String(p.id));
+    if (existing) {
+      existing.qty = qty;
+      existing.price = item.unitPrice || existing.price;
+    } else {
+      cart.push({ ...p, qty, basePrice: p.price, price: item.unitPrice || p.price });
+    }
+  });
+  updateCartUI();
+
+  try {
+    await updateQuote(docId, { status: 'accepted' });
+    showToast('✅ تمت الموافقة على العرض وإضافة المواد للسلة', 'success');
+    renderMyQuotesPage();
+    openCart();
+  } catch(e) {
+    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
+  }
+}
+
+async function rejectQuote(docId) {
+  if (!confirm('هل أنت متأكد من رفض عرض السعر؟')) return;
+  try {
+    await updateQuote(docId, { status: 'rejected' });
+    showToast('🚫 تم رفض العرض', '');
+    renderMyQuotesPage();
+  } catch(e) {
+    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
+  }
+}
+
+async function saveQuoteToFavorites(docId) {
+  try {
+    await updateQuote(docId, { status: 'saved' });
+    showToast('🔖 تم حفظ العرض، يمكنك إكمال الطلب لاحقاً من نفس الصفحة', 'success');
+    renderMyQuotesPage();
+  } catch(e) {
+    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
+  }
+}
+
 // =====================
 // PRODUCT DETAIL PAGE
 // =====================
@@ -4034,22 +4361,6 @@ function getGPSLocation() {
   );
 }
 
-function openMapPicker() {
-  switchLocMethod('Map');
-  window.open('https://maps.google.com/', '_blank');
-  const addrInput = document.getElementById('addressInput');
-  addrInput.placeholder = t(
-    'بعد تحديد موقعك في الخريطة، اكتب العنوان هنا...',
-    'After selecting on the map, type the address here...'
-  );
-  addrInput.focus();
-  showToast(
-    t('📍 حدد موقعك في الخريطة ثم اكتب العنوان في الحقل أدناه',
-      '📍 Select your location on the map then type the address below'),
-    ''
-  );
-}
-
 function updateCharCount() {
   const val = document.getElementById('orderNotes').value;
   document.getElementById('charCount').textContent = val.length;
@@ -4121,6 +4432,7 @@ logActivity('order_placed', { orderId: orderNum, total: getTotal() });
   document.getElementById('modalFooter').style.display  = 'none';
   document.getElementById('successScreen').classList.add('show');
   orderSubmitted = true;
+  clearCart();
   showToast(t('🎉 تم إرسال طلبك بنجاح!','🎉 Order submitted successfully!'), 'success');
 
   } finally {
@@ -4370,6 +4682,9 @@ function showPage(page) {
   } else if (page === 'favorites') {
     document.getElementById('favoritesPage').classList.add('active');
     window.scrollTo(0, 0);
+  } else if (page === 'myQuotes') {
+    document.getElementById('myQuotesPage').classList.add('active');
+    window.scrollTo(0, 0);
   }
 }
 // =====================
@@ -4446,6 +4761,9 @@ function renderAuthHeader() {
         <button class="user-dropdown-item" onclick="openClientOrders()">
           <i class="fas fa-shopping-bag" style="color:var(--primary)"></i> طلباتي
         </button>
+        <button class="user-dropdown-item" onclick="openMyQuotesPage()">
+          <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض أسعاري
+        </button>
         <button class="user-dropdown-item" onclick="openFavoritesPage()">
           <i class="fas fa-heart" style="color:#e53e3e"></i> المفضلة
         </button>
@@ -4517,13 +4835,6 @@ async function doLogin() {
     if (e.code === 'auth/too-many-requests') msg = 'محاولات كثيرة، حاول لاحقاً';
     document.getElementById('loginErrorMsg').textContent = msg;
     document.getElementById('loginError').style.display = 'flex';
-  }
-}
-
-function demoLogin(role) {
-  if (role === 'client') {
-    showToast('💡 سجّل حساباً جديداً أو استخدم بريدك الإلكتروني وكلمة مرورك', '');
-    switchAuthTab('register');
   }
 }
 
@@ -5660,6 +5971,137 @@ function saveBundle() {
   renderOffers();
 }
 
+// =====================
+// QUOTE REQUEST (طلب عرض سعر) — CLIENT SIDE
+// =====================
+let currentQuoteItems = [];
+
+function openQuoteRequestModal() {
+  currentQuoteItems = [];
+  document.getElementById('quoteNotes').value = '';
+  document.getElementById('quoteFormError').style.display = 'none';
+  const sel = document.getElementById('quoteAddProductSelect');
+  sel.innerHTML = `<option value="">— اختر مادة —</option>` +
+    products.map(p => `<option value="${p.id}">${p.ar} — ${p.brand}</option>`).join('');
+  document.getElementById('quoteAddProductQty').value = '';
+  renderQuoteItemsList();
+  document.getElementById('quoteRequestModal').classList.add('open');
+}
+
+function closeQuoteRequestModal() {
+  document.getElementById('quoteRequestModal').classList.remove('open');
+}
+
+function addQuoteItemRow() {
+  const select = document.getElementById('quoteAddProductSelect');
+  const productId = parseInt(select.value);
+  const qtyVal = document.getElementById('quoteAddProductQty').value;
+  const qty = qtyVal ? parseInt(qtyVal) : null;
+
+  if (!productId) {
+    showToast('⚠️ يرجى اختيار مادة أولاً', 'error');
+    return;
+  }
+  const p = products.find(x => x.id === productId);
+  const existing = currentQuoteItems.find(it => it.productId === productId);
+  if (existing) {
+    existing.qty = qty;
+    showToast(`✏️ تم تحديث "${p ? p.ar : 'المادة'}"`, 'success');
+  } else {
+    currentQuoteItems.push({ productId, qty });
+    showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}"`, 'success');
+  }
+  document.getElementById('quoteAddProductQty').value = '';
+  select.selectedIndex = 0;
+  renderQuoteItemsList();
+}
+
+function removeQuoteItemRow(productId) {
+  currentQuoteItems = currentQuoteItems.filter(it => it.productId !== productId);
+  renderQuoteItemsList();
+}
+
+function updateQuoteItemQty(productId, newQty) {
+  const item = currentQuoteItems.find(it => it.productId === productId);
+  if (item) item.qty = newQty ? parseInt(newQty) : null;
+}
+
+function renderQuoteItemsList() {
+  const list = document.getElementById('quoteItemsList');
+  if (!currentQuoteItems.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:10px">لم تتم إضافة مواد بعد</div>`;
+    return;
+  }
+  list.innerHTML = currentQuoteItems.map(it => {
+    const p = products.find(x => x.id === it.productId);
+    if (!p) return '';
+    return `
+    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+        <span style="font-size:18px;flex-shrink:0">${p.image ? `<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover">` : p.icon}</span>
+        <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</span>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span style="font-size:12px;color:var(--text-muted)">الكمية:</span>
+        <input type="number" min="1" placeholder="غير محددة" value="${it.qty || ''}" style="width:90px;padding:5px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center"
+          onchange="updateQuoteItemQty(${it.productId}, this.value)">
+      </div>
+      <button onclick="removeQuoteItemRow(${it.productId})" style="background:none;border:none;color:var(--danger);cursor:pointer;flex-shrink:0"><i class="fas fa-times-circle"></i></button>
+    </div>`;
+  }).join('');
+}
+
+async function submitQuoteRequest() {
+  const showErr = msg => {
+    document.getElementById('quoteFormErrorMsg').textContent = msg;
+    document.getElementById('quoteFormError').style.display = 'block';
+  };
+  if (!currentQuoteItems.length) return showErr('يرجى إضافة مادة واحدة على الأقل');
+  if (!currentUser) {
+    document.getElementById('quoteFormError').style.display = 'none';
+    closeQuoteRequestModal();
+    showToast('🔒 يرجى تسجيل الدخول أولاً لإرسال طلب عرض سعر', 'error');
+    openAuthModal('login');
+    return;
+  }
+
+  const ts = Date.now().toString(36).toUpperCase();
+  const quoteNum = `QT-${ts}`;
+
+  const quote = {
+    id: quoteNum,
+    clientName: currentUser.name,
+    clientEmail: currentUser.email,
+    clientUid: currentUser.uid,
+    clinic: currentUser.clinic || '',
+    phone: currentUser.phone || '',
+    items: currentQuoteItems.map(it => {
+      const p = products.find(x => x.id === it.productId);
+      return {
+        productId: it.productId,
+        ar: p ? p.ar : '',
+        en: p ? p.en : '',
+        icon: p ? p.icon : '📦',
+        image: p ? (p.image || null) : null,
+        qty: it.qty || null,
+        unitPrice: null,
+      };
+    }),
+    notes: document.getElementById('quoteNotes').value.trim(),
+    status: 'pending',
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await createQuoteRequest(quote);
+    document.getElementById('quoteFormError').style.display = 'none';
+    closeQuoteRequestModal();
+    showToast('🎉 تم إرسال طلب عرض السعر بنجاح، سنوافيك بالرد قريباً', 'success');
+  } catch(e) {
+    showErr('حدث خطأ أثناء الإرسال، تحقق من الاتصال');
+  }
+}
+
 function openAddPointsModal(uid, email, name, clinic, currentBalance, mode = 'add') {
   window._pointsMode = mode;
   document.getElementById('pointsTargetUid').value = uid;
@@ -5907,6 +6349,7 @@ function switchAdminTab(tab) {
   const isOrders   = tab === 'orders';
   const isPoints   = tab === 'points';
   const isOffers   = tab === 'offers';
+  const isQuotes   = tab === 'quotes';
 
   document.getElementById('adminTabProducts').style.color = isProducts ? 'var(--primary)' : 'var(--text-muted)';
   document.getElementById('adminTabProducts').style.borderBottomColor = isProducts ? 'var(--primary)' : 'transparent';
@@ -5916,6 +6359,8 @@ function switchAdminTab(tab) {
   document.getElementById('adminTabPoints').style.borderBottomColor = isPoints ? '#f59e0b' : 'transparent';
   document.getElementById('adminTabOffers').style.color = isOffers ? '#d97706' : 'var(--text-muted)';
   document.getElementById('adminTabOffers').style.borderBottomColor = isOffers ? '#f59e0b' : 'transparent';
+  document.getElementById('adminTabQuotes').style.color = isQuotes ? '#0a5c8a' : 'var(--text-muted)';
+  document.getElementById('adminTabQuotes').style.borderBottomColor = isQuotes ? '#0a5c8a' : 'transparent';
 
   const statsGrid = document.getElementById('adminStatTotal').closest('div[style*="grid"]');
   if (statsGrid) statsGrid.style.display = isProducts ? 'grid' : 'none';
@@ -5935,9 +6380,13 @@ function switchAdminTab(tab) {
   const offersWrap = document.getElementById('adminOffersWrap');
   if (offersWrap) offersWrap.style.display = isOffers ? 'block' : 'none';
 
+  const quotesWrap = document.getElementById('adminQuotesWrap');
+  if (quotesWrap) quotesWrap.style.display = isQuotes ? 'block' : 'none';
+
   if (isOrders) renderAdminOrders();
   if (isPoints) renderAdminPoints();
   if (isOffers) renderAdminOffers();
+  if (isQuotes) renderAdminQuotes();
 }
 
 async function renderAdminOrders() {
@@ -6217,6 +6666,141 @@ function showAdminOrderDetail(orderId) {
       <i class="fas fa-print"></i> طباعة الفاتورة
     </button>`;
   document.getElementById('deleteConfirmModal').classList.add('open');
+}
+
+// =====================
+// ADMIN: QUOTES MANAGEMENT
+// =====================
+async function renderAdminQuotes() {
+  const container = document.getElementById('adminQuotesList');
+  container.innerHTML = `
+    <div style="text-align:center;padding:40px;color:var(--text-muted)">
+      <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>
+      جاري تحميل طلبات عروض الأسعار...
+    </div>`;
+
+  const quotes = await getAllQuotes();
+  window._cachedAdminQuotes = quotes;
+
+  const pendingCount = quotes.filter(q => q.status === 'pending').length;
+  const badge = document.getElementById('adminQuotesBadge');
+  if (badge) badge.textContent = pendingCount > 0 ? pendingCount : '';
+
+  if (!quotes.length) {
+    container.innerHTML = `
+      <div style="text-align:center;padding:56px 24px;color:var(--text-muted)">
+        <i class="fas fa-file-invoice-dollar" style="font-size:52px;opacity:0.15;display:block;margin-bottom:16px"></i>
+        <h3 style="font-weight:800;font-size:17px;color:var(--text);margin-bottom:8px">لا توجد طلبات عروض أسعار</h3>
+        <p style="font-size:14px">ستظهر هنا فور إرسالها من العملاء</p>
+      </div>`;
+    return;
+  }
+
+  container.innerHTML = quotes.map(q => {
+    const date = new Date(q.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const itemsHtml = q.items.map(i => `
+      <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:13px">
+        <span style="font-size:18px">${i.icon}</span>
+        <span style="flex:1;font-weight:600">${i.ar}</span>
+        <span style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : 'كمية غير محددة'}</span>
+        ${i.unitPrice ? `<span style="font-weight:800;color:var(--primary)">${i.unitPrice.toLocaleString()} د.أ</span>` : ''}
+      </div>`).join('');
+
+    return `
+    <div class="points-admin-card" style="flex-direction:column;align-items:stretch;gap:12px">
+      <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
+        <div>
+          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">📄 #${q.id}</div>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:2px">👤 ${escHtml(q.clientName)} ${q.clinic?'· '+escHtml(q.clinic):''} · ${escHtml(q.clientEmail)}</div>
+          <div style="font-size:11px;color:var(--text-muted)">📅 ${date}</div>
+        </div>
+        <div>${quoteStatusBadge(q.status)}</div>
+      </div>
+      <div style="background:#f8fbfd;border-radius:10px;padding:10px 14px">${itemsHtml}</div>
+      ${q.notes ? `<div style="font-size:13px;color:var(--text-muted);background:#fffbeb;padding:8px 12px;border-radius:8px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>` : ''}
+      <div style="display:flex;gap:8px;flex-wrap:wrap">
+        ${(q.status === 'pending' || q.status === 'priced') ? `
+        <button onclick="openPriceQuoteModal('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fas fa-tag"></i> ${q.status === 'pending' ? 'تحديد السعر وإرسال العرض' : 'تعديل السعر'}
+        </button>` : ''}
+        <button onclick="sendWhatsAppQuote('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:#e8fdf2;color:#16a34a;border:1.5px solid #bbf7d0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fab fa-whatsapp"></i> تواصل مع العميل
+        </button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openPriceQuoteModal(docId) {
+  const quotes = window._cachedAdminQuotes || [];
+  const q = quotes.find(x => x._docId === docId);
+  if (!q) return;
+  document.getElementById('priceQuoteDocId').value = docId;
+  document.getElementById('priceQuoteError').style.display = 'none';
+  const form = document.getElementById('priceQuoteItemsForm');
+  form.innerHTML = q.items.map((i, idx) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
+      <span style="font-size:22px;flex-shrink:0">${i.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px">${escHtml(i.ar)}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${i.qty ? `الكمية المطلوبة: ${i.qty}` : 'الكمية غير محددة من العميل'}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <input type="number" min="1" placeholder="الكمية" value="${i.qty || ''}" id="quoteItemQty_${idx}" style="width:80px;padding:7px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center">
+        <input type="number" min="0" step="0.01" placeholder="سعر الوحدة" value="${i.unitPrice || ''}" id="quoteItemPrice_${idx}" style="width:100px;padding:7px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center">
+      </div>
+    </div>`).join('');
+  document.getElementById('priceQuoteModal').classList.add('open');
+}
+
+function closePriceQuoteModal() {
+  document.getElementById('priceQuoteModal').classList.remove('open');
+}
+
+async function sendQuotePricing() {
+  const docId = document.getElementById('priceQuoteDocId').value;
+  const quotes = window._cachedAdminQuotes || [];
+  const q = quotes.find(x => x._docId === docId);
+  if (!q) return;
+
+  const updatedItems = q.items.map((item, idx) => {
+    const qtyVal = document.getElementById(`quoteItemQty_${idx}`).value;
+    const priceVal = document.getElementById(`quoteItemPrice_${idx}`).value;
+    return {
+      ...item,
+      qty: qtyVal ? parseInt(qtyVal) : null,
+      unitPrice: priceVal ? parseFloat(priceVal) : null,
+    };
+  });
+
+  const allValid = updatedItems.every(i => i.qty && i.unitPrice && i.unitPrice > 0);
+  if (!allValid) {
+    document.getElementById('priceQuoteError').style.display = 'block';
+    return;
+  }
+  document.getElementById('priceQuoteError').style.display = 'none';
+
+  try {
+    await updateQuote(docId, { items: updatedItems, status: 'priced' });
+    closePriceQuoteModal();
+    showToast('✅ تم إرسال عرض السعر للعميل', 'success');
+    renderAdminQuotes();
+  } catch(e) {
+    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
+  }
+}
+
+function sendWhatsAppQuote(docId) {
+  const quotes = window._cachedAdminQuotes || [];
+  const q = quotes.find(x => x._docId === docId);
+  if (!q) return;
+  const itemsTxt = q.items.map(i => `• ${i.ar}${i.qty?` × ${i.qty}`:''}`).join('\n');
+  const msg = encodeURIComponent(
+    `🦷 *DentaPro — بخصوص طلب عرض السعر #${q.id}*\n\nمرحباً ${q.clientName}،\n\n` +
+    `بخصوص طلبك لعرض سعر المواد:\n${itemsTxt}\n\nسنوافيك بالتفاصيل قريباً.`
+  );
+  const phone = (q.phone || '').replace(/\D/g,'');
+  window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
 }
 
 function sendWhatsAppAdmin(orderId) {
