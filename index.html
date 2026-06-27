@@ -1273,9 +1273,13 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
       </button>
     </div>
     <div class="header-row-break"></div>
-    <div class="header-search">
-      <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product...">
-      <button class="search-btn"><i class="fas fa-search"></i></button>
+    <div class="header-search" style="position:relative">
+      <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product..." autocomplete="off"
+        onkeydown="if(event.key==='Enter'){saveRecentSearch(this.value);document.getElementById('searchSuggestDropdown').style.display='none';scrollToProducts();}">
+      <button class="search-btn" onclick="saveRecentSearch(document.getElementById('searchInput').value);document.getElementById('searchSuggestDropdown').style.display='none';scrollToProducts()"><i class="fas fa-search"></i></button>
+      <div id="searchSuggestDropdown" style="display:none;position:absolute;top:calc(100% + 6px);right:0;left:0;
+        background:#fff;border:1.5px solid var(--border);border-radius:14px;max-height:280px;overflow-y:auto;
+        z-index:1500;box-shadow:var(--shadow-lg)"></div>
     </div>
     <button class="notif-btn" id="msgBtn" onclick="openClientMessages()" style="display:none" title="تواصل مع الإدارة">
       <i class="fas fa-comment-dots"></i>
@@ -3526,7 +3530,105 @@ function renderProducts() {
   }).join('');
 }
 
-document.getElementById('searchInput').addEventListener('input', renderProducts);
+document.getElementById('searchInput').addEventListener('input', () => {
+  renderProducts();
+  renderSearchSuggestions();
+});
+document.getElementById('searchInput').addEventListener('focus', renderSearchSuggestions);
+
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('searchSuggestDropdown');
+  const input = document.getElementById('searchInput');
+  if (dd && dd.style.display === 'block' && !dd.contains(e.target) && e.target !== input) {
+    dd.style.display = 'none';
+  }
+});
+
+function renderSearchSuggestions() {
+  const dd = document.getElementById('searchSuggestDropdown');
+  const raw = document.getElementById('searchInput').value.trim();
+
+  if (!raw) {
+    const recent = getRecentSearches();
+    if (!recent.length) { dd.style.display = 'none'; return; }
+    dd.innerHTML = `
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-bottom:1px solid #f0f4f8">
+        <span style="font-size:12px;font-weight:700;color:var(--text-muted)"><i class="fas fa-history"></i> ${t('عمليات البحث الأخيرة','Recent Searches')}</span>
+        <button onclick="clearRecentSearches()" style="background:none;border:none;color:var(--danger);font-size:11px;font-weight:700;cursor:pointer">${t('حذف الكل','Clear')}</button>
+      </div>
+      ${recent.map(term => `
+        <div onclick="selectRecentSearch('${escHtml(term).replace(/'/g,"\\'")}')"
+          style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+          onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+          <i class="fas fa-clock" style="color:var(--text-muted);font-size:13px"></i>
+          <span style="font-size:13px;font-weight:600">${escHtml(term)}</span>
+        </div>`).join('')}`;
+    dd.style.display = 'block';
+    return;
+  }
+
+  const term = normalizeArabic(raw);
+  const matches = products.filter(p =>
+    normalizeArabic(p.ar).includes(term) ||
+    p.en.toLowerCase().includes(raw.toLowerCase()) ||
+    normalizeArabic(p.brand).includes(term)
+  ).slice(0, 6);
+
+  if (!matches.length) {
+    dd.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-muted);font-size:13px">${t('لا توجد نتائج','No results')}</div>`;
+    dd.style.display = 'block';
+    return;
+  }
+
+  dd.innerHTML = matches.map(p => `
+    <div onclick="selectSearchSuggestion(${p.id})"
+      style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+      <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:28px;height:28px;border-radius:6px;object-fit:cover" loading="lazy">`:p.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${currentLang==='en'?p.en:p.ar}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${p.brand} · ${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>
+      </div>
+    </div>`).join('');
+  dd.style.display = 'block';
+}
+
+function selectSearchSuggestion(id) {
+  saveRecentSearch(document.getElementById('searchInput').value);
+  document.getElementById('searchSuggestDropdown').style.display = 'none';
+  openProductDetail(id);
+}
+
+// ===== RECENT SEARCHES =====
+function getRecentSearches() {
+  try {
+    const saved = localStorage.getItem('dentapro_recent_searches');
+    if (saved) return JSON.parse(saved);
+  } catch(e) {}
+  return [];
+}
+
+function saveRecentSearch(term) {
+  term = term.trim();
+  if (!term || term.length < 2) return;
+  let list = getRecentSearches();
+  list = list.filter(t => t.toLowerCase() !== term.toLowerCase());
+  list.unshift(term);
+  list = list.slice(0, 8);
+  localStorage.setItem('dentapro_recent_searches', JSON.stringify(list));
+}
+
+function clearRecentSearches() {
+  localStorage.removeItem('dentapro_recent_searches');
+  renderSearchSuggestions();
+}
+
+function selectRecentSearch(term) {
+  document.getElementById('searchInput').value = term;
+  document.getElementById('searchSuggestDropdown').style.display = 'none';
+  renderProducts();
+  scrollToProducts();
+}
 
 // =====================
 // RENDER OFFERS SECTION
