@@ -1276,6 +1276,9 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
       <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product...">
       <button class="search-btn"><i class="fas fa-search"></i></button>
     </div>
+    <button class="notif-btn" id="msgBtn" onclick="openClientMessages()" style="display:none" title="تواصل مع الإدارة">
+      <i class="fas fa-comment-dots"></i>
+    </button>
     <button class="notif-btn" id="notifBtn" onclick="toggleNotifDropdown()" style="display:none">
       <i class="fas fa-bell"></i>
       <span class="notif-badge" id="notifBadge" style="display:none">0</span>
@@ -1797,7 +1800,29 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     <div id="myQuotesList"></div>
   </div>
 </div>
-
+<!-- ===== MESSAGES PAGE (CLIENT) ===== -->
+<div class="page-section" id="messagesPage">
+  <div class="orders-page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="section-tag">💬 المراسلات</div>
+        <h2 class="section-title" style="margin-bottom:0">تواصل مع فريق DentaPro</h2>
+      </div>
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
+    <div id="clientMessagesThread" style="background:#fff;border:1px solid var(--border);border-radius:16px;
+      padding:18px;min-height:300px;max-height:480px;overflow-y:auto;margin-bottom:14px;display:flex;flex-direction:column;gap:10px"></div>
+    <div style="display:flex;gap:10px">
+      <input type="text" class="form-input" id="clientMsgInput" placeholder="اكتب رسالتك أو استفسارك هنا..."
+        onkeydown="if(event.key==='Enter'){event.preventDefault();sendClientMessageFromInput();}">
+      <button class="btn-primary" style="padding:0 24px;flex-shrink:0" onclick="sendClientMessageFromInput()">
+        <i class="fas fa-paper-plane"></i>
+      </button>
+    </div>
+  </div>
+</div>
 <!-- ===== PRODUCT DETAIL PAGE ===== -->
 <!-- ===== PRODUCT DETAIL PAGE ===== -->
 <div class="page-section" id="productDetailPage">
@@ -2031,6 +2056,10 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
         <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض الأسعار <span id="adminQuotesBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
       </button>
+      <button onclick="switchAdminTab('messages')" id="adminTabMessages"
+        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
+        <i class="fas fa-comment-dots" style="color:#0a5c8a"></i> الرسائل <span id="adminMsgBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
+      </button>
     </div>
     <!-- Stats Bar -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:24px 28px 0">
@@ -2110,6 +2139,21 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   </div>
   <div id="adminQuotesList"></div>
 </div>
+<!-- Messages Panel (Admin) -->
+<div id="adminMessagesWrap" style="display:none;padding:0 28px 28px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:17px;font-weight:900;color:var(--primary-dark)">رسائل العملاء</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px">تواصل مع عميل محدد أو أرسل رسالة جماعية</div>
+    </div>
+    <button onclick="openBroadcastMessageModal()" style="padding:9px 18px;border-radius:50px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <i class="fas fa-bullhorn"></i> رسالة جماعية لكل العملاء
+    </button>
+  </div>
+  <div id="adminMessagesList"></div>
+</div>
+
+<!-- Orders Table (Admin) -->
 <!-- Orders Table (Admin) -->
     <div id="adminOrdersWrap" style="display:none" class="admin-orders-wrap">
       <div style="background:#fff;border-radius:16px;border:1px solid #e2eaf0;overflow:hidden">
@@ -2484,10 +2528,34 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         <span>اختر المادة (أو أكثر) وحدد الكمية المطلوبة إن وُجدت — يمكنك ترك الكمية فارغة إن لم تكن محددة بعد. سنرسل لك عرض السعر النهائي خلال وقت قصير.</span>
       </div>
 
-      <div style="display:flex;gap:8px;margin-bottom:14px">
-        <select class="form-input" id="quoteAddProductSelect" style="flex:2;cursor:pointer"></select>
+      <div style="position:relative;margin-bottom:10px">
+        <input type="text" class="form-input" id="quoteProductSearch"
+          placeholder="🔍 ابحث عن المادة بالاسم أو الماركة..."
+          oninput="filterQuoteProductList()" onfocus="showQuoteProductList()" autocomplete="off">
+        <input type="hidden" id="quoteAddProductSelect">
+        <div id="quoteProductDropdown"
+          style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:#fff;
+                 border:1.5px solid var(--border);border-radius:12px;max-height:240px;overflow-y:auto;
+                 z-index:60;box-shadow:var(--shadow-lg)"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:10px">
         <input type="number" class="form-input" id="quoteAddProductQty" placeholder="الكمية (اختياري)" min="1" style="flex:1">
         <button type="button" onclick="addQuoteItemRow()" style="padding:0 18px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">
+          <i class="fas fa-plus"></i> إضافة المادة المختارة
+        </button>
+      </div>
+
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <span style="font-size:12px;color:var(--text-muted)">أو</span>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="text" class="form-input" id="quoteCustomItemName" placeholder="✏️ المادة غير موجودة؟ اكتب اسمها هنا" style="flex:2">
+        <input type="number" class="form-input" id="quoteCustomItemQty" placeholder="الكمية (اختياري)" min="1" style="flex:1">
+        <button type="button" onclick="addQuoteCustomItem()" style="padding:0 18px;border-radius:50px;background:#7e22ce;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">
           <i class="fas fa-plus"></i> إضافة
         </button>
       </div>
@@ -3008,8 +3076,10 @@ let _cachedNotifs = [];
 
 async function loadAndRenderNotifIcon() {
   const btn = document.getElementById('notifBtn');
-  if (!currentUser) { btn.style.display = 'none'; return; }
+  const msgBtn = document.getElementById('msgBtn');
+  if (!currentUser) { btn.style.display = 'none'; if (msgBtn) msgBtn.style.display = 'none'; return; }
   btn.style.display = 'flex';
+  if (msgBtn) msgBtn.style.display = (currentUser.role === 'client') ? 'flex' : 'none';
   const isAdminUser = currentUser.role === 'admin';
   _cachedNotifs = await fetchNotificationsFor(currentUser.email, isAdminUser);
   updateNotifBadge();
@@ -3050,10 +3120,20 @@ function onNotifClick(docId, link) {
   markNotifIdRead(docId);
   updateNotifBadge();
   renderNotifList();
-  if (link) {
-    closeNotifDropdown();
-    if (link.startsWith('page:')) {
-      showPage(link.replace('page:',''));
+  if (!link) return;
+  closeNotifDropdown();
+  if (link.startsWith('page:')) {
+    showPage(link.replace('page:',''));
+  } else if (link.startsWith('product:')) {
+    const id = parseInt(link.replace('product:',''));
+    showPage('home');
+    setTimeout(() => openProductDetail(id), 100);
+  } else if (link.startsWith('clientmsg:')) {
+    const email = link.replace('clientmsg:','');
+    if (currentUser && currentUser.role === 'admin') {
+      document.getElementById('adminPanel').classList.add('open');
+      switchAdminTab('messages');
+      setTimeout(() => openAdminThreadModal(email), 400);
     }
   }
 }
@@ -4923,6 +5003,10 @@ function showPage(page) {
   } else if (page === 'myQuotes') {
     document.getElementById('myQuotesPage').classList.add('active');
     window.scrollTo(0, 0);
+  } else if (page === 'messages') {
+    document.getElementById('messagesPage').classList.add('active');
+    window.scrollTo(0, 0);
+    renderClientMessagesThread();
   }
 }
 // =====================
@@ -5172,6 +5256,8 @@ async function doLogout() {
   localStorage.removeItem('dentapro_session');
   renderAuthHeader();
   document.getElementById('notifBtn').style.display = 'none';
+  const msgBtn = document.getElementById('msgBtn');
+  if (msgBtn) msgBtn.style.display = 'none';
   closeNotifDropdown();
   const banner = document.getElementById('clientWelcomeBanner');
   if (banner) banner.remove();
@@ -5603,6 +5689,13 @@ function saveProduct() {
     const newId = Math.max(...products.map(p => p.id)) + 1;
     products.push({ id: newId, ...productData });
     showToast('✅ تم إضافة المنتج بنجاح', 'success');
+    createNotification({
+      scope: 'broadcast',
+      icon: '🆕',
+      title: 'منتج جديد في DentaPro',
+      message: `${ar} — ${price.toLocaleString()} د.أ`,
+      link: `product:${newId}`,
+    });
   }
 
   saveProducts();
@@ -6223,12 +6316,77 @@ function openQuoteRequestModal() {
   currentQuoteItems = [];
   document.getElementById('quoteNotes').value = '';
   document.getElementById('quoteFormError').style.display = 'none';
-  const sel = document.getElementById('quoteAddProductSelect');
-  sel.innerHTML = `<option value="">— اختر مادة —</option>` +
-    products.map(p => `<option value="${p.id}">${p.ar} — ${p.brand}</option>`).join('');
+  document.getElementById('quoteProductSearch').value = '';
+  document.getElementById('quoteAddProductSelect').value = '';
   document.getElementById('quoteAddProductQty').value = '';
+  document.getElementById('quoteCustomItemName').value = '';
+  document.getElementById('quoteCustomItemQty').value = '';
+  document.getElementById('quoteProductDropdown').style.display = 'none';
   renderQuoteItemsList();
   document.getElementById('quoteRequestModal').classList.add('open');
+}
+
+function getSortedProductsAr() {
+  return [...products].sort((a,b) => a.ar.localeCompare(b.ar, 'ar'));
+}
+
+function showQuoteProductList() {
+  filterQuoteProductList();
+  document.getElementById('quoteProductDropdown').style.display = 'block';
+}
+
+function filterQuoteProductList() {
+  const term = normalizeArabic(document.getElementById('quoteProductSearch').value);
+  const list = getSortedProductsAr().filter(p =>
+    !term || normalizeArabic(p.ar).includes(term) || normalizeArabic(p.brand).includes(term) || p.en.toLowerCase().includes(term)
+  );
+  const dd = document.getElementById('quoteProductDropdown');
+  if (!list.length) {
+    dd.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-muted);font-size:13px">
+      لا توجد نتائج — جرّب كتابة اسم المادة في الحقل اليدوي بالأسفل</div>`;
+  } else {
+    dd.innerHTML = list.map(p => `
+      <div onclick="selectQuoteProduct(${p.id})"
+        style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+        onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+        <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover">`:p.icon}</span>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</div>
+          <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
+        </div>
+      </div>`).join('');
+  }
+  dd.style.display = 'block';
+}
+
+function selectQuoteProduct(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('quoteAddProductSelect').value = id;
+  document.getElementById('quoteProductSearch').value = `${p.ar} — ${p.brand}`;
+  document.getElementById('quoteProductDropdown').style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('quoteProductDropdown');
+  const input = document.getElementById('quoteProductSearch');
+  if (dd && dd.style.display === 'block' && !dd.contains(e.target) && e.target !== input) {
+    dd.style.display = 'none';
+  }
+});
+
+function addQuoteCustomItem() {
+  const name = document.getElementById('quoteCustomItemName').value.trim();
+  const qtyVal = document.getElementById('quoteCustomItemQty').value;
+  if (!name) {
+    showToast('⚠️ يرجى كتابة اسم المادة أولاً', 'error');
+    return;
+  }
+  currentQuoteItems.push({ productId: null, customName: name, qty: qtyVal ? parseInt(qtyVal) : null });
+  document.getElementById('quoteCustomItemName').value = '';
+  document.getElementById('quoteCustomItemQty').value = '';
+  showToast(`✅ تمت إضافة "${name}"`, 'success');
+  renderQuoteItemsList();
 }
 
 function closeQuoteRequestModal() {
@@ -6242,7 +6400,7 @@ function addQuoteItemRow() {
   const qty = qtyVal ? parseInt(qtyVal) : null;
 
   if (!productId) {
-    showToast('⚠️ يرجى اختيار مادة أولاً', 'error');
+    showToast('⚠️ يرجى اختيار مادة من القائمة أولاً', 'error');
     return;
   }
   const p = products.find(x => x.id === productId);
@@ -6255,18 +6413,9 @@ function addQuoteItemRow() {
     showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}"`, 'success');
   }
   document.getElementById('quoteAddProductQty').value = '';
-  select.selectedIndex = 0;
+  select.value = '';
+  document.getElementById('quoteProductSearch').value = '';
   renderQuoteItemsList();
-}
-
-function removeQuoteItemRow(productId) {
-  currentQuoteItems = currentQuoteItems.filter(it => it.productId !== productId);
-  renderQuoteItemsList();
-}
-
-function updateQuoteItemQty(productId, newQty) {
-  const item = currentQuoteItems.find(it => it.productId === productId);
-  if (item) item.qty = newQty ? parseInt(newQty) : null;
 }
 
 function renderQuoteItemsList() {
@@ -6275,23 +6424,34 @@ function renderQuoteItemsList() {
     list.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:10px">لم تتم إضافة مواد بعد</div>`;
     return;
   }
-  list.innerHTML = currentQuoteItems.map(it => {
-    const p = products.find(x => x.id === it.productId);
-    if (!p) return '';
+  list.innerHTML = currentQuoteItems.map((it, idx) => {
+    const p = it.productId ? products.find(x => x.id === it.productId) : null;
+    const name = p ? p.ar : (it.customName || 'مادة');
+    const icon = p ? (p.image ? `<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover">` : p.icon) : '✏️';
+    const customBadge = !p ? `<span style="font-size:10px;background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;border-radius:50px;padding:1px 8px;margin-right:6px">مادة جديدة</span>` : '';
     return `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
-        <span style="font-size:18px;flex-shrink:0">${p.image ? `<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover">` : p.icon}</span>
-        <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</span>
+        <span style="font-size:18px;flex-shrink:0">${icon}</span>
+        <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(name)}</span>
+        ${customBadge}
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <span style="font-size:12px;color:var(--text-muted)">الكمية:</span>
         <input type="number" min="1" placeholder="غير محددة" value="${it.qty || ''}" style="width:90px;padding:5px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center"
-          onchange="updateQuoteItemQty(${it.productId}, this.value)">
+          onchange="updateQuoteItemQtyByIdx(${idx}, this.value)">
       </div>
-      <button onclick="removeQuoteItemRow(${it.productId})" style="background:none;border:none;color:var(--danger);cursor:pointer;flex-shrink:0"><i class="fas fa-times-circle"></i></button>
+      <button onclick="removeQuoteItemRowByIdx(${idx})" style="background:none;border:none;color:var(--danger);cursor:pointer;flex-shrink:0"><i class="fas fa-times-circle"></i></button>
     </div>`;
   }).join('');
+}
+
+function updateQuoteItemQtyByIdx(idx, newQty) {
+  if (currentQuoteItems[idx]) currentQuoteItems[idx].qty = newQty ? parseInt(newQty) : null;
+}
+function removeQuoteItemRowByIdx(idx) {
+  currentQuoteItems.splice(idx, 1);
+  renderQuoteItemsList();
 }
 
 async function submitQuoteRequest() {
@@ -6319,13 +6479,14 @@ async function submitQuoteRequest() {
     clinic: currentUser.clinic || '',
     phone: currentUser.phone || '',
     items: currentQuoteItems.map(it => {
-      const p = products.find(x => x.id === it.productId);
+      const p = it.productId ? products.find(x => x.id === it.productId) : null;
       return {
-        productId: it.productId,
-        ar: p ? p.ar : '',
-        en: p ? p.en : '',
-        icon: p ? p.icon : '📦',
+        productId: it.productId || null,
+        ar: p ? p.ar : (it.customName || 'مادة بدون اسم'),
+        en: p ? p.en : (it.customName || ''),
+        icon: p ? p.icon : '✏️',
         image: p ? (p.image || null) : null,
+        isCustom: !p,
         qty: it.qty || null,
         unitPrice: null,
       };
@@ -6593,6 +6754,7 @@ function switchAdminTab(tab) {
   const isPoints   = tab === 'points';
   const isOffers   = tab === 'offers';
   const isQuotes   = tab === 'quotes';
+  const isMessages = tab === 'messages';
 
   document.getElementById('adminTabProducts').style.color = isProducts ? 'var(--primary)' : 'var(--text-muted)';
   document.getElementById('adminTabProducts').style.borderBottomColor = isProducts ? 'var(--primary)' : 'transparent';
@@ -6604,6 +6766,8 @@ function switchAdminTab(tab) {
   document.getElementById('adminTabOffers').style.borderBottomColor = isOffers ? '#f59e0b' : 'transparent';
   document.getElementById('adminTabQuotes').style.color = isQuotes ? '#0a5c8a' : 'var(--text-muted)';
   document.getElementById('adminTabQuotes').style.borderBottomColor = isQuotes ? '#0a5c8a' : 'transparent';
+  document.getElementById('adminTabMessages').style.color = isMessages ? '#0a5c8a' : 'var(--text-muted)';
+  document.getElementById('adminTabMessages').style.borderBottomColor = isMessages ? '#0a5c8a' : 'transparent';
 
   const statsGrid = document.getElementById('adminStatTotal').closest('div[style*="grid"]');
   if (statsGrid) statsGrid.style.display = isProducts ? 'grid' : 'none';
@@ -6626,10 +6790,14 @@ function switchAdminTab(tab) {
   const quotesWrap = document.getElementById('adminQuotesWrap');
   if (quotesWrap) quotesWrap.style.display = isQuotes ? 'block' : 'none';
 
+  const messagesWrap = document.getElementById('adminMessagesWrap');
+  if (messagesWrap) messagesWrap.style.display = isMessages ? 'block' : 'none';
+
   if (isOrders) renderAdminOrders();
   if (isPoints) renderAdminPoints();
   if (isOffers) renderAdminOffers();
   if (isQuotes) renderAdminQuotes();
+  if (isMessages) renderAdminMessages();
 }
 
 async function renderAdminOrders() {
@@ -7436,6 +7604,282 @@ async function showClientRecord(uid, email) {
         خطأ في تحميل البيانات: ${e.message}
       </div>`;
   }
+}
+
+// =====================
+// MESSAGING SYSTEM (Admin ↔ Clients)
+// =====================
+function messagesRef() {
+  return window._fbCollection(window._db, 'messages');
+}
+
+async function sendAdminMessage(clientEmail, text) {
+  const msg = {
+    clientEmail,
+    fromRole: 'admin',
+    fromName: 'فريق DentaPro',
+    text,
+    createdAt: new Date().toISOString(),
+  };
+  await window._fbAddDoc(messagesRef(), msg);
+
+  if (clientEmail === 'broadcast') {
+    await createNotification({
+      scope: 'broadcast',
+      icon: '📢',
+      title: 'رسالة من إدارة DentaPro',
+      message: text.length > 60 ? text.slice(0,60)+'…' : text,
+      link: 'page:messages',
+    });
+  } else {
+    await createNotification({
+      scope: 'client',
+      targetEmail: clientEmail,
+      icon: '💬',
+      title: 'رد جديد من الإدارة',
+      message: text.length > 60 ? text.slice(0,60)+'…' : text,
+      link: 'page:messages',
+    });
+  }
+}
+
+async function sendClientMessage(text) {
+  if (!currentUser) return;
+  const msg = {
+    clientEmail: currentUser.email,
+    fromRole: 'client',
+    fromName: currentUser.name || currentUser.email,
+    text,
+    createdAt: new Date().toISOString(),
+  };
+  await window._fbAddDoc(messagesRef(), msg);
+  await createNotification({
+    scope: 'admin',
+    icon: '💬',
+    title: 'استفسار جديد من عميل',
+    message: `${currentUser.name || currentUser.email}: ${text.length>60?text.slice(0,60)+'…':text}`,
+    link: `clientmsg:${currentUser.email}`,
+  });
+}
+
+async function getClientMessageThread(email) {
+  try {
+    for (let i = 0; i < 20; i++) {
+      if (window._fbQuery && window._fbWhere && window._fbGetDocs) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    const qMine = window._fbQuery(messagesRef(), window._fbWhere('clientEmail','==', email));
+    const qBroadcast = window._fbQuery(messagesRef(), window._fbWhere('clientEmail','==','broadcast'));
+    const [s1, s2] = await Promise.all([window._fbGetDocs(qMine), window._fbGetDocs(qBroadcast)]);
+    const list = [
+      ...s1.docs.map(d => ({_docId:d.id, ...d.data()})),
+      ...s2.docs.map(d => ({_docId:d.id, ...d.data()})),
+    ];
+    list.sort((a,b) => new Date(a.createdAt) - new Date(b.createdAt));
+    return list;
+  } catch(e) {
+    console.warn('getClientMessageThread:', e.message);
+    return [];
+  }
+}
+
+async function getAllMessageThreadsForAdmin() {
+  try {
+    const snap = await window._fbGetDocs(messagesRef());
+    const all = snap.docs.map(d => ({_docId:d.id, ...d.data()}));
+    const grouped = {};
+    all.forEach(m => {
+      if (m.clientEmail === 'broadcast') return;
+      if (!grouped[m.clientEmail]) grouped[m.clientEmail] = [];
+      grouped[m.clientEmail].push(m);
+    });
+    Object.values(grouped).forEach(arr => arr.sort((a,b)=> new Date(a.createdAt)-new Date(b.createdAt)));
+    return grouped;
+  } catch(e) {
+    console.warn('getAllMessageThreadsForAdmin:', e.message);
+    return {};
+  }
+}
+
+function openClientMessages() {
+  if (!currentUser) { openAuthModal('login'); return; }
+  showPage('messages');
+}
+
+async function renderClientMessagesThread() {
+  const wrap = document.getElementById('clientMessagesThread');
+  wrap.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:24px">
+    <div class="spinner" style="margin:0 auto 10px;width:24px;height:24px;border-width:3px"></div>جاري التحميل...</div>`;
+  const thread = await getClientMessageThread(currentUser.email);
+  window._cachedClientThread = thread;
+  if (!thread.length) {
+    wrap.innerHTML = `<div style="text-align:center;color:var(--text-muted);padding:32px">
+      <i class="fas fa-comments" style="font-size:40px;opacity:0.2;display:block;margin-bottom:10px"></i>
+      لا توجد رسائل بعد، ابدأ بكتابة استفسارك بالأسفل</div>`;
+    return;
+  }
+  wrap.innerHTML = thread.map(m => {
+    const isAdmin = m.fromRole === 'admin';
+    const time = timeAgo(m.createdAt);
+    return `
+    <div style="display:flex;justify-content:${isAdmin?'flex-start':'flex-end'}">
+      <div style="max-width:75%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;
+        background:${isAdmin?'#f0f8ff':'linear-gradient(135deg,var(--primary),var(--primary-light))'};
+        color:${isAdmin?'var(--text)':'#fff'}">
+        ${isAdmin?`<div style="font-weight:800;font-size:11px;margin-bottom:4px;color:var(--primary)">${m.clientEmail==='broadcast'?'📢 ':''}${escHtml(m.fromName)}</div>`:''}
+        <div>${escHtml(m.text)}</div>
+        <div style="font-size:10px;opacity:0.7;margin-top:4px;text-align:left">${time}</div>
+      </div>
+    </div>`;
+  }).join('');
+  wrap.scrollTop = wrap.scrollHeight;
+}
+
+async function sendClientMessageFromInput() {
+  const input = document.getElementById('clientMsgInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  await sendClientMessage(text);
+  showToast('✅ تم إرسال رسالتك', 'success');
+  renderClientMessagesThread();
+}
+
+async function renderAdminMessages() {
+  const container = document.getElementById('adminMessagesList');
+  container.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">
+    <div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>جاري التحميل...</div>`;
+  const grouped = await getAllMessageThreadsForAdmin();
+  window._cachedAdminThreads = grouped;
+  const emails = Object.keys(grouped);
+
+  const unreadClients = emails.filter(e => grouped[e][grouped[e].length-1].fromRole === 'client').length;
+  const badge = document.getElementById('adminMsgBadge');
+  if (badge) badge.textContent = unreadClients > 0 ? unreadClients : '';
+
+  if (!emails.length) {
+    container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)">
+      <i class="fas fa-comments" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px"></i>
+      لا توجد رسائل من العملاء بعد</div>`;
+    return;
+  }
+  container.innerHTML = emails.map(email => {
+    const arr = grouped[email];
+    const last = arr[arr.length-1];
+    const clientName = arr.find(m=>m.fromRole==='client')?.fromName || email;
+    return `
+    <div class="points-admin-card" style="cursor:pointer" onclick="openAdminThreadModal('${email}')">
+      <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
+        <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));
+          display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0">${escHtml(clientName).charAt(0)}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">${escHtml(clientName)}</div>
+          <div style="font-size:12px;color:var(--text-muted)">${escHtml(email)}</div>
+          <div style="font-size:12px;color:var(--text);margin-top:4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:380px">
+            ${last.fromRole==='admin'?'<i class="fas fa-reply" style="color:var(--text-muted)"></i> ':''}${escHtml(last.text)}
+          </div>
+        </div>
+      </div>
+      <span style="font-size:11px;color:var(--text-muted)">${timeAgo(last.createdAt)}</span>
+    </div>`;
+  }).join('');
+}
+
+function openAdminThreadModal(email) {
+  const existing = document.getElementById('adminThreadModal');
+  if (existing) existing.remove();
+  const thread = (window._cachedAdminThreads || {})[email] || [];
+  const clientName = thread.find(m=>m.fromRole==='client')?.fromName || email;
+  const modal = document.createElement('div');
+  modal.id = 'adminThreadModal';
+  modal.className = 'modal-overlay open';
+  modal.style.zIndex = '4000';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:560px">
+      <div class="modal-header" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary))">
+        <div class="modal-title"><i class="fas fa-comments"></i> محادثة مع ${escHtml(clientName)}</div>
+        <button class="close-btn" onclick="document.getElementById('adminThreadModal').remove()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div id="adminThreadBody" style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;margin-bottom:14px;padding:6px"></div>
+        <div style="display:flex;gap:10px">
+          <input type="text" class="form-input" id="adminThreadInput" placeholder="اكتب ردك هنا..."
+            onkeydown="if(event.key==='Enter'){event.preventDefault();sendAdminThreadReply('${email}')}">
+          <button class="btn-primary" style="padding:0 24px;flex-shrink:0" onclick="sendAdminThreadReply('${email}')">
+            <i class="fas fa-paper-plane"></i>
+          </button>
+        </div>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  renderAdminThreadBody(thread);
+}
+
+function renderAdminThreadBody(thread) {
+  const body = document.getElementById('adminThreadBody');
+  if (!body) return;
+  body.innerHTML = thread.map(m => {
+    const isAdmin = m.fromRole === 'admin';
+    return `
+    <div style="display:flex;justify-content:${isAdmin?'flex-end':'flex-start'}">
+      <div style="max-width:75%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;
+        background:${isAdmin?'linear-gradient(135deg,var(--primary),var(--primary-light))':'#f0f8ff'};
+        color:${isAdmin?'#fff':'var(--text)'}">
+        <div>${escHtml(m.text)}</div>
+        <div style="font-size:10px;opacity:0.7;margin-top:4px;text-align:left">${timeAgo(m.createdAt)}</div>
+      </div>
+    </div>`;
+  }).join('');
+  body.scrollTop = body.scrollHeight;
+}
+
+async function sendAdminThreadReply(email) {
+  const input = document.getElementById('adminThreadInput');
+  const text = input.value.trim();
+  if (!text) return;
+  input.value = '';
+  await sendAdminMessage(email, text);
+  const grouped = window._cachedAdminThreads || {};
+  if (!grouped[email]) grouped[email] = [];
+  grouped[email].push({ clientEmail: email, fromRole:'admin', fromName:'فريق DentaPro', text, createdAt:new Date().toISOString() });
+  renderAdminThreadBody(grouped[email]);
+  renderAdminMessages();
+  showToast('✅ تم إرسال الرد', 'success');
+}
+
+function openBroadcastMessageModal() {
+  const existing = document.getElementById('broadcastMsgModal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'broadcastMsgModal';
+  modal.className = 'modal-overlay open';
+  modal.style.zIndex = '4000';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:480px">
+      <div class="modal-header" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary))">
+        <div class="modal-title"><i class="fas fa-bullhorn"></i> رسالة جماعية لكل العملاء</div>
+        <button class="close-btn" onclick="document.getElementById('broadcastMsgModal').remove()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">نص الرسالة <span class="required">*</span></label>
+          <textarea class="form-textarea" id="broadcastMsgText" placeholder="مثال: لدينا عرض خاص هذا الأسبوع على مواد التعقيم 🎉"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer" style="justify-content:space-between">
+        <button class="btn-back" onclick="document.getElementById('broadcastMsgModal').remove()">إلغاء</button>
+        <button class="btn-submit" onclick="sendBroadcastMessage()"><i class="fas fa-paper-plane"></i> إرسال للجميع</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function sendBroadcastMessage() {
+  const text = document.getElementById('broadcastMsgText').value.trim();
+  if (!text) { showToast('⚠️ يرجى كتابة نص الرسالة', 'error'); return; }
+  await sendAdminMessage('broadcast', text);
+  document.getElementById('broadcastMsgModal').remove();
+  showToast('✅ تم إرسال الرسالة لجميع العملاء', 'success');
 }
 </script>
 </body>
