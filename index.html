@@ -639,6 +639,68 @@ footer{
   font-size:12px; font-weight:700; color:rgba(255,255,255,0.7);
 }
 
+/* ===== NOTIFICATIONS BELL ===== */
+.notif-btn{
+  position:relative; width:44px; height:44px; border-radius:50%;
+  background: transparent; color:var(--primary); border:2px solid var(--border);
+  cursor:pointer; font-size:17px;
+  display:flex; align-items:center; justify-content:center;
+  transition:all 0.2s;
+}
+.notif-btn:hover{background:rgba(10,92,138,0.06); border-color:var(--primary-light)}
+.notif-badge{
+  position:absolute; top:-4px; right:-4px;
+  background:var(--danger); color:#fff; border-radius:50%;
+  min-width:20px; height:20px; padding:0 4px; font-size:11px; font-weight:700;
+  display:flex; align-items:center; justify-content:center;
+  border:2px solid #fff;
+}
+body.en .notif-badge{right:auto; left:-4px}
+.notif-dropdown{
+  position:fixed; top:70px; left:16px; right:16px; max-width:380px;
+  margin:0 auto; background:#fff; border-radius:16px;
+  border:1px solid var(--border); box-shadow:var(--shadow-lg);
+  z-index:3500; max-height:70vh; overflow-y:auto; display:none;
+}
+body.en .notif-dropdown{left:16px; right:16px}
+@media(min-width:540px){
+  .notif-dropdown{left:auto; right:24px; margin:0}
+  body.en .notif-dropdown{right:auto; left:24px}
+}
+.notif-dropdown.open{display:block; animation:slideIn 0.25s ease}
+.notif-dropdown-header{
+  padding:14px 18px; border-bottom:1px solid var(--border);
+  display:flex; align-items:center; justify-content:space-between;
+  position:sticky; top:0; background:#fff; border-radius:16px 16px 0 0;
+}
+.notif-dropdown-title{font-weight:800; font-size:14px; color:var(--primary-dark)}
+.notif-mark-read-btn{
+  background:none; border:none; color:var(--primary); font-family:inherit;
+  font-size:12px; font-weight:700; cursor:pointer;
+}
+.notif-item{
+  display:flex; gap:10px; padding:14px 18px; border-bottom:1px solid #f0f4f8;
+  cursor:pointer; transition:background 0.15s; position:relative;
+}
+.notif-item:hover{background:#f8fbfd}
+.notif-item.unread{background:#f0f8ff}
+.notif-item.unread::before{
+  content:''; position:absolute; top:18px; right:8px; width:8px; height:8px;
+  border-radius:50%; background:var(--primary);
+}
+body.en .notif-item.unread::before{right:auto; left:8px}
+.notif-item-icon{
+  width:38px; height:38px; border-radius:10px; flex-shrink:0;
+  background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+  display:flex; align-items:center; justify-content:center; font-size:18px;
+}
+.notif-item-content{flex:1; min-width:0}
+.notif-item-title{font-weight:700; font-size:13px; color:var(--primary-dark); margin-bottom:2px}
+.notif-item-msg{font-size:12px; color:var(--text-muted); line-height:1.5}
+.notif-item-time{font-size:11px; color:#9ab; margin-top:4px}
+.notif-empty{text-align:center; padding:40px 20px; color:var(--text-muted)}
+.notif-empty i{font-size:40px; opacity:0.2; display:block; margin-bottom:12px}
+
 /* ===== TOAST ===== */
 .toast-container{position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px}
 body.en .toast-container{right:auto; left:24px}
@@ -1213,6 +1275,17 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     <div class="header-search">
       <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product...">
       <button class="search-btn"><i class="fas fa-search"></i></button>
+    </div>
+    <button class="notif-btn" id="notifBtn" onclick="toggleNotifDropdown()" style="display:none">
+      <i class="fas fa-bell"></i>
+      <span class="notif-badge" id="notifBadge" style="display:none">0</span>
+    </button>
+    <div class="notif-dropdown" id="notifDropdown">
+      <div class="notif-dropdown-header">
+        <span class="notif-dropdown-title"><i class="fas fa-bell"></i> الإشعارات</span>
+        <button class="notif-mark-read-btn" onclick="markAllNotifsRead()">تعليم الكل كمقروء</button>
+      </div>
+      <div id="notifList"></div>
     </div>
     <button class="cart-btn" onclick="openCart()">
       <i class="fas fa-shopping-cart"></i>
@@ -2860,6 +2933,156 @@ function quoteStatusBadge(status) {
 }
 
 // =====================
+// NOTIFICATIONS SYSTEM
+// =====================
+function notifsRef() {
+  return window._fbCollection(window._db, 'notifications');
+}
+
+// إنشاء إشعار جديد
+// scope: 'client' (لعميل محدد عبر targetEmail) | 'admin' (للأدمن فقط) | 'broadcast' (لكل العملاء)
+async function createNotification({ scope, targetEmail = null, icon, title, message, link = null }) {
+  try {
+    await window._fbAddDoc(notifsRef(), {
+      scope, targetEmail, icon, title, message, link,
+      createdAt: new Date().toISOString(),
+    });
+  } catch(e) {
+    console.warn('createNotification:', e.message);
+  }
+}
+
+// جلب إشعارات شخص معيّن (عميل أو أدمن) + البث العام إن كان عميلاً
+async function fetchNotificationsFor(email, isAdminUser) {
+  try {
+    for (let i = 0; i < 20; i++) {
+      if (window._fbQuery && window._fbWhere && window._fbGetDocs) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    let results = [];
+    if (isAdminUser) {
+      const q = window._fbQuery(notifsRef(), window._fbWhere('scope', '==', 'admin'));
+      const snap = await window._fbGetDocs(q);
+      results = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    } else {
+      const qClient = window._fbQuery(notifsRef(), window._fbWhere('targetEmail', '==', email));
+      const qBroadcast = window._fbQuery(notifsRef(), window._fbWhere('scope', '==', 'broadcast'));
+      const [snapClient, snapBroadcast] = await Promise.all([
+        window._fbGetDocs(qClient),
+        window._fbGetDocs(qBroadcast)
+      ]);
+      results = [
+        ...snapClient.docs.map(d => ({ _docId: d.id, ...d.data() })),
+        ...snapBroadcast.docs.map(d => ({ _docId: d.id, ...d.data() }))
+      ];
+    }
+    results.sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+    return results.slice(0, 30);
+  } catch(e) {
+    console.warn('fetchNotificationsFor:', e.message);
+    return [];
+  }
+}
+
+function getReadNotifIds() {
+  try { return JSON.parse(localStorage.getItem('dentapro_read_notifs') || '[]'); }
+  catch(e) { return []; }
+}
+function markNotifIdRead(id) {
+  const list = getReadNotifIds();
+  if (!list.includes(id)) { list.push(id); localStorage.setItem('dentapro_read_notifs', JSON.stringify(list)); }
+}
+function isNotifRead(id) {
+  return getReadNotifIds().includes(id);
+}
+
+function timeAgo(dateStr) {
+  const diff = (Date.now() - new Date(dateStr).getTime()) / 1000;
+  if (diff < 60) return 'الآن';
+  if (diff < 3600) return `منذ ${Math.floor(diff/60)} دقيقة`;
+  if (diff < 86400) return `منذ ${Math.floor(diff/3600)} ساعة`;
+  return `منذ ${Math.floor(diff/86400)} يوم`;
+}
+
+let _cachedNotifs = [];
+
+async function loadAndRenderNotifIcon() {
+  const btn = document.getElementById('notifBtn');
+  if (!currentUser) { btn.style.display = 'none'; return; }
+  btn.style.display = 'flex';
+  const isAdminUser = currentUser.role === 'admin';
+  _cachedNotifs = await fetchNotificationsFor(currentUser.email, isAdminUser);
+  updateNotifBadge();
+}
+
+function updateNotifBadge() {
+  const unreadCount = _cachedNotifs.filter(n => !isNotifRead(n._docId)).length;
+  const badge = document.getElementById('notifBadge');
+  if (unreadCount > 0) {
+    badge.style.display = 'flex';
+    badge.textContent = unreadCount > 9 ? '9+' : unreadCount;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+function renderNotifList() {
+  const list = document.getElementById('notifList');
+  if (!_cachedNotifs.length) {
+    list.innerHTML = `<div class="notif-empty"><i class="fas fa-bell-slash"></i>لا توجد إشعارات حالياً</div>`;
+    return;
+  }
+  list.innerHTML = _cachedNotifs.map(n => {
+    const unread = !isNotifRead(n._docId);
+    return `
+    <div class="notif-item ${unread?'unread':''}" onclick="onNotifClick('${n._docId}','${n.link||''}')">
+      <div class="notif-item-icon">${n.icon || '🔔'}</div>
+      <div class="notif-item-content">
+        <div class="notif-item-title">${escHtml(n.title)}</div>
+        <div class="notif-item-msg">${escHtml(n.message)}</div>
+        <div class="notif-item-time">${timeAgo(n.createdAt)}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function onNotifClick(docId, link) {
+  markNotifIdRead(docId);
+  updateNotifBadge();
+  renderNotifList();
+  if (link) {
+    closeNotifDropdown();
+    if (link.startsWith('page:')) {
+      showPage(link.replace('page:',''));
+    }
+  }
+}
+
+function markAllNotifsRead() {
+  _cachedNotifs.forEach(n => markNotifIdRead(n._docId));
+  updateNotifBadge();
+  renderNotifList();
+  showToast('✅ تم تعليم الكل كمقروء', 'success');
+}
+
+function toggleNotifDropdown() {
+  const dd = document.getElementById('notifDropdown');
+  const willOpen = !dd.classList.contains('open');
+  if (willOpen) renderNotifList();
+  dd.classList.toggle('open', willOpen);
+}
+function closeNotifDropdown() {
+  document.getElementById('notifDropdown').classList.remove('open');
+}
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('notifDropdown');
+  const btn = document.getElementById('notifBtn');
+  if (dd && dd.classList.contains('open') && !dd.contains(e.target) && !btn.contains(e.target)) {
+    closeNotifDropdown();
+  }
+});
+
+// =====================
 // OFFERS HELPERS
 // =====================
 function getActiveQtyOffer(productId) {
@@ -4431,6 +4654,13 @@ async function submitOrder() {
     local.unshift(order);
     localStorage.setItem('dentapro_orders', JSON.stringify(local));
   }
+  createNotification({
+    scope: 'admin',
+    icon: '🛒',
+    title: 'طلب جديد',
+    message: `طلب جديد من ${order.clinic || order.doctor} بقيمة ${order.total.toLocaleString()} د.أ`,
+    link: 'page:adminOrders',
+  });
 logActivity('order_placed', { orderId: orderNum, total: getTotal() });
   document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
   document.querySelector('.modal-steps').style.display = 'none';
@@ -4722,11 +4952,13 @@ window.addEventListener('load', () => {
       }
       localStorage.setItem('dentapro_session', JSON.stringify(currentUser));
       renderAuthHeader();
+      loadAndRenderNotifIcon();
       if (currentUser.role === 'client') renderPointsInHeader();
     } else {
       currentUser = null;
       localStorage.removeItem('dentapro_session');
       renderAuthHeader();
+      document.getElementById('notifBtn').style.display = 'none';
     }
   });
 });
@@ -4735,7 +4967,7 @@ window.addEventListener('load', () => {
 document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('dentapro_session');
   if (saved) {
-    try { currentUser = JSON.parse(saved); renderAuthHeader(); } catch(e) {}
+    try { currentUser = JSON.parse(saved); renderAuthHeader(); loadAndRenderNotifIcon(); } catch(e) {}
   } else { renderAuthHeader(); }
 });
 
@@ -4851,6 +5083,7 @@ function loginSuccess(user) {
   localStorage.setItem('dentapro_session', JSON.stringify(user));
   closeAuthModal();
   renderAuthHeader();
+  loadAndRenderNotifIcon();
   showToast(`👋 أهلاً ${user.name}!`, 'success');
   if (user.role === 'admin') {
     setTimeout(() => {
@@ -4938,6 +5171,8 @@ async function doLogout() {
   currentUser = null;
   localStorage.removeItem('dentapro_session');
   renderAuthHeader();
+  document.getElementById('notifBtn').style.display = 'none';
+  closeNotifDropdown();
   const banner = document.getElementById('clientWelcomeBanner');
   if (banner) banner.remove();
   showToast('👋 تم تسجيل الخروج', '');
@@ -6484,6 +6719,18 @@ async function updateOrderStatus(docId, orderId, newStatus) {
   try {
     const order = (window._cachedOrders || []).find(o => o._docId === docId) || {};
     await window._fbUpdateDoc(window._fbDoc(docId), { status: newStatus });
+
+    if (order.clientEmail && order.clientEmail !== 'guest') {
+      const s = getStatusObj(newStatus);
+      createNotification({
+        scope: 'client',
+        targetEmail: order.clientEmail,
+        icon: s.icon === 'fa-clock' ? '⏳' : s.icon === 'fa-check-circle' ? '✅' : s.icon === 'fa-box-open' ? '📦' : s.icon === 'fa-shipping-fast' ? '🚚' : s.icon === 'fa-hand-holding' ? '🎉' : '🚫',
+        title: `تحديث طلبك #${order.id || orderId}`,
+        message: `حالة طلبك الآن: ${s.label}`,
+        link: 'page:orders',
+      });
+    }
 // خصم المخزون تلقائياً عند التسليم، فقط إذا لم يُخصم من قبل
     const orderForStock = (window._cachedOrders || []).find(o => o._docId === docId);
     if (newStatus === 'delivered' && orderForStock && !orderForStock.stockDeducted) {
@@ -6899,7 +7146,59 @@ function showQuoteOrderDetail(docId) {
 }
 
 function printQuoteInvoice(docId) {
-  const quotes = w
+  const quotes = window._cachedAdminQuotes || [];
+  const q = quotes.find(x => x._docId === docId);
+  if (!q) { showToast('❌ لم يتم العثور على الطلب', 'error'); return; }
+
+  const date = new Date(q.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
+    { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
+  const total = getQuoteTotal(q);
+
+  const rows = q.items.map(item => `
+    <tr>
+      <td>${escHtml(item.ar)}</td>
+      <td style="text-align:center">${item.qty||1}</td>
+      <td style="text-align:center">${(item.unitPrice||0).toLocaleString()} د.أ</td>
+      <td style="text-align:center;font-weight:700">${((item.unitPrice||0)*(item.qty||1)).toLocaleString()} د.أ</td>
+    </tr>`).join('');
+
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <!DOCTYPE html>
+    <html lang="ar" dir="rtl"><head><meta charset="UTF-8">
+    <title>فاتورة عرض سعر #${q.id}</title>
+    <style>
+      body{font-family:'Cairo',Arial,sans-serif;padding:32px;color:#0f2133}
+      h1{color:#0a5c8a;margin-bottom:4px}
+      .muted{color:#5a7a90;font-size:13px}
+      table{width:100%;border-collapse:collapse;margin-top:24px}
+      th,td{padding:10px 12px;border-bottom:1px solid #e2eaf0;text-align:right;font-size:14px}
+      th{background:#f0f8ff;color:#0a5c8a}
+      .grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:20px 0}
+      .box{background:#f8fbfd;border-radius:8px;padding:12px}
+      .total{margin-top:16px;text-align:left;font-size:18px;font-weight:900;color:#0a5c8a}
+      @media print{ body{padding:0} }
+    </style></head>
+    <body>
+      <h1>🦷 DentaPro</h1>
+      <div class="muted">فاتورة عرض سعر رقم #${q.id} — ${date}</div>
+      <div class="grid">
+        <div class="box"><strong>العميل:</strong> ${escHtml(q.clientName)}</div>
+        <div class="box"><strong>العيادة:</strong> ${escHtml(q.clinic||'—')}</div>
+        <div class="box"><strong>الهاتف:</strong> ${escHtml(q.phone||'—')}</div>
+      </div>
+      <table>
+        <thead><tr><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>
+      <div class="total">الإجمالي الكلي: ${total.toLocaleString()} د.أ</div>
+      <script>window.print();<\/script>
+    </body></html>
+  `);
+  win.document.close();
+}
+
+function sendWhatsAppAdmin(orderId) {
   const orders = window._cachedOrders || [];
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
