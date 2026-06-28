@@ -1337,8 +1337,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
       <h2 class="section-title" data-ar="تصفح حسب الفئة" data-en="Browse by Category">تصفح حسب الفئة</h2>
     </div>
     <div class="categories-grid" id="categoriesGrid"></div>
-    <div id="branchesAccordionWrap" style="margin-top:20px;display:none"></div>
-    <div id="categoryBreadcrumb" style="display:none;margin-top:16px;font-size:13px;color:var(--text-muted);font-weight:600;display:flex;align-items:center;gap:8px;flex-wrap:wrap"></div>
 
     <div class="quick-access-wrap" id="quickAccessWrap" style="display:none">
       <div class="quick-access-card bundles" onclick="goToOffersFiltered('bundle')">
@@ -2292,7 +2290,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">الفئة <span class="required">*</span></label>
-          <select class="form-input" id="pCat" onchange="populateProductBranchSelect()" style="cursor:pointer">
+          <select class="form-input" id="pCat" style="cursor:pointer">
             <option value="dev">أجهزة ومعدات</option>
             <option value="hand">أدوات يدوية</option>
             <option value="mat">مواد طبية</option>
@@ -2303,14 +2301,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
           </select>
         </div>
         <div class="form-group">
-          <label class="form-label">الفرع (اختياري)</label>
-          <select class="form-input" id="pBranch" style="cursor:pointer">
-            <option value="">بدون فرع</option>
-          </select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group" style="flex:1">
           <label class="form-label">الشارة (Badge)</label>
           <select class="form-input" id="pBadge" style="cursor:pointer">
             <option value="">بدون شارة</option>
@@ -2657,10 +2647,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
           </div>
         </div>
       </div>
-      <div class="form-group">
-        <label class="form-label">لون مميز للقسم (اختياري)</label>
-        <input type="color" class="form-input" id="catColor" value="#0a5c8a" style="height:44px;cursor:pointer">
-      </div>
       <div id="catFormError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;
            padding:10px 14px;background:#fff5f5;border-radius:8px;margin-top:8px">
         <i class="fas fa-exclamation-circle"></i>
@@ -2675,100 +2661,10 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         </div>
         <div id="catCurrentList" style="display:flex;flex-direction:column;gap:8px"></div>
       </div>
-
-      <!-- إدارة الفروع -->
-      <div style="margin-top:28px;padding-top:20px;border-top:2px dashed var(--border)">
-        <div style="font-weight:800;font-size:14px;color:var(--primary-dark);margin-bottom:12px;
-                    display:flex;align-items:center;gap:8px">
-          <i class="fas fa-sitemap" style="color:#f59e0b"></i> الفروع
-        </div>
-
-        <input type="hidden" id="editBranchId">
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">القسم الرئيسي للفرع <span class="required">*</span></label>
-            <select class="form-input" id="branchParentCat" style="cursor:pointer"></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">معرّف الفرع (ID) <span class="required">*</span></label>
-            <input type="text" class="form-input" id="branchId" placeholder="مثال: local_anes" maxlength="20">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">اسم الفرع بالعربي <span class="required">*</span></label>
-            <input type="text" class="form-input" id="branchNameAr" placeholder="مثال: تخدير موضعي">
-          </div>
-          <div class="form-group">
-            <label class="form-label">اسم الفرع بالإنجليزي <span class="required">*</span></label>
-            <input type="text" class="form-input" id="branchNameEn" placeholder="e.g. Local Anesthesia">
-          </div>
-        </div>
-
-        <div id="branchFormError" style="display:none;color:#e53e3e;font-size:13px;font-weight:700;
-             padding:10px 14px;background:#fff5f5;border-radius:8px;margin-bottom:12px">
-          <i class="fas fa-exclamation-circle"></i>
-          <span id="branchFormErrorMsg">يرجى ملء جميع الحقول المطلوبة</span>
-        </div>
-
-        <div style="display:flex;gap:10px;margin-bottom:18px">
-          <button type="button" onclick="saveBranch()" style="flex:1;padding:11px;border-radius:50px;
-            background:linear-gradient(135deg,#f59e0b,#d97706);color:#fff;border:none;
-            font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
-            <i class="fas fa-save"></i> حفظ الفرع
-          </button>
-          <button type="button" onclick="resetBranchForm()" style="padding:11px 18px;border-radius:50px;
-            background:#f8fbfd;color:var(--text-muted);border:2px solid var(--border);
-            font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
-            إلغاء
-          </button>
-        </div>
-
-        <div id="branchesCurrentList" style="display:flex;flex-direction:column;gap:8px"></div>
-      </div>
     </div>
     <div class="modal-footer" style="justify-content:space-between">
       <button class="btn-back" onclick="closeAddCategory()"><i class="fas fa-times"></i> إلغاء</button>
       <button class="btn-submit" onclick="saveCategory()"><i class="fas fa-save"></i> حفظ القسم</button>
-    </div>
-  </div>
-</div>
-
-<!-- MOVE BRANCH MODAL -->
-<div class="modal-overlay" id="moveBranchModal">
-  <div class="modal" style="max-width:440px">
-    <div class="modal-header" style="background:linear-gradient(135deg,#d97706,#f59e0b)">
-      <div class="modal-title"><i class="fas fa-arrow-right-arrow-left"></i> نقل المنتج إلى فرع آخر</div>
-      <button class="close-btn" aria-label="إغلاق" onclick="closeMoveBranchModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="modal-body">
-      <input type="hidden" id="moveBranchProductId">
-      <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;display:flex;align-items:center;gap:10px">
-        <span style="font-size:24px" id="moveBranchProductIcon">📦</span>
-        <div>
-          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)" id="moveBranchProductName"></div>
-          <div style="font-size:12px;color:var(--text-muted)" id="moveBranchProductCurrent"></div>
-        </div>
-      </div>
-      <div class="form-group">
-        <label class="form-label">القسم الرئيسي الجديد <span class="required">*</span></label>
-        <select class="form-input" id="moveBranchCatSelect" onchange="populateMoveBranchOptions()" style="cursor:pointer"></select>
-      </div>
-      <div class="form-group">
-        <label class="form-label">الفرع الجديد (اختياري)</label>
-        <select class="form-input" id="moveBranchSelect" style="cursor:pointer">
-          <option value="">بدون فرع</option>
-        </select>
-      </div>
-      <div id="moveBranchError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px;background:#fff5f5;border-radius:8px">
-        <i class="fas fa-exclamation-circle"></i> يرجى اختيار قسم
-      </div>
-    </div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn-back" onclick="closeMoveBranchModal()">إلغاء</button>
-      <button onclick="confirmMoveBranch()" style="padding:12px 28px;border-radius:50px;background:linear-gradient(135deg,#d97706,#f59e0b);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:8px">
-        <i class="fas fa-check"></i> تأكيد النقل
-      </button>
     </div>
   </div>
 </div>
@@ -2867,75 +2763,6 @@ async function saveCategories() {
 }
 
 let categories = loadCategories();
-
-// =====================
-// BRANCHES (الفروع التابعة للأقسام)
-// =====================
-function loadBranches() {
-  try {
-    const saved = localStorage.getItem('dentapro_branches');
-    if (saved) {
-      const parsed = JSON.parse(saved);
-      if (Array.isArray(parsed)) return parsed;
-    }
-  } catch(e) {}
-  return [];
-}
-
-async function loadBranchesFromFirebase() {
-  try {
-    for (let i = 0; i < 30; i++) {
-      if (window._fbDoc2 && window._fbGetDoc) break;
-      await new Promise(r => setTimeout(r, 300));
-    }
-    if (!window._fbDoc2 || !window._fbGetDoc) return;
-
-    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'branches'));
-    if (snap.exists()) {
-      const list = snap.data().list;
-      if (Array.isArray(list)) {
-        branches.length = 0;
-        list.forEach(b => branches.push(b));
-        localStorage.setItem('dentapro_branches', JSON.stringify(branches));
-        renderCategories();
-        renderProducts();
-        console.log('✅ تم تحميل الفروع من Firebase:', branches.length);
-      }
-    }
-  } catch(e) {
-    console.warn('Firebase loadBranches:', e.message);
-  }
-}
-
-async function saveBranches() {
-  try {
-    localStorage.setItem('dentapro_branches', JSON.stringify(branches));
-  } catch(e) {}
-  try {
-    for (let i = 0; i < 15; i++) {
-      if (window._fbDoc2 && window._fbSetDoc) break;
-      await new Promise(r => setTimeout(r, 200));
-    }
-    await window._fbSetDoc(
-      window._fbDoc2('store_data', 'branches'),
-      { list: branches, updatedAt: new Date().toISOString() }
-    );
-  } catch(e) {
-    console.warn('Firebase saveBranches:', e.message);
-  }
-}
-
-let branches = loadBranches();
-
-// إرجاع فروع قسم معيّن فقط
-function getBranchesOfCategory(catId) {
-  return branches.filter(b => b.catId === catId);
-}
-
-// عدد منتجات فرع معيّن
-function getBranchProductsCount(branchId) {
-  return products.filter(p => p.branch === branchId).length;
-}
 
 const DEFAULT_PRODUCTS = [
   {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً'},
@@ -3456,8 +3283,7 @@ document.addEventListener('DOMContentLoaded', async () => {
   // المنتجات أولاً لضمان توافرها قبل فلترة العروض المرتبطة بها
   await Promise.all([
     loadProductsFromFirebase(),
-    loadCategoriesFromFirebase(),
-    loadBranchesFromFirebase()
+    loadCategoriesFromFirebase()
   ]);
   await loadOffersFromFirebase();
 
@@ -3468,8 +3294,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // دعم فتح منتج مباشرة من رابط مشاركة
   openProductFromUrlIfPresent();
-  // دعم فتح قسم/فرع مباشرة من رابط مشاركة
-  openCategoryFromUrlIfPresent();
 
   // إشعار المنتجات الجديدة منذ آخر زيارة
   showNewProductsNotification();
@@ -3543,145 +3367,23 @@ function t(ar, en) {
 // =====================
 // CATEGORIES
 // =====================
-let expandedCatId = null; // أي قسم مفتوح حالياً بالـ Accordion
-let currentBranch = null; // الفرع المختار حالياً (null = كل القسم)
-
 function renderCategories() {
   const grid = document.getElementById('categoriesGrid');
-  grid.innerHTML = categories.map(c => {
-    const count = c.id==='all' ? products.length : products.filter(p=>p.cat===c.id).length;
-    const isExpanded = expandedCatId === c.id;
-    const isActiveCard = (currentCat===c.id && !currentBranch) || (isExpanded && currentBranch);
-    const borderColor = c.color || 'var(--border)';
-    return `
-    <div class="cat-card ${isActiveCard?'active':''}" onclick="toggleCatExpand('${c.id}')"
-      style="${isActiveCard ? `border-color:${borderColor}` : `border-color:${c.color ? borderColor+'55' : borderColor}`}">
+  grid.innerHTML = categories.map(c => `
+    <div class="cat-card ${currentCat===c.id?'active':''}" onclick="filterCat('${c.id}')">
       ${c.image
         ? `<img src="${cldOptimize(c.image, 80)}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;margin-bottom:12px" loading="lazy" decoding="async">`
         : `<span class="cat-icon">${c.icon || '📁'}</span>`}
       <div class="cat-name">${currentLang==='en'?c.en:c.ar}</div>
-      <div class="cat-count">${count} ${t('منتج','items')}</div>
+      <div class="cat-count">${c.id==='all'?products.length:products.filter(p=>p.cat===c.id).length} ${t('منتج','items')}</div>
     </div>
-  `;
-  }).join('');
-
-  renderBranchesAccordion();
-  renderCategoryBreadcrumb();
-  updateCategoryUrl();
-}
-
-function renderBranchesAccordion() {
-  const wrap = document.getElementById('branchesAccordionWrap');
-  if (!wrap) return;
-  if (!expandedCatId || expandedCatId === 'all') {
-    wrap.style.display = 'none';
-    wrap.innerHTML = '';
-    return;
-  }
-  const cat = categories.find(c => c.id === expandedCatId);
-  const relevantBranches = getBranchesOfCategory(expandedCatId)
-    .filter(b => getBranchProductsCount(b.id) > 0); // إخفاء الفروع الفاضية
-
-  const totalInCat = products.filter(p => p.cat === expandedCatId).length;
-
-  wrap.style.display = 'block';
-  wrap.innerHTML = `
-    <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px;flex-wrap:wrap">
-      <button onclick="filterByBranch('${expandedCatId}', null)"
-        style="padding:8px 18px;border-radius:50px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
-               border:2px solid ${!currentBranch?'var(--primary)':'var(--border)'};
-               background:${!currentBranch?'var(--primary)':'#fff'};
-               color:${!currentBranch?'#fff':'var(--text-muted)'}">
-        ${t('عرض كل منتجات القسم','View all in category')} (${totalInCat})
-      </button>
-      ${relevantBranches.map(b => `
-        <button onclick="filterByBranch('${expandedCatId}', '${b.id}')"
-          style="padding:8px 18px;border-radius:50px;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;
-                 border:2px solid ${currentBranch===b.id?'#f59e0b':'var(--border)'};
-                 background:${currentBranch===b.id?'#f59e0b':'#fff'};
-                 color:${currentBranch===b.id?'#fff':'var(--text-muted)'}">
-          ${currentLang==='en'?b.en:b.ar} (${getBranchProductsCount(b.id)})
-        </button>
-      `).join('')}
-    </div>`;
-}
-
-function renderCategoryBreadcrumb() {
-  const el = document.getElementById('categoryBreadcrumb');
-  if (!el) return;
-  if (currentCat === 'all') { el.style.display = 'none'; return; }
-
-  const cat = categories.find(c => c.id === currentCat);
-  const branch = currentBranch ? branches.find(b => b.id === currentBranch) : null;
-
-  el.style.display = 'flex';
-  el.innerHTML = `
-    <span style="cursor:pointer;color:var(--primary)" onclick="toggleCatExpand('all')">${t('الرئيسية','Home')}</span>
-    <i class="fas fa-chevron-${currentLang==='en'?'left':'right'}" style="font-size:10px"></i>
-    <span style="cursor:pointer;color:${branch?'var(--primary)':'var(--primary-dark)'};font-weight:800"
-      onclick="filterByBranch('${currentCat}', null)">${cat ? (currentLang==='en'?cat.en:cat.ar) : ''}</span>
-    ${branch ? `
-      <i class="fas fa-chevron-${currentLang==='en'?'left':'right'}" style="font-size:10px"></i>
-      <span style="color:var(--primary-dark);font-weight:800">${currentLang==='en'?branch.en:branch.ar}</span>
-    ` : ''}`;
-}
-
-function updateCategoryUrl() {
-  if (currentCat === 'all') {
-    history.replaceState(null, '', window.location.pathname);
-    return;
-  }
-  let url = `${window.location.pathname}?cat=${currentCat}`;
-  if (currentBranch) url += `&branch=${currentBranch}`;
-  history.replaceState(null, '', url);
-}
-
-function openCategoryFromUrlIfPresent() {
-  const params = new URLSearchParams(window.location.search);
-  const catId = params.get('cat');
-  const branchId = params.get('branch');
-  if (catId && categories.find(c => c.id === catId)) {
-    expandedCatId = catId;
-    currentCat = catId;
-    currentBranch = branchId && branches.find(b => b.id === branchId) ? branchId : null;
-    renderCategories();
-    renderProducts();
-    scrollToProducts();
-  }
-}
-
-function toggleCatExpand(id) {
-  if (id === 'all') {
-    expandedCatId = null;
-    currentBranch = null;
-    currentCat = 'all';
-    renderCategories();
-    renderProducts();
-    return;
-  }
-  if (expandedCatId === id) {
-    // إغلاق نفس القسم إذا ضُغط مرة ثانية
-    expandedCatId = null;
-    currentBranch = null;
-  } else {
-    expandedCatId = id;
-    currentBranch = null;
-    currentCat = id;
-  }
-  renderCategories();
-  renderProducts();
-}
-
-function filterByBranch(catId, branchId) {
-  currentCat = catId;
-  currentBranch = branchId;
-  renderCategories();
-  renderProducts();
+  `).join('');
 }
 
 function filterCat(id) {
-  // يبقى للتوافق مع أي استدعاء قديم
-  toggleCatExpand(id);
+  currentCat = id;
+  renderCategories();
+  renderProducts();
 }
 
 // =====================
@@ -3698,16 +3400,6 @@ function normalizeArabic(str) {
     .replace(/ئ/g, 'ي')
     .replace(/[ًٌٍَُِّْ]/g, '') // إزالة التشكيل
     .trim();
-}
-function populateProductBranchSelect() {
-  const catSel = document.getElementById('pCat');
-  const branchSel = document.getElementById('pBranch');
-  if (!catSel || !branchSel) return;
-  const currentVal = branchSel.value;
-  const relevant = getBranchesOfCategory(catSel.value);
-  branchSel.innerHTML = '<option value="">بدون فرع</option>' +
-    relevant.map(b => `<option value="${b.id}">${b.ar}</option>`).join('');
-  if (relevant.find(b => b.id === currentVal)) branchSel.value = currentVal;
 }
 
 function populateBrandFilter() {
@@ -3733,7 +3425,6 @@ function renderProducts() {
   populateBrandFilter();
 
   let list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
-  if (currentBranch) list = list.filter(p => p.branch === currentBranch);
   const searchValRaw = document.getElementById('searchInput').value;
   const searchVal = normalizeArabic(searchValRaw);
   let filtered = searchVal ? list.filter(p =>
@@ -5100,9 +4791,6 @@ function openAddCategory() {
   document.getElementById('catFormError').style.display = 'none';
   resetCatImageUpload();
   renderCurrentCatList();
-  populateBranchParentSelect();
-  resetBranchForm();
-  renderBranchesCurrentList();
   document.getElementById('addCategoryModal').classList.add('open');
 }
 
@@ -5155,7 +4843,6 @@ function editCategory(id) {
   document.getElementById('catId').value     = c.id;
   document.getElementById('catId').disabled  = true;
   document.getElementById('editCatId').value = c.id;
-  document.getElementById('catColor').value = c.color || '#0a5c8a';
   document.getElementById('catFormError').style.display = 'none';
   loadCatImagePreview(c.image || null);
 }
@@ -5190,7 +4877,6 @@ function saveCategory() {
   const id   = document.getElementById('catId').value.trim().toLowerCase().replace(/\s/g,'');
   const editId = document.getElementById('editCatId').value;
   const image = currentCategoryImage || null;
-  const color = document.getElementById('catColor').value || '#0a5c8a';
 
   const showErr = (msg) => {
     document.getElementById('catFormErrorMsg').textContent = msg;
@@ -5202,7 +4888,7 @@ function saveCategory() {
 
   if (editId) {
     const idx = categories.findIndex(c => c.id === editId);
-    if (idx !== -1) { categories[idx] = { ...categories[idx], ar, en, image, color }; }
+    if (idx !== -1) { categories[idx] = { ...categories[idx], ar, en, image }; }
     saveCategories();
     document.getElementById('catFormError').style.display = 'none';
     document.getElementById('editCatId').value = '';
@@ -5219,7 +4905,7 @@ function saveCategory() {
     showToast('✅ تم تعديل القسم بنجاح', 'success');
   } else {
     if (categories.find(c => c.id === id)) return showErr('هذا المعرّف مستخدم مسبقاً');
-    categories.push({ id, icon: '📁', image, ar, en, color });
+    categories.push({ id, icon: '📁', image, ar, en });
     const pCat = document.getElementById('pCat');
     const aCat = document.getElementById('adminCatFilter');
     const newOpt = new Option(ar, id);
@@ -5240,187 +4926,6 @@ function saveCategory() {
     closeAddCategory();
     showToast('✅ تم إضافة القسم بنجاح', 'success');
   }
-}
-
-// =====================
-// BRANCH MANAGEMENT (ADMIN)
-// =====================
-function populateBranchParentSelect() {
-  const sel = document.getElementById('branchParentCat');
-  if (!sel) return;
-  const currentVal = sel.value;
-  sel.innerHTML = categories.filter(c => c.id !== 'all')
-    .map(c => `<option value="${c.id}">${c.ar}</option>`).join('');
-  if (categories.find(c => c.id === currentVal)) sel.value = currentVal;
-}
-
-function renderBranchesCurrentList() {
-  const list = document.getElementById('branchesCurrentList');
-  if (!list) return;
-  if (!branches.length) {
-    list.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:12px">لا توجد فروع</div>`;
-    return;
-  }
-  list.innerHTML = branches.map(b => {
-    const parent = categories.find(c => c.id === b.catId);
-    const count = getBranchProductsCount(b.id);
-    return `
-    <div style="display:flex;align-items:center;justify-content:space-between;
-                padding:10px 14px;background:#fffbeb;border-radius:10px;
-                border:1px solid #fde68a">
-      <div>
-        <div style="font-weight:700;font-size:13px;color:var(--primary-dark)">${b.ar} <span style="color:var(--text-muted);font-weight:500">(${count} منتج)</span></div>
-        <div style="font-size:11px;color:var(--text-muted)">${b.en} · القسم: ${parent ? parent.ar : '—'} · ID: ${b.id}</div>
-      </div>
-      <div style="display:flex;gap:6px">
-        <button onclick="editBranch('${b.id}')"
-          style="padding:5px 12px;border-radius:50px;background:#fef3c7;color:#d97706;
-                 border:none;font-size:12px;font-weight:700;cursor:pointer">
-          <i class="fas fa-edit"></i>
-        </button>
-        <button onclick="deleteBranch('${b.id}')"
-          style="padding:5px 12px;border-radius:50px;background:#fff5f5;color:var(--danger);
-                 border:none;font-size:12px;font-weight:700;cursor:pointer">
-          <i class="fas fa-trash-alt"></i>
-        </button>
-      </div>
-    </div>`;
-  }).join('');
-}
-
-function editBranch(id) {
-  const b = branches.find(x => x.id === id);
-  if (!b) return;
-  document.getElementById('editBranchId').value = b.id;
-  document.getElementById('branchParentCat').value = b.catId;
-  document.getElementById('branchId').value = b.id;
-  document.getElementById('branchId').disabled = true;
-  document.getElementById('branchNameAr').value = b.ar;
-  document.getElementById('branchNameEn').value = b.en;
-  document.getElementById('branchFormError').style.display = 'none';
-}
-
-function resetBranchForm() {
-  document.getElementById('editBranchId').value = '';
-  document.getElementById('branchId').value = '';
-  document.getElementById('branchId').disabled = false;
-  document.getElementById('branchNameAr').value = '';
-  document.getElementById('branchNameEn').value = '';
-  document.getElementById('branchFormError').style.display = 'none';
-  populateBranchParentSelect();
-}
-
-function deleteBranch(id) {
-  const inUse = products.some(p => p.branch === id);
-  if (inUse) {
-    document.getElementById('branchFormErrorMsg').textContent = 'لا يمكن حذف فرع يحتوي على منتجات، يرجى نقلها أولاً';
-    document.getElementById('branchFormError').style.display = 'flex';
-    return;
-  }
-  const idx = branches.findIndex(b => b.id === id);
-  if (idx !== -1) branches.splice(idx, 1);
-  saveBranches();
-  renderBranchesCurrentList();
-  renderCategories();
-  showToast('🗑️ تم حذف الفرع بنجاح', 'success');
-}
-
-function saveBranch() {
-  const catId = document.getElementById('branchParentCat').value;
-  const ar = document.getElementById('branchNameAr').value.trim();
-  const en = document.getElementById('branchNameEn').value.trim();
-  const id = document.getElementById('branchId').value.trim().toLowerCase().replace(/\s/g,'_');
-  const editId = document.getElementById('editBranchId').value;
-
-  const showErr = (msg) => {
-    document.getElementById('branchFormErrorMsg').textContent = msg;
-    document.getElementById('branchFormError').style.display = 'flex';
-  };
-
-  if (!catId || !ar || !en || !id) return showErr('يرجى ملء جميع الحقول المطلوبة');
-  if (!/^[a-z0-9_]+$/.test(id)) return showErr('المعرّف يجب أن يحتوي على حروف إنجليزية صغيرة وأرقام و"_" فقط');
-
-  if (editId) {
-    const idx = branches.findIndex(b => b.id === editId);
-    if (idx !== -1) branches[idx] = { ...branches[idx], catId, ar, en };
-    saveBranches();
-    resetBranchForm();
-    renderBranchesCurrentList();
-    renderCategories();
-    showToast('✅ تم تعديل الفرع بنجاح', 'success');
-  } else {
-    if (branches.find(b => b.id === id)) return showErr('هذا المعرّف مستخدم مسبقاً');
-    branches.push({ id, catId, ar, en });
-    saveBranches();
-    resetBranchForm();
-    renderBranchesCurrentList();
-    renderCategories();
-    showToast('✅ تم إضافة الفرع بنجاح', 'success');
-  }
-}
-
-// =====================
-// MOVE PRODUCT TO ANOTHER BRANCH
-// =====================
-function openMoveBranchModal(productId) {
-  const p = products.find(x => x.id === productId);
-  if (!p) return;
-  document.getElementById('moveBranchProductId').value = productId;
-  document.getElementById('moveBranchProductIcon').textContent = p.icon || '📦';
-  document.getElementById('moveBranchProductName').textContent = p.ar;
-
-  const currentCat = categories.find(c => c.id === p.cat);
-  const currentBranch = branches.find(b => b.id === p.branch);
-  document.getElementById('moveBranchProductCurrent').textContent =
-    `الحالي: ${currentCat ? currentCat.ar : '—'}${currentBranch ? ' ← ' + currentBranch.ar : ' (بدون فرع)'}`;
-
-  const catSel = document.getElementById('moveBranchCatSelect');
-  catSel.innerHTML = categories.filter(c => c.id !== 'all')
-    .map(c => `<option value="${c.id}">${c.ar}</option>`).join('');
-  catSel.value = p.cat;
-
-  populateMoveBranchOptions();
-  document.getElementById('moveBranchSelect').value = p.branch || '';
-  document.getElementById('moveBranchError').style.display = 'none';
-  document.getElementById('moveBranchModal').classList.add('open');
-}
-
-function populateMoveBranchOptions() {
-  const catId = document.getElementById('moveBranchCatSelect').value;
-  const branchSel = document.getElementById('moveBranchSelect');
-  const relevant = getBranchesOfCategory(catId);
-  branchSel.innerHTML = '<option value="">بدون فرع</option>' +
-    relevant.map(b => `<option value="${b.id}">${b.ar}</option>`).join('');
-}
-
-function closeMoveBranchModal() {
-  document.getElementById('moveBranchModal').classList.remove('open');
-}
-
-function confirmMoveBranch() {
-  const productId = parseInt(document.getElementById('moveBranchProductId').value);
-  const newCat = document.getElementById('moveBranchCatSelect').value;
-  const newBranch = document.getElementById('moveBranchSelect').value || null;
-
-  if (!newCat) {
-    document.getElementById('moveBranchError').style.display = 'flex';
-    return;
-  }
-  document.getElementById('moveBranchError').style.display = 'none';
-
-  const idx = products.findIndex(x => x.id === productId);
-  if (idx === -1) return;
-
-  products[idx].cat = newCat;
-  products[idx].branch = newBranch;
-
-  saveProducts();
-  closeMoveBranchModal();
-  renderAdminTable();
-  renderProducts();
-  renderCategories();
-  updateAdminStats();
-  showToast('✅ تم نقل المنتج بنجاح', 'success');
 }
 
 // =====================
@@ -5908,9 +5413,6 @@ function renderAdminTable() {
           <button onclick="openEditProduct(${p.id})" style="padding:7px 16px;border-radius:50px;background:#e8f3fb;color:#0a5c8a;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
             <i class="fas fa-edit"></i> تعديل
           </button>
-          <button onclick="openMoveBranchModal(${p.id})" style="padding:7px 16px;border-radius:50px;background:#fffbeb;color:#d97706;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
-            <i class="fas fa-arrow-right-arrow-left"></i> نقل
-          </button>
           <button onclick="openDeleteConfirm(${p.id})" style="padding:7px 16px;border-radius:50px;background:#fff5f5;color:#e53e3e;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:5px">
             <i class="fas fa-trash-alt"></i> حذف
           </button>
@@ -6108,8 +5610,6 @@ function openAddProduct() {
   document.getElementById('productFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> إضافة منتج جديد';
   ['pAr','pEn','pDescAr','pDescEn','pBrand','pPrice','pOldPrice'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pCat').value = 'dev';
-  populateProductBranchSelect();
-  document.getElementById('pBranch').value = '';
   document.getElementById('pUnitQty').value = 1;
   document.getElementById('pUnit').value = 'قطعة';
   document.getElementById('pBadge').value = '';
@@ -6134,8 +5634,6 @@ function openEditProduct(id) {
   document.getElementById('pPrice').value = p.price;
   document.getElementById('pOldPrice').value = p.old || '';
   document.getElementById('pCat').value = p.cat;
-  populateProductBranchSelect();
-  document.getElementById('pBranch').value = p.branch || '';
   document.getElementById('pUnitQty').value = p.unitQty || 1;
   document.getElementById('pUnit').value = p.unit || 'قطعة';
   document.getElementById('pBadge').value = p.badge || '';
@@ -6168,7 +5666,6 @@ function saveProduct() {
   const unitQty = parseInt(document.getElementById('pUnitQty').value) || 1;
   const productData = {
     cat: document.getElementById('pCat').value,
-    branch: document.getElementById('pBranch').value || null,
     brand, ar, en,
     price, old: oldPrice, unit, unitQty,
     desc_ar: document.getElementById('pDescAr').value.trim() || ar,
