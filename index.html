@@ -3578,49 +3578,6 @@ function renderBranchesAccordion() {
     wrap.innerHTML = '';
     return;
   }
-function renderCategoryBreadcrumb() 
-function updateCategoryUrl() {
-  if (currentCat === 'all') {
-    history.replaceState(null, '', window.location.pathname);
-    return;
-  }
-  let url = `${window.location.pathname}?cat=${currentCat}`;
-  if (currentBranch) url += `&branch=${currentBranch}`;
-  history.replaceState(null, '', url);
-}
-
-function openCategoryFromUrlIfPresent() {
-  const params = new URLSearchParams(window.location.search);
-  const catId = params.get('cat');
-  const branchId = params.get('branch');
-  if (catId && categories.find(c => c.id === catId)) {
-    expandedCatId = catId;
-    currentCat = catId;
-    currentBranch = branchId && branches.find(b => b.id === branchId) ? branchId : null;
-    renderCategories();
-    renderProducts();
-    scrollToProducts();
-  }
-}
-{
-  const el = document.getElementById('categoryBreadcrumb');
-  if (!el) return;
-  if (currentCat === 'all') { el.style.display = 'none'; return; }
-
-  const cat = categories.find(c => c.id === currentCat);
-  const branch = currentBranch ? branches.find(b => b.id === currentBranch) : null;
-
-  el.style.display = 'flex';
-  el.innerHTML = `
-    <span style="cursor:pointer;color:var(--primary)" onclick="toggleCatExpand('all')">${t('الرئيسية','Home')}</span>
-    <i class="fas fa-chevron-${currentLang==='en'?'left':'right'}" style="font-size:10px"></i>
-    <span style="cursor:pointer;color:${branch?'var(--primary)':'var(--primary-dark)'};font-weight:800"
-      onclick="filterByBranch('${currentCat}', null)">${cat ? (currentLang==='en'?cat.en:cat.ar) : ''}</span>
-    ${branch ? `
-      <i class="fas fa-chevron-${currentLang==='en'?'left':'right'}" style="font-size:10px"></i>
-      <span style="color:var(--primary-dark);font-weight:800">${currentLang==='en'?branch.en:branch.ar}</span>
-    ` : ''}`;
-}
   const cat = categories.find(c => c.id === expandedCatId);
   const relevantBranches = getBranchesOfCategory(expandedCatId)
     .filter(b => getBranchProductsCount(b.id) > 0); // إخفاء الفروع الفاضية
@@ -3647,6 +3604,50 @@ function openCategoryFromUrlIfPresent() {
         </button>
       `).join('')}
     </div>`;
+}
+
+function renderCategoryBreadcrumb() {
+  const el = document.getElementById('categoryBreadcrumb');
+  if (!el) return;
+  if (currentCat === 'all') { el.style.display = 'none'; return; }
+
+  const cat = categories.find(c => c.id === currentCat);
+  const branch = currentBranch ? branches.find(b => b.id === currentBranch) : null;
+
+  el.style.display = 'flex';
+  el.innerHTML = `
+    <span style="cursor:pointer;color:var(--primary)" onclick="toggleCatExpand('all')">${t('الرئيسية','Home')}</span>
+    <i class="fas fa-chevron-${currentLang==='en'?'left':'right'}" style="font-size:10px"></i>
+    <span style="cursor:pointer;color:${branch?'var(--primary)':'var(--primary-dark)'};font-weight:800"
+      onclick="filterByBranch('${currentCat}', null)">${cat ? (currentLang==='en'?cat.en:cat.ar) : ''}</span>
+    ${branch ? `
+      <i class="fas fa-chevron-${currentLang==='en'?'left':'right'}" style="font-size:10px"></i>
+      <span style="color:var(--primary-dark);font-weight:800">${currentLang==='en'?branch.en:branch.ar}</span>
+    ` : ''}`;
+}
+
+function updateCategoryUrl() {
+  if (currentCat === 'all') {
+    history.replaceState(null, '', window.location.pathname);
+    return;
+  }
+  let url = `${window.location.pathname}?cat=${currentCat}`;
+  if (currentBranch) url += `&branch=${currentBranch}`;
+  history.replaceState(null, '', url);
+}
+
+function openCategoryFromUrlIfPresent() {
+  const params = new URLSearchParams(window.location.search);
+  const catId = params.get('cat');
+  const branchId = params.get('branch');
+  if (catId && categories.find(c => c.id === catId)) {
+    expandedCatId = catId;
+    currentCat = catId;
+    currentBranch = branchId && branches.find(b => b.id === branchId) ? branchId : null;
+    renderCategories();
+    renderProducts();
+    scrollToProducts();
+  }
 }
 
 function toggleCatExpand(id) {
