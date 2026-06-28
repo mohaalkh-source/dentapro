@@ -1273,10 +1273,13 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
       </button>
     </div>
     <div class="header-row-break"></div>
-    <div class="header-search">
-      <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product...">
-      <button class="search-btn"><i class="fas fa-search"></i></button>
-    </div>
+ <div class="header-search" style="position:relative">
+  <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product..." autocomplete="off">
+  <button class="search-btn"><i class="fas fa-search"></i></button>
+  <div id="searchSuggestions" style="display:none;position:absolute;top:calc(100% + 6px);right:0;left:0;
+       background:#fff;border:1.5px solid var(--border);border-radius:14px;max-height:340px;overflow-y:auto;
+       z-index:1500;box-shadow:var(--shadow-lg)"></div>
+</div>
     <button class="notif-btn" id="msgBtn" onclick="openClientMessages()" style="display:none" title="تواصل مع الإدارة">
       <i class="fas fa-comment-dots"></i>
     </button>
@@ -3526,7 +3529,93 @@ function renderProducts() {
   }).join('');
 }
 
-document.getElementById('searchInput').addEventListener('input', renderProducts);
+document.addEventListener('DOMContentLoaded', () => {
+  const searchEl = document.getElementById('searchInput');
+  const searchBtnEl = document.querySelector('.header-search .search-btn');
+  if (searchEl) {
+    searchEl.addEventListener('input', () => {
+      renderProducts();
+      renderSearchSuggestions();
+    });
+    searchEl.addEventListener('focus', renderSearchSuggestions);
+    searchEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        hideSearchSuggestions();
+        renderProducts();
+        scrollToProducts();
+      }
+    });
+  }
+  if (searchBtnEl) {
+    searchBtnEl.addEventListener('click', () => {
+      hideSearchSuggestions();
+      renderProducts();
+      scrollToProducts();
+    });
+  }
+  document.addEventListener('click', (e) => {
+    const box = document.getElementById('searchSuggestions');
+    if (box && box.style.display === 'block' && !box.contains(e.target) && e.target !== searchEl) {
+      hideSearchSuggestions();
+    }
+  });
+});
+
+function renderSearchSuggestions() {
+  const box = document.getElementById('searchSuggestions');
+  const inputEl = document.getElementById('searchInput');
+  if (!box || !inputEl) return;
+  const raw = inputEl.value.trim();
+  if (!raw) { box.style.display = 'none'; return; }
+
+  const term = normalizeArabic(raw);
+  const matches = products.filter(p =>
+    normalizeArabic(p.ar).includes(term) ||
+    p.en.toLowerCase().includes(raw.toLowerCase()) ||
+    normalizeArabic(p.brand).includes(term)
+  ).slice(0, 8);
+
+  if (!matches.length) {
+    box.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px">
+      ${t('لا توجد نتائج مطابقة','No matching results')}</div>`;
+    box.style.display = 'block';
+    return;
+  }
+
+  box.innerHTML = matches.map(p => `
+    <div onclick="selectSearchSuggestion(${p.id})"
+      style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+      <div style="width:36px;height:36px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+                  display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">
+        ${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:cover">` : p.icon}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
+          ${currentLang==='en'?p.en:p.ar}
+        </div>
+        <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
+      </div>
+      <div style="font-weight:800;font-size:13px;color:var(--primary);flex-shrink:0">
+        ${p.price.toLocaleString()} ${t('د.أ','SAR')}
+      </div>
+    </div>`).join('');
+  box.style.display = 'block';
+}
+
+function hideSearchSuggestions() {
+  const box = document.getElementById('searchSuggestions');
+  if (box) box.style.display = 'none';
+}
+
+function selectSearchSuggestion(id) {
+  hideSearchSuggestions();
+  document.getElementById('searchInput').value = '';
+  renderProducts();
+  showPage('home');
+  setTimeout(() => openProductDetail(id), 50);
+}
 
 // =====================
 // RENDER OFFERS SECTION
