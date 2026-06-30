@@ -2944,7 +2944,7 @@ async function loadProductsFromFirebase() {
       renderCategories();
       console.log(`✅ تم تحميل أول صفحة (${products.length} منتج) عبر limit()`);
     } else {
-      // الـ Collection فاضية حالياً (أول تشغيل) → نقرأ البنية القديمة كتوافق رجعي ونرحّلها تلقائياً
+      // الـ Collection فاضية أو غير موجودة بعد → نقرأ البنية القديمة (store_data/products) كتوافق رجعي
       await loadProductsLegacyFallback();
     }
     if (typeof updateAdminStats === 'function') updateAdminStats();
@@ -2952,8 +2952,17 @@ async function loadProductsFromFirebase() {
       renderAdminTable();
     }
   } catch(e) {
-    console.warn('⚠️ Firebase loadProducts:', e.message);
-    showToast('⚠️ تعذّر تحميل أحدث المنتجات من الخادم، يتم عرض نسخة محفوظة محلياً', 'error');
+    // فشل تحميل Collection الجديدة → جرّب البنية القديمة صامتاً قبل إظهار أي خطأ
+    console.warn('⚠️ Firebase loadProducts (new collection):', e.message);
+    try {
+      await loadProductsLegacyFallback();
+    } catch(e2) {
+      console.warn('⚠️ Firebase loadProducts (legacy fallback):', e2.message);
+      // لا نُظهر رسالة خطأ إذا كانت المنتجات موجودة محلياً (localStorage)
+      if (!products.length) {
+        showToast('⚠️ تعذّر تحميل المنتجات، تحقق من اتصال الإنترنت', 'error');
+      }
+    }
   }
 }
 
