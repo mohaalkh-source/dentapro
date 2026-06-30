@@ -1207,7 +1207,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, query, orderBy, where, onSnapshot }
+  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch, enableIndexedDbPersistence }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
            signOut, onAuthStateChanged, updateProfile }
@@ -1237,6 +1237,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   window._db           = db;
   window._fbGetDoc     = getDoc;
   window._fbSetDoc     = setDoc;
+  window._fbDeleteDoc  = deleteDoc;
   window._fbDoc2       = (col, id) => doc(db, col, id);
   window._fbCollection = collection;
   window._fbOrdersRef  = () => collection(db, 'orders');
@@ -1248,20 +1249,40 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   window._fbOrderBy    = orderBy;
   window._fbWhere      = where;
   window._fbOnSnapshot = onSnapshot;
+  window._fbLimit      = limit;
+  window._fbStartAfter = startAfter;
+  window._fbWriteBatch = () => writeBatch(db);
+  window._fbIsOnline   = () => navigator.onLine;
+
+  // تفعيل التخزين المحلي (IndexedDB) لتقليل عمليات القراءة المكررة من Firestore
+  try { enableIndexedDbPersistence(db).catch(() => {}); } catch(e) {}
 
   let _ordersUnsub = null;
   let _messagesUnsub = null;
   let _notifsUnsub = [];
 
   window.addEventListener('load', () => {
-    onAuthStateChanged(auth, (fbUser) => {
+    onAuthStateChanged(auth, async (fbUser) => {
       if (_ordersUnsub)   { _ordersUnsub();   _ordersUnsub = null; }
       if (_messagesUnsub) { _messagesUnsub(); _messagesUnsub = null; }
       if (_notifsUnsub.length) { _notifsUnsub.forEach(u => u()); _notifsUnsub = []; }
-      if (!fbUser) return;
+      if (!fbUser) { window._currentRole = null; return; }
       try {
-        const isAdminUser = fbUser.email === 'moh.a.alkh@gmail.com';
-        const q = isAdminUser
+        // جلب الدور الحقيقي من Firestore (users/{uid}.role) — البريد الإداري يبقى كحساب احتياطي فقط
+        let role = 'customer';
+        if (fbUser.email === 'moh.a.alkh@gmail.com') {
+          role = 'admin';
+        } else {
+          try {
+            const uSnap = await getDoc(doc(db, 'users', fbUser.uid));
+            if (uSnap.exists() && uSnap.data().role) role = uSnap.data().role;
+          } catch(roleErr) {
+            console.warn('⚠️ تعذّر جلب صلاحية المستخدم من Firestore:', roleErr.message);
+          }
+        }
+        window._currentRole = role;
+        const isStaffUser = (role === 'admin' || role === 'manager');
+        const q = isStaffUser
           ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
           : query(collection(db, 'orders'), where('clientEmail', '==', fbUser.email));
         _ordersUnsub = onSnapshot(q, (snap) => {
@@ -1272,33 +1293,33 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
           const pending = snap.docs.filter(d => d.data().status === 'pending').length;
           const badge = document.getElementById('adminOrdersBadge');
           if (badge) badge.textContent = pending > 0 ? pending : '';
-        });
+        }, (err) => console.warn('⚠️ مراقبة الطلبات:', err.message));
 
         // مراقبة الرسائل لحظياً (لتحديث شارة الإشعار فوراً)
-        const msgsQ = isAdminUser
+        const msgsQ = isStaffUser
           ? collection(db, 'messages')
           : query(collection(db, 'messages'), where('clientEmail', 'in', [fbUser.email, 'broadcast']));
         _messagesUnsub = onSnapshot(msgsQ, () => {
           if (typeof window._onMessagesUpdate === 'function') window._onMessagesUpdate();
-        });
+        }, (err) => console.warn('⚠️ مراقبة الرسائل:', err.message));
 
         // مراقبة جرس الإشعارات لحظياً (طلب جديد / تغيير حالة / منتج جديد)
         _notifsUnsub.forEach(u => u());
         _notifsUnsub = [];
-        if (isAdminUser) {
+        if (isStaffUser) {
           const nq = query(collection(db, 'notifications'), where('scope', '==', 'admin'));
           _notifsUnsub.push(onSnapshot(nq, () => {
             if (typeof window._onNotificationsUpdate === 'function') window._onNotificationsUpdate();
-          }));
+          }, (err) => console.warn('⚠️ مراقبة الإشعارات:', err.message)));
         } else {
           const nq1 = query(collection(db, 'notifications'), where('targetEmail', '==', fbUser.email));
           const nq2 = query(collection(db, 'notifications'), where('scope', '==', 'broadcast'));
           _notifsUnsub.push(onSnapshot(nq1, () => {
             if (typeof window._onNotificationsUpdate === 'function') window._onNotificationsUpdate();
-          }));
+          }, (err) => console.warn('⚠️ مراقبة الإشعارات:', err.message)));
           _notifsUnsub.push(onSnapshot(nq2, () => {
             if (typeof window._onNotificationsUpdate === 'function') window._onNotificationsUpdate();
-          }));
+          }, (err) => console.warn('⚠️ مراقبة الإشعارات:', err.message)));
         }
       } catch(e) { console.warn('Listener:', e); }
     });
@@ -2087,7 +2108,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         <button onclick="openAddCategory()" style="padding:9px 20px;border-radius:50px;background:rgba(255,255,255,0.15);color:#fff;border:2px solid rgba(255,255,255,0.25);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
           <i class="fas fa-folder-plus"></i> إضافة قسم
         </button>
-        <button onclick="resetProducts()" style="padding:9px 20px;border-radius:50px;background:rgba(229,62,62,0.2);color:#fff;border:2px solid rgba(229,62,62,0.4);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(229,62,62,0.35)'" onmouseout="this.style.background='rgba(229,62,62,0.2)'" title="إعادة تعيين المنتجات للبيانات الأصلية">
+        <button id="adminResetBtn" onclick="resetProducts()" style="padding:9px 20px;border-radius:50px;background:rgba(229,62,62,0.2);color:#fff;border:2px solid rgba(229,62,62,0.4);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(229,62,62,0.35)'" onmouseout="this.style.background='rgba(229,62,62,0.2)'" title="إعادة تعيين المنتجات للبيانات الأصلية">
           <i class="fas fa-undo"></i> إعادة تعيين
         </button>
         <button onclick="closeAdmin()" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;border:2px solid rgba(255,255,255,0.2);cursor:pointer;font-size:15px">
@@ -2120,6 +2141,10 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
       <button onclick="switchAdminTab('messages')" id="adminTabMessages"
         style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
         <i class="fas fa-comment-dots" style="color:#0a5c8a"></i> الرسائل <span id="adminMsgBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
+      </button>
+      <button onclick="switchAdminTab('roles')" id="adminTabRoles"
+        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
+        <i class="fas fa-user-shield" style="color:#e53e3e"></i> الصلاحيات
       </button>
     </div>
     <!-- Stats Bar -->
@@ -2212,6 +2237,26 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     </button>
   </div>
   <div id="adminMessagesList"></div>
+</div>
+
+<!-- Roles Management (Admin Only) -->
+<div id="adminRolesWrap" style="display:none;padding:0 28px 28px">
+  <div style="margin-bottom:18px">
+    <div style="font-size:17px;font-weight:900;color:var(--primary-dark)">إدارة صلاحيات المستخدمين</div>
+    <div style="font-size:13px;color:var(--text-muted);margin-top:4px">حدّد دور المستخدم: مدير النظام (Admin) أو مدير فرعي (Manager) أو عميل (Customer)</div>
+  </div>
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2eaf0;padding:20px;max-width:520px">
+    <label style="font-size:13px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:8px">البريد الإلكتروني للمستخدم</label>
+    <div style="display:flex;gap:10px">
+      <input type="email" id="roleSearchEmail" placeholder="example@email.com"
+        style="flex:1;padding:11px 16px;border:2px solid var(--border);border-radius:50px;font-family:inherit;font-size:14px">
+      <button onclick="searchUserForRole()" style="padding:11px 22px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-weight:700;cursor:pointer">بحث</button>
+    </div>
+    <div id="roleSearchResult" style="margin-top:18px"></div>
+  </div>
+  <div style="margin-top:24px;font-size:12px;color:var(--text-muted);max-width:520px">
+    <i class="fas fa-info-circle"></i> تغيير الصلاحية يحتاج من المستخدم تسجيل خروج ودخول مجدداً لتفعيله بالكامل.
+  </div>
 </div>
 
 <!-- Orders Table (Admin) -->
@@ -2854,61 +2899,166 @@ function loadProducts() {
   return DEFAULT_PRODUCTS.map(p => ({...p}));
 }
 
+// ============================
+// PRODUCTS — Firestore Collection حقيقية (Pagination: limit() + startAfter())
+// ============================
+const FIRESTORE_PAGE_SIZE = 24;       // حجم كل صفحة تُجلب من Firestore (limit)
+let _productsLastDoc = null;          // آخر مستند مُحمّل، يُستخدم في startAfter()
+let _productsAllLoaded = false;       // true عند استنفاذ كل صفحات Firestore
+let _productsCollectionReady = false; // true إذا كانت Collection الجديدة تحتوي بيانات فعلاً
+let _ensureAllPromise = null;
+
+async function waitForFirebase(maxTries = 30) {
+  for (let i = 0; i < maxTries; i++) {
+    if (window._fbCollection && window._fbGetDocs && window._fbLimit) return true;
+    await new Promise(r => setTimeout(r, 250));
+  }
+  return !!(window._fbCollection && window._fbGetDocs && window._fbLimit);
+}
+
+// يجلب صفحة واحدة من Collection "products" باستخدام limit() الحقيقي، ومع startAfter() لما بعد أول صفحة
+async function fetchProductsPage() {
+  if (_productsAllLoaded) return [];
+  if (!navigator.onLine) throw new Error('لا يوجد اتصال بالإنترنت');
+  if (!await waitForFirebase()) throw new Error('Firebase غير جاهز');
+  const constraints = [window._fbOrderBy('id', 'asc'), window._fbLimit(FIRESTORE_PAGE_SIZE)];
+  if (_productsLastDoc) constraints.push(window._fbStartAfter(_productsLastDoc));
+  const q = window._fbQuery(window._fbCollection(window._db, 'products'), ...constraints);
+  const snap = await window._fbGetDocs(q);
+  if (snap.empty) { _productsAllLoaded = true; return []; }
+  _productsLastDoc = snap.docs[snap.docs.length - 1];
+  if (snap.docs.length < FIRESTORE_PAGE_SIZE) _productsAllLoaded = true;
+  return snap.docs.map(d => d.data());
+}
+
+// التحميل الأولي عند فتح المتجر: أول صفحة فقط من Firestore (لا يتم تحميل كل المنتجات دفعة واحدة)
 async function loadProductsFromFirebase() {
   try {
-    for (let i = 0; i < 30; i++) {
-      if (window._fbDoc2 && window._fbGetDoc) break;
-      await new Promise(r => setTimeout(r, 300));
+    const firstPage = await fetchProductsPage();
+    if (firstPage.length > 0) {
+      products.length = 0;
+      firstPage.forEach(p => products.push(p));
+      _productsCollectionReady = true;
+      cacheProductsLocally();
+      renderProducts();
+      renderCategories();
+      console.log(`✅ تم تحميل أول صفحة (${products.length} منتج) عبر limit()`);
+    } else {
+      // الـ Collection فاضية حالياً (أول تشغيل) → نقرأ البنية القديمة كتوافق رجعي ونرحّلها تلقائياً
+      await loadProductsLegacyFallback();
     }
-    if (!window._fbDoc2 || !window._fbGetDoc) {
-      console.warn('Firebase غير جاهز');
-      return;
+    if (typeof updateAdminStats === 'function') updateAdminStats();
+    if (typeof renderAdminTable === 'function' && document.getElementById('adminPanel')?.classList.contains('open')) {
+      renderAdminTable();
     }
+  } catch(e) {
+    console.warn('⚠️ Firebase loadProducts:', e.message);
+    showToast('⚠️ تعذّر تحميل أحدث المنتجات من الخادم، يتم عرض نسخة محفوظة محلياً', 'error');
+  }
+}
+
+// توافق رجعي: قراءة بنية المستند القديم (list array) وترحيلها تلقائياً لـ Collection عند وجود صلاحية أدمن
+async function loadProductsLegacyFallback() {
+  try {
+    if (!await waitForFirebase(15)) return;
     const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'products'));
     if (snap.exists()) {
       const list = snap.data().list;
       if (Array.isArray(list) && list.length > 0) {
         products.length = 0;
         list.forEach(p => products.push(p));
-        localStorage.setItem('dentapro_products', JSON.stringify(products));
+        cacheProductsLocally();
         renderProducts();
         renderCategories();
-        if (typeof updateAdminStats === 'function') updateAdminStats();
-        if (typeof renderAdminTable === 'function' &&
-            document.getElementById('adminPanel')?.classList.contains('open')) {
-          renderAdminTable();
-        }
-        console.log('✅ تم تحميل المنتجات من Firebase:', products.length);
+        if (isAdmin()) migrateProductsToCollection(list); // ترحيل صامت لمرة واحدة فقط
       }
     }
-    // لا نرفع تلقائياً أي شيء؛ فقط نقرأ. الكتابة تتم فقط عند تعديل فعلي من الأدمن.
   } catch(e) {
-    console.warn('Firebase loadProducts:', e.message);
+    console.warn('⚠️ Firebase loadProducts (legacy fallback):', e.message);
   }
 }
 
-async function saveProducts() {
-  // حفظ محلي دائماً
+// ترحيل لمرة واحدة من البنية القديمة (مستند واحد) إلى Collection حقيقية (كتابات مجمّعة Batched)
+async function migrateProductsToCollection(list) {
   try {
-    localStorage.setItem('dentapro_products', JSON.stringify(products));
-  } catch(e) {}
-  // حفظ في Firebase
-  try {
-    for (let i = 0; i < 15; i++) {
-      if (window._fbDoc2 && window._fbSetDoc) break;
-      await new Promise(r => setTimeout(r, 200));
+    if (!window._fbWriteBatch) return;
+    for (let i = 0; i < list.length; i += 400) {
+      const batch = window._fbWriteBatch();
+      list.slice(i, i + 400).forEach(p => batch.set(window._fbDoc2('products', String(p.id)), p));
+      await batch.commit();
     }
-    await window._fbSetDoc(
-      window._fbDoc2('store_data', 'products'),
-      { list: products, updatedAt: new Date().toISOString() }
-    );
+    _productsLastDoc = null; _productsAllLoaded = false; _productsCollectionReady = true;
+    console.log('✅ تم ترحيل', list.length, 'منتج إلى Collection حقيقية تدعم limit()/startAfter()');
   } catch(e) {
-    console.warn('Firebase saveProducts:', e.message);
+    console.warn('⚠️ فشل ترحيل المنتجات التلقائي:', e.message);
   }
+}
+
+// يجلب الصفحة التالية من Firestore (startAfter() حقيقي) ويضيفها للمصفوفة المحلية — تُستخدم في "تحميل المزيد" والتمرير اللامتناهي
+async function loadMoreProductsFromServer() {
+  if (_productsAllLoaded || !_productsCollectionReady) return false;
+  try {
+    const nextPage = await fetchProductsPage();
+    if (nextPage.length > 0) {
+      const existingIds = new Set(products.map(p => p.id));
+      nextPage.forEach(p => { if (!existingIds.has(p.id)) products.push(p); });
+      cacheProductsLocally();
+      return true;
+    }
+    return false;
+  } catch(e) {
+    console.warn('⚠️ تحميل المزيد من المنتجات:', e.message);
+    showToast('⚠️ تعذّر تحميل المزيد من المنتجات، تحقق من اتصال الإنترنت', 'error');
+    return false;
+  }
+}
+
+// يضمن تحميل كل المنتجات من السيرفر (صفحة تلو الأخرى) — مطلوب عند تفعيل بحث/فلتر/ترتيب أو فتح لوحة التحكم لضمان دقة النتائج على كامل الكتالوج
+async function ensureAllProductsLoaded() {
+  if (_productsAllLoaded || !_productsCollectionReady) return;
+  if (_ensureAllPromise) return _ensureAllPromise;
+  _ensureAllPromise = (async () => {
+    while (!_productsAllLoaded) {
+      const got = await loadMoreProductsFromServer();
+      if (!got) break;
+    }
+  })();
+  await _ensureAllPromise;
+  _ensureAllPromise = null;
+}
+
+// حفظ منتج واحد فقط في Firestore (إضافة/تعديل) — كتابة جزئية بدل إعادة كتابة القائمة كاملة
+async function saveProductToFirebase(product) {
+  try {
+    if (!navigator.onLine) throw new Error('لا يوجد اتصال بالإنترنت');
+    if (!await waitForFirebase(15)) throw new Error('Firebase غير جاهز');
+    await window._fbSetDoc(window._fbDoc2('products', String(product.id)), product);
+  } catch(e) {
+    console.error('❌ saveProductToFirebase:', e.message);
+    showToast('⚠️ تم الحفظ محلياً فقط، فشل الحفظ في Firebase: ' + e.message, 'error');
+  }
+}
+
+// حذف منتج واحد فقط من Firestore
+async function deleteProductFromFirebase(id) {
+  try {
+    if (!navigator.onLine) throw new Error('لا يوجد اتصال بالإنترنت');
+    if (!await waitForFirebase(15)) throw new Error('Firebase غير جاهز');
+    await window._fbDeleteDoc(window._fbDoc2('products', String(id)));
+  } catch(e) {
+    console.error('❌ deleteProductFromFirebase:', e.message);
+    showToast('⚠️ تم الحذف محلياً فقط، فشل الحذف من Firebase: ' + e.message, 'error');
+  }
+}
+
+// تخزين محلي سريع فقط (لا يلمس Firebase) — يُستخدم بعد كل تعديل لتفادي الوميض عند إعادة فتح الصفحة
+function cacheProductsLocally() {
+  try { localStorage.setItem('dentapro_products', JSON.stringify(products)); } catch(e) {}
 }
 
 async function resetProducts() {
-  if (!confirm('هل أنت متأكد؟ سيتم حذف جميع التعديلات والعودة للمنتجات الأصلية.')) return;
+  if (!isAdmin()) { showToast('⛔ هذا الإجراء خاص بمدير النظام فقط', 'error'); return; }
+  if (!confirm('هل أنت متأكد؟ سيتم حذف كل المنتجات الحالية في Firebase والعودة للمنتجات الأصلية. هذا الإجراء لا يمكن التراجع عنه.')) return;
 
   const password = prompt('🔒 لتأكيد هذا الإجراء الحساس، أدخل كلمة مرور حساب الأدمن:');
   if (!password) { showToast('❌ تم إلغاء العملية', 'error'); return; }
@@ -2921,15 +3071,37 @@ async function resetProducts() {
     return;
   }
 
-  localStorage.removeItem('dentapro_products');
-  products.length = 0;
-  DEFAULT_PRODUCTS.forEach(p => products.push({...p}));
-  saveProducts();
-  updateAdminStats();
-  renderAdminTable();
-  renderProducts();
-  renderCategories();
-  showToast('✅ تم إعادة تعيين المنتجات بنجاح', 'success');
+  if (!navigator.onLine) { showToast('📡 لا يوجد اتصال بالإنترنت، حاول مجدداً', 'error'); return; }
+
+  try {
+    showToast('🔄 جارٍ إعادة التعيين...', '');
+    await ensureAllProductsLoaded();
+    const idsToDelete = products.map(p => String(p.id));
+    for (let i = 0; i < idsToDelete.length; i += 400) {
+      const batch = window._fbWriteBatch();
+      idsToDelete.slice(i, i + 400).forEach(id => batch.delete(window._fbDoc2('products', id)));
+      await batch.commit();
+    }
+    for (let i = 0; i < DEFAULT_PRODUCTS.length; i += 400) {
+      const batch2 = window._fbWriteBatch();
+      DEFAULT_PRODUCTS.slice(i, i + 400).forEach(p => batch2.set(window._fbDoc2('products', String(p.id)), p));
+      await batch2.commit();
+    }
+
+    localStorage.removeItem('dentapro_products');
+    products.length = 0;
+    DEFAULT_PRODUCTS.forEach(p => products.push({...p}));
+    _productsLastDoc = null; _productsAllLoaded = true; _productsCollectionReady = true;
+    cacheProductsLocally();
+    updateAdminStats();
+    renderAdminTable();
+    renderProducts();
+    renderCategories();
+    showToast('✅ تم إعادة تعيين المنتجات بنجاح', 'success');
+  } catch(e) {
+    console.error('resetProducts:', e.message);
+    showToast('❌ حدث خطأ أثناء إعادة التعيين، حاول مجدداً: ' + e.message, 'error');
+  }
 }
 
 let products = loadProducts();
@@ -3139,7 +3311,7 @@ async function loadAndRenderNotifIcon() {
   const msgBtn = document.getElementById('msgBtn');
   if (!currentUser) { btn.style.display = 'none'; if (msgBtn) msgBtn.style.display = 'none'; return; }
   btn.style.display = 'flex';
-  const isAdminUser = currentUser.role === 'admin';
+  const isAdminUser = isStaff();
   if (msgBtn) {
     msgBtn.style.display = 'flex';
     msgBtn.title = isAdminUser ? 'رسائل العملاء' : 'تواصل مع الإدارة';
@@ -3151,7 +3323,7 @@ async function loadAndRenderNotifIcon() {
 }
 
 function openAdminMessagesPanel() {
-  if (!currentUser || currentUser.role !== 'admin') return;
+  if (!isStaff()) return;
   document.getElementById('adminPanel').classList.add('open');
   switchAdminTab('messages');
 }
@@ -3230,7 +3402,7 @@ function onNotifClick(docId, link) {
   if (link.startsWith('page:')) {
     showPage(link.replace('page:',''));
   } else if (link.startsWith('adminorders:')) {
-    if (currentUser && currentUser.role === 'admin') {
+    if (isStaff()) {
       document.getElementById('adminPanel').classList.add('open');
       switchAdminTab('orders');
     }
@@ -3245,7 +3417,7 @@ function onNotifClick(docId, link) {
     }, 100);
   } else if (link.startsWith('clientmsg:')) {
     const email = link.replace('clientmsg:','');
-    if (currentUser && currentUser.role === 'admin') {
+    if (isStaff()) {
       document.getElementById('adminPanel').classList.add('open');
       switchAdminTab('messages');
       setTimeout(() => openAdminThreadModal(email), 400);
@@ -3264,7 +3436,7 @@ async function toggleNotifDropdown() {
   const dd = document.getElementById('notifDropdown');
   const willOpen = !dd.classList.contains('open');
   if (willOpen && currentUser) {
-    _cachedNotifs = await fetchNotificationsFor(currentUser.email, currentUser.role === 'admin');
+    _cachedNotifs = await fetchNotificationsFor(currentUser.email, isStaff());
     updateNotifBadge();
   }
   if (willOpen) renderNotifList();
@@ -5260,21 +5432,16 @@ let currentUser = null;
 window.addEventListener('load', () => {
   window._fbAuthState(window._auth, async (fbUser) => {
     if (fbUser) {
-      const isAdmin = fbUser.email === ADMIN_EMAIL;
-      if (isAdmin) {
-        currentUser = { role: 'admin', name: 'المدير', email: fbUser.email, uid: fbUser.uid };
+      let resolved;
+      try {
+        resolved = await resolveUserRole(fbUser);
+      } catch(e) {
+        console.warn('⚠️ تعذّر تحديد صلاحية المستخدم، سيتم اعتباره عميلاً:', e.message);
+        resolved = { role: 'client', name: fbUser.displayName || 'عميل', clinic: '', phone: '' };
+      }
+      currentUser = { ...resolved, email: fbUser.email, uid: fbUser.uid };
+      if (currentUser.role === 'admin' || currentUser.role === 'manager') {
         notifyPendingOrdersOnLogin();
-      } else {
-        const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
-        const profile = users.find(u => u.email === fbUser.email) || {};
-        currentUser = {
-          role: 'client',
-          name: profile.firstName || fbUser.displayName || 'عميل',
-          clinic: profile.clinic || '',
-          email: fbUser.email,
-          phone: profile.phone || '',
-          uid: fbUser.uid
-        };
       }
       localStorage.setItem('dentapro_session', JSON.stringify(currentUser));
       renderAuthHeader();
@@ -5288,6 +5455,43 @@ window.addEventListener('load', () => {
     }
   });
 });
+
+// يحدد دور المستخدم الحقيقي (admin / manager / client) من مستند Firestore users/{uid}
+// البريد الإداري الثابت يبقى كحساب احتياطي (bootstrap) لضمان وجود أدمن دائماً حتى لو فشلت قراءة Firestore
+async function resolveUserRole(fbUser) {
+  if (fbUser.email === ADMIN_EMAIL) {
+    return { role: 'admin', name: 'المدير' };
+  }
+  try {
+    const snap = await window._fbGetDoc(window._fbDoc2('users', fbUser.uid));
+    if (snap.exists()) {
+      const data = snap.data();
+      const role = (data.role === 'admin' || data.role === 'manager') ? data.role : 'client';
+      return {
+        role,
+        name: data.firstName || fbUser.displayName || (role==='manager' ? 'مدير فرعي' : 'عميل'),
+        clinic: data.clinic || '',
+        phone: data.phone || ''
+      };
+    }
+  } catch(e) {
+    console.warn('⚠️ Firestore users/{uid}:', e.message);
+  }
+  // احتياطي: نسخة محلية قديمة (تتوافق مع البيانات السابقة فقط، لا تُستخدم لتحديد صلاحيات حساسة)
+  const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+  const profile = users.find(u => u.email === fbUser.email) || {};
+  return {
+    role: 'client',
+    name: profile.firstName || fbUser.displayName || 'عميل',
+    clinic: profile.clinic || '',
+    phone: profile.phone || ''
+  };
+}
+
+// اختصارات للتحقق من الصلاحيات تُستخدم في كل الواجهة
+function isAdmin()   { return !!currentUser && currentUser.role === 'admin'; }
+function isManager()  { return !!currentUser && currentUser.role === 'manager'; }
+function isStaff()    { return isAdmin() || isManager(); }
 
 // تحميل الجلسة المحلية فوراً (لتجنب الوميض)
 document.addEventListener('DOMContentLoaded', () => {
@@ -5307,19 +5511,22 @@ function renderAuthHeader() {
       </button>`;
     return;
   }
-  const isAdmin = currentUser.role === 'admin';
-  const avatarBg = isAdmin ? 'linear-gradient(135deg,#e53e3e,#c53030)' : 'linear-gradient(135deg,#0a5c8a,#00c2a8)';
-  const avatarIcon = isAdmin ? '🔧' : '👤';
+  const staff = isStaff();
+  const isAdminRole = currentUser.role === 'admin';
+  const isManagerRole = currentUser.role === 'manager';
+  const avatarBg = isAdminRole ? 'linear-gradient(135deg,#e53e3e,#c53030)' : (isManagerRole ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,#0a5c8a,#00c2a8)');
+  const avatarIcon = isAdminRole ? '🔧' : (isManagerRole ? '🗂️' : '👤');
+  const roleLabel = isAdminRole ? 'مدير النظام' : (isManagerRole ? 'مدير فرعي' : 'عميل');
   area.innerHTML = `
     <div class="user-chip" tabindex="0">
       <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
       <div>
         <div class="user-chip-name">${currentUser.name}</div>
-        <div class="user-chip-role">${isAdmin ? 'مدير النظام' : 'عميل'}</div>
+        <div class="user-chip-role">${roleLabel}</div>
       </div>
       <i class="fas fa-chevron-down" style="font-size:11px;color:var(--text-muted);margin-right:4px"></i>
       <div class="user-dropdown">
-        ${isAdmin ? `
+        ${staff ? `
         <button class="user-dropdown-item" onclick="openAdminDirect()">
           <i class="fas fa-cog" style="color:#e53e3e"></i> لوحة التحكم
         </button>
@@ -5376,29 +5583,24 @@ async function doLogin() {
     return;
   }
 
+  if (!navigator.onLine) {
+    document.getElementById('loginErrorMsg').textContent = '📡 لا يوجد اتصال بالإنترنت، يرجى التحقق من الشبكة والمحاولة مجدداً';
+    document.getElementById('loginError').style.display = 'flex';
+    return;
+  }
+
   try {
     const cred = await window._fbSignIn(window._auth, id, pass);
     const fbUser = cred.user;
-    const isAdmin = fbUser.email === ADMIN_EMAIL;
-
-    if (isAdmin) {
-      loginSuccess({ role: 'admin', name: 'المدير', email: fbUser.email, uid: fbUser.uid });
-    } else {
-      const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
-      const profile = users.find(u => u.email === fbUser.email) || {};
-      loginSuccess({
-        role: 'client',
-        name: profile.firstName || fbUser.displayName || 'عميل',
-        clinic: profile.clinic || '',
-        email: fbUser.email,
-        phone: profile.phone || '',
-        uid: fbUser.uid
-      });
-    }
+    const resolved = await resolveUserRole(fbUser);
+    loginSuccess({ ...resolved, email: fbUser.email, uid: fbUser.uid });
   } catch(e) {
-    console.error('Login error:', e.code);
+    console.error('Login error:', e.code || e.message);
     let msg = 'البريد الإلكتروني أو كلمة المرور غير صحيحة';
-    if (e.code === 'auth/too-many-requests') msg = 'محاولات كثيرة، حاول لاحقاً';
+    if (e.code === 'auth/too-many-requests') msg = '⏳ محاولات كثيرة، حاول لاحقاً';
+    else if (e.code === 'auth/network-request-failed') msg = '📡 تعذّر الاتصال بالخادم، تحقق من اتصال الإنترنت';
+    else if (e.code === 'auth/user-disabled') msg = '🚫 هذا الحساب معطّل، تواصل مع الإدارة';
+    else if (e.code === 'auth/invalid-email') msg = 'صيغة البريد الإلكتروني غير صحيحة';
     document.getElementById('loginErrorMsg').textContent = msg;
     document.getElementById('loginError').style.display = 'flex';
   }
@@ -5411,9 +5613,11 @@ function loginSuccess(user) {
   renderAuthHeader();
   loadAndRenderNotifIcon();
   showToast(`👋 أهلاً ${user.name}!`, 'success');
-  if (user.role === 'admin') {
-    setTimeout(() => {
+  if (user.role === 'admin' || user.role === 'manager') {
+    setTimeout(async () => {
       document.getElementById('adminPanel').classList.add('open');
+      applyAdminUIPermissions();
+      await ensureAllProductsLoaded();
       updateAdminStats();
       renderAdminTable();
     }, 400);
@@ -5506,11 +5710,14 @@ async function doLogout() {
   showToast('👋 تم تسجيل الخروج', '');
 }
 
-function openAdminDirect() {
-  if (!currentUser || currentUser.role !== 'admin') {
+async function openAdminDirect() {
+  if (!isStaff()) {
     showToast('⛔ غير مصرح لك بالدخول', 'error'); return;
   }
   document.getElementById('adminPanel').classList.add('open');
+  applyAdminUIPermissions();
+  showToast('🔄 جاري تحميل كل المنتجات...', '');
+  await ensureAllProductsLoaded(); // لوحة التحكم تحتاج كل المنتجات (إحصائيات/جدول/بحث دقيق)
   updateAdminStats();
   renderAdminTable();
 }
@@ -5891,7 +6098,7 @@ function closeProductForm() {
   document.getElementById('productFormModal').classList.remove('open');
 }
 
-function saveProduct() {
+async function saveProduct() {
   const ar = document.getElementById('pAr').value.trim();
   const en = document.getElementById('pEn').value.trim();
   const brand = document.getElementById('pBrand').value.trim();
@@ -5923,13 +6130,16 @@ function saveProduct() {
     productData.createdAt = new Date().toISOString();
   }
 
+  let savedProduct;
   if (editingProductId) {
     const idx = products.findIndex(x => x.id === editingProductId);
     if (idx !== -1) products[idx] = { ...products[idx], ...productData };
+    savedProduct = products[idx];
     showToast('✅ تم تعديل المنتج بنجاح', 'success');
   } else {
-    const newId = Math.max(...products.map(p => p.id)) + 1;
-    products.push({ id: newId, ...productData });
+    const newId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+    savedProduct = { id: newId, ...productData };
+    products.push(savedProduct);
     showToast('✅ تم إضافة المنتج بنجاح', 'success');
     createNotification({
       scope: 'broadcast',
@@ -5940,12 +6150,13 @@ function saveProduct() {
     });
   }
 
-  saveProducts();
+  cacheProductsLocally();
   closeProductForm();
   updateAdminStats();
   renderAdminTable();
   renderProducts();
   renderCategories();
+  await saveProductToFirebase(savedProduct);
 }
 
 // Delete Product
@@ -5959,7 +6170,7 @@ function closeDeleteConfirm() {
   document.getElementById('deleteConfirmModal').classList.remove('open');
   deleteTargetId = null;
 }
-function confirmDelete() {
+async function confirmDelete() {
   if (!deleteTargetId) return;
   const p = products.find(x => x.id === deleteTargetId);
   const idx = products.findIndex(x => x.id === deleteTargetId);
@@ -5976,7 +6187,8 @@ function confirmDelete() {
   });
   saveOffers();
 
-  saveProducts();
+  cacheProductsLocally();
+  const deletedId = deleteTargetId;
   closeDeleteConfirm();
   updateAdminStats();
   renderAdminTable();
@@ -5985,6 +6197,7 @@ function confirmDelete() {
   renderOffers();
   updateCartUI();
   showToast(`🗑️ تم حذف "${p?.ar}" بنجاح`, 'success');
+  await deleteProductFromFirebase(deletedId);
 }
 // =====================
 // POINTS SYSTEM
@@ -6904,7 +7117,7 @@ async function renderClientOrders() {
     if (!window._fbQuery) throw new Error('Firebase غير جاهز');
 
     let q;
-    if (currentUser.role === 'admin') {
+    if (isStaff()) {
       q = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
     } else {
       // لازم نفلتر من السيرفر عبر where() حتى تتوافق مع قواعد Firestore
@@ -6997,6 +7210,9 @@ function switchAdminTab(tab) {
   const isOffers   = tab === 'offers';
   const isQuotes   = tab === 'quotes';
   const isMessages = tab === 'messages';
+  const isRoles    = tab === 'roles';
+
+  if (isRoles && !isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
 
   document.getElementById('adminTabProducts').style.color = isProducts ? 'var(--primary)' : 'var(--text-muted)';
   document.getElementById('adminTabProducts').style.borderBottomColor = isProducts ? 'var(--primary)' : 'transparent';
@@ -7010,6 +7226,11 @@ function switchAdminTab(tab) {
   document.getElementById('adminTabQuotes').style.borderBottomColor = isQuotes ? '#0a5c8a' : 'transparent';
   document.getElementById('adminTabMessages').style.color = isMessages ? '#0a5c8a' : 'var(--text-muted)';
   document.getElementById('adminTabMessages').style.borderBottomColor = isMessages ? '#0a5c8a' : 'transparent';
+  const rolesTabBtn = document.getElementById('adminTabRoles');
+  if (rolesTabBtn) {
+    rolesTabBtn.style.color = isRoles ? '#e53e3e' : 'var(--text-muted)';
+    rolesTabBtn.style.borderBottomColor = isRoles ? '#e53e3e' : 'transparent';
+  }
 
   const statsGrid = document.getElementById('adminStatTotal').closest('div[style*="grid"]');
   if (statsGrid) statsGrid.style.display = isProducts ? 'grid' : 'none';
@@ -7035,11 +7256,84 @@ function switchAdminTab(tab) {
   const messagesWrap = document.getElementById('adminMessagesWrap');
   if (messagesWrap) messagesWrap.style.display = isMessages ? 'block' : 'none';
 
-  if (isOrders) renderAdminOrders();
-  if (isPoints) renderAdminPoints();
-  if (isOffers) renderAdminOffers();
-  if (isQuotes) renderAdminQuotes();
+  const rolesWrap = document.getElementById('adminRolesWrap');
+  if (rolesWrap) rolesWrap.style.display = isRoles ? 'block' : 'none';
+
+  if (isOrders)   renderAdminOrders();
+  if (isPoints)   renderAdminPoints();
+  if (isOffers)   renderAdminOffers();
+  if (isQuotes)   renderAdminQuotes();
   if (isMessages) renderAdminMessages();
+}
+
+// يُخفي عناصر الأدمن الحصرية (تبويب الصلاحيات + زر إعادة التعيين) عن Manager
+function applyAdminUIPermissions() {
+  const adminOnly = isAdmin();
+  const rolesTabBtn = document.getElementById('adminTabRoles');
+  const resetBtn = document.getElementById('adminResetBtn');
+  if (rolesTabBtn) rolesTabBtn.style.display = adminOnly ? 'inline-block' : 'none';
+  if (resetBtn)    resetBtn.style.display    = adminOnly ? 'flex'         : 'none';
+}
+
+// ── إدارة الصلاحيات: البحث عن مستخدم بالبريد وتعيين دوره ──
+async function searchUserForRole() {
+  const email = document.getElementById('roleSearchEmail').value.trim();
+  const resultBox = document.getElementById('roleSearchResult');
+  if (!email) { showToast('يرجى إدخال البريد الإلكتروني', 'error'); return; }
+  if (!navigator.onLine) { showToast('📡 لا يوجد اتصال بالإنترنت', 'error'); return; }
+  resultBox.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>`;
+  try {
+    const q = window._fbQuery(window._fbCollection(window._db, 'users'), window._fbWhere('email', '==', email));
+    const snap = await window._fbGetDocs(q);
+    if (snap.empty) {
+      resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;padding:10px 0"><i class="fas fa-exclamation-circle"></i> لا يوجد مستخدم مسجّل بهذا البريد (يجب أن يكون أنشأ حساباً أولاً)</div>`;
+      return;
+    }
+    const userDoc = snap.docs[0];
+    const data = userDoc.data();
+    const currentRole = data.role || 'client';
+    const roleLabel = currentRole === 'admin' ? 'مدير النظام' : currentRole === 'manager' ? 'مدير فرعي' : 'عميل';
+    resultBox.innerHTML = `
+      <div style="padding:14px;background:#f8fbfd;border-radius:12px;border:1px solid var(--border)">
+        <div style="font-weight:800;margin-bottom:4px">${escHtml(data.firstName || email)}</div>
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">${escHtml(email)}</div>
+        <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px">
+          الدور الحالي: <b style="color:var(--primary)">${roleLabel}</b>
+        </label>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button onclick="assignUserRole('${userDoc.id}','admin','${escHtml(email)}')"
+            style="padding:8px 16px;border-radius:50px;background:#e53e3e;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+            مدير نظام
+          </button>
+          <button onclick="assignUserRole('${userDoc.id}','manager','${escHtml(email)}')"
+            style="padding:8px 16px;border-radius:50px;background:#d97706;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+            مدير فرعي
+          </button>
+          <button onclick="assignUserRole('${userDoc.id}','client','${escHtml(email)}')"
+            style="padding:8px 16px;border-radius:50px;background:#0a5c8a;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+            عميل
+          </button>
+        </div>
+      </div>`;
+  } catch(e) {
+    console.error('searchUserForRole:', e.message);
+    resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px"><i class="fas fa-exclamation-circle"></i> حدث خطأ أثناء البحث، تحقق من اتصالك وحاول مجدداً</div>`;
+  }
+}
+
+async function assignUserRole(uid, role, email) {
+  if (!isAdmin()) { showToast('⛔ غير مصرح', 'error'); return; }
+  const label = role === 'admin' ? 'مدير نظام' : role === 'manager' ? 'مدير فرعي' : 'عميل';
+  if (!confirm(`تأكيد: تعيين ${email} كـ "${label}"؟`)) return;
+  if (!navigator.onLine) { showToast('📡 لا يوجد اتصال بالإنترنت، حاول مجدداً', 'error'); return; }
+  try {
+    await window._fbUpdateDoc(window._fbDoc2('users', uid), { role });
+    showToast('✅ تم تحديث الصلاحية بنجاح', 'success');
+    searchUserForRole();
+  } catch(e) {
+    console.error('assignUserRole:', e.message);
+    showToast('❌ فشل تحديث الصلاحية، تحقق من اتصالك وحاول مجدداً', 'error');
+  }
 }
 
 async function renderAdminOrders() {
@@ -7144,25 +7438,33 @@ async function updateOrderStatus(docId, orderId, newStatus) {
 // خصم المخزون تلقائياً عند التسليم، فقط إذا لم يُخصم من قبل
     const orderForStock = (window._cachedOrders || []).find(o => o._docId === docId);
     if (newStatus === 'delivered' && orderForStock && !orderForStock.stockDeducted) {
-      let stockChanged = false;
+      await ensureAllProductsLoaded(); // نضمن أن كل المنتجات محمّلة محلياً قبل تعديل مخزونها
+      const changedProducts = [];
       (orderForStock.items || []).forEach(item => {
         if (item.isBundle && item.bundleItems) {
           item.bundleItems.forEach(bi => {
             const prod = products.find(x => x.id === bi.productId);
             if (prod && prod.stock !== undefined && prod.stock !== null) {
               prod.stock = Math.max(0, prod.stock - (bi.qty * item.qty));
-              stockChanged = true;
+              changedProducts.push(prod);
             }
           });
         } else {
           const prod = products.find(x => x.id === item.id);
           if (prod && prod.stock !== undefined && prod.stock !== null) {
             prod.stock = Math.max(0, prod.stock - item.qty);
-            stockChanged = true;
+            changedProducts.push(prod);
           }
         }
       });
-      if (stockChanged) await saveProducts();
+      if (changedProducts.length) {
+        cacheProductsLocally();
+        try {
+          await Promise.all(changedProducts.map(p => saveProductToFirebase(p)));
+        } catch(stockErr) {
+          console.warn('⚠️ خطأ أثناء تحديث المخزون في Firebase:', stockErr.message);
+        }
+      }
       await window._fbUpdateDoc(window._fbDoc(docId), { stockDeducted: true });
     }
     // خصم النقاط تلقائياً فقط عند التسليم، وفقط إذا لم تُخصم من قبل
@@ -8270,7 +8572,7 @@ async function sendBroadcastMessage() {
 }
 window._onMessagesUpdate = function() {
   if (!currentUser) return;
-  if (currentUser.role === 'admin') {
+  if (isStaff()) {
     updateHeaderMsgBadge();
     const panelOpen = document.getElementById('adminPanel')?.classList.contains('open');
     const msgsTabOpen = document.getElementById('adminMessagesWrap')?.style.display !== 'none';
@@ -8288,7 +8590,7 @@ window._onMessagesUpdate = function() {
 
 window._onNotificationsUpdate = async function() {
   if (!currentUser) return;
-  const isAdminUser = currentUser.role === 'admin';
+  const isAdminUser = isStaff();
   _cachedNotifs = await fetchNotificationsFor(currentUser.email, isAdminUser);
   updateNotifBadge();
   if (document.getElementById('notifDropdown')?.classList.contains('open')) {
