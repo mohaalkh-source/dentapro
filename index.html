@@ -1210,7 +1210,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch, enableIndexedDbPersistence }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-           signOut, onAuthStateChanged, updateProfile }
+           signOut, onAuthStateChanged, updateProfile, signInAnonymously }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -1233,6 +1233,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   window._fbSignOut       = signOut;
   window._fbAuthState     = onAuthStateChanged;
   window._fbUpdateProfile = updateProfile;
+  window._fbSignInAnon    = signInAnonymously;
 
   window._db           = db;
   window._fbGetDoc     = getDoc;
@@ -5120,6 +5121,15 @@ async function submitOrder() {
 
   try {
 
+  // زائر بدون تسجيل دخول: نفعّل جلسة مجهولة حتى تقبل Firestore عملية الكتابة
+  if (!window._auth.currentUser) {
+    try {
+      await window._fbSignInAnon(window._auth);
+    } catch (anonErr) {
+      console.error('فشل تسجيل الدخول المجهول:', anonErr);
+    }
+  }
+
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
   const orderNum = `DP-${ts}-${rand}`;
@@ -5166,6 +5176,7 @@ async function submitOrder() {
     } catch(e) {
       lastError = e;
       console.error(`❌ Firebase error (محاولة ${attempt}):`, e);
+      if (e.code === 'permission-denied') break; // لا فائدة من إعادة محاولة برفض صلاحيات
       if (attempt === 1) await new Promise(r => setTimeout(r, 1500));
     }
   }
@@ -5177,10 +5188,17 @@ async function submitOrder() {
     local.unshift(order);
     localStorage.setItem('dentapro_orders_pending', JSON.stringify(local));
 
-    showToast(t(
-      '❌ تعذّر إرسال طلبك، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً، أو تواصل معنا عبر واتساب',
-      '❌ Could not send your order, please check your internet connection and try again, or contact us via WhatsApp'
-    ), 'error');
+    const failMsg = (lastError && lastError.code === 'permission-denied')
+      ? t(
+          '❌ لا تملك صلاحية إرسال الطلب حالياً، يرجى المحاولة مجدداً أو تسجيل الدخول',
+          '❌ You are not authorized to submit right now, please try again or log in'
+        )
+      : t(
+          '❌ تعذّر إرسال طلبك، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً، أو تواصل معنا عبر واتساب',
+          '❌ Could not send your order, please check your internet connection and try again, or contact us via WhatsApp'
+        );
+
+    showToast(failMsg, 'error');
 
     btn.disabled = false;
     btn.innerHTML = btnOriginalHTML;
