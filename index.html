@@ -21,7 +21,7 @@
   "description": "متجر متخصص في مستلزمات طب الأسنان: أجهزة، أدوات يدوية، مواد طبية، أدوات تعقيم وتقويم وزراعة أسنان.",
   "url": "https://dentapro-db2f6.firebaseapp.com/",
   "telephone": "+962790408680",
-  "email": "support@dentapro.com",
+  
   "areaServed": ["JO","SA","AE","KW","BH","QA","OM"],
   "priceRange": "$$"
 }
@@ -1961,11 +1961,11 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
           <div style="font-size:13px;color:var(--text-muted)">+962 7 90 40 86 80</div>
         </div>
       </a>
-      <a href="mailto:support@dentapro.com" style="text-decoration:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:12px;color:inherit">
-        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="fas fa-envelope"></i></div>
+      <a href="https://wa.me/962790408680?text=السلام عليكم، أحتاج مساعدة من فضلك" style="text-decoration:none;background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:12px;color:inherit">
+        <div style="width:44px;height:44px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px"><i class="fab fa-whatsapp"></i></div>
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">البريد الإلكتروني</div>
-          <div style="font-size:13px;color:var(--text-muted)">support@dentapro.com</div>
+          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">واتساب</div>
+          <div style="font-size:13px;color:var(--text-muted)">+962 7 90 40 86 80</div>
         </div>
       </a>
       <div style="background:#fff;border:1px solid var(--border);border-radius:14px;padding:18px;display:flex;align-items:center;gap:12px">
@@ -3791,7 +3791,7 @@ function renderProducts() {
         ? `<div class="product-badge" style="background:linear-gradient(135deg,var(--accent),#00a896)">🆕 ${t('وصل حديثاً','Just Arrived')}</div>`
         : (outOfStock
             ? `<div class="product-badge" style="background:#94a3b8">${t('نفذت الكمية','Out of stock')}</div>`
-            : (p.badge ? `<div class="product-badge">${t(p.badge, p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':p.badge)}</div>` : ''))}
+            : (p.badge ? `<div class="product-badge">${t(escHtml(p.badge), p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':escHtml(p.badge))}</div>` : ''))}
       <div class="product-img-wrap" onclick="openProductDetail(${p.id})" title="${t('عرض التفاصيل','View details')}" style="${outOfStock?'opacity:0.5':''}">
         ${p.image
           ? `<img src="${cldOptimize(p.image, 400)}" alt="${escHtml(p.ar)}" loading="lazy" decoding="async" />`
@@ -4535,7 +4535,7 @@ function openProductDetail(id, _isRefresh) {
   container.innerHTML = `
     <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px">
       <div class="product-img-wrap" style="height:340px;border-radius:var(--radius)">
-        ${p.badge ? `<div class="product-badge">${t(p.badge, p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':p.badge)}</div>` : ''}
+        ${p.badge ? `<div class="product-badge">${t(escHtml(p.badge), p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':escHtml(p.badge))}</div>` : ''}
         ${p.image
           ? `<img src="${cldOptimize(p.image, 600)}" alt="${escHtml(p.ar)}" loading="lazy" decoding="async" />`
           : `<span class="emoji-fallback">${p.icon}</span>`}
@@ -5108,6 +5108,12 @@ async function submitOrder() {
 
   const btn = document.getElementById('btnSubmit');
   if (btn.disabled) return; // منع النقر المتكرر أثناء تنفيذ الطلب
+
+  if (!navigator.onLine) {
+    showToast(t('📡 لا يوجد اتصال بالإنترنت، يرجى التحقق من الشبكة والمحاولة مجدداً','📡 No internet connection, please check your network and try again'), 'error');
+    return;
+  }
+
   btn.disabled = true;
   const btnOriginalHTML = btn.innerHTML;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
@@ -5148,15 +5154,39 @@ async function submitOrder() {
     createdAt:   new Date().toISOString(),
   };
 
-  try {
-    await window._fbAddDoc(window._fbOrdersRef(), order);
-    console.log('✅ تم الحفظ في Firebase');
-  } catch(e) {
-    console.error('❌ Firebase error:', e);
-    const local = JSON.parse(localStorage.getItem('dentapro_orders') || '[]');
-    local.unshift(order);
-    localStorage.setItem('dentapro_orders', JSON.stringify(local));
+  // محاولة الحفظ في Firebase — إن فشلت نعيد المحاولة مرة واحدة بعد تأخير بسيط
+  let savedToFirebase = false;
+  let lastError = null;
+  for (let attempt = 1; attempt <= 2; attempt++) {
+    try {
+      await window._fbAddDoc(window._fbOrdersRef(), order);
+      savedToFirebase = true;
+      console.log('✅ تم الحفظ في Firebase');
+      break;
+    } catch(e) {
+      lastError = e;
+      console.error(`❌ Firebase error (محاولة ${attempt}):`, e);
+      if (attempt === 1) await new Promise(r => setTimeout(r, 1500));
+    }
   }
+
+  // إذا فشل الحفظ في Firebase بعد المحاولتين، لا نُظهر نجاح الطلب
+  // لأن الإدارة لن ترى الطلب أبداً — نحفظه محلياً كنسخة احتياطية فقط ونُعلم العميل بوضوح
+  if (!savedToFirebase) {
+    const local = JSON.parse(localStorage.getItem('dentapro_orders_pending') || '[]');
+    local.unshift(order);
+    localStorage.setItem('dentapro_orders_pending', JSON.stringify(local));
+
+    showToast(t(
+      '❌ تعذّر إرسال طلبك، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً، أو تواصل معنا عبر واتساب',
+      '❌ Could not send your order, please check your internet connection and try again, or contact us via WhatsApp'
+    ), 'error');
+
+    btn.disabled = false;
+    btn.innerHTML = btnOriginalHTML;
+    return;
+  }
+
   createNotification({
     scope: 'admin',
     icon: '🛒',
@@ -5404,8 +5434,38 @@ async function sendContactMessage() {
     showToast('❌ فشل إرسال الرسالة، تحقق من الاتصال', 'error');
   }
 }
+// =====================
+// PAGE NAVIGATION HISTORY (لدعم زر الرجوع في WebView)
+// =====================
+let pageHistory = ['home'];
+let isBackNavigation = false;
+
+function goBack() {
+  if (pageHistory.length > 1) {
+    pageHistory.pop();
+    isBackNavigation = true;
+    showPage(pageHistory[pageHistory.length - 1]);
+    isBackNavigation = false;
+  }
+}
+
+// معالج زر الرجوع في Android WebView
+window.addEventListener('popstate', (e) => {
+  if (e.state && e.state.page) {
+    isBackNavigation = true;
+    showPage(e.state.page);
+    isBackNavigation = false;
+  }
+});
 function showPage(page) {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  
+  // أضيف الصفحة الجديدة للسجل (إذا لم تكن عملية رجوع)
+  if (!isBackNavigation && (pageHistory.length === 0 || pageHistory[pageHistory.length - 1] !== page)) {
+    pageHistory.push(page);
+    window.history.pushState({ page: page }, '', `#${page}`);
+  }
+  
   if (page === 'home') {
     document.getElementById('homePage').classList.add('active');
   } else if (page === 'orders') {
@@ -5885,7 +5945,8 @@ function renderAdminTable() {
 // IMAGE HANDLING
 // =====================
 const CLOUDINARY_CLOUD_NAME = 'dssbu3ooo';
-const CLOUDINARY_UPLOAD_PRESET = 'ml_default';
+const CLOUDINARY_UPLOAD_PRESET = 'dentapro_products'; // ⚠️ لازم تنشئه بنفسك في لوحة Cloudinary (تفاصيل بالأسفل)
+const CLOUDINARY_MAX_SIZE_MB = 5;
 
 // يحوّل رابط Cloudinary العادي إلى رابط محسّن (ضغط تلقائي + صيغة تلقائية + تحديد عرض)
 function cldOptimize(url, width) {
@@ -5898,9 +5959,17 @@ async function uploadToCloudinary(file) {
   if (!file.type || !file.type.startsWith('image/')) {
     throw new Error('نوع الملف غير مسموح، يجب أن يكون صورة');
   }
+  const allowedTypes = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];
+  if (!allowedTypes.includes(file.type)) {
+    throw new Error('صيغة الصورة غير مدعومة، يُسمح فقط بـ JPG, PNG, WEBP, GIF');
+  }
+  if (file.size > CLOUDINARY_MAX_SIZE_MB * 1024 * 1024) {
+    throw new Error(`حجم الصورة كبير جداً، الحد الأقصى ${CLOUDINARY_MAX_SIZE_MB} ميجابايت`);
+  }
   const formData = new FormData();
   formData.append('file', file);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+  formData.append('folder', 'dentapro_products');
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
     method: 'POST',
@@ -8329,7 +8398,7 @@ async function renderAdminMessages() {
     const last = arr[arr.length-1];
     const clientName = arr.find(m=>m.fromRole==='client')?.fromName || email;
     return `
-    <div class="points-admin-card" style="cursor:pointer" onclick="openAdminThreadModal('${email}')">
+    <div class="points-admin-card" style="cursor:pointer" data-email="${email}" onclick="openAdminThreadModal(this.dataset.email)">
       <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:0">
         <div style="width:42px;height:42px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));
           display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;flex-shrink:0">${escHtml(clientName).charAt(0)}</div>
@@ -8347,6 +8416,7 @@ async function renderAdminMessages() {
 }
 
 function openAdminThreadModal(email) {
+  email = email.trim(); // تنظيف إضافي
   const existing = document.getElementById('adminThreadModal');
   if (existing) existing.remove();
   const thread = (window._cachedAdminThreads || {})[email] || [];
