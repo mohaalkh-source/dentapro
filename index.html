@@ -5154,7 +5154,7 @@ async function submitOrder() {
     items:       cart.map(i => ({
       id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty, points:i.points||0,
       isBundle: i.isBundle || false,
-      bundleItems: i.isBundle ? i.bundleItems : undefined
+      bundleItems: i.isBundle ? (i.bundleItems || null) : null
     })),
     total:       getTotal(),
     totalPoints: totalPoints,
@@ -5164,12 +5164,16 @@ async function submitOrder() {
     createdAt:   new Date().toISOString(),
   };
 
+  // طبقة حماية: Firestore يرفض أي حقل بقيمة undefined، فننظّف الكائن تلقائياً
+  // (JSON.stringify يحذف مفاتيح undefined ويحوّلها داخل المصفوفات إلى null)
+  const cleanOrder = JSON.parse(JSON.stringify(order));
+
   // محاولة الحفظ في Firebase — إن فشلت نعيد المحاولة مرة واحدة بعد تأخير بسيط
   let savedToFirebase = false;
   let lastError = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      await window._fbAddDoc(window._fbOrdersRef(), order);
+      await window._fbAddDoc(window._fbOrdersRef(), cleanOrder);
       savedToFirebase = true;
       console.log('✅ تم الحفظ في Firebase');
       break;
