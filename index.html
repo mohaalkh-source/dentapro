@@ -1210,7 +1210,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch, enableIndexedDbPersistence }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
-           signOut, onAuthStateChanged, updateProfile, signInAnonymously }
+           signOut, onAuthStateChanged, updateProfile }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
 
   const firebaseConfig = {
@@ -1233,7 +1233,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   window._fbSignOut       = signOut;
   window._fbAuthState     = onAuthStateChanged;
   window._fbUpdateProfile = updateProfile;
-  window._fbSignInAnon    = signInAnonymously;
 
   window._db           = db;
   window._fbGetDoc     = getDoc;
@@ -1897,7 +1896,16 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     </div>
     <div id="clientMessagesThread" style="background:#fff;border:1px solid var(--border);border-radius:16px;
       padding:18px;min-height:300px;max-height:480px;overflow-y:auto;margin-bottom:14px;display:flex;flex-direction:column;gap:10px"></div>
+    <div id="clientChatImgPreviewWrap" style="display:none;margin-bottom:10px;position:relative;width:fit-content">
+      <img id="clientChatImgPreview" style="max-width:120px;max-height:120px;border-radius:10px;border:2px solid var(--border);display:block">
+      <button onclick="clearClientChatImage()" style="position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:11px">✕</button>
+    </div>
     <div style="display:flex;gap:10px">
+      <input type="file" id="clientChatImgFile" accept="image/*" style="display:none" onchange="handleClientChatImageSelect(event)">
+      <button onclick="document.getElementById('clientChatImgFile').click()" title="إرفاق صورة"
+        style="width:44px;height:44px;border-radius:50%;background:#f0f8ff;color:var(--primary);border:2px solid var(--border);cursor:pointer;flex-shrink:0">
+        <i class="fas fa-paperclip"></i>
+      </button>
       <input type="text" class="form-input" id="clientMsgInput" placeholder="اكتب رسالتك أو استفسارك هنا..."
         onkeydown="if(event.key==='Enter'){event.preventDefault();sendClientMessageFromInput();}">
       <button class="btn-primary" style="padding:0 24px;flex-shrink:0" onclick="sendClientMessageFromInput()">
@@ -2246,17 +2254,27 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     <div style="font-size:17px;font-weight:900;color:var(--primary-dark)">إدارة صلاحيات المستخدمين</div>
     <div style="font-size:13px;color:var(--text-muted);margin-top:4px">حدّد دور المستخدم: مدير النظام (Admin) أو مدير فرعي (Manager) أو عميل (Customer)</div>
   </div>
-  <div style="background:#fff;border-radius:16px;border:1px solid #e2eaf0;padding:20px;max-width:520px">
-    <label style="font-size:13px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:8px">البريد الإلكتروني للمستخدم</label>
+  <div style="background:#fff;border-radius:16px;border:1px solid #e2eaf0;padding:20px;max-width:560px">
+    <label style="font-size:13px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:8px">البحث بالبريد الإلكتروني أو اسم المستخدم</label>
     <div style="display:flex;gap:10px">
-      <input type="email" id="roleSearchEmail" placeholder="example@email.com"
-        style="flex:1;padding:11px 16px;border:2px solid var(--border);border-radius:50px;font-family:inherit;font-size:14px">
+      <input type="text" id="roleSearchEmail" placeholder="example@email.com أو اسم المستخدم"
+        style="flex:1;padding:11px 16px;border:2px solid var(--border);border-radius:50px;font-family:inherit;font-size:14px"
+        onkeydown="if(event.key==='Enter')searchUserForRole()">
       <button onclick="searchUserForRole()" style="padding:11px 22px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-weight:700;cursor:pointer">بحث</button>
     </div>
-    <div id="roleSearchResult" style="margin-top:18px"></div>
+    <div id="roleSearchResult" style="margin-top:18px;display:flex;flex-direction:column;gap:10px"></div>
   </div>
-  <div style="margin-top:24px;font-size:12px;color:var(--text-muted);max-width:520px">
+  <div style="margin-top:24px;font-size:12px;color:var(--text-muted);max-width:560px">
     <i class="fas fa-info-circle"></i> تغيير الصلاحية يحتاج من المستخدم تسجيل خروج ودخول مجدداً لتفعيله بالكامل.
+  </div>
+
+  <!-- قائمة المدراء الحاليين -->
+  <div style="margin-top:32px">
+    <div style="font-size:16px;font-weight:900;color:var(--primary-dark);margin-bottom:4px">
+      <i class="fas fa-user-shield" style="color:#e53e3e"></i> المدراء الحاليون
+    </div>
+    <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">مدير النظام الرئيسي والمدراء الفرعيون المسجّلون حالياً</div>
+    <div id="adminStaffList" style="display:flex;flex-direction:column;gap:10px;max-width:700px"></div>
   </div>
 </div>
 
@@ -5121,15 +5139,6 @@ async function submitOrder() {
 
   try {
 
-  // زائر بدون تسجيل دخول: نفعّل جلسة مجهولة حتى تقبل Firestore عملية الكتابة
-  if (!window._auth.currentUser) {
-    try {
-      await window._fbSignInAnon(window._auth);
-    } catch (anonErr) {
-      console.error('فشل تسجيل الدخول المجهول:', anonErr);
-    }
-  }
-
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
   const orderNum = `DP-${ts}-${rand}`;
@@ -5154,7 +5163,7 @@ async function submitOrder() {
     items:       cart.map(i => ({
       id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty, points:i.points||0,
       isBundle: i.isBundle || false,
-      bundleItems: i.isBundle ? (i.bundleItems || null) : null
+      bundleItems: i.isBundle ? i.bundleItems : undefined
     })),
     total:       getTotal(),
     totalPoints: totalPoints,
@@ -5164,23 +5173,18 @@ async function submitOrder() {
     createdAt:   new Date().toISOString(),
   };
 
-  // طبقة حماية: Firestore يرفض أي حقل بقيمة undefined، فننظّف الكائن تلقائياً
-  // (JSON.stringify يحذف مفاتيح undefined ويحوّلها داخل المصفوفات إلى null)
-  const cleanOrder = JSON.parse(JSON.stringify(order));
-
   // محاولة الحفظ في Firebase — إن فشلت نعيد المحاولة مرة واحدة بعد تأخير بسيط
   let savedToFirebase = false;
   let lastError = null;
   for (let attempt = 1; attempt <= 2; attempt++) {
     try {
-      await window._fbAddDoc(window._fbOrdersRef(), cleanOrder);
+      await window._fbAddDoc(window._fbOrdersRef(), order);
       savedToFirebase = true;
       console.log('✅ تم الحفظ في Firebase');
       break;
     } catch(e) {
       lastError = e;
       console.error(`❌ Firebase error (محاولة ${attempt}):`, e);
-      if (e.code === 'permission-denied') break; // لا فائدة من إعادة محاولة برفض صلاحيات
       if (attempt === 1) await new Promise(r => setTimeout(r, 1500));
     }
   }
@@ -5192,17 +5196,10 @@ async function submitOrder() {
     local.unshift(order);
     localStorage.setItem('dentapro_orders_pending', JSON.stringify(local));
 
-    const failMsg = (lastError && lastError.code === 'permission-denied')
-      ? t(
-          '❌ لا تملك صلاحية إرسال الطلب حالياً، يرجى المحاولة مجدداً أو تسجيل الدخول',
-          '❌ You are not authorized to submit right now, please try again or log in'
-        )
-      : t(
-          '❌ تعذّر إرسال طلبك، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً، أو تواصل معنا عبر واتساب',
-          '❌ Could not send your order, please check your internet connection and try again, or contact us via WhatsApp'
-        );
-
-    showToast(failMsg, 'error');
+    showToast(t(
+      '❌ تعذّر إرسال طلبك، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً، أو تواصل معنا عبر واتساب',
+      '❌ Could not send your order, please check your internet connection and try again, or contact us via WhatsApp'
+    ), 'error');
 
     btn.disabled = false;
     btn.innerHTML = btnOriginalHTML;
@@ -5977,6 +5974,35 @@ function cldOptimize(url, width) {
   return url.replace('/upload/', `/upload/f_auto,q_auto${w}/`);
 }
 
+// ضغط الصورة تلقائياً (تصغير الأبعاد + إعادة ترميز JPEG) قبل رفعها — لا يشمل GIF لتفادي فقدان الحركة
+function compressImageFile(file, maxDimension = 1600, quality = 0.8) {
+  return new Promise((resolve) => {
+    if (file.type === 'image/gif') { resolve(file); return; }
+    const img = new Image();
+    const objectUrl = URL.createObjectURL(file);
+    img.onload = () => {
+      let { width, height } = img;
+      if (width > maxDimension || height > maxDimension) {
+        const ratio = Math.min(maxDimension / width, maxDimension / height);
+        width = Math.round(width * ratio);
+        height = Math.round(height * ratio);
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(img, 0, 0, width, height);
+      canvas.toBlob((blob) => {
+        URL.revokeObjectURL(objectUrl);
+        if (!blob || blob.size >= file.size) { resolve(file); return; }
+        resolve(new File([blob], file.name.replace(/\.\w+$/, '.jpg'), { type: 'image/jpeg' }));
+      }, 'image/jpeg', quality);
+    };
+    img.onerror = () => { URL.revokeObjectURL(objectUrl); resolve(file); };
+    img.src = objectUrl;
+  });
+}
+
 async function uploadToCloudinary(file) {
   if (!file.type || !file.type.startsWith('image/')) {
     throw new Error('نوع الملف غير مسموح، يجب أن يكون صورة');
@@ -5988,8 +6014,16 @@ async function uploadToCloudinary(file) {
   if (file.size > CLOUDINARY_MAX_SIZE_MB * 1024 * 1024) {
     throw new Error(`حجم الصورة كبير جداً، الحد الأقصى ${CLOUDINARY_MAX_SIZE_MB} ميجابايت`);
   }
+
+  let uploadFile = file;
+  try {
+    uploadFile = await compressImageFile(file);
+  } catch(e) {
+    console.warn('⚠️ فشل ضغط الصورة، سيتم رفعها كما هي:', e.message);
+  }
+
   const formData = new FormData();
-  formData.append('file', file);
+  formData.append('file', uploadFile);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
   formData.append('folder', 'dentapro_products');
 
@@ -7364,6 +7398,7 @@ function switchAdminTab(tab) {
   if (isOffers)   renderAdminOffers();
   if (isQuotes)   renderAdminQuotes();
   if (isMessages) renderAdminMessages();
+  if (isRoles)    renderAdminStaffList();
 }
 
 // يُخفي عناصر الأدمن الحصرية (تبويب الصلاحيات + زر إعادة التعيين) عن Manager
@@ -7375,49 +7410,125 @@ function applyAdminUIPermissions() {
   if (resetBtn)    resetBtn.style.display    = adminOnly ? 'flex'         : 'none';
 }
 
-// ── إدارة الصلاحيات: البحث عن مستخدم بالبريد وتعيين دوره ──
+// ── إدارة الصلاحيات: البحث عن مستخدم بالبريد أو بالاسم وتعيين دوره ──
+function roleBadgeChip(role) {
+  const roleLabel = role === 'admin' ? 'مدير النظام' : role === 'manager' ? 'مدير فرعي' : 'عميل';
+  const roleColor = role === 'admin' ? '#e53e3e' : role === 'manager' ? '#d97706' : '#0a5c8a';
+  return `<span style="padding:3px 12px;border-radius:50px;background:${roleColor}1a;color:${roleColor};font-size:11px;font-weight:800">${roleLabel}</span>`;
+}
+
+function roleActionButtonsHTML(uid, email) {
+  return `
+    <button onclick="assignUserRole('${uid}','admin','${escHtml(email)}')"
+      style="padding:7px 14px;border-radius:50px;background:#e53e3e;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+      مدير نظام
+    </button>
+    <button onclick="assignUserRole('${uid}','manager','${escHtml(email)}')"
+      style="padding:7px 14px;border-radius:50px;background:#d97706;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+      مدير فرعي
+    </button>
+    <button onclick="revokeUserRole('${uid}','${escHtml(email)}')"
+      style="padding:7px 14px;border-radius:50px;background:#fff5f5;color:var(--danger);border:1.5px solid #fecaca;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+      <i class="fas fa-trash-alt"></i> إزالة الصلاحية
+    </button>`;
+}
+
+async function fetchAllUsersList() {
+  const snap = await window._fbGetDocs(window._fbCollection(window._db, 'users'));
+  return snap.docs.map(d => ({ uid: d.id, ...d.data() }));
+}
+
 async function searchUserForRole() {
-  const email = document.getElementById('roleSearchEmail').value.trim();
+  const term = document.getElementById('roleSearchEmail').value.trim();
   const resultBox = document.getElementById('roleSearchResult');
-  if (!email) { showToast('يرجى إدخال البريد الإلكتروني', 'error'); return; }
+  if (!term) { showToast('يرجى إدخال البريد الإلكتروني أو اسم المستخدم', 'error'); return; }
   if (!navigator.onLine) { showToast('📡 لا يوجد اتصال بالإنترنت', 'error'); return; }
   resultBox.innerHTML = `<div style="text-align:center;padding:16px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> جاري البحث...</div>`;
   try {
-    const q = window._fbQuery(window._fbCollection(window._db, 'users'), window._fbWhere('email', '==', email));
-    const snap = await window._fbGetDocs(q);
-    if (snap.empty) {
-      resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;padding:10px 0"><i class="fas fa-exclamation-circle"></i> لا يوجد مستخدم مسجّل بهذا البريد (يجب أن يكون أنشأ حساباً أولاً)</div>`;
+    const allUsers = await fetchAllUsersList();
+    const normTerm = normalizeArabic(term);
+    const matches = allUsers.filter(u =>
+      (u.email || '').toLowerCase().includes(term.toLowerCase()) ||
+      normalizeArabic(u.firstName || u.name || '').includes(normTerm)
+    );
+
+    if (!matches.length) {
+      resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px;padding:10px 0"><i class="fas fa-exclamation-circle"></i> لا يوجد مستخدم مطابق (يجب أن يكون قد أنشأ حساباً أولاً)</div>`;
       return;
     }
-    const userDoc = snap.docs[0];
-    const data = userDoc.data();
-    const currentRole = data.role || 'client';
-    const roleLabel = currentRole === 'admin' ? 'مدير النظام' : currentRole === 'manager' ? 'مدير فرعي' : 'عميل';
-    resultBox.innerHTML = `
+
+    resultBox.innerHTML = matches.map(data => {
+      const currentRole = data.role || 'client';
+      return `
       <div style="padding:14px;background:#f8fbfd;border-radius:12px;border:1px solid var(--border)">
-        <div style="font-weight:800;margin-bottom:4px">${escHtml(data.firstName || email)}</div>
-        <div style="font-size:12px;color:var(--text-muted);margin-bottom:14px">${escHtml(email)}</div>
-        <label style="font-size:12px;font-weight:700;color:var(--text-muted);display:block;margin-bottom:6px">
-          الدور الحالي: <b style="color:var(--primary)">${roleLabel}</b>
-        </label>
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:10px">
+          <div>
+            <div style="font-weight:800">${escHtml(data.firstName || data.name || data.email)}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${escHtml(data.email)}${data.clinic?' · '+escHtml(data.clinic):''}</div>
+          </div>
+          ${roleBadgeChip(currentRole)}
+        </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button onclick="assignUserRole('${userDoc.id}','admin','${escHtml(email)}')"
-            style="padding:8px 16px;border-radius:50px;background:#e53e3e;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
-            مدير نظام
-          </button>
-          <button onclick="assignUserRole('${userDoc.id}','manager','${escHtml(email)}')"
-            style="padding:8px 16px;border-radius:50px;background:#d97706;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
-            مدير فرعي
-          </button>
-          <button onclick="assignUserRole('${userDoc.id}','client','${escHtml(email)}')"
-            style="padding:8px 16px;border-radius:50px;background:#0a5c8a;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
-            عميل
-          </button>
+          ${roleActionButtonsHTML(data.uid, data.email)}
         </div>
       </div>`;
+    }).join('');
   } catch(e) {
     console.error('searchUserForRole:', e.message);
     resultBox.innerHTML = `<div style="color:var(--danger);font-size:13px"><i class="fas fa-exclamation-circle"></i> حدث خطأ أثناء البحث، تحقق من اتصالك وحاول مجدداً</div>`;
+  }
+}
+
+// ── عرض قائمة كل المدراء (admin) والمدراء الفرعيين (manager) الحاليين ──
+async function renderAdminStaffList() {
+  const container = document.getElementById('adminStaffList');
+  if (!container) return;
+  container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted)"><i class="fas fa-spinner fa-spin"></i> جاري التحميل...</div>`;
+  try {
+    const allUsers = await fetchAllUsersList();
+    let staff = allUsers.filter(u => u.role === 'admin' || u.role === 'manager');
+
+    // ضمان ظهور مدير النظام الرئيسي (البريد الثابت) حتى لو لم يكن له مستند users/{uid} بعد
+    if (!staff.find(u => u.email === ADMIN_EMAIL)) {
+      staff.unshift({ uid: null, email: ADMIN_EMAIL, firstName: 'المدير الرئيسي', role: 'admin', isBootstrap: true });
+    }
+
+    // ترتيب: مدير النظام أولاً ثم المدراء الفرعيون
+    staff.sort((a,b) => (a.role === 'admin' ? 0 : 1) - (b.role === 'admin' ? 0 : 1));
+
+    if (!staff.length) {
+      container.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-muted);font-size:13px">لا يوجد مدراء حالياً</div>`;
+      return;
+    }
+
+    container.innerHTML = staff.map(u => {
+      const avatarBg = u.role === 'admin' ? 'linear-gradient(135deg,#e53e3e,#c53030)' : 'linear-gradient(135deg,#d97706,#b45309)';
+      const isSelf = currentUser && u.email === currentUser.email;
+      const actions = u.isBootstrap
+        ? `<span style="font-size:11px;color:var(--text-muted);font-style:italic">حساب المدير الأساسي — لا يمكن تعديله من هنا</span>`
+        : isSelf
+          ? `<span style="font-size:11px;color:var(--text-muted);font-style:italic">هذا حسابك الحالي</span>`
+          : roleActionButtonsHTML(u.uid, u.email);
+      return `
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+                  background:#fff;border:1px solid #e2eaf0;border-radius:14px;padding:14px 18px">
+        <div style="display:flex;align-items:center;gap:12px;flex:1;min-width:200px">
+          <div style="width:40px;height:40px;border-radius:50%;background:${avatarBg};color:#fff;
+                      display:flex;align-items:center;justify-content:center;font-weight:800;flex-shrink:0">
+            ${escHtml((u.firstName||u.name||'؟').charAt(0))}
+          </div>
+          <div style="min-width:0">
+            <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">${escHtml(u.firstName || u.name || 'بدون اسم')}</div>
+            <div style="font-size:12px;color:var(--text-muted)">${escHtml(u.email)}</div>
+          </div>
+          ${roleBadgeChip(u.role)}
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">${actions}</div>
+      </div>`;
+    }).join('');
+  } catch(e) {
+    console.error('renderAdminStaffList:', e.message);
+    container.innerHTML = `<div style="color:var(--danger);font-size:13px;text-align:center;padding:16px"><i class="fas fa-exclamation-circle"></i> تعذّر تحميل القائمة، تحقق من اتصالك</div>`;
   }
 }
 
@@ -7430,9 +7541,27 @@ async function assignUserRole(uid, role, email) {
     await window._fbUpdateDoc(window._fbDoc2('users', uid), { role });
     showToast('✅ تم تحديث الصلاحية بنجاح', 'success');
     searchUserForRole();
+    renderAdminStaffList();
   } catch(e) {
     console.error('assignUserRole:', e.message);
     showToast('❌ فشل تحديث الصلاحية، تحقق من اتصالك وحاول مجدداً', 'error');
+  }
+}
+
+// إزالة صلاحية مدير/مدير فرعي وإعادته لدور "عميل" — ملاحظة: هذا لا يحذف حساب المستخدم نفسه
+// (حذف حساب Firebase Authentication يتطلب صلاحيات Admin SDK من الخادم، غير متاحة من المتصفح)
+async function revokeUserRole(uid, email) {
+  if (!isAdmin()) { showToast('⛔ غير مصرح', 'error'); return; }
+  if (!confirm(`سيتم إزالة صلاحية الإدارة عن ${email} وتحويله إلى "عميل". هل تريد المتابعة؟`)) return;
+  if (!navigator.onLine) { showToast('📡 لا يوجد اتصال بالإنترنت، حاول مجدداً', 'error'); return; }
+  try {
+    await window._fbUpdateDoc(window._fbDoc2('users', uid), { role: 'client' });
+    showToast('✅ تمت إزالة الصلاحية بنجاح', 'success');
+    searchUserForRole();
+    renderAdminStaffList();
+  } catch(e) {
+    console.error('revokeUserRole:', e.message);
+    showToast('❌ فشل تنفيذ العملية، تحقق من اتصالك وحاول مجدداً', 'error');
   }
 }
 
@@ -8257,51 +8386,55 @@ function messagesRef() {
   return window._fbCollection(window._db, 'messages');
 }
 
-async function sendAdminMessage(clientEmail, text) {
+async function sendAdminMessage(clientEmail, text, imageUrl = null) {
   const msg = {
     clientEmail,
     fromRole: 'admin',
     fromName: 'فريق DentaPro',
-    text,
+    text: text || '',
+    imageUrl: imageUrl || null,
     createdAt: new Date().toISOString(),
   };
   await window._fbAddDoc(messagesRef(), msg);
 
+  const previewMsg = text ? (text.length > 60 ? text.slice(0,60)+'…' : text) : '📷 صورة';
   if (clientEmail === 'broadcast') {
     await createNotification({
       scope: 'broadcast',
-      icon: '📢',
+      icon: imageUrl ? '📷' : '📢',
       title: 'رسالة من إدارة DentaPro',
-      message: text.length > 60 ? text.slice(0,60)+'…' : text,
+      message: previewMsg,
       link: 'page:messages',
     });
   } else {
     await createNotification({
       scope: 'client',
       targetEmail: clientEmail,
-      icon: '💬',
+      icon: imageUrl ? '📷' : '💬',
       title: 'رد جديد من الإدارة',
-      message: text.length > 60 ? text.slice(0,60)+'…' : text,
+      message: previewMsg,
       link: 'page:messages',
     });
   }
 }
 
-async function sendClientMessage(text) {
+async function sendClientMessage(text, imageUrl = null) {
   if (!currentUser) return;
   const msg = {
     clientEmail: currentUser.email,
     fromRole: 'client',
     fromName: currentUser.name || currentUser.email,
-    text,
+    text: text || '',
+    imageUrl: imageUrl || null,
     createdAt: new Date().toISOString(),
   };
   await window._fbAddDoc(messagesRef(), msg);
+  const previewMsg = text ? (text.length>60?text.slice(0,60)+'…':text) : '📷 صورة';
   await createNotification({
     scope: 'admin',
-    icon: '💬',
+    icon: imageUrl ? '📷' : '💬',
     title: 'استفسار جديد من عميل',
-    message: `${currentUser.name || currentUser.email}: ${text.length>60?text.slice(0,60)+'…':text}`,
+    message: `${currentUser.name || currentUser.email}: ${previewMsg}`,
     link: `clientmsg:${currentUser.email}`,
   });
 }
@@ -8365,13 +8498,16 @@ async function renderClientMessagesThread() {
   wrap.innerHTML = thread.map(m => {
     const isAdmin = m.fromRole === 'admin';
     const time = timeAgo(m.createdAt);
+    const imgHtml = m.imageUrl ? `<img src="${cldOptimize(m.imageUrl,320)}" onclick="window.open('${m.imageUrl}','_blank')"
+      style="max-width:220px;max-height:220px;border-radius:10px;cursor:pointer;display:block;${m.text?'margin-bottom:6px':''}">` : '';
     return `
     <div style="display:flex;justify-content:${isAdmin?'flex-start':'flex-end'}">
       <div style="max-width:75%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;
         background:${isAdmin?'#f0f8ff':'linear-gradient(135deg,var(--primary),var(--primary-light))'};
         color:${isAdmin?'var(--text)':'#fff'}">
         ${isAdmin?`<div style="font-weight:800;font-size:11px;margin-bottom:4px;color:var(--primary)">${m.clientEmail==='broadcast'?'📢 ':''}${escHtml(m.fromName)}</div>`:''}
-        <div>${escHtml(m.text)}</div>
+        ${imgHtml}
+        ${m.text ? `<div>${escHtml(m.text)}</div>` : ''}
         <div style="font-size:10px;opacity:0.7;margin-top:4px;text-align:left">${time}</div>
       </div>
     </div>`;
@@ -8379,12 +8515,46 @@ async function renderClientMessagesThread() {
   wrap.scrollTop = wrap.scrollHeight;
 }
 
+// ── إرفاق صورة في رسائل العميل ──
+let clientChatPendingImage = null;
+function handleClientChatImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  clientChatPendingImage = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('clientChatImgPreview').src = e.target.result;
+    document.getElementById('clientChatImgPreviewWrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+function clearClientChatImage() {
+  clientChatPendingImage = null;
+  const fileInput = document.getElementById('clientChatImgFile');
+  const wrap = document.getElementById('clientChatImgPreviewWrap');
+  if (fileInput) fileInput.value = '';
+  if (wrap) wrap.style.display = 'none';
+}
+
 async function sendClientMessageFromInput() {
   const input = document.getElementById('clientMsgInput');
   const text = input.value.trim();
-  if (!text) return;
+  if (!text && !clientChatPendingImage) return;
+
+  let imageUrl = null;
+  if (clientChatPendingImage) {
+    showToast('⏳ جاري رفع الصورة...', '');
+    try {
+      imageUrl = await uploadToCloudinary(clientChatPendingImage);
+    } catch(e) {
+      showToast('❌ فشل رفع الصورة: ' + e.message, 'error');
+      return;
+    }
+  }
+
   input.value = '';
-  await sendClientMessage(text);
+  clearClientChatImage();
+  await sendClientMessage(text, imageUrl);
   showToast('✅ تم إرسال رسالتك', 'success');
   renderClientMessagesThread();
 }
@@ -8455,7 +8625,16 @@ function openAdminThreadModal(email) {
       </div>
       <div class="modal-body">
         <div id="adminThreadBody" style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;margin-bottom:14px;padding:6px"></div>
+        <div id="adminChatImgPreviewWrap" style="display:none;margin-bottom:10px;position:relative;width:fit-content">
+          <img id="adminChatImgPreview" style="max-width:120px;max-height:120px;border-radius:10px;border:2px solid var(--border);display:block">
+          <button onclick="clearAdminChatImage()" style="position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:11px">✕</button>
+        </div>
         <div style="display:flex;gap:10px">
+          <input type="file" id="adminChatImgFile" accept="image/*" style="display:none" onchange="handleAdminChatImageSelect(event)">
+          <button onclick="document.getElementById('adminChatImgFile').click()" title="إرفاق صورة"
+            style="width:44px;height:44px;border-radius:50%;background:#f0f8ff;color:var(--primary);border:2px solid var(--border);cursor:pointer;flex-shrink:0">
+            <i class="fas fa-paperclip"></i>
+          </button>
           <input type="text" class="form-input" id="adminThreadInput" placeholder="اكتب ردك هنا..."
             onkeydown="if(event.key==='Enter'){event.preventDefault();sendAdminThreadReply('${email}')}">
           <button class="btn-primary" style="padding:0 24px;flex-shrink:0" onclick="sendAdminThreadReply('${email}')">
@@ -8465,6 +8644,7 @@ function openAdminThreadModal(email) {
       </div>
     </div>`;
   document.body.appendChild(modal);
+  clearAdminChatImage();
   renderAdminThreadBody(thread);
   if (thread.length) {
     markThreadRead(email, thread[thread.length - 1].createdAt);
@@ -8477,12 +8657,15 @@ function renderAdminThreadBody(thread) {
   if (!body) return;
   body.innerHTML = thread.map(m => {
     const isAdmin = m.fromRole === 'admin';
+    const imgHtml = m.imageUrl ? `<img src="${cldOptimize(m.imageUrl,320)}" onclick="window.open('${m.imageUrl}','_blank')"
+      style="max-width:220px;max-height:220px;border-radius:10px;cursor:pointer;display:block;${m.text?'margin-bottom:6px':''}">` : '';
     return `
     <div style="display:flex;justify-content:${isAdmin?'flex-end':'flex-start'}">
       <div style="max-width:75%;padding:10px 14px;border-radius:14px;font-size:13px;line-height:1.6;
         background:${isAdmin?'linear-gradient(135deg,var(--primary),var(--primary-light))':'#f0f8ff'};
         color:${isAdmin?'#fff':'var(--text)'}">
-        <div>${escHtml(m.text)}</div>
+        ${imgHtml}
+        ${m.text ? `<div>${escHtml(m.text)}</div>` : ''}
         <div style="font-size:10px;opacity:0.7;margin-top:4px;text-align:left">${timeAgo(m.createdAt)}</div>
       </div>
     </div>`;
@@ -8490,15 +8673,49 @@ function renderAdminThreadBody(thread) {
   body.scrollTop = body.scrollHeight;
 }
 
+// ── إرفاق صورة في ردود الأدمن ──
+let adminChatPendingImage = null;
+function handleAdminChatImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  adminChatPendingImage = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('adminChatImgPreview').src = e.target.result;
+    document.getElementById('adminChatImgPreviewWrap').style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+}
+function clearAdminChatImage() {
+  adminChatPendingImage = null;
+  const fileInput = document.getElementById('adminChatImgFile');
+  const wrap = document.getElementById('adminChatImgPreviewWrap');
+  if (fileInput) fileInput.value = '';
+  if (wrap) wrap.style.display = 'none';
+}
+
 async function sendAdminThreadReply(email) {
   const input = document.getElementById('adminThreadInput');
   const text = input.value.trim();
-  if (!text) return;
+  if (!text && !adminChatPendingImage) return;
+
+  let imageUrl = null;
+  if (adminChatPendingImage) {
+    showToast('⏳ جاري رفع الصورة...', '');
+    try {
+      imageUrl = await uploadToCloudinary(adminChatPendingImage);
+    } catch(e) {
+      showToast('❌ فشل رفع الصورة: ' + e.message, 'error');
+      return;
+    }
+  }
+
   input.value = '';
-  await sendAdminMessage(email, text);
+  clearAdminChatImage();
+  await sendAdminMessage(email, text, imageUrl);
   const grouped = window._cachedAdminThreads || {};
   if (!grouped[email]) grouped[email] = [];
-  grouped[email].push({ clientEmail: email, fromRole:'admin', fromName:'فريق DentaPro', text, createdAt:new Date().toISOString() });
+  grouped[email].push({ clientEmail: email, fromRole:'admin', fromName:'فريق DentaPro', text, imageUrl, createdAt:new Date().toISOString() });
   renderAdminThreadBody(grouped[email]);
   renderAdminMessages();
   showToast('✅ تم إرسال الرد', 'success');
