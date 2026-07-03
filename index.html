@@ -662,9 +662,9 @@ footer{
   background: transparent; color:var(--primary); border:2px solid var(--border);
   cursor:pointer; font-size:17px;
   display:flex; align-items:center; justify-content:center;
-  transition:all 0.2s;
+  transition:all 0.2s; box-shadow:0 3px 10px rgba(10,92,138,0.08);
 }
-.notif-btn:hover{background:rgba(10,92,138,0.06); border-color:var(--primary-light)}
+.notif-btn:hover{background:rgba(10,92,138,0.06); border-color:var(--primary-light); transform:scale(1.05)}
 .notif-badge{
   position:absolute; top:-4px; right:-4px;
   background:var(--danger); color:#fff; border-radius:50%;
@@ -717,7 +717,20 @@ body.en .notif-item.unread::before{right:auto; left:8px}
 .notif-item-time{font-size:11px; color:#9ab; margin-top:4px}
 .notif-empty{text-align:center; padding:40px 20px; color:var(--text-muted)}
 .notif-empty i{font-size:40px; opacity:0.2; display:block; margin-bottom:12px}
+/* ===== OFFLINE BANNER ===== */
+#offlineBanner{
+  position:relative; z-index:1001;
+  background:linear-gradient(135deg,#e53e3e,#c53030); color:#fff;
+  text-align:center; font-size:13px; font-weight:700;
+  padding:8px 16px; display:none; align-items:center;
+  justify-content:center; gap:8px;
+  box-shadow:0 2px 10px rgba(0,0,0,0.15);
+}
+#offlineBanner.show{ display:flex; animation:slideIn 0.3s ease; }
+body.en #offlineBanner{ direction:ltr; }
 
+/* ===== TOAST ===== */
+.toast-container{position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px}
 /* ===== TOAST ===== */
 .toast-container{position:fixed; bottom:24px; right:24px; z-index:9999; display:flex; flex-direction:column; gap:10px}
 body.en .toast-container{right:auto; left:24px}
@@ -1057,17 +1070,32 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .logo{order:1}
   .header-actions{order:2; margin-right:auto}
   body.en .header-actions{margin-right:0; margin-left:auto}
-  #msgBtn{order:2; flex-shrink:0}
-  #notifBtn{order:2; flex-shrink:0}
+  #msgBtn{order:2; flex-shrink:0; margin-inline-start:6px}
+  #notifBtn{order:2; flex-shrink:0; margin-inline-start:6px}
   .header-row-break{order:3; flex-basis:100%; height:0}
   .header-search{order:4; flex:1; margin-top:6px}
   .cart-btn{order:5; flex-shrink:0; margin-top:6px; width:38px; height:38px; font-size:15px}
-  #msgBtn, #notifBtn{width:38px; height:38px; font-size:15px}
+  #msgBtn, #notifBtn{
+    width:38px; height:38px; font-size:15px;
+    display:flex; align-items:center; justify-content:center;
+  }
+.notif-badge{
+    min-width:18px; height:18px; font-size:10px;
+    padding:0 3px;
+  }
   .logo-icon{width:36px; height:36px; font-size:18px; border-radius:10px}
   .logo-text{font-size:17px}
   .cart-count{width:17px; height:17px; font-size:10px}
-  .lang-btn{padding:6px 10px; font-size:12px; min-height:36px}
+  .lang-btn{
+  padding:0; width:38px; height:38px; min-height:38px;
+  border-radius:50%; font-size:15px; justify-content:center;
+}
+.lang-btn #langLabel{display:none}
   .auth-btn{min-height:36px}
+  .user-chip{padding:5px 10px 5px 6px; gap:6px}
+  .user-avatar{width:28px; height:28px; font-size:13px}
+  .user-chip-name{max-width:70px; font-size:12px}
+  .user-chip-role{font-size:9px}
   .header-search input{padding:9px 40px 9px 14px; font-size:13px}
   .header-search .search-btn{font-size:14px; right:12px}
   .header-search{max-width:none}
@@ -1330,7 +1358,16 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
 
 <!-- HEADER -->
 <header>
+  <div id="offlineBanner">
+    <i class="fas fa-wifi" style="opacity:0.9"></i>
+    <span data-ar="لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً" data-en="No internet connection — will retry automatically">لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً</span>
+  </div>
   <div class="header-inner">
+    <button id="headerBackBtn" onclick="goBack()" style="display:none;width:38px;height:38px;border-radius:50%;
+      border:2px solid var(--border);background:#fff;color:var(--primary);cursor:pointer;font-size:15px;
+      align-items:center;justify-content:center;flex-shrink:0" title="رجوع">
+      <i class="fas fa-arrow-right"></i>
+    </button>
     <a href="#" class="logo" onclick="showPage('home')">
       <div class="logo-icon">🦷</div>
       <span class="logo-text">Denta<span>Pro</span></span>
@@ -5472,7 +5509,41 @@ function showToast(msg, type='') {
   container.appendChild(toast);
   setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(40px)'; setTimeout(()=>toast.remove(),300); }, 3000);
 }
+// =====================
+// TOAST
+// =====================
+function showToast(msg, type='') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = `toast ${type}`;
+  toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'}"></i> ${msg}`;
+  container.appendChild(toast);
+  setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(40px)'; setTimeout(()=>toast.remove(),300); }, 3000);
+}
 
+// =====================
+// OFFLINE / ONLINE BANNER
+// =====================
+function updateOfflineBanner() {
+  const banner = document.getElementById('offlineBanner');
+  if (!banner) return;
+  if (navigator.onLine) {
+    banner.classList.remove('show');
+  } else {
+    banner.classList.add('show');
+  }
+}
+
+window.addEventListener('online', () => {
+  updateOfflineBanner();
+  showToast('✅ تم استعادة الاتصال بالإنترنت', 'success');
+});
+window.addEventListener('offline', () => {
+  updateOfflineBanner();
+  showToast('📡 انقطع الاتصال بالإنترنت', 'error');
+});
+
+document.addEventListener('DOMContentLoaded', updateOfflineBanner);
 // =====================
 // HELPERS
 // =====================
@@ -5520,6 +5591,12 @@ function goBack() {
   }
 }
 
+function updateHeaderBackBtn() {
+  const btn = document.getElementById('headerBackBtn');
+  if (!btn) return;
+  btn.style.display = pageHistory.length > 1 ? 'flex' : 'none';
+}
+
 // معالج زر الرجوع في Android WebView
 window.addEventListener('popstate', (e) => {
   if (e.state && e.state.page) {
@@ -5536,6 +5613,7 @@ function showPage(page) {
     pageHistory.push(page);
     window.history.pushState({ page: page }, '', `#${page}`);
   }
+  updateHeaderBackBtn();
   
   if (page === 'home') {
     document.getElementById('homePage').classList.add('active');
