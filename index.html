@@ -56,7 +56,10 @@
 html{scroll-behavior:smooth}
 body{
   font-family: var(--font-ar);
-  background: var(--bg);
+  background:
+    radial-gradient(circle at 15% 8%, rgba(0,194,168,0.05) 0%, transparent 35%),
+    radial-gradient(circle at 90% 25%, rgba(10,92,138,0.05) 0%, transparent 40%),
+    var(--bg);
   color: var(--text);
   min-height: 100vh;
   overflow-x: hidden;
@@ -130,13 +133,21 @@ body.en .header-search .search-btn{right:auto; left:14px}
 .lang-btn:hover{background:var(--primary); color:#fff; border-color:var(--primary)}
 
 .cart-btn{
-  position:relative; width:44px; height:44px; border-radius:50%;
-  background: var(--primary); color:#fff; border:none;
-  cursor:pointer; font-size:18px;
+  position:relative; width:46px; height:46px; border-radius:50%;
+  background: linear-gradient(135deg, var(--accent), var(--primary));
+  color:#fff; border:none;
+  cursor:pointer; font-size:19px;
   display:flex; align-items:center; justify-content:center;
-  transition:all 0.2s; box-shadow:0 3px 10px rgba(10,92,138,0.3);
+  transition:all 0.2s; box-shadow:0 4px 14px rgba(0,194,168,0.4);
 }
-.cart-btn:hover{background:var(--primary-dark); transform:scale(1.05)}
+.cart-btn:hover{transform:scale(1.08); box-shadow:0 6px 18px rgba(0,194,168,0.5)}
+.cart-btn.bump{ animation: cartBump 0.4s ease; }
+@keyframes cartBump{
+  0%{transform:scale(1)}
+  30%{transform:scale(1.25) rotate(-8deg)}
+  60%{transform:scale(0.95) rotate(4deg)}
+  100%{transform:scale(1) rotate(0)}
+}
 .cart-count{
   position:absolute; top:-4px; right:-4px;
   background:var(--accent2); color:#fff; border-radius:50%;
@@ -190,10 +201,7 @@ body.en .cart-count{right:auto; left:-4px}
   box-shadow:0 6px 20px rgba(10,92,138,0.35);
 }
 .btn-outline:hover{transform:translateY(-2px); box-shadow:0 10px 28px rgba(10,92,138,0.45)}
-.hero-stats{display:flex; gap:32px; margin-top:40px; flex-wrap:wrap}
-.stat{text-align:center}
-.stat-num{font-size:28px; font-weight:900; color:var(--accent); display:block}
-.stat-label{font-size:13px; color:rgba(255,255,255,0.7)}
+
 .hero-visual{
   flex:0 0 auto; width:340px; height:280px;
   background:rgba(255,255,255,0.08); border-radius:24px;
@@ -278,15 +286,23 @@ body.en .filter-results-count{margin-right:0; margin-left:auto}
 .product-card{
   background:var(--card); border-radius:var(--radius);
   border:1px solid var(--border); overflow:hidden;
-  transition:all 0.25s; position:relative;
+  transition:all 0.3s cubic-bezier(0.4,0,0.2,1); position:relative;
+  box-shadow:0 2px 8px rgba(10,92,138,0.06), 0 1px 3px rgba(10,92,138,0.04);
 }
-.product-card:hover{box-shadow:var(--shadow-lg); transform:translateY(-4px)}
+.product-card:hover{
+  box-shadow:0 16px 40px rgba(10,92,138,0.16), 0 4px 12px rgba(10,92,138,0.08);
+  transform:translateY(-6px);
+  border-color:transparent;
+}
 .product-badge{
-  position:absolute; top:12px; right:12px; z-index:2;
-  background:var(--danger); color:#fff; padding:4px 10px;
-  border-radius:50px; font-size:11px; font-weight:700;
+  position:absolute; top:14px; right:-32px; z-index:2;
+  background:var(--danger); color:#fff; padding:5px 38px;
+  font-size:11px; font-weight:800; letter-spacing:0.3px;
+  transform:rotate(45deg);
+  box-shadow:0 3px 8px rgba(0,0,0,0.18);
+  text-align:center;
 }
-body.en .product-badge{right:auto; left:12px}
+body.en .product-badge{right:auto; left:-32px; transform:rotate(-45deg)}
 .product-img{
   width:100%; height:200px; object-fit:contain;
   background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
@@ -950,6 +966,60 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .product-detail-grid .product-price{font-size:28px !important}
 }
 
+/* ===== PRODUCT DETAIL TABS ===== */
+.pd-tabs{
+  display:flex; gap:4px; margin:20px 0 16px; border-bottom:2px solid var(--border);
+  overflow-x:auto;
+}
+.pd-tab-btn{
+  padding:10px 18px; background:none; border:none; cursor:pointer;
+  font-family:inherit; font-size:13px; font-weight:700; color:var(--text-muted);
+  border-bottom:3px solid transparent; margin-bottom:-2px; transition:all 0.2s;
+  display:flex; align-items:center; gap:6px; white-space:nowrap; flex-shrink:0;
+}
+.pd-tab-btn.active{ color:var(--primary); border-bottom-color:var(--primary); }
+.pd-tab-panel{ display:none; animation:fadeInTab 0.25s ease; }
+.pd-tab-panel.active{ display:block; }
+@keyframes fadeInTab{ from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:translateY(0)} }
+.pd-specs-table{ width:100%; border-collapse:collapse; }
+.pd-specs-table tr{ border-bottom:1px solid var(--border); }
+.pd-specs-table tr:last-child{ border-bottom:none; }
+.pd-specs-table td{ padding:12px 8px; font-size:13px; }
+.pd-specs-table td:first-child{ color:var(--text-muted); font-weight:600; width:40%; }
+.pd-specs-table td:last-child{ color:var(--text); font-weight:700; }
+.pd-reviews-empty{ text-align:center; padding:32px 16px; color:var(--text-muted); }
+.pd-reviews-empty i{ font-size:40px; opacity:0.2; display:block; margin-bottom:12px; }
+.pd-rating-summary{
+  display:flex; align-items:center; gap:16px; padding:16px;
+  background:#f8fbfd; border-radius:var(--radius-sm); margin-bottom:16px;
+}
+.pd-rating-num{ font-size:36px; font-weight:900; color:var(--primary-dark); line-height:1; }
+
+/* ===== PRODUCT GALLERY THUMBNAILS ===== */
+.pd-gallery-thumbs{
+  display:flex; gap:10px; margin-top:12px; overflow-x:auto; padding-bottom:4px;
+}
+.pd-gallery-thumb{
+  width:64px; height:64px; border-radius:10px; flex-shrink:0; cursor:pointer;
+  border:2px solid var(--border); overflow:hidden; background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+  transition:all 0.2s;
+}
+.pd-gallery-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.pd-gallery-thumb.active{border-color:var(--primary); box-shadow:0 0 0 2px rgba(10,92,138,0.15)}
+.pd-gallery-thumb:hover{border-color:var(--primary-light)}
+
+/* ===== ADMIN EXTRA IMAGES GRID ===== */
+.extra-img-thumb{
+  position:relative; width:100%; aspect-ratio:1; border-radius:10px; overflow:hidden;
+  border:2px solid var(--border); background:#f8fbfd;
+}
+.extra-img-thumb img{width:100%;height:100%;object-fit:cover}
+.extra-img-thumb .remove-extra-btn{
+  position:absolute; top:3px; left:3px; width:20px; height:20px; border-radius:50%;
+  background:rgba(229,62,62,0.9); color:#fff; border:none; cursor:pointer; font-size:10px;
+  display:flex; align-items:center; justify-content:center;
+}
+
 /* Image Upload Preview */
 .img-upload-area {
   border:2px dashed var(--border); border-radius:var(--radius);
@@ -1071,7 +1141,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .logo{order:1}
   .header-actions{order:2; margin-right:0; display:flex; align-items:center; gap:6px}
   body.en .header-actions{margin-left:0}
-  .cart-btn{order:3; flex-shrink:0; margin-top:0; width:36px; height:36px; font-size:14px}
+  .cart-btn{order:3; flex-shrink:0; margin-top:0; width:40px; height:40px; font-size:16px}
   #notifBtn{order:4; flex-shrink:0; margin-inline-start:4px}
   #msgBtn{order:5; flex-shrink:0; margin-inline-start:4px}
   .header-row-break{order:6; flex-basis:100%; height:0}
@@ -1108,9 +1178,6 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
     display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
     overflow:hidden; font-size:14px; margin-bottom:20px;
   }
-  .hero-stats{gap:16px}
-  .hero-stats .stat-num{font-size:20px}
-  .hero-stats .stat-label{font-size:11px}
   .form-row{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
   .modal-footer{flex-direction:column}
@@ -1133,8 +1200,8 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .product-price{font-size:15px}
   .product-old-price{font-size:10px}
   .add-to-cart{width:30px; height:30px; font-size:13px}
-  .product-badge{padding:3px 8px; font-size:9px; top:8px; right:8px}
-  body.en .product-badge{left:8px}
+  .product-badge{padding:3px 26px; font-size:8px; top:9px; right:-24px}
+  body.en .product-badge{right:auto; left:-24px}
 }
 /* ===== ADMIN ORDERS TABLE ===== */
 .admin-orders-wrap{padding:0 28px 28px}
@@ -1449,14 +1516,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           <span data-ar="طلب عرض سعر" data-en="Request a Quote">طلب عرض سعر</span>
         </button>
       </div>
-      <div class="hero-stats">
-        <div class="stat"><span class="stat-num">+2500</span><span class="stat-label" data-ar="منتج طبي" data-en="Medical Products">منتج طبي</span></div>
-        <div class="stat"><span class="stat-num">+850</span><span class="stat-label" data-ar="عيادة عميل" data-en="Clinic Clients">عيادة عميل</span></div>
-        <div class="stat"><span class="stat-num">24h</span><span class="stat-label" data-ar="توصيل سريع" data-en="Fast Delivery">توصيل سريع</span></div>
-        <div class="stat"><span class="stat-num">100%</span><span class="stat-label" data-ar="منتجات أصلية" data-en="Authentic Products">منتجات أصلية</span></div>
-      </div>
-    </div>
-    <div class="hero-visual">🦷</div>
+      
   </div>
 </section>
 
@@ -2411,7 +2471,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <div class="form-group">
           <label class="form-label">
             <i class="fas fa-image" style="color:var(--primary-light)"></i>
-            صورة المنتج (اختياري)
+            الصورة الرئيسية (اختياري)
           </label>
           <div class="img-upload-area" id="imgUploadArea" onclick="triggerImgUpload()">
             <input type="file" id="pImageFile" accept="image/*"
@@ -2427,6 +2487,20 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
                    font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
             <i class="fas fa-trash-alt"></i> حذف الصورة
           </button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-images" style="color:var(--primary-light)"></i>
+          صور إضافية للمعرض (اختياري)
+          <small style="color:var(--text-muted);font-weight:500">— حتى 4 صور تظهر بمعرض الصور بصفحة المنتج</small>
+        </label>
+        <div id="extraImagesGrid" style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:8px"></div>
+        <div class="img-upload-area" id="extraImgUploadArea" onclick="triggerExtraImgUpload()" style="padding:14px">
+          <input type="file" id="pExtraImageFile" accept="image/*"
+            onchange="handleExtraImageUpload(event)" onclick="event.stopPropagation()">
+          <span class="img-upload-icon" style="font-size:22px;margin-bottom:2px;display:block">➕</span>
+          <div class="img-upload-text" style="font-size:12px">إضافة صورة للمعرض</div>
         </div>
       </div>
       <div class="form-row">
@@ -3904,11 +3978,15 @@ function renderProducts() {
         </button>` : ''}
         ${p.points ? `
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:10px;
-                    padding:6px 12px;border-radius:50px;
-                    background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(245,158,11,0.05));
-                    border:1.5px solid rgba(245,158,11,0.35);width:fit-content">
-          <span style="font-size:14px">🏆</span>
-          <span style="font-size:12px;font-weight:800;color:#d97706">
+                    padding:4px 12px 4px 4px;border-radius:50px;
+                    background:linear-gradient(135deg,#fffbeb,#fef3c7);
+                    border:1.5px solid #f59e0b;width:fit-content;
+                    box-shadow:0 2px 6px rgba(245,158,11,0.25)">
+          <span style="width:22px;height:22px;border-radius:50%;
+                       background:linear-gradient(135deg,#f59e0b,#d97706);
+                       display:flex;align-items:center;justify-content:center;
+                       font-size:12px;box-shadow:0 1px 3px rgba(0,0,0,0.15)">🏆</span>
+          <span style="font-size:12px;font-weight:800;color:#92400e">
             ${p.points} ${t('نقطة للشراء','pts to buy')}
           </span>
         </div>` : ''}
@@ -4621,14 +4699,24 @@ function openProductDetail(id, _isRefresh) {
 
   const inCart = cart.find(x => x.id === id);
   const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+  const galleryImages = [p.image, ...(p.images||[])].filter(Boolean);
   const container = document.getElementById('productDetailContent');
   container.innerHTML = `
     <div style="max-width:900px;margin:0 auto;display:grid;grid-template-columns:1fr 1fr;gap:32px">
-      <div class="product-img-wrap" style="height:340px;border-radius:var(--radius)">
-        ${p.badge ? `<div class="product-badge">${t(escHtml(p.badge), p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':escHtml(p.badge))}</div>` : ''}
-        ${p.image
-          ? `<img src="${cldOptimize(p.image, 600)}" alt="${escHtml(p.ar)}" loading="lazy" decoding="async" />`
-          : `<span class="emoji-fallback">${p.icon}</span>`}
+      <div>
+        <div class="product-img-wrap" style="height:340px;border-radius:var(--radius)">
+          ${p.badge ? `<div class="product-badge">${t(escHtml(p.badge), p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':escHtml(p.badge))}</div>` : ''}
+          ${galleryImages.length
+            ? `<img id="pdMainImg" src="${cldOptimize(galleryImages[0], 600)}" alt="${escHtml(p.ar)}" loading="lazy" decoding="async" />`
+            : `<span class="emoji-fallback">${p.icon}</span>`}
+        </div>
+        ${galleryImages.length > 1 ? `
+        <div class="pd-gallery-thumbs">
+          ${galleryImages.map((img,idx) => `
+            <div class="pd-gallery-thumb ${idx===0?'active':''}" onclick="switchGalleryImage(this,'${img}')">
+              <img src="${cldOptimize(img,120)}" loading="lazy">
+            </div>`).join('')}
+        </div>` : ''}
       </div>
       <div>
         <div class="product-name" style="font-size:22px;margin-bottom:8px">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
@@ -4650,13 +4738,6 @@ function openProductDetail(id, _isRefresh) {
           <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
           <span>(${20 + (p.id * 17 % 80)})</span>
         </div>
-        <div style="font-size:13px;color:var(--text-muted);margin-bottom:6px">
-          <strong>${t('الماركة','Brand')}:</strong> ${escHtml(p.brand)}
-        </div>
-        ${p.country ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:14px">
-          <strong>${t('بلد المنشأ','Origin')}:</strong> ${escHtml(p.country)}
-        </div>` : ''}
-        <div class="product-desc" style="font-size:14px;margin-bottom:16px">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
         ${p.points ? `
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;
                     padding:6px 12px;border-radius:50px;
@@ -4685,6 +4766,50 @@ function openProductDetail(id, _isRefresh) {
           <i class="fas ${inCart?'fa-trash-alt':(outOfStock?'fa-ban':'fa-cart-plus')}"></i>
           ${inCart ? t('إزالة من السلة','Remove from cart') : (outOfStock ? t('غير متوفر','Unavailable') : t('أضف للسلة','Add to cart'))}
         </button>
+
+        <div class="pd-tabs">
+          <button class="pd-tab-btn active" id="pdTabBtnDesc" onclick="switchProductTab('desc')">
+            <i class="fas fa-align-right"></i> ${t('الوصف','Description')}
+          </button>
+          <button class="pd-tab-btn" id="pdTabBtnSpecs" onclick="switchProductTab('specs')">
+            <i class="fas fa-list-ul"></i> ${t('المواصفات','Specifications')}
+          </button>
+          <button class="pd-tab-btn" id="pdTabBtnReviews" onclick="switchProductTab('reviews')">
+            <i class="fas fa-star"></i> ${t('التقييمات','Reviews')}
+          </button>
+        </div>
+
+        <div class="pd-tab-panel active" id="pdTabPanelDesc">
+          <div class="product-desc" style="font-size:14px;line-height:1.9">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
+        </div>
+
+        <div class="pd-tab-panel" id="pdTabPanelSpecs">
+          <table class="pd-specs-table">
+            <tr><td>${t('الماركة','Brand')}</td><td>${escHtml(p.brand)}</td></tr>
+            ${p.country ? `<tr><td>${t('بلد المنشأ','Origin')}</td><td>${escHtml(p.country)}</td></tr>` : ''}
+            <tr><td>${t('القسم','Category')}</td><td>${escHtml((categories.find(c=>c.id===p.cat)||{}).ar || p.cat)}</td></tr>
+            <tr><td>${t('وحدة البيع','Sale Unit')}</td><td>${p.unitQty||1} ${escHtml(p.unit||t('قطعة','pc'))}</td></tr>
+            ${p.points ? `<tr><td>${t('نقاط الشراء','Purchase Points')}</td><td>🏆 ${p.points}</td></tr>` : ''}
+            ${(p.stock !== undefined && p.stock !== null) ? `<tr><td>${t('المخزون','Stock')}</td><td>${p.stock}</td></tr>` : ''}
+          </table>
+        </div>
+
+        <div class="pd-tab-panel" id="pdTabPanelReviews">
+          <div class="pd-rating-summary">
+            <div class="pd-rating-num">4.5</div>
+            <div>
+              <div class="product-stars" style="margin-bottom:4px">
+                <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
+              </div>
+              <div style="font-size:12px;color:var(--text-muted)">${20 + (p.id * 17 % 80)} ${t('تقييم','ratings')}</div>
+            </div>
+          </div>
+          <div class="pd-reviews-empty">
+            <i class="fas fa-comment-slash"></i>
+            <div style="font-weight:700;color:var(--text)">${t('لا توجد تقييمات مكتوبة بعد','No written reviews yet')}</div>
+            <div style="font-size:13px;margin-top:4px">${t('كن أول من يشارك تجربته مع هذا المنتج','Be the first to share your experience')}</div>
+          </div>
+        </div>
       </div>
     </div>
   `;
@@ -4697,6 +4822,23 @@ function closeProductDetail() {
   document.getElementById(lastPageBeforeDetail).classList.add('active');
   window.scrollTo(0, lastScrollYBeforeDetail);
   history.replaceState(null, '', window.location.pathname);
+}
+
+function switchProductTab(tab) {
+  const tabs = { desc:'Desc', specs:'Specs', reviews:'Reviews' };
+  Object.keys(tabs).forEach(key => {
+    const btn = document.getElementById(`pdTabBtn${tabs[key]}`);
+    const panel = document.getElementById(`pdTabPanel${tabs[key]}`);
+    if (btn) btn.classList.toggle('active', key === tab);
+    if (panel) panel.classList.toggle('active', key === tab);
+  });
+}
+
+function switchGalleryImage(el, url) {
+  const mainImg = document.getElementById('pdMainImg');
+  if (mainImg) mainImg.src = cldOptimize(url, 600);
+  document.querySelectorAll('.pd-gallery-thumb').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
 }
 
 function getProductShareUrl(id) {
@@ -4767,6 +4909,14 @@ async function notifyPendingOrdersOnLogin() {
 // =====================
 // CART
 // =====================
+function bumpCartIcon() {
+  const btn = document.querySelector('.cart-btn');
+  if (!btn) return;
+  btn.classList.remove('bump');
+  void btn.offsetWidth; // إعادة تشغيل الأنيميشن حتى لو تكرر بسرعة
+  btn.classList.add('bump');
+}
+
 function addToCart(id) {
   const p = products.find(x => x.id === id);
   if (!p) return;
@@ -4784,6 +4934,7 @@ function addToCart(id) {
   showToast(`✅ ${currentLang==='en'?p.en:p.ar} ${t('أُضيف للسلة','added to cart')}`, 'success');
   updateCartUI();
   renderProducts();
+  bumpCartIcon();
   logActivity('add_to_cart', { productId: p.id, productName: p.ar });
 }
 
@@ -6230,6 +6381,63 @@ function resetImageUpload() {
   currentProductImage = null;
   removeProductImage();
 }
+
+// ===== صور إضافية للمعرض =====
+let currentProductExtraImages = [];
+
+function triggerExtraImgUpload() {
+  if (currentProductExtraImages.length >= 4) {
+    showToast('⚠️ الحد الأقصى 4 صور إضافية', 'error');
+    return;
+  }
+  document.getElementById('pExtraImageFile').click();
+}
+
+async function handleExtraImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (currentProductExtraImages.length >= 4) {
+    showToast('⚠️ الحد الأقصى 4 صور إضافية', 'error');
+    event.target.value = '';
+    return;
+  }
+  showToast('⏳ جاري رفع الصورة...', '');
+  try {
+    const url = await uploadToCloudinary(file);
+    currentProductExtraImages.push(url);
+    renderExtraImagesGrid();
+  } catch(e) {
+    showToast('❌ فشل رفع الصورة: ' + e.message, 'error');
+  }
+  event.target.value = '';
+}
+
+function removeExtraImage(idx) {
+  currentProductExtraImages.splice(idx, 1);
+  renderExtraImagesGrid();
+}
+
+function renderExtraImagesGrid() {
+  const grid = document.getElementById('extraImagesGrid');
+  const uploadArea = document.getElementById('extraImgUploadArea');
+  if (!grid) return;
+  grid.innerHTML = currentProductExtraImages.map((url, idx) => `
+    <div class="extra-img-thumb">
+      <img src="${cldOptimize(url,150)}" loading="lazy">
+      <button type="button" class="remove-extra-btn" onclick="removeExtraImage(${idx})"><i class="fas fa-times"></i></button>
+    </div>`).join('');
+  if (uploadArea) uploadArea.style.display = currentProductExtraImages.length >= 4 ? 'none' : 'block';
+}
+
+function loadExtraImages(images) {
+  currentProductExtraImages = Array.isArray(images) ? [...images] : [];
+  renderExtraImagesGrid();
+}
+
+function resetExtraImages() {
+  currentProductExtraImages = [];
+  renderExtraImagesGrid();
+}
 // ===== صورة القسم =====
 let currentCategoryImage = null;
 
@@ -6334,6 +6542,7 @@ function openAddProduct() {
   document.getElementById('pStock').value = '';
   document.getElementById('productFormError').style.display = 'none';
   resetImageUpload();
+  resetExtraImages();
   document.getElementById('productFormModal').classList.add('open');
 }
 
@@ -6358,6 +6567,7 @@ function openEditProduct(id) {
   document.getElementById('pStock').value = (p.stock !== undefined && p.stock !== null) ? p.stock : '';
   document.getElementById('productFormError').style.display = 'none';
   loadImagePreview(p.image || null);
+  loadExtraImages(p.images || []);
   document.getElementById('productFormModal').classList.add('open');
 }
 
@@ -6389,6 +6599,7 @@ async function saveProduct() {
     badge:   document.getElementById('pBadge').value || null,
     country: document.getElementById('pCountry').value.trim() || '',
     image:   currentProductImage || null,
+    images:  currentProductExtraImages.slice(),
     points:  parseInt(document.getElementById('pPoints').value) || 0,
     stock:   document.getElementById('pStock').value === '' ? null : parseInt(document.getElementById('pStock').value),
   };
