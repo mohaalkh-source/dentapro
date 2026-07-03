@@ -183,12 +183,13 @@ body.en .cart-count{right:auto; left:-4px}
 .btn-primary:hover{transform:translateY(-2px); box-shadow:0 10px 28px rgba(0,194,168,0.5)}
 .btn-outline{
   padding:14px 32px; border-radius:50px;
-  background:transparent; color:#fff;
-  border:2px solid rgba(255,255,255,0.4);
-  font-family:inherit; font-size:15px; font-weight:600;
+  background: linear-gradient(135deg, var(--primary-light), var(--primary));
+  color:#fff; border:none;
+  font-family:inherit; font-size:15px; font-weight:700;
   cursor:pointer; transition:all 0.25s; text-decoration:none; display:inline-block;
+  box-shadow:0 6px 20px rgba(10,92,138,0.35);
 }
-.btn-outline:hover{background:rgba(255,255,255,0.1); border-color:rgba(255,255,255,0.7)}
+.btn-outline:hover{transform:translateY(-2px); box-shadow:0 10px 28px rgba(10,92,138,0.45)}
 .hero-stats{display:flex; gap:32px; margin-top:40px; flex-wrap:wrap}
 .stat{text-align:center}
 .stat-num{font-size:28px; font-weight:900; color:var(--accent); display:block}
@@ -1066,15 +1067,15 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 .quick-access-sub{font-size:12px; color:var(--text-muted)}
 /* ===== RESPONSIVE ===== */
 @media(max-width:768px){
-  .header-inner{padding:10px 14px; gap:8px; flex-wrap:wrap}
+  .header-inner{padding:10px 14px; gap:6px; flex-wrap:wrap; align-items:center}
   .logo{order:1}
-  .header-actions{order:2; margin-right:auto}
-  body.en .header-actions{margin-right:0; margin-left:auto}
-  #msgBtn{order:2; flex-shrink:0; margin-inline-start:6px}
-  #notifBtn{order:2; flex-shrink:0; margin-inline-start:6px}
-  .header-row-break{order:3; flex-basis:100%; height:0}
-  .header-search{order:4; flex:1; margin-top:6px}
-  .cart-btn{order:5; flex-shrink:0; margin-top:6px; width:38px; height:38px; font-size:15px}
+  .header-actions{order:2; margin-right:0; display:flex; align-items:center; gap:6px}
+  body.en .header-actions{margin-left:0}
+  .cart-btn{order:3; flex-shrink:0; margin-top:0; width:36px; height:36px; font-size:14px}
+  #notifBtn{order:4; flex-shrink:0; margin-inline-start:4px}
+  #msgBtn{order:5; flex-shrink:0; margin-inline-start:4px}
+  .header-row-break{order:6; flex-basis:100%; height:0}
+  .header-search{order:7; flex:1 1 100%; margin-top:6px}
   #msgBtn, #notifBtn{
     width:38px; height:38px; font-size:15px;
     display:flex; align-items:center; justify-content:center;
@@ -1092,17 +1093,24 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 }
 .lang-btn #langLabel{display:none}
   .auth-btn{min-height:36px}
-  .user-chip{padding:5px 10px 5px 6px; gap:6px}
-  .user-avatar{width:28px; height:28px; font-size:13px}
-  .user-chip-name{max-width:70px; font-size:12px}
-  .user-chip-role{font-size:9px}
+  .user-chip{padding:0; width:36px; height:36px; justify-content:center; border-radius:50%; gap:0}
+  .user-chip-name, .user-chip-role{display:none}
+  .user-chip i.fa-chevron-down{display:none}
+  .user-avatar{width:36px; height:36px; font-size:14px}
   .header-search input{padding:9px 40px 9px 14px; font-size:13px}
   .header-search .search-btn{font-size:14px; right:12px}
   .header-search{max-width:none}
-  .hero{padding:48px 16px}
-  .hero-inner{flex-direction:column; gap:24px}
+  .hero{padding:32px 16px}
+  .hero-inner{flex-direction:column; gap:16px}
   .hero-visual{display:none}
-  .hero-stats{gap:20px}
+  .hero-badge{display:none}
+  .hero p{
+    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    overflow:hidden; font-size:14px; margin-bottom:20px;
+  }
+  .hero-stats{gap:16px}
+  .hero-stats .stat-num{font-size:20px}
+  .hero-stats .stat-label{font-size:11px}
   .form-row{grid-template-columns:1fr}
   .footer-grid{grid-template-columns:1fr 1fr}
   .modal-footer{flex-direction:column}
@@ -1429,10 +1437,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         </button>
         <button class="btn-outline" onclick="openQuoteRequestModal()">
           <span data-ar="طلب عرض سعر" data-en="Request a Quote">طلب عرض سعر</span>
-        </button>
-        <button class="btn-outline" onclick="openUnavailableItemModal()">
-          <i class="fas fa-search"></i>
-          <span data-ar="اطلب مادة غير متوفرة" data-en="Request Unavailable Item">اطلب مادة غير متوفرة</span>
         </button>
       </div>
       <div class="hero-stats">
@@ -2713,7 +2717,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
 
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
         <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="font-size:12px;color:var(--text-muted)">أو</span>
+        <span style="font-size:12px;color:var(--text-muted);font-weight:700">أو اكتب المادة هنا</span>
         <div style="flex:1;height:1px;background:var(--border)"></div>
       </div>
 
@@ -2732,6 +2736,20 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
         <textarea class="form-textarea" id="quoteNotes" maxlength="500" placeholder="مثال: أحتاج توصيل عاجل، أو استفسار عن بديل لهذه المادة..."></textarea>
       </div>
 
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-image" style="color:var(--primary-light)"></i> إرفاق صورة (اختياري)</label>
+        <div id="quoteImgPreviewWrap" style="display:none;margin-bottom:10px;position:relative;width:fit-content">
+          <img id="quoteImgPreview" style="max-width:140px;max-height:140px;border-radius:10px;border:2px solid var(--border);display:block">
+          <button type="button" onclick="clearQuoteImage()" style="position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:11px">✕</button>
+        </div>
+        <div class="img-upload-area" id="quoteImgUploadArea" onclick="triggerQuoteImgUpload()">
+          <input type="file" id="quoteItemImgFile" accept="image/*" onchange="handleQuoteImageSelect(event)" onclick="event.stopPropagation()">
+          <span class="img-upload-icon">📷</span>
+          <div class="img-upload-text">انقر لاختيار صورة</div>
+          <div class="img-upload-hint">PNG، JPG، WEBP — بحد أقصى 5MB</div>
+        </div>
+      </div>
+
       <div id="quoteFormError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
         <i class="fas fa-exclamation-circle"></i> <span id="quoteFormErrorMsg">يرجى إضافة مادة واحدة على الأقل</span>
       </div>
@@ -2742,55 +2760,6 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
     </div>
   </div>
 </div>
-
-<!-- UNAVAILABLE ITEM REQUEST MODAL -->
-<div class="modal-overlay" id="unavailableItemModal">
-  <div class="modal" style="max-width:520px">
-    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
-      <div class="modal-title"><i class="fas fa-search"></i> طلب/استفسار عن مادة غير متوفرة</div>
-      <button class="close-btn" onclick="closeUnavailableItemModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div class="modal-body">
-      <div style="background:#f0f8ff;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:20px;font-size:13px;color:var(--text-muted);display:flex;align-items:flex-start;gap:10px">
-        <i class="fas fa-info-circle" style="color:var(--primary);margin-top:2px"></i>
-        <span>لم تجد المادة التي تبحث عنها؟ اكتب اسمها وأرفق صورة إن توفرت، وسيتواصل معك فريقنا لتوفيرها.</span>
-      </div>
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-box" style="color:var(--primary-light)"></i> اسم المادة <span class="required">*</span></label>
-        <input type="text" class="form-input" id="unavailItemName" placeholder="مثال: قفازات نيتريل مقاس L">
-      </div>
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-hashtag" style="color:var(--primary-light)"></i> الكمية (اختياري)</label>
-        <input type="number" class="form-input" id="unavailItemQty" min="1" placeholder="مثال: 5">
-      </div>
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ملاحظات إضافية (اختياري)</label>
-        <textarea class="form-textarea" id="unavailItemNotes" maxlength="500" placeholder="أي تفاصيل إضافية عن المادة المطلوبة..."></textarea>
-      </div>
-      <div class="form-group">
-        <label class="form-label"><i class="fas fa-image" style="color:var(--primary-light)"></i> إرفاق صورة (اختياري)</label>
-        <div id="unavailImgPreviewWrap" style="display:none;margin-bottom:10px;position:relative;width:fit-content">
-          <img id="unavailImgPreview" style="max-width:140px;max-height:140px;border-radius:10px;border:2px solid var(--border);display:block">
-          <button onclick="clearUnavailableItemImage()" style="position:absolute;top:-8px;left:-8px;width:22px;height:22px;border-radius:50%;background:var(--danger);color:#fff;border:none;cursor:pointer;font-size:11px">✕</button>
-        </div>
-        <div class="img-upload-area" id="unavailImgUploadArea" onclick="triggerUnavailImgUpload()">
-          <input type="file" id="unavailItemImgFile" accept="image/*" onchange="handleUnavailableItemImageSelect(event)" onclick="event.stopPropagation()">
-          <span class="img-upload-icon">📷</span>
-          <div class="img-upload-text">انقر لاختيار صورة</div>
-          <div class="img-upload-hint">PNG، JPG، WEBP — بحد أقصى 5MB</div>
-        </div>
-      </div>
-      <div id="unavailItemError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
-        <i class="fas fa-exclamation-circle"></i> <span id="unavailItemErrorMsg">يرجى كتابة اسم المادة</span>
-      </div>
-    </div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn-back" onclick="closeUnavailableItemModal()">إلغاء</button>
-      <button class="btn-submit" onclick="submitUnavailableItemRequest()"><i class="fas fa-paper-plane"></i> إرسال الطلب</button>
-    </div>
-  </div>
-</div>
-
 <!-- PRICE QUOTE MODAL (ADMIN) -->
 <div class="modal-overlay" id="priceQuoteModal">
   <div class="modal" style="max-width:600px">
@@ -3779,7 +3748,10 @@ function t(ar, en) {
 // =====================
 function renderCategories() {
   const grid = document.getElementById('categoriesGrid');
-  grid.innerHTML = categories.map(c => `
+  const visibleCats = categories.filter(c =>
+    c.id === 'all' || products.filter(p => p.cat === c.id).length > 0
+  );
+  grid.innerHTML = visibleCats.map(c => `
     <div class="cat-card ${currentCat===c.id?'active':''}" onclick="filterCat('${c.id}')">
       ${c.image
         ? `<img src="${cldOptimize(c.image, 80)}" style="width:36px;height:36px;border-radius:8px;object-fit:cover;margin-bottom:12px" loading="lazy" decoding="async">`
@@ -7030,6 +7002,7 @@ function saveBundle() {
 // QUOTE REQUEST (طلب عرض سعر) — CLIENT SIDE
 // =====================
 let currentQuoteItems = [];
+let quotePendingImage = null;
 
 function openQuoteRequestModal() {
   currentQuoteItems = [];
@@ -7041,8 +7014,40 @@ function openQuoteRequestModal() {
   document.getElementById('quoteCustomItemName').value = '';
   document.getElementById('quoteCustomItemQty').value = '';
   document.getElementById('quoteProductDropdown').style.display = 'none';
+  clearQuoteImage();
   renderQuoteItemsList();
   document.getElementById('quoteRequestModal').classList.add('open');
+}
+
+function triggerQuoteImgUpload() {
+  document.getElementById('quoteItemImgFile').click();
+}
+
+function handleQuoteImageSelect(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 5 * 1024 * 1024) {
+    showToast('❌ حجم الصورة يتجاوز 5MB', 'error');
+    return;
+  }
+  quotePendingImage = file;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('quoteImgPreview').src = e.target.result;
+    document.getElementById('quoteImgPreviewWrap').style.display = 'block';
+    document.getElementById('quoteImgUploadArea').style.display = 'none';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearQuoteImage() {
+  quotePendingImage = null;
+  const fileInput = document.getElementById('quoteItemImgFile');
+  const previewWrap = document.getElementById('quoteImgPreviewWrap');
+  const uploadArea = document.getElementById('quoteImgUploadArea');
+  if (fileInput) fileInput.value = '';
+  if (previewWrap) previewWrap.style.display = 'none';
+  if (uploadArea) uploadArea.style.display = 'block';
 }
 
 function getSortedProductsAr() {
@@ -7187,6 +7192,17 @@ async function submitQuoteRequest() {
     return;
   }
 
+  let attachedImageUrl = null;
+  if (quotePendingImage) {
+    showToast('⏳ جاري رفع الصورة...', '');
+    try {
+      attachedImageUrl = await uploadToCloudinary(quotePendingImage);
+    } catch(e) {
+      showErr('فشل رفع الصورة: ' + e.message);
+      return;
+    }
+  }
+
   const ts = Date.now().toString(36).toUpperCase();
   const quoteNum = `QT-${ts}`;
 
@@ -7211,6 +7227,7 @@ async function submitQuoteRequest() {
       };
     }),
     notes: document.getElementById('quoteNotes').value.trim(),
+    attachedImage: attachedImageUrl,
     status: 'pending',
     createdAt: new Date().toISOString(),
   };
@@ -7228,98 +7245,6 @@ async function submitQuoteRequest() {
 // =====================
 // UNAVAILABLE ITEM REQUEST (طلب/استفسار عن مادة غير متوفرة)
 // =====================
-let unavailItemPendingImage = null;
-
-function openUnavailableItemModal() {
-  document.getElementById('unavailItemName').value = '';
-  document.getElementById('unavailItemQty').value = '';
-  document.getElementById('unavailItemNotes').value = '';
-  document.getElementById('unavailItemError').style.display = 'none';
-  clearUnavailableItemImage();
-  document.getElementById('unavailableItemModal').classList.add('open');
-}
-
-function closeUnavailableItemModal() {
-  document.getElementById('unavailableItemModal').classList.remove('open');
-}
-
-function triggerUnavailImgUpload() {
-  document.getElementById('unavailItemImgFile').click();
-}
-
-function handleUnavailableItemImageSelect(event) {
-  const file = event.target.files[0];
-  if (!file) return;
-  if (file.size > 5 * 1024 * 1024) {
-    showToast('❌ حجم الصورة يتجاوز 5MB', 'error');
-    return;
-  }
-  unavailItemPendingImage = file;
-  const reader = new FileReader();
-  reader.onload = e => {
-    document.getElementById('unavailImgPreview').src = e.target.result;
-    document.getElementById('unavailImgPreviewWrap').style.display = 'block';
-    document.getElementById('unavailImgUploadArea').style.display = 'none';
-  };
-  reader.readAsDataURL(file);
-}
-
-function clearUnavailableItemImage() {
-  unavailItemPendingImage = null;
-  const fileInput = document.getElementById('unavailItemImgFile');
-  const previewWrap = document.getElementById('unavailImgPreviewWrap');
-  const uploadArea = document.getElementById('unavailImgUploadArea');
-  if (fileInput) fileInput.value = '';
-  if (previewWrap) previewWrap.style.display = 'none';
-  if (uploadArea) uploadArea.style.display = 'block';
-}
-
-async function submitUnavailableItemRequest() {
-  const showErr = msg => {
-    document.getElementById('unavailItemErrorMsg').textContent = msg;
-    document.getElementById('unavailItemError').style.display = 'block';
-  };
-  const name = document.getElementById('unavailItemName').value.trim();
-  const qty = document.getElementById('unavailItemQty').value.trim();
-  const notes = document.getElementById('unavailItemNotes').value.trim();
-
-  if (!name) return showErr('يرجى كتابة اسم المادة');
-
-  if (!currentUser) {
-    document.getElementById('unavailItemError').style.display = 'none';
-    closeUnavailableItemModal();
-    showToast('🔒 يرجى تسجيل الدخول أولاً لإرسال الطلب', 'error');
-    openAuthModal('login');
-    return;
-  }
-  document.getElementById('unavailItemError').style.display = 'none';
-
-  let imageUrl = null;
-  if (unavailItemPendingImage) {
-    showToast('⏳ جاري رفع الصورة...', '');
-    try {
-      imageUrl = await uploadToCloudinary(unavailItemPendingImage);
-    } catch(e) {
-      showErr('فشل رفع الصورة: ' + e.message);
-      return;
-    }
-  }
-
-  const text =
-    `🔍 طلب/استفسار عن مادة غير متوفرة\n` +
-    `المادة: ${name}` +
-    (qty ? `\nالكمية: ${qty}` : '') +
-    (notes ? `\nملاحظات: ${notes}` : '');
-
-  try {
-    await sendClientMessage(text, imageUrl);
-    closeUnavailableItemModal();
-    showToast('🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً', 'success');
-    showPage('messages');
-  } catch(e) {
-    showErr('حدث خطأ أثناء الإرسال، تحقق من الاتصال');
-  }
-}
 
 function openAddPointsModal(uid, email, name, clinic, currentBalance, mode = 'add') {
   window._pointsMode = mode;
@@ -8139,6 +8064,11 @@ async function renderAdminQuotes() {
         <div>${quoteStatusBadge(q.status)}</div>
       </div>
       <div style="background:#f8fbfd;border-radius:10px;padding:10px 14px">${itemsHtml}</div>
+      ${q.attachedImage ? `
+      <div>
+        <img src="${cldOptimize(q.attachedImage,200)}" onclick="window.open('${q.attachedImage}','_blank')"
+          style="max-width:120px;max-height:120px;border-radius:10px;border:2px solid var(--border);cursor:pointer" title="اضغط لعرض الصورة بالحجم الكامل">
+      </div>` : ''}
       ${q.notes ? `<div style="font-size:13px;color:var(--text-muted);background:#fffbeb;padding:8px 12px;border-radius:8px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>` : ''}
       ${q.status === 'accepted' ? `
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
@@ -8295,6 +8225,12 @@ function showQuoteOrderDetail(docId) {
           <span>${total.toLocaleString()} د.أ</span>
         </div>
       </div>
+      ${q.attachedImage ? `
+      <div style="margin-bottom:12px">
+        <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px"><i class="fas fa-image" style="color:var(--primary-light)"></i> صورة مرفقة من العميل</div>
+        <img src="${cldOptimize(q.attachedImage,400)}" onclick="window.open('${q.attachedImage}','_blank')"
+          style="max-width:220px;max-height:220px;border-radius:12px;border:2px solid var(--border);cursor:pointer" title="اضغط لعرض الصورة بالحجم الكامل">
+      </div>` : ''}
       ${q.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>`:''}
       <div style="margin-top:16px;text-align:center">${statusBadgeHTML(orderStatus)}</div>
       ${trackStepsHTML(orderStatus)}
