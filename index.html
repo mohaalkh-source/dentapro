@@ -53,7 +53,7 @@
   --font-en: 'DM Sans', sans-serif;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-html{scroll-behavior:smooth}
+html{scroll-behavior:smooth; overflow-x:hidden; max-width:100vw}
 body{
   font-family: var(--font-ar);
   background:
@@ -62,7 +62,9 @@ body{
     var(--bg);
   color: var(--text);
   min-height: 100vh;
+  max-width: 100vw;
   overflow-x: hidden;
+  position: relative;
 }
 body.en { font-family: var(--font-en); direction: ltr; text-align: left; }
 body.en [dir="rtl"] { direction: ltr; }
@@ -960,7 +962,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 @media(max-width:768px){
   #productDetailPage .orders-page{padding:14px 12px}
   .product-detail-grid{grid-template-columns:1fr; gap:14px; max-width:100%}
-  .product-detail-img{height:62vh; min-height:300px; border-radius:14px}
+  .product-detail-img{aspect-ratio:1/1; height:auto; max-height:380px; min-height:260px; border-radius:14px}
   .product-detail-grid .product-name{font-size:20px !important}
   .product-detail-grid .product-desc{font-size:15px !important; line-height:1.8}
   .product-detail-grid .product-price{font-size:28px !important}
@@ -1533,7 +1535,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <div class="quick-access-card bundles" onclick="goToOffersFiltered('bundle')">
         <div class="quick-access-icon">🎁</div>
         <div>
-          <div class="quick-access-title"><span data-ar="الباقات" data-en="Bundles">الباقات</span></div>
+          <div class="quick-access-title"><span data-ar="الباقات" data-en="Bundles">عروض الباقات</span></div>
           <div class="quick-access-sub" data-ar="شاهد كل الباقات المتاحة" data-en="View all available bundles">شاهد كل الباقات المتاحة</div>
         </div>
       </div>
