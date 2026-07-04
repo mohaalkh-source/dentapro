@@ -3,6 +3,19 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<script>
+(function(){
+  function fixViewport(){
+    var vp = document.querySelector('meta[name="viewport"]');
+    if (vp && window.innerWidth > 0) {
+      vp.setAttribute('content', 'width=' + window.innerWidth + ', initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover');
+    }
+  }
+  fixViewport();
+  window.addEventListener('resize', fixViewport);
+  document.addEventListener('DOMContentLoaded', fixViewport);
+})();
+</script>
 <title>DentaPro | متجر مستلزمات طب الأسنان</title>
 <meta name="description" content="DentaPro - متجر متخصص في مستلزمات طب الأسنان: أجهزة، أدوات يدوية، مواد طبية، أدوات تعقيم وتقويم وزراعة أسنان. توصيل سريع لعيادات الأسنان.">
 <link rel="alternate" hreflang="ar" href="https://dentapro-db2f6.firebaseapp.com/">
