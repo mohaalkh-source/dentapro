@@ -1131,6 +1131,17 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 .offer-bundle-card{border:2px solid #f59e0b}
 .tier-row{display:flex;gap:8px;align-items:center}
 
+/* ===== OFFER COUNTDOWN ===== */
+.offer-countdown-badge{
+  display:inline-flex; align-items:center; gap:6px;
+  background:linear-gradient(135deg,#fff1f2,#ffe4e6);
+  border:1.5px solid #fecdd3; color:#be123c;
+  padding:5px 14px; border-radius:50px; font-size:12px; font-weight:800;
+  margin:8px 0; width:fit-content;
+}
+.offer-countdown-badge i{font-size:12px}
+.offer-countdown-badge.mini{padding:3px 10px; font-size:11px; margin:6px 0}
+
 /* ===== QUICK ACCESS SHORTCUTS ===== */
 .quick-access-wrap{display:flex;gap:16px;flex-wrap:wrap;margin-top:24px}
 .quick-access-card{
@@ -2686,6 +2697,13 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           <i class="fas fa-plus"></i> إضافة مستوى
         </button>
       </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-clock" style="color:#be123c"></i> تاريخ ووقت انتهاء العرض
+          <small style="color:var(--text-muted);font-weight:500">(اختياري — اتركه فارغاً ليبقى العرض بدون تاريخ انتهاء)</small>
+        </label>
+        <input type="datetime-local" class="form-input" id="qtyOfferExpiry">
+      </div>
       <div id="qtyOfferError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px;background:#fff5f5;border-radius:8px">
         <i class="fas fa-exclamation-circle"></i> <span id="qtyOfferErrorMsg">يرجى ملء الحقول بشكل صحيح</span>
       </div>
@@ -2765,6 +2783,14 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           <label class="form-label"><i class="fas fa-star" style="color:var(--accent2)"></i> نقاط الشراء (اختياري)</label>
           <input type="number" class="form-input" id="bundlePoints" placeholder="مثال: 50" min="0">
         </div>
+      </div>
+
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-clock" style="color:#be123c"></i> تاريخ ووقت انتهاء العرض
+          <small style="color:var(--text-muted);font-weight:500">(اختياري — اتركه فارغاً ليبقى العرض بدون تاريخ انتهاء)</small>
+        </label>
+        <input type="datetime-local" class="form-input" id="bundleExpiry">
       </div>
 
       <div style="background:#f8fbfd;border-radius:10px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;font-size:13px">
@@ -3642,7 +3668,7 @@ document.addEventListener('click', (e) => {
 // OFFERS HELPERS
 // =====================
 function getActiveQtyOffer(productId) {
-  return offers.find(o => o.type === 'qty' && o.active && o.productId === productId) || null;
+  return offers.find(o => o.type === 'qty' && o.active && o.productId === productId && !isOfferExpired(o)) || null;
 }
 
 function getEffectiveUnitPrice(product, qty) {
@@ -3655,6 +3681,56 @@ function getEffectiveUnitPrice(product, qty) {
   if (!best) return product.price;
   return best.price / best.qty;
 }
+
+// ===== OFFER EXPIRY HELPERS =====
+function isOfferExpired(o) {
+  return !!(o.expiresAt && new Date(o.expiresAt) <= new Date());
+}
+
+function toDatetimeLocalValue(iso) {
+  if (!iso) return '';
+  const d = new Date(iso);
+  const pad = n => String(n).padStart(2,'0');
+  return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function formatCountdown(expiresAt) {
+  const diff = new Date(expiresAt) - new Date();
+  if (diff <= 0) return null;
+  const days = Math.floor(diff / 86400000);
+  const hours = Math.floor((diff % 86400000) / 3600000);
+  const minutes = Math.floor((diff % 3600000) / 60000);
+  const seconds = Math.floor((diff % 60000) / 1000);
+  if (days > 0) return `${t('ينتهي خلال','Ends in')} ${days}${t('ي','d')} ${hours}${t('س','h')} ${minutes}${t('د','m')}`;
+  if (hours > 0) return `${t('ينتهي خلال','Ends in')} ${hours}${t('س','h')} ${minutes}${t('د','m')} ${seconds}${t('ث','s')}`;
+  return `${t('ينتهي خلال','Ends in')} ${minutes}${t('د','m')} ${seconds}${t('ث','s')}`;
+}
+
+// يحذف تلقائياً أي عرض انتهى وقته من المصفوفة المحلية ومن Firebase
+function cleanupExpiredOffers() {
+  const before = offers.length;
+  offers = offers.filter(o => !isOfferExpired(o));
+  if (offers.length !== before) {
+    saveOffers();
+    renderOffers();
+    renderProducts();
+    if (document.getElementById('adminPanel')?.classList.contains('open')) renderAdminOffers();
+  }
+}
+
+// يحدّث كل عدّادات الوقت الظاهرة بالصفحة كل ثانية، ويطلق الحذف عند الوصول للصفر
+function tickOfferCountdowns() {
+  document.querySelectorAll('.offer-countdown[data-expires]').forEach(el => {
+    const label = formatCountdown(el.getAttribute('data-expires'));
+    if (label === null) {
+      cleanupExpiredOffers();
+    } else {
+      el.textContent = label;
+    }
+  });
+}
+setInterval(tickOfferCountdowns, 1000);
+setInterval(cleanupExpiredOffers, 30000);
 
 function getBundleOriginalPrice(bundle) {
   return (bundle.items || []).reduce((s, it) => {
@@ -3673,11 +3749,11 @@ function isBundleInStock(bundle) {
 }
 
 function getActiveBundles() {
-  return offers.filter(o => o.type === 'bundle' && o.active && isBundleInStock(o));
+  return offers.filter(o => o.type === 'bundle' && o.active && !isOfferExpired(o) && isBundleInStock(o));
 }
 
 function getActiveQtyOfferProducts() {
-  const activeQtyOffers = offers.filter(o => o.type === 'qty' && o.active);
+  const activeQtyOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o));
   console.log('🔍 عروض الكمية الفعّالة:', activeQtyOffers);
   const result = activeQtyOffers
     .map(o => {
@@ -3709,6 +3785,7 @@ function renderQtyOfferTableHTML(p) {
   return `
   <div style="margin:16px 0;background:#f0f8ff;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:14px">
     <div style="font-weight:800;font-size:14px;color:var(--primary-dark);margin-bottom:10px">🏷️ ${t('عرض الكمية','Quantity Offer')}</div>
+    ${offer.expiresAt ? `<div class="offer-countdown-badge"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${offer.expiresAt}">${formatCountdown(offer.expiresAt)||''}</span></div>` : ''}
     <table style="width:100%;border-collapse:collapse">
       <thead><tr style="font-size:12px;color:var(--text-muted)">
         <th style="padding:6px 10px">${t('الكمية','Qty')}</th>
@@ -4183,6 +4260,7 @@ function renderOffers() {
         <div class="product-name" onclick="openBundleDetail(${b.id})" style="cursor:pointer">${escHtml(currentLang==='en'?b.name_en:b.name_ar)}</div>
         <div style="display:flex;gap:6px;margin:6px 0">${miniIcons}</div>
         <div class="product-desc">${escHtml(currentLang==='en'?(b.desc_en||''):(b.desc_ar||''))}</div>
+        ${b.expiresAt ? `<div class="offer-countdown-badge mini"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${b.expiresAt}">${formatCountdown(b.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
           <div>
             <div class="product-price">${b.bundlePrice.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
@@ -4210,6 +4288,7 @@ function renderOffers() {
       <div class="product-info">
         <div class="product-name" onclick="openProductDetail(${p.id})" style="cursor:pointer">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
         <div class="product-desc">${t('اشتري','Buy')} ${bestTier.qty} ${t('بسعر','for')} ${bestTier.price.toLocaleString()} ${t('د.أ','SAR')} (${t('الوحدة','unit')} ${unitPrice.toFixed(2)} ${t('د.أ','SAR')})</div>
+        ${offer.expiresAt ? `<div class="offer-countdown-badge mini"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${offer.expiresAt}">${formatCountdown(offer.expiresAt)||''}</span></div>` : ''}
         <button class="btn-primary" style="width:100%;padding:9px;font-size:13px" onclick="openProductDetail(${p.id})">${t('شاهد العرض','View Offer')}</button>
       </div>
     </div>`;
@@ -4258,6 +4337,7 @@ function openBundleDetail(id) {
             ${savings>0?`<div style="font-size:13px;font-weight:800;color:var(--success);margin-top:4px">${t('توفير','You save')} ${savings.toLocaleString()} ${t('د.أ','SAR')}</div>`:''}
           </div>
         </div>
+        ${b.expiresAt ? `<div class="offer-countdown-badge"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${b.expiresAt}">${formatCountdown(b.expiresAt)||''}</span></div>` : ''}
         ${b.points?`<div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;padding:6px 12px;border-radius:50px;background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(245,158,11,0.05));border:1.5px solid rgba(245,158,11,0.35);width:fit-content"><span style="font-size:14px">🏆</span><span style="font-size:12px;font-weight:800;color:#d97706">${b.points} ${t('نقطة للشراء','pts to buy')}</span></div>`:''}
         <div style="font-weight:800;font-size:14px;color:var(--primary-dark);margin-bottom:10px">${t('محتويات الباقة','Bundle Contents')}</div>
         <div class="order-items-list" style="margin-bottom:20px">${itemsRows}</div>
@@ -6921,7 +7001,10 @@ function renderAdminOffers() {
           <div style="flex:1;min-width:0">
             <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">🏷️ ${p?p.ar:'منتج محذوف'}</div>
             <div style="margin-top:6px">${tiersHtml}</div>
-            <div style="margin-top:6px"><span style="font-size:11px;font-weight:800;color:${o.active?'#15803d':'#94a3b8'}">${o.active?'● فعّال':'○ متوقف'}</span></div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:11px;font-weight:800;color:${o.active?'#15803d':'#94a3b8'}">${o.active?'● فعّال':'○ متوقف'}</span>
+              ${o.expiresAt ? `<span class="offer-countdown-badge mini" style="margin:0"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${o.expiresAt}">${formatCountdown(o.expiresAt)||''}</span></span>` : ''}
+            </div>
           </div>
         </div>
         <div style="display:flex;gap:8px">
@@ -6946,7 +7029,10 @@ function renderAdminOffers() {
             <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">🎁 ${o.name_ar}</div>
             <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${original.toLocaleString()} ← ${o.bundlePrice.toLocaleString()} د.أ</div>
             <div style="margin-top:4px">${itemsDetailHtml}</div>
-            <div style="margin-top:6px"><span style="font-size:11px;font-weight:800;color:${o.active?'#15803d':'#94a3b8'}">${o.active?'● فعّال':'○ متوقف'}</span></div>
+            <div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+              <span style="font-size:11px;font-weight:800;color:${o.active?'#15803d':'#94a3b8'}">${o.active?'● فعّال':'○ متوقف'}</span>
+              ${o.expiresAt ? `<span class="offer-countdown-badge mini" style="margin:0"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${o.expiresAt}">${formatCountdown(o.expiresAt)||''}</span></span>` : ''}
+            </div>
           </div>
         </div>
         <div style="display:flex;gap:8px">
@@ -6995,6 +7081,7 @@ function openAddQtyOffer() {
   document.getElementById('qtyOfferTitle').innerHTML = '<i class="fas fa-tag"></i> إضافة عرض كمية';
   document.getElementById('qtyOfferId').value = '';
   document.getElementById('qtyOfferError').style.display = 'none';
+  document.getElementById('qtyOfferExpiry').value = '';
   const sel = document.getElementById('qtyOfferProduct');
   sel.innerHTML = products.map(p => `<option value="${p.id}">${p.ar} — ${p.brand}</option>`).join('');
   document.getElementById('qtyTiersList').innerHTML = '';
@@ -7010,6 +7097,7 @@ function openEditQtyOffer(id) {
   document.getElementById('qtyOfferTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل عرض الكمية';
   document.getElementById('qtyOfferId').value = id;
   document.getElementById('qtyOfferProduct').value = o.productId;
+  document.getElementById('qtyOfferExpiry').value = toDatetimeLocalValue(o.expiresAt);
   document.getElementById('qtyTiersList').innerHTML = '';
   (o.tiers || []).forEach(tr => addTierRow(tr.qty, tr.price));
 }
@@ -7036,17 +7124,21 @@ function saveQtyOffer() {
   if (!productId) return showErr('يرجى اختيار منتج');
   if (tiers.length < 1) return showErr('يرجى إضافة مستوى واحد على الأقل بكمية وسعر صحيحين');
 
+  const expiryVal = document.getElementById('qtyOfferExpiry').value;
+  if (expiryVal && new Date(expiryVal) <= new Date()) return showErr('تاريخ الانتهاء يجب أن يكون بالمستقبل');
+  const expiresAt = expiryVal ? new Date(expiryVal).toISOString() : null;
+
   const editId = parseInt(document.getElementById('qtyOfferId').value) || null;
   const existingDup = offers.find(o => o.type === 'qty' && o.productId === productId && o.id !== editId);
   if (existingDup) return showErr('يوجد عرض كمية بالفعل لهذا المنتج');
 
   if (editId) {
     const idx = offers.findIndex(o => o.id === editId);
-    if (idx !== -1) offers[idx] = { ...offers[idx], productId, tiers };
+    if (idx !== -1) offers[idx] = { ...offers[idx], productId, tiers, expiresAt };
     showToast('✅ تم تعديل عرض الكمية', 'success');
   } else {
     const newId = offers.length ? Math.max(...offers.map(o => o.id)) + 1 : 1;
-    offers.push({ id: newId, type: 'qty', productId, tiers, active: true, createdAt: new Date().toISOString() });
+    offers.push({ id: newId, type: 'qty', productId, tiers, expiresAt, active: true, createdAt: new Date().toISOString() });
     showToast('✅ تم إضافة عرض الكمية', 'success');
   }
   saveOffers();
@@ -7185,6 +7277,7 @@ function loadBundleImagePreview(url) {
 function openAddBundle() {
   document.getElementById('bundleModalTitle').innerHTML = '<i class="fas fa-gift"></i> إضافة باقة جديدة';
   document.getElementById('bundleId').value = '';
+  document.getElementById('bundleExpiry').value = '';
   ['bundleNameAr','bundleNameEn','bundleDescAr','bundleDescEn','bundlePrice','bundlePoints'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('bundleError').style.display = 'none';
   currentBundleItems = [];
@@ -7209,6 +7302,7 @@ function openEditBundle(id) {
   document.getElementById('bundleDescEn').value = o.desc_en || '';
   document.getElementById('bundlePrice').value = o.bundlePrice;
   document.getElementById('bundlePoints').value = o.points || '';
+  document.getElementById('bundleExpiry').value = toDatetimeLocalValue(o.expiresAt);
   currentBundleItems = (o.items || []).map(it => ({...it}));
   if (o.image) loadBundleImagePreview(o.image);
   renderBundleItemsList();
@@ -7226,6 +7320,9 @@ function saveBundle() {
   if (!currentBundleItems.length) return showErr('يرجى إضافة منتج واحد على الأقل للباقة');
   if (!bundlePrice || bundlePrice <= 0) return showErr('يرجى إدخال سعر صحيح للباقة');
 
+  const bundleExpiryVal = document.getElementById('bundleExpiry').value;
+  if (bundleExpiryVal && new Date(bundleExpiryVal) <= new Date()) return showErr('تاريخ الانتهاء يجب أن يكون بالمستقبل');
+
   const data = {
     type: 'bundle',
     name_ar, name_en,
@@ -7236,6 +7333,7 @@ function saveBundle() {
     points: parseInt(document.getElementById('bundlePoints').value) || 0,
     image: currentBundleImage || null,
     icon: '🎁',
+    expiresAt: bundleExpiryVal ? new Date(bundleExpiryVal).toISOString() : null,
   };
 
   const editId = parseInt(document.getElementById('bundleId').value) || null;
