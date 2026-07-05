@@ -5832,6 +5832,10 @@ async function sendContactMessage() {
 let pageHistory = ['home'];
 let isBackNavigation = false;
 
+// نضمن وجود حالة أولية في سجل المتصفح تطابق الصفحة الرئيسية
+// بدون هذا، أول ضغطة رجوع لن يكون لها e.state فيتجاوز الكود منطق تأكيد الخروج ويخرج فوراً
+history.replaceState({ page: 'home' }, '', window.location.href);
+
 function goBack() {
   if (pageHistory.length > 1) {
     pageHistory.pop();
