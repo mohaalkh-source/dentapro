@@ -5832,9 +5832,11 @@ async function sendContactMessage() {
 let pageHistory = ['home'];
 let isBackNavigation = false;
 
-// نضمن وجود حالة أولية في سجل المتصفح تطابق الصفحة الرئيسية
-// بدون هذا، أول ضغطة رجوع لن يكون لها e.state فيتجاوز الكود منطق تأكيد الخروج ويخرج فوراً
+// نضمن وجود أكثر من مُدخل واحد في سجل المتصفح عند فتح التطبيق
+// بدون هذا، تطبيقات تغليف WebView تعتبر canGoBack() = false وتغلق التطبيق
+// مباشرة من ضغطة واحدة دون حتى تشغيل الجافاسكربت الخاص بنا
 history.replaceState({ page: 'home' }, '', window.location.href);
+history.pushState({ page: 'home' }, '', window.location.href);
 
 function goBack() {
   if (pageHistory.length > 1) {
