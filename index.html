@@ -5851,17 +5851,7 @@ let _exitConfirmPending = false;
 let _exitConfirmTimer = null;
 
 window.addEventListener('popstate', (e) => {
-  const oldModal = _modalHistoryState.modal;
-  const newModal = (e.state && e.state.modal) ? e.state.modal : null;
-  _modalHistoryState = { modal: newModal };
-
-  // إغلاق النافذة المنبثقة المفتوحة إن وُجدت (له الأولوية دائماً)
-  if (oldModal && oldModal !== newModal && MODAL_BACK_CLOSERS[oldModal]) {
-    MODAL_BACK_CLOSERS[oldModal]();
-    return;
-  }
-
-  if (!newModal && e.state && e.state.page) {
+  if (e.state && e.state.page) {
     const isOnHome = pageHistory.length <= 1 && document.getElementById('homePage').classList.contains('active');
 
     // إذا كنا فعلياً بالصفحة الرئيسية وما في صفحات أخرى بالسجل → فعّل تأكيد الخروج
