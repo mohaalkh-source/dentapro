@@ -90,6 +90,7 @@ body.en [dir="rtl"] { direction: ltr; }
 /* ===== HEADER ===== */
 header{
   position: sticky; top:0; z-index:1000;
+  transition: transform 0.3s ease;
   background: rgba(255,255,255,0.97);
   backdrop-filter: blur(16px);
   border-bottom: 1px solid var(--border);
@@ -9666,6 +9667,25 @@ window._onMessagesUpdate = function() {
     loadAndRenderNotifIcon();
   }
 };
+(function() {
+  let lastScroll = 0;
+  const header = document.querySelector('header');
+  window.addEventListener('scroll', () => {
+    const currentScroll = window.scrollY;
+    if (currentScroll <= 50) {
+      header.style.transform = 'translateY(0)';
+    } else if (currentScroll > lastScroll) {
+      header.style.transform = 'translateY(-100%)';
+    } else {
+      header.style.transform = 'translateY(0)';
+    }
+    lastScroll = currentScroll;
+  }, { passive: true });
+})();
+
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const splash = document.getElementById('splashScreen');
 window.addEventListener('load', () => {
   setTimeout(() => {
     const splash = document.getElementById('splashScreen');
