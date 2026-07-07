@@ -1125,8 +1125,8 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 }
 .add-points-btn:hover { transform: translateY(-1px); }
 /* ===== PAGE SECTIONS HIDE/SHOW ===== */
-.page-section{display:none}
-.page-section.active{display:block}
+.page-section{display:none; opacity:0; transform:translateY(12px); transition:opacity 0.25s ease, transform 0.25s ease}
+.page-section.active{display:block; opacity:1; transform:translateY(0)}
 /* ===== OFFERS ===== */
 .offers-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:20px}
 .offer-bundle-card{border:2px solid #f59e0b}
@@ -1168,7 +1168,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .logo{order:1}
   .header-actions{order:2; margin-right:0; display:flex; align-items:center; gap:6px}
   body.en .header-actions{margin-left:0}
-  .cart-btn{order:3; flex-shrink:0; margin-top:0; width:40px; height:40px; font-size:16px}
+  .cart-btn{display:none}
   #notifBtn{order:4; flex-shrink:0; margin-inline-start:4px}
   #msgBtn{order:5; flex-shrink:0; margin-inline-start:4px}
   .header-row-break{order:6; flex-basis:100%; height:0}
@@ -5964,7 +5964,9 @@ window.addEventListener('popstate', (e) => {
 });
 
 function showPage(page) {
-  document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
+  const current = document.querySelector('.page-section.active');
+  if (current) current.classList.remove('active');
+  document.querySelectorAll('.page-section').forEach(s => { if (s !== current) s.style.display = 'none'; });
   
   // أضيف الصفحة الجديدة للسجل (إذا لم تكن عملية رجوع)
   if (!isBackNavigation && (pageHistory.length === 0 || pageHistory[pageHistory.length - 1] !== page)) {
