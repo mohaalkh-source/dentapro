@@ -1,7 +1,6 @@
 <!DOCTYPE html>
 <html lang="ar" dir="rtl">
 <head>
-  <link rel="manifest" href="manifest.json">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
 <script>
@@ -16,15 +15,6 @@
   window.addEventListener('resize', fixViewport);
   document.addEventListener('DOMContentLoaded', fixViewport);
 })();
-</script>
-  <script>
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/dentapro/sw.js')
-      .then(() => console.log('Service Worker registered'))
-      .catch((err) => console.log('Service Worker registration failed:', err));
-  });
-}
 </script>
 <title>DentaPro | متجر مستلزمات طب الأسنان</title>
 <meta name="description" content="DentaPro - متجر متخصص في مستلزمات طب الأسنان: أجهزة، أدوات يدوية، مواد طبية، أدوات تعقيم وتقويم وزراعة أسنان. توصيل سريع لعيادات الأسنان.">
@@ -1471,6 +1461,29 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
 </script>
 </head>
 <body>
+
+<!-- SPLASH SCREEN -->
+<div id="splashScreen" style="position:fixed;inset:0;z-index:99999;
+  background:linear-gradient(135deg,#063d5e,#0a5c8a,#1a8bbf);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  transition:opacity 0.5s ease, visibility 0.5s ease;">
+  <div style="width:100px;height:100px;border-radius:24px;background:#fff;
+    display:flex;align-items:center;justify-content:center;font-size:48px;
+    box-shadow:0 8px 32px rgba(0,0,0,0.3);margin-bottom:20px;
+    animation:splashPop 0.6s cubic-bezier(0.34,1.56,0.64,1)">🦷</div>
+  <div style="color:#fff;font-size:26px;font-weight:900;letter-spacing:-0.5px">
+    Denta<span style="color:#00c2a8">Pro</span>
+  </div>
+  <div style="color:rgba(255,255,255,0.6);font-size:13px;margin-top:8px">
+    متجر مستلزمات طب الأسنان
+  </div>
+  <div style="width:36px;height:36px;border:3px solid rgba(255,255,255,0.2);
+    border-top-color:#00c2a8;border-radius:50%;margin-top:32px;
+    animation:spin 0.8s linear infinite"></div>
+</div>
+<style>
+@keyframes splashPop{0%{transform:scale(0);opacity:0}100%{transform:scale(1);opacity:1}}
+</style>
 
 <!-- HEADER -->
 <header>
@@ -3011,6 +3024,51 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </div>
   </div>
 </div>
+<!-- BOTTOM NAV BAR -->
+<div id="bottomNavBar" style="position:fixed;bottom:0;left:0;right:0;z-index:1600;
+  background:#fff;border-top:1px solid var(--border);
+  box-shadow:0 -2px 16px rgba(10,92,138,0.08);
+  display:flex;align-items:center;justify-content:space-around;
+  padding:8px 4px calc(8px + env(safe-area-inset-bottom,0)) 4px;">
+
+  <div class="bottom-nav-item" data-page="home" onclick="showPage('home');updateBottomNav('home')"
+    style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+    padding:4px 12px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px">
+    <i class="fas fa-home" style="font-size:19px"></i>
+    <span style="font-size:10px;font-weight:700">الرئيسية</span>
+  </div>
+
+  <div class="bottom-nav-item" data-page="cart" onclick="openCart();updateBottomNav('cart')"
+    style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+    padding:4px 12px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px;position:relative">
+    <i class="fas fa-shopping-cart" style="font-size:19px"></i>
+    <span style="font-size:10px;font-weight:700">السلة</span>
+    <span id="bottomNavCartBadge" style="display:none;position:absolute;top:-2px;left:50%;margin-left:8px;
+      background:var(--accent2);color:#fff;border-radius:50%;width:16px;height:16px;
+      font-size:9px;align-items:center;justify-content:center">0</span>
+  </div>
+
+  <div class="bottom-nav-item" data-page="orders" onclick="openClientOrders();updateBottomNav('orders')"
+    style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+    padding:4px 12px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px">
+    <i class="fas fa-shopping-bag" style="font-size:19px"></i>
+    <span style="font-size:10px;font-weight:700">طلباتي</span>
+  </div>
+
+  <div class="bottom-nav-item" data-page="account" onclick="handleBottomNavAccount();updateBottomNav('account')"
+    style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
+    padding:4px 12px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px">
+    <i class="fas fa-user" style="font-size:19px"></i>
+    <span style="font-size:10px;font-weight:700">حسابي</span>
+  </div>
+</div>
+
+<style>
+.bottom-nav-item i, .bottom-nav-item span { color: var(--text-muted); }
+.bottom-nav-item.active i, .bottom-nav-item.active span { color: var(--primary); }
+body { padding-bottom: 64px; }
+</style>
+
 <!-- TOAST CONTAINER -->
 <div class="toast-container" id="toastContainer"></div>
 
@@ -9606,7 +9664,40 @@ window._onMessagesUpdate = function() {
     loadAndRenderNotifIcon();
   }
 };
+window.addEventListener('load', () => {
+  setTimeout(() => {
+    const splash = document.getElementById('splashScreen');
+    if (splash) {
+      splash.style.opacity = '0';
+      splash.style.visibility = 'hidden';
+      setTimeout(() => splash.remove(), 500);
+    }
+  }, 1200);
+});
 
+function updateBottomNav(page) {
+  document.querySelectorAll('.bottom-nav-item').forEach(el => {
+    el.classList.toggle('active', el.dataset.page === page);
+  });
+}
+function handleBottomNavAccount() {
+  if (currentUser) {
+    isStaff() ? openAdminDirect() : openEditProfile();
+  } else {
+    openAuthModal('login');
+  }
+}
+function syncBottomNavCartBadge() {
+  const badge = document.getElementById('bottomNavCartBadge');
+  if (!badge) return;
+  const count = cart.reduce((s,i) => s + i.qty, 0);
+  badge.style.display = count > 0 ? 'flex' : 'none';
+  badge.textContent = count > 9 ? '9+' : count;
+}
+const _origUpdateCartUI = updateCartUI;
+updateCartUI = function() { _origUpdateCartUI(); syncBottomNavCartBadge(); };
+
+window._onNotificationsUpdate = async function() {
 window._onNotificationsUpdate = async function() {
   if (!currentUser) return;
   const isAdminUser = isStaff();
