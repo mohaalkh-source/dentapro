@@ -5908,6 +5908,93 @@ let _homeGuardArmed = false;
 let _exitWarningShown = false;
 let _exitWarningTimer = null;
 
+// ============================================================
+// [جديد] مكدّس طبقات واجهة المستخدم (مودالات / سلة / لوحة تحكم / إشعارات)
+// الفكرة: أي عنصر من هذه الأنواع يُكتشف تلقائياً عند فتحه أو إغلاقه
+// (عبر MutationObserver) بدون الحاجة لتعديل أي دالة open*/close* موجودة.
+// كل فتح يُسجَّل كـ "طبقة" فوق حالة History الحالية، وزر الرجوع
+// يغلق الطبقة الأعلى فقط بدل الانتقال بين الصفحات أو إغلاق التطبيق.
+// ============================================================
+let uiLayerStack = [];          // {id, el} لكل طبقة مفتوحة حالياً، بترتيب الفتح
+let _pendingHistoryCleanup = false; // يمنع أي popstate ناتج عن تنظيفنا التلقائي للسجل من التسبب بتنقل غير مقصود
+
+// المودالات الثابتة الموجودة أصلاً بالـ HTML (تُغلق بإزالة كلاس open فقط، لا تُحذف من الـ DOM)
+const STATIC_MODAL_IDS = new Set([
+  'orderModal', 'authModal', 'adminPanel', 'productFormModal', 'addPointsModal',
+  'qtyOfferModal', 'bundleModal', 'quoteRequestModal', 'priceQuoteModal',
+  'addCategoryModal', 'deleteConfirmModal'
+]);
+
+// أي عنصر آخر بكلاس modal-overlay (المودالات المُنشأة ديناميكياً بالجافاسكربت مثل
+// تعديل الملف الشخصي، حذف الحساب، سجل العميل، محادثة الأدمن، الرسالة الجماعية)
+// يُغلق فعلياً بحذفه من الـ DOM، لأن هذا هو نفس سلوك أزرار الإغلاق الأصلية فيها.
+
+function isTrackableUIElement(el) {
+  if (!el || !el.classList || !el.id) return false;
+  if (el.id === 'cartSidebar' || el.id === 'notifDropdown') return true;
+  return el.classList.contains('modal-overlay');
+}
+
+function trackUILayerOpen(el) {
+  if (uiLayerStack.some(l => l.id === el.id)) return; // مُسجّلة مسبقاً، تجاهل
+  uiLayerStack.push({ id: el.id, el });
+  // نضيف حالة History "فارغة" فقط لحجز ضغطة الرجوع القادمة لصالح إغلاق هذه الطبقة
+  history.pushState({ uiLayer: el.id }, '', window.location.href);
+}
+
+function trackUILayerClose(el) {
+  const idx = uiLayerStack.findIndex(l => l.id === el.id);
+  if (idx === -1) return; // غير مُسجّلة (أو أُغلقت مسبقاً عبر زر الرجوع نفسه)
+  uiLayerStack.splice(idx, 1);
+  // الإغلاق هنا حصل من واجهة المستخدم (زر X، ضغط خارج المودال، دالة close تلقائية...)
+  // وليس من زر الرجوع الفيزيائي، لذا يجب تنظيف حالة History الزائدة حتى يبقى السجل متزامناً
+  _pendingHistoryCleanup = true;
+  history.back();
+}
+
+// ينفّذ الإغلاق الفعلي لعنصر عندما يكون زر الرجوع هو من طلب الإغلاق
+function closeUILayerElement(el) {
+  if (!el || !document.body.contains(el)) return;
+  if (el.id === 'cartSidebar') { if (typeof closeCart === 'function') closeCart(); return; }
+  if (el.id === 'notifDropdown') { if (typeof closeNotifDropdown === 'function') closeNotifDropdown(); return; }
+  if (STATIC_MODAL_IDS.has(el.id)) { el.classList.remove('open'); return; }
+  // مودال ديناميكي (تم إنشاؤه بالجافاسكربت) → يُحذف من الـ DOM مثل زر إغلاقه تماماً
+  el.remove();
+}
+
+// مراقب عام يكتشف فتح/إغلاق أي طبقة واجهة تلقائياً دون لمس أي كود موجود
+const _uiLayerObserver = new MutationObserver((mutations) => {
+  for (const m of mutations) {
+    if (m.type === 'attributes' && m.attributeName === 'class') {
+      const el = m.target;
+      if (!isTrackableUIElement(el)) continue;
+      const isOpenNow = el.classList.contains('open');
+      const alreadyTracked = uiLayerStack.some(l => l.id === el.id);
+      if (isOpenNow && !alreadyTracked) trackUILayerOpen(el);
+      else if (!isOpenNow && alreadyTracked) trackUILayerClose(el);
+    } else if (m.type === 'childList') {
+      m.addedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        if (isTrackableUIElement(node) && node.classList.contains('open')) trackUILayerOpen(node);
+        if (node.querySelectorAll) {
+          node.querySelectorAll('.modal-overlay.open').forEach(child => trackUILayerOpen(child));
+        }
+      });
+      m.removedNodes.forEach(node => {
+        if (node.nodeType !== 1) return;
+        if (isTrackableUIElement(node)) trackUILayerClose(node);
+        if (node.querySelectorAll) {
+          node.querySelectorAll('.modal-overlay').forEach(child => trackUILayerClose(child));
+        }
+      });
+    }
+  }
+});
+_uiLayerObserver.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true });
+// ============================================================
+// [نهاية الجزء الجديد الخاص بمكدّس الطبقات]
+// ============================================================
+
 function armHomeGuard() {
   // يضيف "حالة حارسة" فوق السجل الحالي — هذي هي اللي تلتقط أول ضغطة رجوع
   // وأنت بجذر الصفحة الرئيسية، فتمنع خروج التطبيق فوراً وتفسح المجال لعرض التنبيه
@@ -5937,6 +6024,22 @@ function updateHeaderBackBtn() {
 
 // معالج زر الرجوع في Android WebView
 window.addEventListener('popstate', (e) => {
+  // [جديد] (1) تجاهل أي popstate ناتج عن تنظيفنا التلقائي للسجل بعد إغلاق طبقة من واجهة المستخدم
+  // (مثلاً: ضغط المستخدم زر X لإغلاق مودال، وليس زر الرجوع الفيزيائي)
+  if (_pendingHistoryCleanup) {
+    _pendingHistoryCleanup = false;
+    return;
+  }
+
+  // [جديد] (2) الأولوية دائماً لإغلاق أعلى طبقة مفتوحة (مودال / سلة / لوحة تحكم / إشعارات)
+  // قبل أي تنقل بين الصفحات أو محاولة الخروج من التطبيق
+  if (uiLayerStack.length > 0) {
+    const layer = uiLayerStack.pop();
+    closeUILayerElement(layer.el);
+    return;
+  }
+
+  // ↓↓↓ من هنا للأسفل: الكود الأصلي بدون أي تغيير ↓↓↓
   // حالة: استُهلكت "الحالة الحارسة" ووصلنا فعلياً لجذر الصفحة الرئيسية (لا صفحات أخرى بالسجل الداخلي)
   if (e.state && e.state.page === 'home' && !e.state.guard && pageHistory.length <= 1) {
     _homeGuardArmed = false;
