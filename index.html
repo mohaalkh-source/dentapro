@@ -9698,7 +9698,6 @@ const _origUpdateCartUI = updateCartUI;
 updateCartUI = function() { _origUpdateCartUI(); syncBottomNavCartBadge(); };
 
 window._onNotificationsUpdate = async function() {
-window._onNotificationsUpdate = async function() {
   if (!currentUser) return;
   const isAdminUser = isStaff();
   _cachedNotifs = await fetchNotificationsFor(currentUser.email, isAdminUser);
