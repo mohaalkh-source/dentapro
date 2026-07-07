@@ -5993,7 +5993,7 @@ const _uiLayerObserver = new MutationObserver((mutations) => {
 });
 _uiLayerObserver.observe(document.body, { attributes: true, attributeFilter: ['class'], subtree: true, childList: true });
 // ============================================================
-// [نهاية الجزء الجديد الخاص بمكدّس الطبقات]
+// [نهاية الجزء الخاص بمكدّس الطبقات]
 // ============================================================
 
 function armHomeGuard() {
@@ -6025,14 +6025,14 @@ function updateHeaderBackBtn() {
 
 // معالج زر الرجوع في Android WebView
 window.addEventListener('popstate', (e) => {
-  // [جديد] (1) تجاهل أي popstate ناتج عن تنظيفنا التلقائي للسجل بعد إغلاق طبقة من واجهة المستخدم
+  // (1) تجاهل أي popstate ناتج عن تنظيفنا التلقائي للسجل بعد إغلاق طبقة من واجهة المستخدم
   // (مثلاً: ضغط المستخدم زر X لإغلاق مودال، وليس زر الرجوع الفيزيائي)
   if (_pendingHistoryCleanup) {
     _pendingHistoryCleanup = false;
     return;
   }
 
-  // [جديد] (2) الأولوية دائماً لإغلاق أعلى طبقة مفتوحة (مودال / سلة / لوحة تحكم / إشعارات)
+  // (2) الأولوية دائماً لإغلاق أعلى طبقة مفتوحة (مودال / سلة / لوحة تحكم / إشعارات)
   // قبل أي تنقل بين الصفحات أو محاولة الخروج من التطبيق
   if (uiLayerStack.length > 0) {
     const layer = uiLayerStack.pop();
@@ -6040,7 +6040,6 @@ window.addEventListener('popstate', (e) => {
     return;
   }
 
-  // ↓↓↓ من هنا للأسفل: الكود الأصلي بدون أي تغيير ↓↓↓
   // حالة: استُهلكت "الحالة الحارسة" ووصلنا فعلياً لجذر الصفحة الرئيسية (لا صفحات أخرى بالسجل الداخلي)
   if (e.state && e.state.page === 'home' && !e.state.guard && pageHistory.length <= 1) {
     _homeGuardArmed = false;
