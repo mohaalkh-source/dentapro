@@ -5965,9 +5965,7 @@ window.addEventListener('popstate', (e) => {
 });
 
 function showPage(page) {
-  const current = document.querySelector('.page-section.active');
-  if (current) current.classList.remove('active');
-  document.querySelectorAll('.page-section').forEach(s => { if (s !== current) s.style.display = 'none'; });
+  document.querySelectorAll('.page-section').forEach(s => { s.classList.remove('active'); s.style.display = ''; });
   
   // أضيف الصفحة الجديدة للسجل (إذا لم تكن عملية رجوع)
   if (!isBackNavigation && (pageHistory.length === 0 || pageHistory[pageHistory.length - 1] !== page)) {
