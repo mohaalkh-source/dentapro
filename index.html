@@ -1392,7 +1392,17 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   window._fbIsOnline   = () => navigator.onLine;
 
   // تفعيل التخزين المحلي (IndexedDB) لتقليل عمليات القراءة المكررة من Firestore
-  try { enableIndexedDbPersistence(db).catch(() => {}); } catch(e) {}
+  try {
+  enableIndexedDbPersistence(db).catch((err) => {
+    if (err.code === 'failed-precondition') {
+      console.warn('⚠️ التخزين المحلي غير مفعّل: التطبيق مفتوح بأكثر من نافذة/تبويب بنفس الوقت');
+    } else if (err.code === 'unimplemented') {
+      console.warn('⚠️ هذا المتصفح/الـ WebView لا يدعم التخزين المحلي (IndexedDB)');
+    } else {
+      console.warn('⚠️ فشل تفعيل التخزين المحلي:', err.message);
+    }
+  });
+} catch(e) { console.warn('⚠️ خطأ تفعيل التخزين المحلي:', e.message); }
 
   let _ordersUnsub = null;
   let _messagesUnsub = null;
