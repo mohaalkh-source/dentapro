@@ -1171,11 +1171,12 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .header-actions{order:2; margin-right:0; display:flex; align-items:center; gap:6px}
   body.en .header-actions{margin-left:0}
   .cart-btn{display:none}
-  #notifBtn{order:4; flex-shrink:0; margin-inline-start:4px}
+  #favBtn{order:4; flex-shrink:0; margin-inline-start:4px}
   #msgBtn{order:5; flex-shrink:0; margin-inline-start:4px}
-  .header-row-break{order:6; flex-basis:100%; height:0}
-  .header-search{order:7; flex:1 1 100%; margin-top:6px}
-  #msgBtn, #notifBtn{
+  #notifBtn{order:6; flex-shrink:0; margin-inline-start:4px}
+  .header-row-break{order:7; flex-basis:100%; height:0}
+  .header-search{order:8; flex:1 1 100%; margin-top:6px}
+  #favBtn, #msgBtn, #notifBtn{
     width:38px; height:38px; font-size:15px;
     display:flex; align-items:center; justify-content:center;
   }
@@ -1530,6 +1531,9 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
        background:#fff;border:1.5px solid var(--border);border-radius:14px;max-height:340px;overflow-y:auto;
        z-index:1500;box-shadow:var(--shadow-lg)"></div>
 </div>
+<button class="notif-btn" id="favBtn" onclick="openFavoritesPage()" title="المفضلة">
+      <i class="fas fa-heart"></i>
+    </button>
     <button class="notif-btn" id="msgBtn" onclick="openClientMessages()" style="display:none" title="تواصل مع الإدارة">
       <i class="fas fa-comment-dots"></i>
       <span class="notif-badge" id="msgBadge" style="display:none">0</span>
@@ -3024,6 +3028,13 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <i class="fas fa-trash-alt"></i> نعم، احذف
       </button>
     </div>
+  </div>
+</div>
+<!-- ACCOUNT MENU MODAL (تُستخدم من زر "حسابي" بالشريط السفلي، بنفس محتوى قائمة الحساب العلوية) -->
+<div class="modal-overlay" id="accountMenuModal" style="align-items:flex-end;padding:0">
+  <div class="modal" style="max-width:100%;width:100%;border-radius:20px 20px 0 0;margin:0">
+    <div style="width:40px;height:4px;background:var(--border);border-radius:50px;margin:12px auto 4px"></div>
+    <div id="accountMenuItems" style="padding:8px 0 calc(8px + env(safe-area-inset-bottom,0))"></div>
   </div>
 </div>
 <!-- BOTTOM NAV BAR -->
@@ -9771,15 +9782,30 @@ window._onMessagesUpdate = function() {
 (function() {
   let lastScroll = 0;
   const header = document.querySelector('header');
+  const bottomNav = document.getElementById('bottomNavBar');
+
+  // إضافة انتقال سلس للشريط السفلي (الشريط العلوي already لديه transition في الـ CSS)
+  if (bottomNav) {
+    bottomNav.style.transition = 'transform 0.3s ease';
+  }
+
   window.addEventListener('scroll', () => {
     const currentScroll = window.scrollY;
+
     if (currentScroll <= 50) {
+      // بالقرب من أعلى الصفحة: أظهر الشريطين دائماً
       header.style.transform = 'translateY(0)';
+      if (bottomNav) bottomNav.style.transform = 'translateY(0)';
     } else if (currentScroll > lastScroll) {
+      // تمرير للأسفل: أخفِ الشريط العلوي للأعلى والسفلي للأسفل
       header.style.transform = 'translateY(-100%)';
+      if (bottomNav) bottomNav.style.transform = 'translateY(100%)';
     } else {
+      // تمرير للأعلى (ولو قليلاً): أظهر الشريطين
       header.style.transform = 'translateY(0)';
+      if (bottomNav) bottomNav.style.transform = 'translateY(0)';
     }
+
     lastScroll = currentScroll;
   }, { passive: true });
 })();
@@ -9800,12 +9826,53 @@ function updateBottomNav(page) {
     el.classList.toggle('active', el.dataset.page === page);
   });
 }
-function handleBottomNavAccount() {
-  if (currentUser) {
-    isStaff() ? openAdminDirect() : openEditProfile();
-  } else {
-    openAuthModal('login');
+// [جديد] محتوى قائمة الحساب — نفس عناصر قائمة user-dropdown العلوية بالضبط
+function accountMenuItemsHTML() {
+  if (!currentUser) return '';
+  if (isStaff()) {
+    return `
+      <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openAdminDirect()">
+        <i class="fas fa-cog" style="color:#e53e3e"></i> لوحة التحكم
+      </button>
+      <div class="user-dropdown-divider"></div>
+      <button class="user-dropdown-item danger" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();doLogout()">
+        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+      </button>`;
   }
+  return `
+    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openClientOrders()">
+      <i class="fas fa-shopping-bag" style="color:var(--primary)"></i> طلباتي
+    </button>
+    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openMyQuotesPage()">
+      <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض أسعاري
+    </button>
+    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openFavoritesPage()">
+      <i class="fas fa-heart" style="color:#e53e3e"></i> المفضلة
+    </button>
+    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openEditProfile()">
+      <i class="fas fa-user-edit" style="color:var(--accent)"></i> تعديل الملف
+    </button>
+    <div class="user-dropdown-divider"></div>
+    <button class="user-dropdown-item danger" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();doLogout()">
+      <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+    </button>
+    <button class="user-dropdown-item danger" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openDeleteAccountModal()">
+      <i class="fas fa-user-times"></i> حذف الحساب نهائياً
+    </button>`;
+}
+
+function openAccountMenu() {
+  document.getElementById('accountMenuItems').innerHTML = accountMenuItemsHTML();
+  document.getElementById('accountMenuModal').classList.add('open');
+}
+function closeAccountMenu() {
+  document.getElementById('accountMenuModal').classList.remove('open');
+}
+
+// [مُعدَّل] زر "حسابي" بالشريط السفلي الآن يفتح نفس القائمة الكاملة بدل تعديل الملف مباشرة
+function handleBottomNavAccount() {
+  if (!currentUser) { openAuthModal('login'); return; }
+  openAccountMenu();
 }
 function syncBottomNavCartBadge() {
   const badge = document.getElementById('bottomNavCartBadge');
