@@ -5543,11 +5543,6 @@ async function submitOrder() {
   const btn = document.getElementById('btnSubmit');
   if (btn.disabled) return; // منع النقر المتكرر أثناء تنفيذ الطلب
 
-  if (!navigator.onLine) {
-    showToast(t('📡 لا يوجد اتصال بالإنترنت، يرجى التحقق من الشبكة والمحاولة مجدداً','📡 No internet connection, please check your network and try again'), 'error');
-    return;
-  }
-
   btn.disabled = true;
   const btnOriginalHTML = btn.innerHTML;
   btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
@@ -5606,37 +5601,14 @@ async function submitOrder() {
   }
   const cleanOrder = stripUndefinedDeep(order);
 
-  // محاولة الحفظ في Firebase — إن فشلت نعيد المحاولة مرة واحدة بعد تأخير بسيط
-  let savedToFirebase = false;
-  let lastError = null;
-  for (let attempt = 1; attempt <= 2; attempt++) {
-    try {
-      await window._fbAddDoc(window._fbOrdersRef(), cleanOrder);
-      savedToFirebase = true;
-      console.log('✅ تم الحفظ في Firebase');
-      break;
-    } catch(e) {
-      lastError = e;
-      console.error(`❌ Firebase error (محاولة ${attempt}):`, e.code || e.message, e);
-      if (attempt === 1) await new Promise(r => setTimeout(r, 1500));
-    }
-  }
-  if (!savedToFirebase && lastError) {
-    showToast('🔍 كود الخطأ: ' + (lastError.code || lastError.message), 'error');
-  }
-
-  // إذا فشل الحفظ في Firebase بعد المحاولتين، لا نُظهر نجاح الطلب
-  // لأن الإدارة لن ترى الطلب أبداً — نحفظه محلياً كنسخة احتياطية فقط ونُعلم العميل بوضوح
-  if (!savedToFirebase) {
-    const local = JSON.parse(localStorage.getItem('dentapro_orders_pending') || '[]');
-    local.unshift(order);
-    localStorage.setItem('dentapro_orders_pending', JSON.stringify(local));
-
-    showToast(t(
-      '❌ تعذّر إرسال طلبك، يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً، أو تواصل معنا عبر واتساب',
-      '❌ Could not send your order, please check your internet connection and try again, or contact us via WhatsApp'
-    ), 'error');
-
+  // مع تفعيل persistentLocalCache، عملية addDoc تنجح فوراً محلياً حتى بدون إنترنت
+  // وتُرسل تلقائياً لـ Firebase بمجرد عودة الاتصال — لا داعي لاعتبارها فشلاً
+  try {
+    await window._fbAddDoc(window._fbOrdersRef(), cleanOrder);
+    console.log(navigator.onLine ? '✅ تم الحفظ في Firebase' : '📦 تم حفظ الطلب محلياً، سيُرسل تلقائياً عند عودة الاتصال');
+  } catch(e) {
+    console.error('❌ Firebase error:', e.code || e.message, e);
+    showToast('🔍 كود الخطأ: ' + (e.code || e.message), 'error');
     btn.disabled = false;
     btn.innerHTML = btnOriginalHTML;
     return;
