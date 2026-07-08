@@ -1340,7 +1340,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch, enableIndexedDbPersistence }
+  import { initializeFirestore, persistentLocalCache, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
            signOut, onAuthStateChanged, updateProfile,
@@ -1358,7 +1358,9 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   };
 
   const app  = initializeApp(firebaseConfig);
-  const db   = getFirestore(app);
+  const db   = initializeFirestore(app, {
+    localCache: persistentLocalCache()
+  });
   const auth = getAuth(app);
 
   window._auth            = auth;
