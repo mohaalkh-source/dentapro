@@ -1337,6 +1337,27 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   color:var(--text); margin-bottom:8px;
 }
 .empty-orders p{font-size:14px}
+
+/* ===== SKELETON LOADING ===== */
+@keyframes skeletonPulse{
+  0%{opacity:1}
+  50%{opacity:0.55}
+  100%{opacity:1}
+}
+.skeleton-block{
+  background:linear-gradient(90deg,#e8f0f6 25%,#f4f8fb 37%,#e8f0f6 63%);
+  background-size:400% 100%;
+  border-radius:8px;
+  animation:skeletonPulse 1.4s ease-in-out infinite;
+}
+.skeleton-order-card{
+  background:#fff; border-radius:18px; border:1px solid var(--border);
+  margin-bottom:20px; padding:22px; overflow:hidden;
+}
+.skeleton-order-card .skeleton-line{height:14px; margin-bottom:10px}
+.skeleton-order-card .skeleton-line.short{width:35%}
+.skeleton-order-card .skeleton-line.medium{width:55%}
+.skeleton-order-card .skeleton-line.long{width:85%}
 </style>
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
@@ -1633,6 +1654,26 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       </button>
     </div>
     <div class="offers-grid" id="offersGrid"></div>
+  </div>
+</section>
+<!-- BEST SELLERS -->
+<section id="bestSellersSection" style="padding:32px 24px 16px;display:none">
+  <div class="section-inner">
+    <div class="section-header" style="text-align:right;margin-bottom:24px">
+      <div class="section-tag" style="background:rgba(229,62,62,0.1);color:#e53e3e">🔥 <span data-ar="الأكثر طلباً" data-en="Top Picks">الأكثر طلباً</span></div>
+      <h2 class="section-title" style="margin-bottom:0"><span data-ar="الأكثر مبيعاً" data-en="Best Sellers">الأكثر مبيعاً</span></h2>
+    </div>
+    <div class="products-grid" id="bestSellersGrid"></div>
+  </div>
+</section>
+<!-- LATEST PRODUCTS -->
+<section id="latestProductsSection" style="padding:32px 24px 16px;display:none">
+  <div class="section-inner">
+    <div class="section-header" style="text-align:right;margin-bottom:24px">
+      <div class="section-tag" style="background:rgba(0,194,168,0.1);color:#00a896">🆕 <span data-ar="جديدنا" data-en="New In">جديدنا</span></div>
+      <h2 class="section-title" style="margin-bottom:0"><span data-ar="آخر المنتجات المضافة" data-en="Latest Arrivals">آخر المنتجات المضافة</span></h2>
+    </div>
+    <div class="products-grid" id="latestProductsGrid"></div>
   </div>
 </section>
 <!-- PRODUCTS -->
@@ -2188,6 +2229,25 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     <button class="btn-primary" onclick="sendContactMessage()">
       <i class="fas fa-paper-plane"></i> إرسال الرسالة
     </button>
+  </div>
+</div>
+
+<!-- ===== ERROR PAGE ===== -->
+<div class="page-section" id="errorPage">
+  <div class="orders-page" style="max-width:760px;text-align:center;padding-top:60px">
+    <div style="font-size:64px;margin-bottom:20px" id="errorPageIcon">⚠️</div>
+    <h2 class="section-title" id="errorPageTitle">حدث خطأ ما</h2>
+    <p style="color:var(--text-muted);font-size:15px;line-height:1.8;margin:16px auto 32px;max-width:420px" id="errorPageMessage">
+      تعذّر تحميل هذه الصفحة. يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً.
+    </p>
+    <div style="display:flex;gap:12px;justify-content:center;flex-wrap:wrap">
+      <button class="btn-primary" id="errorPageRetryBtn" onclick="location.reload()">
+        <i class="fas fa-rotate-right"></i> إعادة المحاولة
+      </button>
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
   </div>
 </div>
 <!-- ===== AUTH MODAL ===== -->
@@ -3138,6 +3198,7 @@ async function loadCategoriesFromFirebase() {
         categories.length = 0;
         list.forEach(c => categories.push(c));
         localStorage.setItem('dentapro_categories', JSON.stringify(categories));
+        clearSearchIndex();
         renderCategories();
         renderProducts();
         console.log('✅ تم تحميل الأقسام من Firebase:', categories.length);
@@ -3150,6 +3211,7 @@ async function loadCategoriesFromFirebase() {
 }
 
 async function saveCategories() {
+  clearSearchIndex();
   try {
     localStorage.setItem('dentapro_categories', JSON.stringify(categories));
   } catch(e) {}
@@ -3258,9 +3320,13 @@ async function loadProductsFromFirebase() {
       await loadProductsLegacyFallback();
     } catch(e2) {
       console.warn('⚠️ Firebase loadProducts (legacy fallback):', e2.message);
-      // لا نُظهر رسالة خطأ إذا كانت المنتجات موجودة محلياً (localStorage)
+      // لا نُظهر شاشة خطأ إذا كانت المنتجات موجودة محلياً (localStorage) — فقط عند عدم وجود أي بيانات نهائياً
       if (!products.length) {
-        showToast('⚠️ تعذّر تحميل المنتجات، تحقق من اتصال الإنترنت', 'error');
+        showErrorPage({
+          icon: '📡',
+          title: 'لا يوجد اتصال بالإنترنت',
+          message: 'تعذّر تحميل المنتجات لعدم توفر اتصال بالإنترنت. تحقق من الشبكة وأعد المحاولة.',
+        });
       }
     }
   }
@@ -3363,6 +3429,7 @@ async function deleteProductFromFirebase(id) {
 // تخزين محلي سريع فقط (لا يلمس Firebase) — يُستخدم بعد كل تعديل لتفادي الوميض عند إعادة فتح الصفحة
 function cacheProductsLocally() {
   try { localStorage.setItem('dentapro_products', JSON.stringify(products)); } catch(e) {}
+  clearSearchIndex();
 }
 
 async function resetProducts() {
@@ -4063,6 +4130,55 @@ function normalizeArabic(str) {
     .replace(/[ًٌٍَُِّْ]/g, '') // إزالة التشكيل
     .trim();
 }
+// ===== SEARCH INDEX (فهرسة مخزّنة لتسريع البحث في الكتالوجات الكبيرة) =====
+let _searchIndexCache = {};
+
+function clearSearchIndex() {
+  _searchIndexCache = {};
+}
+
+function getProductSearchIndex(p) {
+  let idx = _searchIndexCache[p.id];
+  if (idx) return idx;
+  const cat = categories.find(c => c.id === p.cat);
+  idx = {
+    nameAr: normalizeArabic(p.ar),
+    nameEn: (p.en || '').toLowerCase(),
+    brandAr: normalizeArabic(p.brand),
+    brandEn: (p.brand || '').toLowerCase(),
+    catAr: normalizeArabic(cat ? cat.ar : ''),
+    catEn: (cat ? cat.en : '').toLowerCase(),
+  };
+  _searchIndexCache[p.id] = idx;
+  return idx;
+}
+
+function productMatchesQuery(p, rawQuery) {
+  const terms = rawQuery.trim().split(/\s+/).filter(Boolean);
+  if (!terms.length) return 1;
+  const idx = getProductSearchIndex(p);
+  let score = 0;
+  for (const term of terms) {
+    const normT = normalizeArabic(term);
+    const lowerT = term.toLowerCase();
+    if (idx.nameAr.includes(normT) || idx.nameEn.includes(lowerT)) score += 10;
+    else if (idx.brandAr.includes(normT) || idx.brandEn.includes(lowerT)) score += 5;
+    else if (idx.catAr.includes(normT) || idx.catEn.includes(lowerT)) score += 3;
+    else return 0;
+  }
+  const fullNorm = normalizeArabic(rawQuery);
+  const fullLower = rawQuery.trim().toLowerCase();
+  if (idx.nameAr.startsWith(fullNorm) || idx.nameEn.startsWith(fullLower)) score += 50;
+  return score;
+}
+
+function debounce(fn, wait) {
+  let timer;
+  return function(...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
 
 function populateBrandFilter() {
   const sel = document.getElementById('filterBrand');
@@ -4084,54 +4200,10 @@ function clearFilters() {
   renderProducts();
 }
 
-function renderProducts() {
-  populateBrandFilter();
-
-  let list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
-  const searchValRaw = document.getElementById('searchInput').value;
-  const searchVal = normalizeArabic(searchValRaw);
-  let filtered = searchVal ? list.filter(p =>
-    normalizeArabic(p.ar).includes(searchVal) ||
-    p.en.toLowerCase().includes(searchValRaw.toLowerCase()) ||
-    normalizeArabic(p.brand).includes(searchVal)
-  ) : list;
-
-  // فلتر السعر
-  const priceMin = parseFloat(document.getElementById('filterPriceMin')?.value);
-  const priceMax = parseFloat(document.getElementById('filterPriceMax')?.value);
-  if (!isNaN(priceMin)) filtered = filtered.filter(p => p.price >= priceMin);
-  if (!isNaN(priceMax)) filtered = filtered.filter(p => p.price <= priceMax);
-
-  // فلتر الماركة
-  const brandVal = document.getElementById('filterBrand')?.value;
-  if (brandVal && brandVal !== 'all') filtered = filtered.filter(p => p.brand === brandVal);
-
-  // فلتر التوفر بالمخزون
-  const inStockOnly = document.getElementById('filterInStock')?.checked;
-  if (inStockOnly) filtered = filtered.filter(p => !(p.stock !== undefined && p.stock !== null && p.stock <= 0));
-
-  const sortVal = document.getElementById('sortSelect')?.value || 'default';
-  if (sortVal === 'price_asc')    filtered = [...filtered].sort((a,b) => a.price - b.price);
-  if (sortVal === 'price_desc')   filtered = [...filtered].sort((a,b) => b.price - a.price);
-  if (sortVal === 'newest')       filtered = [...filtered].sort((a,b) => b.id - a.id);
-  if (sortVal === 'bestselling')  filtered = [...filtered].sort((a,b) => (b.badge==='الأكثر مبيعاً'?1:0) - (a.badge==='الأكثر مبيعاً'?1:0));
-
-  const countEl = document.getElementById('filterResultsCount');
-  if (countEl) countEl.textContent = `${filtered.length} ${t('نتيجة','results')}`;
-
-  const grid = document.getElementById('productsGrid');
-  const loadMoreBtn = document.getElementById('loadMoreBtn');
-  if (!filtered.length) {
-    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)"><i class="fas fa-search" style="font-size:48px;opacity:0.3;margin-bottom:16px;display:block"></i>${t('لا توجد نتائج','No results found')}</div>`;
-    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
-    return;
-  }
-  const visibleProducts = filtered.slice(0, productsDisplayLimit);
-  if (loadMoreBtn) loadMoreBtn.style.display = (filtered.length > productsDisplayLimit) ? 'inline-block' : 'none';
-  grid.innerHTML = visibleProducts.map(p => {
-    const inCart = cart.find(c => c.id === p.id);
-    const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
-    return `
+function productCardHTML(p) {
+  const inCart = cart.find(c => c.id === p.id);
+  const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+  return `
     <div class="product-card">
       <button class="compare-toggle-btn ${isInCompare(p.id)?'active':''}"
         onclick="toggleCompare(${p.id})" title="${t('أضف للمقارنة','Add to compare')}">
@@ -4194,18 +4266,120 @@ function renderProducts() {
         </div>
       </div>
     </div>`;
-  }).join('');
+}
+
+function renderProducts() {
+  populateBrandFilter();
+
+  let list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
+  const searchValRaw = document.getElementById('searchInput').value.trim();
+  let filtered = list;
+  let searchScores = null;
+  if (searchValRaw) {
+    searchScores = {};
+    filtered = list.filter(p => {
+      const score = productMatchesQuery(p, searchValRaw);
+      if (score > 0) { searchScores[p.id] = score; return true; }
+      return false;
+    });
+  }
+
+  const priceMin = parseFloat(document.getElementById('filterPriceMin')?.value);
+  const priceMax = parseFloat(document.getElementById('filterPriceMax')?.value);
+  if (!isNaN(priceMin)) filtered = filtered.filter(p => p.price >= priceMin);
+  if (!isNaN(priceMax)) filtered = filtered.filter(p => p.price <= priceMax);
+
+  const brandVal = document.getElementById('filterBrand')?.value;
+  if (brandVal && brandVal !== 'all') filtered = filtered.filter(p => p.brand === brandVal);
+
+  const inStockOnly = document.getElementById('filterInStock')?.checked;
+  if (inStockOnly) filtered = filtered.filter(p => !(p.stock !== undefined && p.stock !== null && p.stock <= 0));
+
+  const sortVal = document.getElementById('sortSelect')?.value || 'default';
+  if (sortVal === 'price_asc')    filtered = [...filtered].sort((a,b) => a.price - b.price);
+  if (sortVal === 'price_desc')   filtered = [...filtered].sort((a,b) => b.price - a.price);
+  if (sortVal === 'newest')       filtered = [...filtered].sort((a,b) => b.id - a.id);
+  if (sortVal === 'bestselling')  filtered = [...filtered].sort((a,b) => (b.badge==='الأكثر مبيعاً'?1:0) - (a.badge==='الأكثر مبيعاً'?1:0));
+  if (sortVal === 'default' && searchScores) {
+    filtered = [...filtered].sort((a,b) => (searchScores[b.id]||0) - (searchScores[a.id]||0));
+  }
+  if (sortVal === 'default' && !searchScores) {
+    const isOut = p => (p.stock !== undefined && p.stock !== null && p.stock <= 0) ? 1 : 0;
+    filtered = [...filtered].sort((a,b) => isOut(a) - isOut(b));
+  }
+
+  const countEl = document.getElementById('filterResultsCount');
+  if (countEl) countEl.textContent = `${filtered.length} ${t('نتيجة','results')}`;
+
+  const grid = document.getElementById('productsGrid');
+  const loadMoreBtn = document.getElementById('loadMoreBtn');
+  if (!filtered.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)"><i class="fas fa-search" style="font-size:48px;opacity:0.3;margin-bottom:16px;display:block"></i>${t('لا توجد نتائج','No results found')}</div>`;
+    if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+    renderBestSellers();
+    renderLatestProducts();
+    return;
+  }
+  const visibleProducts = filtered.slice(0, productsDisplayLimit);
+  if (loadMoreBtn) loadMoreBtn.style.display = (filtered.length > productsDisplayLimit) ? 'inline-block' : 'none';
+  grid.innerHTML = visibleProducts.map(p => productCardHTML(p)).join('');
+  renderBestSellers();
+  renderLatestProducts();
+}
+
+function renderBestSellers() {
+  const section = document.getElementById('bestSellersSection');
+  const grid = document.getElementById('bestSellersGrid');
+  if (!section || !grid) return;
+  const items = products.filter(p => p.badge === 'الأكثر مبيعاً').slice(0, 8);
+  if (!items.length) { section.style.display = 'none'; return; }
+  section.style.display = 'block';
+  grid.innerHTML = items.map(p => productCardHTML(p)).join('');
+}
+
+function renderLatestProducts() {
+  const section = document.getElementById('latestProductsSection');
+  const grid = document.getElementById('latestProductsGrid');
+  if (!section || !grid) return;
+  if (!products.length) { section.style.display = 'none'; return; }
+  const items = [...products]
+    .sort((a,b) => {
+      const da = a.createdAt ? new Date(a.createdAt).getTime() : a.id;
+      const db = b.createdAt ? new Date(b.createdAt).getTime() : b.id;
+      return db - da;
+    })
+    .slice(0, 8);
+  section.style.display = 'block';
+  grid.innerHTML = items.map(p => productCardHTML(p)).join('');
+}
+
+function renderSimilarProducts(product) {
+  const wrap = document.getElementById('similarProductsWrap');
+  const grid = document.getElementById('similarProductsGrid');
+  if (!wrap || !grid) return;
+  const sameCat = products.filter(p => p.id !== product.id && p.cat === product.cat);
+  let items = sameCat.slice(0, 6);
+  if (items.length < 4) {
+    const sameBrand = products.filter(p =>
+      p.id !== product.id && p.brand === product.brand && !items.find(i => i.id === p.id)
+    );
+    items = items.concat(sameBrand).slice(0, 6);
+  }
+  if (!items.length) { wrap.style.display = 'none'; return; }
+  wrap.style.display = 'block';
+  grid.innerHTML = items.map(p => productCardHTML(p)).join('');
 }
 
 document.addEventListener('DOMContentLoaded', () => {
   const searchEl = document.getElementById('searchInput');
   const searchBtnEl = document.querySelector('.header-search .search-btn');
   if (searchEl) {
-    searchEl.addEventListener('input', () => {
+    const debouncedSearchUpdate = debounce(() => {
       productsDisplayLimit = PRODUCTS_PAGE_SIZE;
       renderProducts();
       renderSearchSuggestions();
-    });
+    }, 120);
+    searchEl.addEventListener('input', debouncedSearchUpdate);
     searchEl.addEventListener('focus', renderSearchSuggestions);
     searchEl.addEventListener('keydown', (e) => {
       if (e.key === 'Enter') {
@@ -4240,12 +4414,13 @@ function renderSearchSuggestions() {
   const raw = inputEl.value.trim();
   if (!raw) { box.style.display = 'none'; return; }
 
-  const term = normalizeArabic(raw);
-  const matches = products.filter(p =>
-    normalizeArabic(p.ar).includes(term) ||
-    p.en.toLowerCase().includes(raw.toLowerCase()) ||
-    normalizeArabic(p.brand).includes(term)
-  ).slice(0, 8);
+  const scored = [];
+  for (const p of products) {
+    const score = productMatchesQuery(p, raw);
+    if (score > 0) scored.push({ p, score });
+  }
+  scored.sort((a,b) => b.score - a.score);
+  const matches = scored.slice(0, 8).map(s => s.p);
 
   if (!matches.length) {
     box.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px">
@@ -5005,9 +5180,17 @@ function openProductDetail(id, _isRefresh) {
         </div>
       </div>
     </div>
+    <div id="similarProductsWrap" style="display:none;margin-top:40px;max-width:1100px">
+      <div class="section-header" style="text-align:right;margin-bottom:20px">
+        <div class="section-tag">✨ <span data-ar="قد يعجبك أيضاً" data-en="You May Also Like">قد يعجبك أيضاً</span></div>
+        <h2 class="section-title" style="margin-bottom:0;font-size:20px"><span data-ar="منتجات مشابهة" data-en="Similar Products">منتجات مشابهة</span></h2>
+      </div>
+      <div class="products-grid" id="similarProductsGrid"></div>
+    </div>
   `;
   if (!_isRefresh) showPage('productDetail');
   if (!_isRefresh) history.replaceState(null, '', getProductShareUrl(id));
+  renderSimilarProducts(p);
 }
 
 function closeProductDetail() {
@@ -5608,7 +5791,7 @@ async function submitOrder() {
     console.log(navigator.onLine ? '✅ تم الحفظ في Firebase' : '📦 تم حفظ الطلب محلياً، سيُرسل تلقائياً عند عودة الاتصال');
   } catch(e) {
     console.error('❌ Firebase error:', e.code || e.message, e);
-    showToast('🔍 كود الخطأ: ' + (e.code || e.message), 'error');
+    showToast('❌ تعذّر إرسال الطلب، تحقق من اتصال الإنترنت وحاول مجدداً', 'error');
     btn.disabled = false;
     btn.innerHTML = btnOriginalHTML;
     return;
@@ -6101,7 +6284,34 @@ function showPage(page) {
     document.getElementById('messagesPage').classList.add('active');
     window.scrollTo(0, 0);
     renderClientMessagesThread();
+  } else if (page === 'error') {
+    document.getElementById('errorPage').classList.add('active');
+    window.scrollTo(0, 0);
   }
+}
+
+function showErrorPage(options = {}) {
+  const icon    = options.icon    || '⚠️';
+  const title   = options.title   || 'حدث خطأ ما';
+  const message = options.message || 'تعذّر تحميل هذه الصفحة. يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً.';
+
+  document.getElementById('errorPageIcon').textContent = icon;
+  document.getElementById('errorPageTitle').textContent = title;
+  document.getElementById('errorPageMessage').textContent = message;
+  showPage('error');
+}
+
+function skeletonOrderCardsHTML(count = 3) {
+  let html = '';
+  for (let i = 0; i < count; i++) {
+    html += `
+    <div class="skeleton-order-card">
+      <div class="skeleton-block skeleton-line medium"></div>
+      <div class="skeleton-block skeleton-line short"></div>
+      <div class="skeleton-block skeleton-line long" style="margin-top:16px;height:60px;border-radius:12px"></div>
+    </div>`;
+  }
+  return html;
 }
 // =====================
 // AUTH SYSTEM
@@ -6512,7 +6722,13 @@ function renderAdminTable() {
 
   const tbody = document.getElementById('adminTableBody');
   if (!list.length) {
-    tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;padding:40px;color:#5a7a90;font-size:15px">لا توجد منتجات</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="6" style="padding:0">
+      <div class="empty-orders" style="padding:48px 24px">
+        <i class="fas fa-box-open"></i>
+        <h3>لا توجد منتجات مطابقة</h3>
+        <p>جرّب تغيير كلمة البحث أو الفئة المحددة</p>
+      </div>
+    </td></tr>`;
     return;
   }
 
@@ -7959,11 +8175,7 @@ function openClientOrders() {
 }
 async function renderClientOrders() {
   const container = document.getElementById('clientOrdersList');
-  container.innerHTML = `
-    <div style="text-align:center;padding:40px;color:var(--text-muted)">
-      <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>
-      جاري تحميل طلباتك...
-    </div>`;
+  container.innerHTML = skeletonOrderCardsHTML(3);
 
   try {
     // انتظر حتى يصبح Firebase جاهزاً
@@ -8054,8 +8266,11 @@ async function renderClientOrders() {
   } catch(e) {
     console.error(e);
     container.innerHTML = `
-      <div style="text-align:center;padding:32px;color:var(--danger)">
-        خطأ في تحميل الطلبات
+      <div class="empty-orders">
+        <i class="fas fa-triangle-exclamation" style="color:var(--danger)"></i>
+        <h3>تعذّر تحميل الطلبات</h3>
+        <p>يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً</p>
+        <button class="btn-primary" style="margin-top:16px" onclick="renderClientOrders()">إعادة المحاولة</button>
       </div>`;
   }
 }
