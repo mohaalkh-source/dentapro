@@ -2358,51 +2358,21 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         </div>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
-        <button onclick="openAddProduct()" style="padding:9px 20px;border-radius:50px;background:#00c2a8;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
-          <i class="fas fa-plus"></i> إضافة منتج
-        </button>
-        <button onclick="openAddCategory()" style="padding:9px 20px;border-radius:50px;background:rgba(255,255,255,0.15);color:#fff;border:2px solid rgba(255,255,255,0.25);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.25)'" onmouseout="this.style.background='rgba(255,255,255,0.15)'">
-          <i class="fas fa-folder-plus"></i> إضافة قسم
-        </button>
-        <button id="adminResetBtn" onclick="resetProducts()" style="padding:9px 20px;border-radius:50px;background:rgba(229,62,62,0.2);color:#fff;border:2px solid rgba(229,62,62,0.4);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(229,62,62,0.35)'" onmouseout="this.style.background='rgba(229,62,62,0.2)'" title="إعادة تعيين المنتجات للبيانات الأصلية">
-          <i class="fas fa-undo"></i> إعادة تعيين
-        </button>
         <button onclick="closeAdmin()" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;border:2px solid rgba(255,255,255,0.2);cursor:pointer;font-size:15px">
           <i class="fas fa-times"></i>
         </button>
       </div>
     </div>
-<!-- Admin Nav Tabs -->
-    <div style="display:flex;gap:0;padding:0 28px;margin-top:20px;border-bottom:2px solid #e2eaf0">
-      <button onclick="switchAdminTab('products')" id="adminTabProducts"
-        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--primary);border-bottom:3px solid var(--primary);margin-bottom:-2px;transition:all 0.2s">
-        <i class="fas fa-box"></i> المنتجات
+    <!-- Products Tab Toolbar -->
+    <div id="adminProductsToolbar" style="padding:20px 28px 0;display:flex;gap:10px;flex-wrap:wrap">
+      <button onclick="openAddProduct()" style="padding:9px 20px;border-radius:50px;background:#00c2a8;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
+        <i class="fas fa-plus"></i> إضافة منتج
       </button>
-      <button onclick="switchAdminTab('orders')" id="adminTabOrders"
-        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
-        <i class="fas fa-clipboard-list"></i> الطلبات <span id="adminOrdersBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
-      </button>
-      <button onclick="switchAdminTab('points')" id="adminTabPoints"
-        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
-        <i class="fas fa-star" style="color:#f59e0b"></i> النقاط
-      </button>
-      <button onclick="switchAdminTab('offers')" id="adminTabOffers"
-        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
-        <i class="fas fa-gift" style="color:#f59e0b"></i> العروض
-      </button>
-      <button onclick="switchAdminTab('quotes')" id="adminTabQuotes"
-        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
-        <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض الأسعار <span id="adminQuotesBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
-      </button>
-      <button onclick="switchAdminTab('messages')" id="adminTabMessages"
-        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
-        <i class="fas fa-comment-dots" style="color:#0a5c8a"></i> الرسائل <span id="adminMsgBadge" style="background:#e53e3e;color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;margin-right:4px"></span>
-      </button>
-      <button onclick="switchAdminTab('roles')" id="adminTabRoles"
-        style="padding:11px 22px;background:none;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;color:var(--text-muted);border-bottom:3px solid transparent;margin-bottom:-2px;transition:all 0.2s">
-        <i class="fas fa-user-shield" style="color:#e53e3e"></i> الصلاحيات
+      <button onclick="openAddCategory()" style="padding:9px 20px;border-radius:50px;background:#0a5c8a;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px">
+        <i class="fas fa-folder-plus"></i> إضافة قسم
       </button>
     </div>
+
     <!-- Stats Bar -->
     <div style="display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;padding:24px 28px 0">
       <div style="background:#fff;border-radius:14px;padding:20px;border:1px solid #e2eaf0;text-align:center">
@@ -3430,54 +3400,6 @@ async function deleteProductFromFirebase(id) {
 function cacheProductsLocally() {
   try { localStorage.setItem('dentapro_products', JSON.stringify(products)); } catch(e) {}
   clearSearchIndex();
-}
-
-async function resetProducts() {
-  if (!isAdmin()) { showToast('⛔ هذا الإجراء خاص بمدير النظام فقط', 'error'); return; }
-  if (!confirm('هل أنت متأكد؟ سيتم حذف كل المنتجات الحالية في Firebase والعودة للمنتجات الأصلية. هذا الإجراء لا يمكن التراجع عنه.')) return;
-
-  const password = prompt('🔒 لتأكيد هذا الإجراء الحساس، أدخل كلمة مرور حساب الأدمن:');
-  if (!password) { showToast('❌ تم إلغاء العملية', 'error'); return; }
-
-  try {
-    const { signInWithEmailAndPassword } = await import("https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js");
-    await signInWithEmailAndPassword(window._auth, ADMIN_EMAIL, password);
-  } catch(e) {
-    showToast('❌ كلمة المرور غير صحيحة، تم إلغاء العملية', 'error');
-    return;
-  }
-
-  if (!navigator.onLine) { showToast('📡 لا يوجد اتصال بالإنترنت، حاول مجدداً', 'error'); return; }
-
-  try {
-    showToast('🔄 جارٍ إعادة التعيين...', '');
-    await ensureAllProductsLoaded();
-    const idsToDelete = products.map(p => String(p.id));
-    for (let i = 0; i < idsToDelete.length; i += 400) {
-      const batch = window._fbWriteBatch();
-      idsToDelete.slice(i, i + 400).forEach(id => batch.delete(window._fbDoc2('products', id)));
-      await batch.commit();
-    }
-    for (let i = 0; i < DEFAULT_PRODUCTS.length; i += 400) {
-      const batch2 = window._fbWriteBatch();
-      DEFAULT_PRODUCTS.slice(i, i + 400).forEach(p => batch2.set(window._fbDoc2('products', String(p.id)), p));
-      await batch2.commit();
-    }
-
-    localStorage.removeItem('dentapro_products');
-    products.length = 0;
-    DEFAULT_PRODUCTS.forEach(p => products.push({...p}));
-    _productsLastDoc = null; _productsAllLoaded = true; _productsCollectionReady = true;
-    cacheProductsLocally();
-    updateAdminStats();
-    renderAdminTable();
-    renderProducts();
-    renderCategories();
-    showToast('✅ تم إعادة تعيين المنتجات بنجاح', 'success');
-  } catch(e) {
-    console.error('resetProducts:', e.message);
-    showToast('❌ حدث خطأ أثناء إعادة التعيين، حاول مجدداً: ' + e.message, 'error');
-  }
 }
 
 let products = loadProducts();
@@ -6407,6 +6329,20 @@ function renderAuthHeader() {
   const avatarBg = isAdminRole ? 'linear-gradient(135deg,#e53e3e,#c53030)' : (isManagerRole ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,#0a5c8a,#00c2a8)');
   const avatarIcon = isAdminRole ? '🔧' : (isManagerRole ? '🗂️' : '👤');
   const roleLabel = isAdminRole ? 'مدير النظام' : (isManagerRole ? 'مدير فرعي' : 'عميل');
+
+  if (staff) {
+    // للأدمن/المدير: عرض فقط (اسم + دور) بدون قائمة منسدلة — كل الإجراءات صارت من "حسابي" بالشريط السفلي
+    area.innerHTML = `
+      <div class="user-chip" style="cursor:default">
+        <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
+        <div>
+          <div class="user-chip-name">${currentUser.name}</div>
+          <div class="user-chip-role">${roleLabel}</div>
+        </div>
+      </div>`;
+    return;
+  }
+
   area.innerHTML = `
     <div class="user-chip" tabindex="0">
       <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
@@ -6416,11 +6352,6 @@ function renderAuthHeader() {
       </div>
       <i class="fas fa-chevron-down" style="font-size:11px;color:var(--text-muted);margin-right:4px"></i>
       <div class="user-dropdown">
-        ${staff ? `
-        <button class="user-dropdown-item" onclick="openAdminDirect()">
-          <i class="fas fa-cog" style="color:#e53e3e"></i> لوحة التحكم
-        </button>
-        <div class="user-dropdown-divider"></div>` : `
         <button class="user-dropdown-item" onclick="openClientOrders()">
           <i class="fas fa-shopping-bag" style="color:var(--primary)"></i> طلباتي
         </button>
@@ -6433,14 +6364,13 @@ function renderAuthHeader() {
         <button class="user-dropdown-item" onclick="openEditProfile()">
           <i class="fas fa-user-edit" style="color:var(--accent)"></i> تعديل الملف
         </button>
-        <div class="user-dropdown-divider"></div>`}
+        <div class="user-dropdown-divider"></div>
         <button class="user-dropdown-item danger" onclick="doLogout()">
           <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
         </button>
-        ${!staff ? `
         <button class="user-dropdown-item danger" onclick="openDeleteAccountModal()">
           <i class="fas fa-user-times"></i> حذف الحساب نهائياً
-        </button>` : ''}
+        </button>
       </div>
     </div>`;
 }
@@ -8286,29 +8216,14 @@ function switchAdminTab(tab) {
 
   if (isRoles && !isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
 
-  document.getElementById('adminTabProducts').style.color = isProducts ? 'var(--primary)' : 'var(--text-muted)';
-  document.getElementById('adminTabProducts').style.borderBottomColor = isProducts ? 'var(--primary)' : 'transparent';
-  document.getElementById('adminTabOrders').style.color = isOrders ? 'var(--primary)' : 'var(--text-muted)';
-  document.getElementById('adminTabOrders').style.borderBottomColor = isOrders ? 'var(--primary)' : 'transparent';
-  document.getElementById('adminTabPoints').style.color = isPoints ? '#d97706' : 'var(--text-muted)';
-  document.getElementById('adminTabPoints').style.borderBottomColor = isPoints ? '#f59e0b' : 'transparent';
-  document.getElementById('adminTabOffers').style.color = isOffers ? '#d97706' : 'var(--text-muted)';
-  document.getElementById('adminTabOffers').style.borderBottomColor = isOffers ? '#f59e0b' : 'transparent';
-  document.getElementById('adminTabQuotes').style.color = isQuotes ? '#0a5c8a' : 'var(--text-muted)';
-  document.getElementById('adminTabQuotes').style.borderBottomColor = isQuotes ? '#0a5c8a' : 'transparent';
-  document.getElementById('adminTabMessages').style.color = isMessages ? '#0a5c8a' : 'var(--text-muted)';
-  document.getElementById('adminTabMessages').style.borderBottomColor = isMessages ? '#0a5c8a' : 'transparent';
-  const rolesTabBtn = document.getElementById('adminTabRoles');
-  if (rolesTabBtn) {
-    rolesTabBtn.style.color = isRoles ? '#e53e3e' : 'var(--text-muted)';
-    rolesTabBtn.style.borderBottomColor = isRoles ? '#e53e3e' : 'transparent';
-  }
-
   const statsGrid = document.getElementById('adminStatTotal').closest('div[style*="grid"]');
   if (statsGrid) statsGrid.style.display = isProducts ? 'grid' : 'none';
 
   const filterBar = document.getElementById('adminFilterBar');
   if (filterBar) filterBar.style.display = isProducts ? 'flex' : 'none';
+
+  const productsToolbar = document.getElementById('adminProductsToolbar');
+  if (productsToolbar) productsToolbar.style.display = isProducts ? 'flex' : 'none';
 
   const prodWrap = document.getElementById('adminProductsWrap');
   if (prodWrap) prodWrap.style.display = isProducts ? 'block' : 'none';
@@ -8343,9 +8258,7 @@ function switchAdminTab(tab) {
 function applyAdminUIPermissions() {
   const adminOnly = isAdmin();
   const rolesTabBtn = document.getElementById('adminTabRoles');
-  const resetBtn = document.getElementById('adminResetBtn');
   if (rolesTabBtn) rolesTabBtn.style.display = adminOnly ? 'inline-block' : 'none';
-  if (resetBtn)    resetBtn.style.display    = adminOnly ? 'flex'         : 'none';
 }
 
 // ── إدارة الصلاحيات: البحث عن مستخدم بالبريد أو بالاسم وتعيين دوره ──
@@ -8520,7 +8433,8 @@ async function renderAdminOrders() {
     window._cachedOrders = orders;
 
     const pending = orders.filter(o => o.status === 'pending').length;
-    document.getElementById('adminOrdersBadge').textContent = pending > 0 ? pending : '';
+    const ordersBadge = document.getElementById('adminOrdersBadge');
+    if (ordersBadge) ordersBadge.textContent = pending > 0 ? pending : '';
 
     if (!orders.length) {
       body.innerHTML = `
@@ -10026,13 +9940,43 @@ function updateBottomNav(page) {
   });
 }
 // [جديد] محتوى قائمة الحساب — نفس عناصر قائمة user-dropdown العلوية بالضبط
+// يبني بنود قائمة حساب الأدمن/المدير (تُستخدم بهيدر الديسكتوب وبالـ Bottom Sheet معاً)
+function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
+  const s = itemStyle ? ` style="${itemStyle}"` : '';
+  return `
+    <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('orders')">
+      <i class="fas fa-clipboard-list" style="color:var(--primary)"></i> الطلبات
+    </button>
+    <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('points')">
+      <i class="fas fa-star" style="color:#f59e0b"></i> النقاط
+    </button>
+    <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('offers')">
+      <i class="fas fa-gift" style="color:#f59e0b"></i> العروض
+    </button>
+    <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('quotes')">
+      <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض الأسعار
+    </button>
+    <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('messages')">
+      <i class="fas fa-comment-dots" style="color:#0a5c8a"></i> الرسائل
+    </button>
+    ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('roles')">
+      <i class="fas fa-user-shield" style="color:#e53e3e"></i> الصلاحيات
+    </button>` : ''}
+    <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('products')">
+      <i class="fas fa-box" style="color:var(--primary)"></i> المنتجات
+    </button>`;
+}
+
+// يفتح لوحة التحكم مباشرة على تبويب محدد
+async function openAdminTabDirect(tab) {
+  await openAdminDirect();
+  switchAdminTab(tab);
+}
 function accountMenuItemsHTML() {
   if (!currentUser) return '';
   if (isStaff()) {
     return `
-      <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openAdminDirect()">
-        <i class="fas fa-cog" style="color:#e53e3e"></i> لوحة التحكم
-      </button>
+      ${adminAccountMenuButtonsHTML('width:100%;text-align:right;padding:16px 22px;font-size:15px', 'closeAccountMenu();')}
       <div class="user-dropdown-divider"></div>
       <button class="user-dropdown-item danger" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();doLogout()">
         <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
