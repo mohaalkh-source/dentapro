@@ -6023,7 +6023,7 @@ let _pendingHistoryCleanup = false; // يمنع أي popstate ناتج عن تن
 const STATIC_MODAL_IDS = new Set([
   'orderModal', 'authModal', 'adminPanel', 'productFormModal', 'addPointsModal',
   'qtyOfferModal', 'bundleModal', 'quoteRequestModal', 'priceQuoteModal',
-  'addCategoryModal', 'deleteConfirmModal'
+  'addCategoryModal', 'deleteConfirmModal', 'accountMenuModal'
 ]);
 
 // أي عنصر آخر بكلاس modal-overlay (المودالات المُنشأة ديناميكياً بالجافاسكربت مثل
@@ -6330,47 +6330,12 @@ function renderAuthHeader() {
   const avatarIcon = isAdminRole ? '🔧' : (isManagerRole ? '🗂️' : '👤');
   const roleLabel = isAdminRole ? 'مدير النظام' : (isManagerRole ? 'مدير فرعي' : 'عميل');
 
-  if (staff) {
-    // للأدمن/المدير: عرض فقط (اسم + دور) بدون قائمة منسدلة — كل الإجراءات صارت من "حسابي" بالشريط السفلي
-    area.innerHTML = `
-      <div class="user-chip" style="cursor:default">
-        <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
-        <div>
-          <div class="user-chip-name">${currentUser.name}</div>
-          <div class="user-chip-role">${roleLabel}</div>
-        </div>
-      </div>`;
-    return;
-  }
-
   area.innerHTML = `
-    <div class="user-chip" tabindex="0">
+    <div class="user-chip" style="cursor:default">
       <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
       <div>
         <div class="user-chip-name">${currentUser.name}</div>
         <div class="user-chip-role">${roleLabel}</div>
-      </div>
-      <i class="fas fa-chevron-down" style="font-size:11px;color:var(--text-muted);margin-right:4px"></i>
-      <div class="user-dropdown">
-        <button class="user-dropdown-item" onclick="openClientOrders()">
-          <i class="fas fa-shopping-bag" style="color:var(--primary)"></i> طلباتي
-        </button>
-        <button class="user-dropdown-item" onclick="openMyQuotesPage()">
-          <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض أسعاري
-        </button>
-        <button class="user-dropdown-item" onclick="openFavoritesPage()">
-          <i class="fas fa-heart" style="color:#e53e3e"></i> المفضلة
-        </button>
-        <button class="user-dropdown-item" onclick="openEditProfile()">
-          <i class="fas fa-user-edit" style="color:var(--accent)"></i> تعديل الملف
-        </button>
-        <div class="user-dropdown-divider"></div>
-        <button class="user-dropdown-item danger" onclick="doLogout()">
-          <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-        </button>
-        <button class="user-dropdown-item danger" onclick="openDeleteAccountModal()">
-          <i class="fas fa-user-times"></i> حذف الحساب نهائياً
-        </button>
       </div>
     </div>`;
 }
