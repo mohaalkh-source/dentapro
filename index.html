@@ -1248,6 +1248,29 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   color:var(--text-muted); border-bottom:2px solid #e2eaf0;
   padding:12px 18px;
 }
+@media(max-width:640px){
+  .admin-orders-wrap{padding:0 12px 20px}
+  .admin-order-row{
+    grid-template-columns:1fr;
+    gap:8px;
+    padding:16px 14px;
+    border:1px solid #e2eaf0;
+    border-radius:14px;
+    margin-bottom:12px;
+  }
+  .admin-order-row.header-row{ display:none }
+  .admin-order-row > div:last-child{
+    display:flex; justify-content:flex-end;
+  }
+  .admin-order-row .admin-order-field{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding-top:8px; border-top:1px dashed #f0f4f8;
+  }
+  .admin-order-row .admin-order-field::before{
+    content:attr(data-label);
+    font-size:11px; font-weight:700; color:var(--text-muted); flex-shrink:0;
+  }
+}
 .status-select{
   padding:7px 12px; border-radius:50px;
   border:2px solid var(--border); background:#fff;
@@ -2351,11 +2374,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <button onclick="closeAdmin()" style="padding:9px 16px;border-radius:50px;background:rgba(255,255,255,0.12);color:#fff;border:2px solid rgba(255,255,255,0.2);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:7px;transition:all 0.2s" onmouseover="this.style.background='rgba(255,255,255,0.22)'" onmouseout="this.style.background='rgba(255,255,255,0.12)'">
           <i class="fas fa-arrow-right"></i> الرئيسية
         </button>
-        <div style="width:40px;height:40px;border-radius:10px;background:rgba(255,255,255,0.15);display:flex;align-items:center;justify-content:center;font-size:20px">🦷</div>
-        <div>
-          <div style="color:#fff;font-weight:900;font-size:17px">DentaPro — لوحة التحكم</div>
-          <div style="color:rgba(255,255,255,0.6);font-size:12px">إدارة المنتجات</div>
-        </div>
+        <div style="color:#fff;font-weight:900;font-size:17px" id="adminPanelTitle">المنتجات</div>
       </div>
       <div style="display:flex;gap:10px;align-items:center">
         <button onclick="closeAdmin()" style="width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.1);color:#fff;border:2px solid rgba(255,255,255,0.2);cursor:pointer;font-size:15px">
@@ -4030,6 +4049,7 @@ function filterCat(id) {
   productsDisplayLimit = PRODUCTS_PAGE_SIZE;
   renderCategories();
   renderProducts();
+  scrollToProducts();
 }
 
 function loadMoreProducts() {
@@ -4994,7 +5014,7 @@ function openProductDetail(id, _isRefresh) {
   container.innerHTML = `
     <div class="product-detail-grid">
       <div>
-        <div class="product-img-wrap" style="height:340px;border-radius:var(--radius)">
+        <div class="product-img-wrap" id="pdImageWrap" style="height:340px;border-radius:var(--radius)">
           ${p.badge ? `<div class="product-badge">${t(escHtml(p.badge), p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':escHtml(p.badge))}</div>` : ''}
           ${galleryImages.length
             ? `<img id="pdMainImg" src="${cldOptimize(galleryImages[0], 600)}" alt="${escHtml(p.ar)}" loading="lazy" decoding="async" />`
@@ -5975,6 +5995,14 @@ function scrollToProducts() {
   document.getElementById('productsSection').scrollIntoView({behavior:'smooth', block:'start'});
 }
 
+function scrollToProductImage() {
+  const el = document.getElementById('pdImageWrap');
+  if (!el) { window.scrollTo(0, 0); return; }
+  const header = document.querySelector('header');
+  const headerH = header ? header.offsetHeight : 0;
+  const y = el.getBoundingClientRect().top + window.scrollY - headerH - 8;
+  window.scrollTo(0, Math.max(0, y));
+}
 async function sendContactMessage() {
   const name = document.getElementById('contactName').value.trim();
   const email = document.getElementById('contactEmail').value.trim();
@@ -6189,7 +6217,7 @@ function showPage(page) {
     window.scrollTo(0, 0);
   } else if (page === 'productDetail') {
     document.getElementById('productDetailPage').classList.add('active');
-    window.scrollTo(0, 0);
+    scrollToProductImage();
   } else if (page === 'about') {
     document.getElementById('aboutPage').classList.add('active');
     window.scrollTo(0, 0);
@@ -8170,6 +8198,11 @@ async function renderClientOrders() {
   }
 }
 // ── ADMIN ORDERS ──
+const ADMIN_TAB_TITLES = {
+  products: 'المنتجات', orders: 'الطلبات', points: 'النقاط', offers: 'العروض',
+  quotes: 'عروض الأسعار', messages: 'الرسائل', roles: 'الصلاحيات'
+};
+
 function switchAdminTab(tab) {
   const isProducts = tab === 'products';
   const isOrders   = tab === 'orders';
@@ -8180,6 +8213,9 @@ function switchAdminTab(tab) {
   const isRoles    = tab === 'roles';
 
   if (isRoles && !isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+
+  const titleEl = document.getElementById('adminPanelTitle');
+  if (titleEl) titleEl.textContent = ADMIN_TAB_TITLES[tab] || 'المنتجات';
 
   const statsGrid = document.getElementById('adminStatTotal').closest('div[style*="grid"]');
   if (statsGrid) statsGrid.style.display = isProducts ? 'grid' : 'none';
@@ -8430,17 +8466,17 @@ async function renderAdminOrders() {
           </div>
           <div style="font-size:11px;color:var(--text-muted)">📞 ${escHtml(order.phone)}</div>
         </div>
-        <div style="font-size:12px;color:var(--text-muted);line-height:1.7">
+        <div class="admin-order-field" data-label="المنتجات:" style="font-size:12px;color:var(--text-muted);line-height:1.7">
           ${itemsSummary}<br>
           <span style="color:var(--primary-light);font-weight:700">${order.items.length} منتج</span>
         </div>
-        <div style="font-weight:900;color:${order.payMethod==='points'?'#d97706':'var(--primary)'}">
+        <div class="admin-order-field" data-label="الإجمالي:" style="font-weight:900;color:${order.payMethod==='points'?'#d97706':'var(--primary)'}">
           ${order.payMethod==='points'
             ? `🏆 ${order.totalPoints||0} نقطة`
             : `${order.total.toLocaleString()} د.أ`}
         </div>
-        <div style="font-size:12px;color:var(--text-muted)">${date}</div>
-        <div>
+        <div class="admin-order-field" data-label="التاريخ:" style="font-size:12px;color:var(--text-muted)">${date}</div>
+        <div class="admin-order-field" data-label="الحالة:">
           <select class="status-select"
             onchange="updateOrderStatus('${order._docId}','${order.id}',this.value)">
             ${statusOpts}
