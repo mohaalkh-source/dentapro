@@ -1218,8 +1218,8 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .categories-grid{grid-template-columns:repeat(3,1fr)}
   .products-grid{grid-template-columns:1fr 1fr; gap:10px}
   .offers-grid{grid-template-columns:1fr 1fr; gap:10px}
-  .product-img{height:120px; font-size:44px; padding:10px}
-  .product-img-wrap{height:110px; font-size:36px; padding:8px}
+  .product-img{height:170px; font-size:48px; padding:10px}
+  .product-img-wrap{height:160px; font-size:40px; padding:8px}
   .compare-toggle-btn{width:32px; height:32px; font-size:13px; top:8px}
   .favorite-toggle-btn{width:32px; height:32px; font-size:13px; top:44px}
   .product-info{padding:10px}
@@ -1269,6 +1269,11 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .admin-order-row .admin-order-field::before{
     content:attr(data-label);
     font-size:11px; font-weight:700; color:var(--text-muted); flex-shrink:0;
+  }
+  .admin-order-row > div:last-child button{
+    width:100%; padding:12px !important; font-size:14px !important;
+    display:flex; align-items:center; justify-content:center; gap:8px;
+    margin-top:4px;
   }
 }
 .status-select{
@@ -2041,7 +2046,14 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <ul>
           <li><a href="#" data-ar="الأسئلة الشائعة" data-en="FAQ">الأسئلة الشائعة</a></li>
           <li><a href="#" data-ar="سياسة الإرجاع" data-en="Return Policy">سياسة الإرجاع</a></li>
-          <li><a href="#" data-ar="تتبع الطلب" data-en="Track Order">تتبع الطلب</a></li>
+          allow get:  if isStaff() ||
+               (isLoggedIn() && resource.data.clientEmail == request.auth.token.email) ||
+               resource.data.clientEmail == 'guest';
+allow get:  if isStaff() ||
+               (isLoggedIn() && resource.data.clientEmail == request.auth.token.email) ||
+               resource.data.clientEmail == 'guest';
+allow list: if isStaff() ||
+               (isLoggedIn() && resource.data.clientEmail == request.auth.token.email);
           <li><a href="#" data-ar="الشحن والتوصيل" data-en="Shipping Info">الشحن والتوصيل</a></li>
         </ul>
       </div>
@@ -2254,7 +2266,37 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </button>
   </div>
 </div>
-
+<!-- ===== GUEST TRACK ORDER PAGE ===== -->
+<div class="page-section" id="trackOrderPage">
+  <div class="orders-page" style="max-width:600px">
+    <div style="margin-bottom:24px">
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
+    <div class="section-tag">تتبع الطلب</div>
+    <h2 class="section-title">تتبع طلبك أو عرض السعر</h2>
+    <p style="color:var(--text-muted);font-size:14px;margin:8px 0 24px;line-height:1.7">
+      أدخل رقم الطلب أو عرض السعر (كما وصلك بشاشة التأكيد أو واتساب) ورقم الهاتف المستخدم عند الطلب.
+    </p>
+    <div class="form-group">
+      <label class="form-label">رقم الطلب / عرض السعر <span class="required">*</span></label>
+      <input type="text" class="form-input" id="trackOrderId" placeholder="DP-XXXXX-XXX أو QT-XXXXX-XXX" style="text-transform:uppercase">
+    </div>
+    <div class="form-group">
+      <label class="form-label">رقم الهاتف <span class="required">*</span></label>
+      <input type="tel" class="form-input" id="trackOrderPhone" placeholder="05xxxxxxxx" onkeydown="if(event.key==='Enter')trackGuestOrder()">
+    </div>
+    <div id="trackErrorBox" style="display:none;align-items:center;gap:8px;color:var(--danger);font-size:13px;font-weight:700;
+      padding:10px 14px;background:#fff5f5;border-radius:8px;margin-bottom:16px">
+      <i class="fas fa-exclamation-circle"></i> <span id="trackErrorMsg"></span>
+    </div>
+    <button class="btn-primary" style="width:100%" onclick="trackGuestOrder()">
+      <i class="fas fa-search"></i> بحث
+    </button>
+    <div id="trackResultBox" style="margin-top:24px"></div>
+  </div>
+</div>
 <!-- ===== ERROR PAGE ===== -->
 <div class="page-section" id="errorPage">
   <div class="orders-page" style="max-width:760px;text-align:center;padding-top:60px">
@@ -2916,7 +2958,22 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <i class="fas fa-info-circle" style="color:var(--primary);margin-top:2px"></i>
         <span>اختر المادة (أو أكثر) وحدد الكمية المطلوبة إن وُجدت — يمكنك ترك الكمية فارغة إن لم تكن محددة بعد. سنرسل لك عرض السعر النهائي خلال وقت قصير.</span>
       </div>
-
+<div id="quoteGuestFields" style="display:none;margin-bottom:20px">
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-user" style="color:var(--primary-light)"></i> الاسم <span class="required">*</span></label>
+            <input type="text" class="form-input" id="quoteGuestName" placeholder="اسمك الكامل">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> رقم الهاتف <span class="required">*</span></label>
+            <input type="tel" class="form-input" id="quoteGuestPhone" placeholder="05xxxxxxxx">
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-hospital" style="color:var(--primary-light)"></i> اسم العيادة (اختياري)</label>
+          <input type="text" class="form-input" id="quoteGuestClinic" placeholder="عيادة...">
+        </div>
+      </div>
       <div style="position:relative;margin-bottom:10px">
         <input type="text" class="form-input" id="quoteProductSearch"
           placeholder="🔍 ابحث عن المادة بالاسم أو الماركة..."
@@ -3490,8 +3547,8 @@ function quotesRef() {
 
 async function createQuoteRequest(quote) {
   try {
-    const docRef = await window._fbAddDoc(quotesRef(), quote);
-    return docRef.id;
+    await window._fbSetDoc(window._fbDoc2('quotes', quote.id), quote);
+    return quote.id;
   } catch(e) {
     console.error('createQuoteRequest:', e);
     throw e;
@@ -5729,7 +5786,7 @@ async function submitOrder() {
   // مع تفعيل persistentLocalCache، عملية addDoc تنجح فوراً محلياً حتى بدون إنترنت
   // وتُرسل تلقائياً لـ Firebase بمجرد عودة الاتصال — لا داعي لاعتبارها فشلاً
   try {
-    await window._fbAddDoc(window._fbOrdersRef(), cleanOrder);
+    await window._fbSetDoc(window._fbDoc2('orders', orderNum), cleanOrder);
     console.log(navigator.onLine ? '✅ تم الحفظ في Firebase' : '📦 تم حفظ الطلب محلياً، سيُرسل تلقائياً عند عودة الاتصال');
   } catch(e) {
     console.error('❌ Firebase error:', e.code || e.message, e);
@@ -5942,17 +5999,7 @@ function escHtml(str) {
   d.textContent = String(str);
   return d.innerHTML;
 }
-// =====================
-// TOAST
-// =====================
-function showToast(msg, type='') {
-  const container = document.getElementById('toastContainer');
-  const toast = document.createElement('div');
-  toast.className = `toast ${type}`;
-  toast.innerHTML = `<i class="fas fa-${type==='success'?'check-circle':type==='error'?'exclamation-circle':'info-circle'}"></i> ${msg}`;
-  container.appendChild(toast);
-  setTimeout(() => { toast.style.opacity='0'; toast.style.transform='translateX(40px)'; setTimeout(()=>toast.remove(),300); }, 3000);
-}
+
 // =====================
 // TOAST
 // =====================
@@ -6234,6 +6281,9 @@ function showPage(page) {
     document.getElementById('messagesPage').classList.add('active');
     window.scrollTo(0, 0);
     renderClientMessagesThread();
+  } else if (page === 'trackOrder') {
+    document.getElementById('trackOrderPage').classList.add('active');
+    window.scrollTo(0, 0);
   } else if (page === 'error') {
     document.getElementById('errorPage').classList.add('active');
     window.scrollTo(0, 0);
@@ -6249,6 +6299,101 @@ function showErrorPage(options = {}) {
   document.getElementById('errorPageTitle').textContent = title;
   document.getElementById('errorPageMessage').textContent = message;
   showPage('error');
+}
+function openTrackOrderPage() {
+  document.getElementById('trackOrderId').value = '';
+  document.getElementById('trackOrderPhone').value = '';
+  document.getElementById('trackErrorBox').style.display = 'none';
+  document.getElementById('trackResultBox').innerHTML = '';
+  showPage('trackOrder');
+}
+function showTrackError(msg) {
+  document.getElementById('trackResultBox').innerHTML = '';
+  document.getElementById('trackErrorMsg').textContent = msg;
+  document.getElementById('trackErrorBox').style.display = 'flex';
+}
+
+async function trackGuestOrder() {
+  const idInput = document.getElementById('trackOrderId').value.trim().toUpperCase();
+  const phoneInput = document.getElementById('trackOrderPhone').value.trim();
+  document.getElementById('trackErrorBox').style.display = 'none';
+  const resultBox = document.getElementById('trackResultBox');
+
+  if (!idInput || !phoneInput) return showTrackError('يرجى إدخال رقم الطلب ورقم الهاتف');
+
+  resultBox.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">
+    <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>جاري البحث...</div>`;
+
+  try {
+    const isQuote = idInput.startsWith('QT-');
+    const colName = isQuote ? 'quotes' : 'orders';
+    const snap = await window._fbGetDoc(window._fbDoc2(colName, idInput));
+
+    if (!snap.exists()) return showTrackError('لم يتم العثور على طلب بهذا الرقم، تأكد من كتابته بشكل صحيح');
+
+    const data = snap.data();
+    const cleanPhone  = (data.phone || '').replace(/\D/g,'');
+    const inputPhone  = phoneInput.replace(/\D/g,'');
+    const matches = cleanPhone.slice(-7) === inputPhone.slice(-7) && inputPhone.length >= 7;
+    if (!matches) return showTrackError('رقم الهاتف لا يطابق بيانات هذا الطلب');
+
+    const date = new Date(data.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
+      { year:'numeric', month:'long', day:'numeric' });
+
+    if (isQuote) {
+      const total = (data.items||[]).reduce((s,i)=> s + ((i.unitPrice||0)*(i.qty||1)), 0);
+      resultBox.innerHTML = `
+        <div class="order-track-card">
+          <div class="order-track-header">
+            <div>
+              <div class="order-track-num"><i class="fas fa-file-invoice-dollar"></i> #${escHtml(data.id)}</div>
+              <div class="order-track-date">📅 ${date}</div>
+            </div>
+            ${quoteStatusBadge(data.status)}
+          </div>
+          <div class="order-track-body">
+            ${data.status==='accepted' ? trackStepsHTML(data.orderStatus||'pending') : ''}
+            <div class="order-items-list">
+              ${(data.items||[]).map(i=>`
+                <div class="order-item-row">
+                  <div class="order-item-icon">${i.icon||'📦'}</div>
+                  <div style="flex:1;font-weight:600">${escHtml(i.ar)}</div>
+                  <div style="color:var(--text-muted)">${i.qty?`× ${i.qty}`:''}</div>
+                </div>`).join('')}
+            </div>
+            ${(data.status==='priced'||data.status==='accepted') ? `<div style="text-align:left;font-weight:900;color:var(--primary);margin-top:10px">الإجمالي: ${total.toLocaleString()} د.أ</div>` : ''}
+          </div>
+        </div>`;
+    } else {
+      resultBox.innerHTML = `
+        <div class="order-track-card">
+          <div class="order-track-header">
+            <div>
+              <div class="order-track-num"><i class="fas fa-receipt"></i> #${escHtml(data.id)}</div>
+              <div class="order-track-date">📅 ${date}</div>
+            </div>
+            ${statusBadgeHTML(data.status)}
+          </div>
+          <div class="order-track-body">
+            ${trackStepsHTML(data.status)}
+            <div class="order-items-list">
+              ${(data.items||[]).map(i=>`
+                <div class="order-item-row">
+                  <div class="order-item-icon">${i.icon}</div>
+                  <div style="flex:1;font-weight:600">${escHtml(i.ar)}</div>
+                  <div style="color:var(--text-muted)">× ${i.qty}</div>
+                </div>`).join('')}
+            </div>
+            <div style="text-align:left;font-weight:900;color:var(--primary);margin-top:10px">
+              الإجمالي: ${data.payMethod==='points' ? `${data.totalPoints||0} نقطة` : `${data.total.toLocaleString()} د.أ`}
+            </div>
+          </div>
+        </div>`;
+    }
+  } catch(e) {
+    console.error(e);
+    showTrackError('حدث خطأ أثناء البحث، تحقق من الاتصال بالإنترنت');
+  }
 }
 
 function skeletonOrderCardsHTML(count = 3) {
@@ -6351,7 +6496,6 @@ function renderAuthHeader() {
       </button>`;
     return;
   }
-  const staff = isStaff();
   const isAdminRole = currentUser.role === 'admin';
   const isManagerRole = currentUser.role === 'manager';
   const avatarBg = isAdminRole ? 'linear-gradient(135deg,#e53e3e,#c53030)' : (isManagerRole ? 'linear-gradient(135deg,#d97706,#b45309)' : 'linear-gradient(135deg,#0a5c8a,#00c2a8)');
@@ -6738,7 +6882,7 @@ function compressImageFile(file, maxDimension = 1600, quality = 0.8) {
   });
 }
 
-async function uploadToCloudinary(file) {
+async function uploadToCloudinary(file, folder = 'dentapro_products') {
   if (!file.type || !file.type.startsWith('image/')) {
     throw new Error('نوع الملف غير مسموح، يجب أن يكون صورة');
   }
@@ -6760,7 +6904,7 @@ async function uploadToCloudinary(file) {
   const formData = new FormData();
   formData.append('file', uploadFile);
   formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
-  formData.append('folder', 'dentapro_products');
+  formData.append('folder', folder);
 
   const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`, {
     method: 'POST',
@@ -7726,6 +7870,15 @@ function openQuoteRequestModal() {
   document.getElementById('quoteCustomItemQty').value = '';
   document.getElementById('quoteProductDropdown').style.display = 'none';
   clearQuoteImage();
+
+  const guestFields = document.getElementById('quoteGuestFields');
+  if (guestFields) {
+    guestFields.style.display = currentUser ? 'none' : 'block';
+    document.getElementById('quoteGuestName').value = '';
+    document.getElementById('quoteGuestPhone').value = '';
+    document.getElementById('quoteGuestClinic').value = '';
+  }
+
   renderQuoteItemsList();
   document.getElementById('quoteRequestModal').classList.add('open');
 }
@@ -7895,19 +8048,25 @@ async function submitQuoteRequest() {
     document.getElementById('quoteFormError').style.display = 'block';
   };
   if (!currentQuoteItems.length) return showErr('يرجى إضافة مادة واحدة على الأقل');
+
+  let guestName = '', guestPhone = '', guestClinic = '';
   if (!currentUser) {
-    document.getElementById('quoteFormError').style.display = 'none';
-    closeQuoteRequestModal();
-    showToast('🔒 يرجى تسجيل الدخول أولاً لإرسال طلب عرض سعر', 'error');
-    openAuthModal('login');
-    return;
+    guestName   = document.getElementById('quoteGuestName').value.trim();
+    guestPhone  = document.getElementById('quoteGuestPhone').value.trim();
+    guestClinic = document.getElementById('quoteGuestClinic').value.trim();
+    if (!guestName || !guestPhone) {
+      return showErr('يرجى إدخال الاسم ورقم الهاتف للمتابعة كزائر');
+    }
+    if (guestPhone.length < 7) {
+      return showErr('رقم الهاتف غير صحيح');
+    }
   }
 
   let attachedImageUrl = null;
   if (quotePendingImage) {
     showToast('⏳ جاري رفع الصورة...', '');
     try {
-      attachedImageUrl = await uploadToCloudinary(quotePendingImage);
+      attachedImageUrl = await uploadToCloudinary(quotePendingImage, 'dentapro_customer_uploads');
     } catch(e) {
       showErr('فشل رفع الصورة: ' + e.message);
       return;
@@ -7915,15 +8074,15 @@ async function submitQuoteRequest() {
   }
 
   const ts = Date.now().toString(36).toUpperCase();
-  const quoteNum = `QT-${ts}`;
+  const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
 
   const quote = {
     id: quoteNum,
-    clientName: currentUser.name,
-    clientEmail: currentUser.email,
-    clientUid: currentUser.uid,
-    clinic: currentUser.clinic || '',
-    phone: currentUser.phone || '',
+    clientName: currentUser ? currentUser.name : guestName,
+    clientEmail: currentUser ? currentUser.email : 'guest',
+    clientUid: currentUser ? currentUser.uid : null,
+    clinic: currentUser ? (currentUser.clinic || '') : guestClinic,
+    phone: currentUser ? (currentUser.phone || '') : guestPhone,
     items: currentQuoteItems.map(it => {
       const p = it.productId ? products.find(x => x.id === it.productId) : null;
       return {
@@ -7947,7 +8106,12 @@ async function submitQuoteRequest() {
     await createQuoteRequest(quote);
     document.getElementById('quoteFormError').style.display = 'none';
     closeQuoteRequestModal();
-    showToast('🎉 تم إرسال طلب عرض السعر بنجاح، سنوافيك بالرد قريباً', 'success');
+    showToast(
+      currentUser
+        ? '🎉 تم إرسال طلب عرض السعر بنجاح، سنوافيك بالرد قريباً'
+        : '🎉 تم إرسال طلبك بنجاح! سنتواصل معك على رقم هاتفك قريباً',
+      'success'
+    );
   } catch(e) {
     showErr('حدث خطأ أثناء الإرسال، تحقق من الاتصال');
   }
@@ -8643,8 +8807,6 @@ function showAdminOrderDetail(orderId) {
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
   const date = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
-  // Reuse a simple alert-style modal — inject into deleteConfirm modal for now
-  document.getElementById('deleteProductName').innerHTML = '';
   document.querySelector('#deleteConfirmModal .modal-header').style.background = 'linear-gradient(135deg,#0a5c8a,#1a8bbf)';
   document.querySelector('#deleteConfirmModal .modal-title').innerHTML = `<i class="fas fa-receipt"></i> تفاصيل الطلب #${order.id}`;
   document.querySelector('#deleteConfirmModal .modal-body').innerHTML = `
@@ -9533,7 +9695,7 @@ async function sendClientMessageFromInput() {
   if (clientChatPendingImage) {
     showToast('⏳ جاري رفع الصورة...', '');
     try {
-      imageUrl = await uploadToCloudinary(clientChatPendingImage);
+      imageUrl = await uploadToCloudinary(clientChatPendingImage, 'dentapro_customer_uploads');
     } catch(e) {
       showToast('❌ فشل رفع الصورة: ' + e.message, 'error');
       return;
@@ -9691,7 +9853,7 @@ async function sendAdminThreadReply(email) {
   if (adminChatPendingImage) {
     showToast('⏳ جاري رفع الصورة...', '');
     try {
-      imageUrl = await uploadToCloudinary(adminChatPendingImage);
+      imageUrl = await uploadToCloudinary(adminChatPendingImage, 'dentapro_customer_uploads');
     } catch(e) {
       showToast('❌ فشل رفع الصورة: ' + e.message, 'error');
       return;
@@ -9970,7 +10132,15 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
 
 // يفتح لوحة التحكم مباشرة على تبويب محدد
 async function openAdminTabDirect(tab) {
-  await openAdminDirect();
+  if (!isStaff()) { showToast('⛔ غير مصرح لك بالدخول', 'error'); return; }
+  document.getElementById('adminPanel').classList.add('open');
+  applyAdminUIPermissions();
+  if (tab === 'products') {
+    showToast('🔄 جاري تحميل كل المنتجات...', '');
+    await ensureAllProductsLoaded();
+    updateAdminStats();
+    renderAdminTable();
+  }
   switchAdminTab(tab);
 }
 function accountMenuItemsHTML() {
