@@ -4205,7 +4205,6 @@ let _searchIndexCache = {};
 function clearSearchIndex() {
   _searchIndexCache = {};
 }
-
 function getProductSearchIndex(p) {
   let idx = _searchIndexCache[p.id];
   if (idx) return idx;
@@ -4217,11 +4216,12 @@ function getProductSearchIndex(p) {
     brandEn: (p.brand || '').toLowerCase(),
     catAr: normalizeArabic(cat ? cat.ar : ''),
     catEn: (cat ? cat.en : '').toLowerCase(),
+    descAr: normalizeArabic(p.desc_ar),
+    descEn: (p.desc_en || '').toLowerCase(),
   };
   _searchIndexCache[p.id] = idx;
   return idx;
 }
-
 function productMatchesQuery(p, rawQuery) {
   const terms = rawQuery.trim().split(/\s+/).filter(Boolean);
   if (!terms.length) return 1;
@@ -4233,6 +4233,7 @@ function productMatchesQuery(p, rawQuery) {
     if (idx.nameAr.includes(normT) || idx.nameEn.includes(lowerT)) score += 10;
     else if (idx.brandAr.includes(normT) || idx.brandEn.includes(lowerT)) score += 5;
     else if (idx.catAr.includes(normT) || idx.catEn.includes(lowerT)) score += 3;
+    else if (idx.descAr.includes(normT) || idx.descEn.includes(lowerT)) score += 1;
     else return 0;
   }
   const fullNorm = normalizeArabic(rawQuery);
