@@ -3322,7 +3322,7 @@ function loadProducts() {
 // ============================
 // PRODUCTS — Firestore Collection حقيقية (Pagination: limit() + startAfter())
 // ============================
-const FIRESTORE_PAGE_SIZE = 24;       // حجم كل صفحة تُجلب من Firestore (limit)
+const FIRESTORE_PAGE_SIZE = 100;      // حجم كل صفحة تُجلب من Firestore (limit)
 let _productsLastDoc = null;          // آخر مستند مُحمّل، يُستخدم في startAfter()
 let _productsAllLoaded = false;       // true عند استنفاذ كل صفحات Firestore
 let _productsCollectionReady = false; // true إذا كانت Collection الجديدة تحتوي بيانات فعلاً
@@ -4087,6 +4087,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   // إشعار المنتجات الجديدة منذ آخر زيارة
   showNewProductsNotification();
   setLastVisitDate();
+
+  // تحميل باقي المنتجات بالخلفية دون توقيف عرض الصفحة —
+  // يضمن أن الأقسام والبحث وزر "عرض المزيد" تعمل على كامل الكتالوج
+  ensureAllProductsLoaded().then(() => {
+    renderProducts();
+    renderCategories();
+    populateCategorySelects();
+  });
 });
 
 function syncCartWithProducts() {
