@@ -4324,7 +4324,6 @@ function productCardHTML(p) {
         <div class="product-price-row">
           <div>
             <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            ${p.unitQty ? `<div style="font-size:11px;color:var(--text-muted);font-weight:600">${escHtml(p.unitQty)}</div>` : ''}
             ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
           </div>
           <button class="add-to-cart ${inCart?'added':''}" onclick="${outOfStock?'':`addToCart(${p.id})`}"
