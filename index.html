@@ -2470,13 +2470,6 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <select id="adminCatFilter" onchange="renderAdminTable()"
         style="padding:11px 16px;border-radius:50px;border:2px solid #d0e4ef;background:#fff;font-family:inherit;font-size:14px;outline:none;cursor:pointer">
         <option value="all">كل الفئات</option>
-        <option value="dev">أجهزة ومعدات</option>
-        <option value="hand">أدوات يدوية</option>
-        <option value="mat">مواد طبية</option>
-        <option value="prot">الوقاية</option>
-        <option value="ortho">التقويم</option>
-        <option value="impl">زراعة</option>
-        <option value="home">العناية المنزلية</option>
       </select>
     </div>
     <!-- Points Panel (Admin) -->
@@ -2713,15 +2706,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">الفئة <span class="required">*</span></label>
-          <select class="form-input" id="pCat" style="cursor:pointer">
-            <option value="dev">أجهزة ومعدات</option>
-            <option value="hand">أدوات يدوية</option>
-            <option value="mat">مواد طبية</option>
-            <option value="prot">الوقاية والتعقيم</option>
-            <option value="ortho">التقويم</option>
-            <option value="impl">زراعة الأسنان</option>
-            <option value="home">العناية المنزلية</option>
-          </select>
+          <select class="form-input" id="pCat" style="cursor:pointer"></select>
         </div>
         <div class="form-group">
           <label class="form-label">الشارة (Badge)</label>
@@ -3224,7 +3209,27 @@ const DEFAULT_CATEGORIES = [
   {id:'impl',  icon:'🏥', ar:'زراعة الأسنان',       en:'Implants'},
   {id:'home',  icon:'🌟', ar:'العناية المنزلية',     en:'Home Care'},
 ];
+// يبني قائمتي الفئات (نموذج المنتج + فلتر جدول الأدمن) من مصفوفة categories الفعلية
+function populateCategorySelects() {
+  const realCats = categories.filter(c => c.id !== 'all');
 
+  const pCat = document.getElementById('pCat');
+  if (pCat) {
+    const currentVal = pCat.value;
+    pCat.innerHTML = realCats.map(c => `<option value="${c.id}">${escHtml(c.ar)}</option>`).join('');
+    if (realCats.find(c => c.id === currentVal)) pCat.value = currentVal;
+  }
+
+  const adminFilter = document.getElementById('adminCatFilter');
+  if (adminFilter) {
+    const currentVal = adminFilter.value || 'all';
+    adminFilter.innerHTML = `<option value="all">كل الفئات</option>` +
+      realCats.map(c => `<option value="${c.id}">${escHtml(c.ar)}</option>`).join('');
+    if (currentVal === 'all' || realCats.find(c => c.id === currentVal)) adminFilter.value = currentVal;
+  }
+}
+
+function loadCategories() {
 function loadCategories() {
   try {
     const saved = localStorage.getItem('dentapro_categories');
@@ -3253,6 +3258,7 @@ async function loadCategoriesFromFirebase() {
         localStorage.setItem('dentapro_categories', JSON.stringify(categories));
         clearSearchIndex();
         renderCategories();
+        populateCategorySelects();
         renderProducts();
         console.log('✅ تم تحميل الأقسام من Firebase:', categories.length);
       }
@@ -4057,6 +4063,7 @@ let orderSubmitted = false;
 // =====================
 document.addEventListener('DOMContentLoaded', async () => {
   renderCategories();
+  populateCategorySelects();
   renderProducts();
   renderOffers();
   updateCartUI();
@@ -5991,17 +5998,10 @@ function deleteCategory(id) {
   if (idx !== -1) categories.splice(idx, 1);
   saveCategories();
 
-  // تحديث القوائم المنسدلة لإزالة القسم المحذوف
-  const pCatSelect = document.getElementById('pCat');
-  const adminCatFilterSelect = document.getElementById('adminCatFilter');
-  [pCatSelect, adminCatFilterSelect].forEach(sel => {
-    if (!sel) return;
-    const opt = Array.from(sel.options).find(o => o.value === id);
-    if (opt) opt.remove();
-  });
-
   renderCurrentCatList();
   renderCategories();
+  populateCategorySelects();
+  renderProducts();
   showToast('🗑️ تم حذف القسم بنجاح', 'success');
 }
 function saveCategory() {
@@ -6033,6 +6033,7 @@ function saveCategory() {
     document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-folder-plus"></i> إضافة قسم جديد';
     renderCurrentCatList();
     renderCategories();
+    populateCategorySelects();
     renderProducts();
     closeAddCategory();
     showToast('✅ تم تعديل القسم بنجاح', 'success');
@@ -6055,6 +6056,7 @@ function saveCategory() {
     document.getElementById('catFormTitle').innerHTML = '<i class="fas fa-folder-plus"></i> إضافة قسم جديد';
     renderCurrentCatList();
     renderCategories();
+    populateCategorySelects();
     renderProducts();
     closeAddCategory();
     showToast('✅ تم إضافة القسم بنجاح', 'success');
