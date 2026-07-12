@@ -1796,7 +1796,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <div class="feature-card">
         <div class="feature-icon"><i class="fas fa-headset"></i></div>
         <div class="feature-title" data-ar="دعم فني متخصص" data-en="Specialized Technical Support">دعم فني متخصص</div>
-        <div class="feature-desc" data-ar="فريق متخصص من أطباء الأسنان جاهز للإجابة على استفساراتك" data-en="A specialized team of dentists ready to answer your inquiries">فريق متخصص من أطباء الأسنان جاهز للإجابة على استفساراتك</div>
+        <div class="feature-desc" data-ar="" data-en="A specialized team of dentists ready to answer your inquiries"></div>
       </div>
     </div>
   </div>
@@ -2686,10 +2686,10 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <div class="form-row">
         <div class="form-group">
           <label class="form-label">
-            <i class="fas fa-hashtag" style="color:var(--primary-light)"></i>
-            عدد الوحدة <span class="required">*</span>
+            <i class="fas fa-ruler-combined" style="color:var(--primary-light)"></i>
+            الحجم
           </label>
-          <input type="number" class="form-input" id="pUnitQty" placeholder="مثال: 1, 2, 3" min="1" value="1">
+          <input type="text" class="form-input" id="pUnitQty" placeholder="مثال: 500 مل, 10 قطع, 1 كغم">
         </div>
         <div class="form-group">
           <label class="form-label">
@@ -4318,7 +4318,7 @@ function productCardHTML(p) {
         <div class="product-price-row">
           <div>
             <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            ${p.unit ? `<div style="font-size:11px;color:var(--text-muted);font-weight:600">${t('لكل','per')} ${p.unitQty||1} ${p.unit}</div>` : ''}
+            ${p.unitQty ? `<div style="font-size:11px;color:var(--text-muted);font-weight:600">${escHtml(p.unitQty)}</div>` : ''}
             ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
           </div>
           <button class="add-to-cart ${inCart?'added':''}" onclick="${outOfStock?'':`addToCart(${p.id})`}"
@@ -4850,7 +4850,7 @@ function renderCompareTable() {
     { label: 'الماركة', render: p => escHtml(p.brand) },
     { label: 'السعر', render: p => `<strong style="color:var(--primary)">${p.price.toLocaleString()} د.أ</strong>` },
     { label: 'السعر القديم', render: p => p.old ? `${p.old.toLocaleString()} د.أ` : '—' },
-    { label: 'وحدة البيع', render: p => `${p.unitQty||1} ${escHtml(p.unit || 'قطعة')}` },
+    { label: 'الحجم', render: p => p.unitQty ? escHtml(p.unitQty) : '—' },
     { label: 'بلد المنشأ', render: p => escHtml(p.country) || '—' },
     { label: 'نقاط الشراء', render: p => p.points ? `🏆 ${p.points}` : '—' },
     { label: 'المخزون', render: p => (p.stock !== undefined && p.stock !== null) ? p.stock : 'غير محدد' },
@@ -5190,7 +5190,7 @@ function openProductDetail(id, _isRefresh) {
         <div class="product-price-row" style="margin-bottom:18px">
           <div>
             <div class="product-price" style="font-size:26px">${p.price.toLocaleString()} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
-            ${p.unit ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px">${t('السعر لكل','Price per')} ${p.unitQty||1} ${p.unit}</div>` : ''}
+            ${p.unitQty ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px">${escHtml(p.unitQty)}</div>` : ''}
             ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
           </div>
         </div>
@@ -5218,7 +5218,7 @@ function openProductDetail(id, _isRefresh) {
         </div>
 
         <div class="pd-tab-panel active" id="pdTabPanelDesc">
-          <div class="product-desc" style="font-size:14px;line-height:1.9">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
+          <div class="product-desc" style="font-size:14px;line-height:1.9;-webkit-line-clamp:unset;display:block;overflow:visible;white-space:pre-line">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
         </div>
 
         <div class="pd-tab-panel" id="pdTabPanelSpecs">
@@ -5226,7 +5226,7 @@ function openProductDetail(id, _isRefresh) {
             <tr><td>${t('الماركة','Brand')}</td><td>${escHtml(p.brand)}</td></tr>
             ${p.country ? `<tr><td>${t('بلد المنشأ','Origin')}</td><td>${escHtml(p.country)}</td></tr>` : ''}
             <tr><td>${t('القسم','Category')}</td><td>${escHtml((categories.find(c=>c.id===p.cat)||{}).ar || p.cat)}</td></tr>
-            <tr><td>${t('وحدة البيع','Sale Unit')}</td><td>${p.unitQty||1} ${escHtml(p.unit||t('قطعة','pc'))}</td></tr>
+            ${p.unitQty ? `<tr><td>${t('الحجم','Size')}</td><td>${escHtml(p.unitQty)}</td></tr>` : ''}
             ${p.points ? `<tr><td>${t('نقاط الشراء','Purchase Points')}</td><td>🏆 ${p.points}</td></tr>` : ''}
             ${(p.stock !== undefined && p.stock !== null) ? `<tr><td>${t('المخزون','Stock')}</td><td>${p.stock}</td></tr>` : ''}
           </table>
@@ -7201,9 +7201,8 @@ function loadImagePreview(imageUrl) {
 function openAddProduct() {
   editingProductId = null;
   document.getElementById('productFormTitle').innerHTML = '<i class="fas fa-plus-circle"></i> إضافة منتج جديد';
-  ['pAr','pEn','pDescAr','pDescEn','pBrand','pPrice','pOldPrice'].forEach(id => document.getElementById(id).value = '');
+  ['pAr','pEn','pDescAr','pDescEn','pBrand','pPrice','pOldPrice','pUnitQty'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('pCat').value = 'dev';
-  document.getElementById('pUnitQty').value = 1;
   document.getElementById('pUnit').value = 'قطعة';
   document.getElementById('pBadge').value = '';
   document.getElementById('pCountry').value = '';
@@ -7228,7 +7227,7 @@ function openEditProduct(id) {
   document.getElementById('pPrice').value = p.price;
   document.getElementById('pOldPrice').value = p.old || '';
   document.getElementById('pCat').value = p.cat;
-  document.getElementById('pUnitQty').value = p.unitQty || 1;
+  document.getElementById('pUnitQty').value = p.unitQty || '';
   document.getElementById('pUnit').value = p.unit || 'قطعة';
   document.getElementById('pBadge').value = p.badge || '';
   document.getElementById('pCountry').value = p.country || '';
@@ -7258,7 +7257,7 @@ async function saveProduct() {
 
   const oldPrice = parseFloat(document.getElementById('pOldPrice').value) || null;
   const unit = document.getElementById('pUnit').value || 'قطعة';
-  const unitQty = parseInt(document.getElementById('pUnitQty').value) || 1;
+  const unitQty = document.getElementById('pUnitQty').value.trim() || '';
   const productData = {
     cat: document.getElementById('pCat').value,
     brand, ar, en,
