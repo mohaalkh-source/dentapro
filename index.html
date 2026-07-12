@@ -4232,7 +4232,6 @@ function productMatchesQuery(p, rawQuery) {
     const lowerT = term.toLowerCase();
     if (idx.nameAr.includes(normT) || idx.nameEn.includes(lowerT)) score += 10;
     else if (idx.brandAr.includes(normT) || idx.brandEn.includes(lowerT)) score += 5;
-    else if (idx.catAr.includes(normT) || idx.catEn.includes(lowerT)) score += 3;
     else if (idx.descAr.includes(normT) || idx.descEn.includes(lowerT)) score += 1;
     else return 0;
   }
