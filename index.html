@@ -44,6 +44,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="preconnect" href="https://res.cloudinary.com">
 <style>
 :root {
@@ -1985,6 +1987,9 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
               <button class="loc-method-btn" id="btnGPS" onclick="getGPSLocation()">
                 <i class="fas fa-crosshairs"></i> <span data-ar="موقعي الحالي" data-en="My Location">موقعي الحالي</span>
               </button>
+              <button class="loc-method-btn" id="btnMapPick" onclick="openMapPicker()">
+                <i class="fas fa-map-marked-alt"></i> <span data-ar="اختر من الخريطة" data-en="Pick on Map">اختر من الخريطة</span>
+              </button>
             </div>
 
             <!-- Manual Input -->
@@ -2061,6 +2066,26 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <button class="btn-submit" id="btnSubmit" onclick="submitOrder()" style="display:none">
         <i class="fas fa-paper-plane"></i> <span data-ar="إرسال الطلب" data-en="Send Order">إرسال الطلب</span>
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- MAP PICKER MODAL -->
+<div class="modal-overlay" id="mapPickerModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title"><i class="fas fa-map-marked-alt"></i> <span data-ar="اختر موقعك من الخريطة" data-en="Pick Your Location">اختر موقعك من الخريطة</span></div>
+      <button class="close-btn" onclick="closeMapPicker()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:16px">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+        <i class="fas fa-info-circle"></i> <span data-ar="اضغط على الخريطة أو اسحب الدبوس لتحديد موقعك بدقة" data-en="Tap the map or drag the pin to set your exact location">اضغط على الخريطة أو اسحب الدبوس لتحديد موقعك بدقة</span>
+      </div>
+      <div id="leafletPickerMap" style="width:100%;height:360px;border-radius:var(--radius-sm);border:2px solid var(--border)"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeMapPicker()"><i class="fas fa-times"></i> <span data-ar="إلغاء" data-en="Cancel">إلغاء</span></button>
+      <button class="btn-submit" onclick="confirmMapPick()"><i class="fas fa-check"></i> <span data-ar="تأكيد الموقع" data-en="Confirm Location">تأكيد الموقع</span></button>
     </div>
   </div>
 </div>
@@ -3484,7 +3509,7 @@ async function loadProductsLegacyFallback() {
         cacheProductsLocally();
         renderProducts();
         renderCategories();
-        if (isAdmin()) migrateProductsToCollection(list); // ترحيل صامت لمرة واحدة فقط
+        // تم تعطيل الترحيل التلقائي نهائياً لمنع استرجاع بيانات قديمة بالخطأ
       }
     }
   } catch(e) {
@@ -4361,8 +4386,22 @@ function clearFilters() {
 function productCardHTML(p) {
   const inCart = cart.find(c => c.id === p.id);
   const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+  const adminQuickBtns = isStaff() ? `
+      <div style="position:absolute;top:12px;right:12px;z-index:3;display:flex;gap:6px">
+        <button onclick="event.stopPropagation();openEditProduct(${p.id})" title="تعديل سريع"
+          style="width:32px;height:32px;border-radius:50%;background:#0a5c8a;color:#fff;border:2px solid #fff;
+                 cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button onclick="event.stopPropagation();openDeleteConfirm(${p.id})" title="حذف سريع"
+          style="width:32px;height:32px;border-radius:50%;background:#e53e3e;color:#fff;border:2px solid #fff;
+                 cursor:pointer;font-size:13px;box-shadow:0 2px 8px rgba(0,0,0,0.2)">
+          <i class="fas fa-trash-alt"></i>
+        </button>
+      </div>` : '';
   return `
     <div class="product-card">
+      ${adminQuickBtns}
       <button class="compare-toggle-btn ${isInCompare(p.id)?'active':''}"
         onclick="toggleCompare(${p.id})" title="${t('أضف للمقارنة','Add to compare')}">
         <i class="fas fa-balance-scale"></i>
@@ -5619,6 +5658,7 @@ function openOrderModal() {
   closeCart();
   currentStep = 1;
   orderSubmitted = false;
+  window._autoFilledOnce = false;
   locationData = { lat: null, lng: null, address: '', method: '' };
   document.getElementById('locationConfirm').classList.remove('show');
   document.getElementById('mapPreview').classList.remove('located');
@@ -5660,7 +5700,16 @@ function renderModalStep() {
   if (currentStep === 1) renderModalSummary();
   if (currentStep === 2) {
     const banner = document.getElementById('autoFillBanner');
-    if (banner) banner.style.display = (currentUser && currentUser.role === 'client') ? 'flex' : 'none';
+    if (banner) banner.style.display = 'none';
+    if (currentUser && currentUser.role === 'client' && !window._autoFilledOnce) {
+      const cn = document.getElementById('clinicName');
+      const dn = document.getElementById('doctorName');
+      const ph = document.getElementById('phoneNumber');
+      if (!cn.value && currentUser.clinic) cn.value = currentUser.clinic;
+      if (!dn.value && currentUser.name)   dn.value = currentUser.name;
+      if (!ph.value && currentUser.phone)  ph.value = currentUser.phone.replace(/^\+\d+/, '');
+      window._autoFilledOnce = true;
+    }
   }
   if (currentStep === 4) renderConfirmDetails();
 }
@@ -5859,11 +5908,7 @@ function getGPSLocation() {
       locationData.address = `${t('خط العرض','Lat')}: ${locationData.lat}, ${t('خط الطول','Lng')}: ${locationData.lng}`;
       locationData.method = 'gps';
       document.getElementById('gpsLoading').classList.remove('show');
-      document.getElementById('mapPreview').classList.add('located');
-      document.getElementById('mapPreview').innerHTML = `
-        <i class="fas fa-map-marker-alt" style="color:var(--success)"></i>
-        <div class="map-placeholder-text" style="color:var(--primary-dark)">${t('تم تحديد الموقع','Location Detected')}</div>
-        <div class="map-coords">📍 ${locationData.lat}, ${locationData.lng}</div>`;
+      showLocationOnMap(locationData.lat, locationData.lng);
       document.getElementById('locationConfirm').classList.add('show');
       document.getElementById('locationConfirmText').textContent = `✅ ${t('تم تحديد موقعك بنجاح!','Location detected successfully!')}`;
       document.getElementById('locationError').classList.remove('show');
@@ -5874,6 +5919,64 @@ function getGPSLocation() {
       showToast(t('تعذر الحصول على الموقع. يرجى إدخاله يدوياً.','Could not get location. Please enter manually.'), 'error');
     }
   );
+}
+
+// يعرض الموقع فعلياً على خريطة داخل المربع بدل نص "تم تحديد الموقع"
+function showLocationOnMap(lat, lng) {
+  const box = document.getElementById('mapPreview');
+  box.classList.add('located');
+  box.style.padding = '0';
+  box.style.overflow = 'hidden';
+  const la = parseFloat(lat), ln = parseFloat(lng);
+  box.innerHTML = `
+    <iframe
+      src="https://www.openstreetmap.org/export/embed.html?bbox=${(ln-0.006)}%2C${(la-0.004)}%2C${(ln+0.006)}%2C${(la+0.004)}&layer=mapnik&marker=${la}%2C${ln}"
+      style="width:100%;height:100%;border:0;pointer-events:none"
+      loading="lazy" title="map"></iframe>`;
+}
+
+let _pickerMap = null;
+let _pickerMarker = null;
+
+function openMapPicker() {
+  switchLocMethod('MapPick');
+  document.getElementById('mapPickerModal').classList.add('open');
+  setTimeout(initPickerMap, 150);
+}
+
+function closeMapPicker() {
+  document.getElementById('mapPickerModal').classList.remove('open');
+}
+
+function initPickerMap() {
+  const defaultLat = locationData.lat ? parseFloat(locationData.lat) : 31.9539;
+  const defaultLng = locationData.lng ? parseFloat(locationData.lng) : 35.9106;
+  if (!_pickerMap) {
+    _pickerMap = L.map('leafletPickerMap').setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(_pickerMap);
+    _pickerMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(_pickerMap);
+    _pickerMap.on('click', (e) => { _pickerMarker.setLatLng(e.latlng); });
+  } else {
+    _pickerMap.invalidateSize();
+    _pickerMap.setView([defaultLat, defaultLng], 13);
+    _pickerMarker.setLatLng([defaultLat, defaultLng]);
+  }
+}
+
+function confirmMapPick() {
+  const pos = _pickerMarker.getLatLng();
+  locationData.lat = pos.lat.toFixed(5);
+  locationData.lng = pos.lng.toFixed(5);
+  locationData.address = `${t('خط العرض','Lat')}: ${locationData.lat}, ${t('خط الطول','Lng')}: ${locationData.lng}`;
+  locationData.method = 'map';
+  showLocationOnMap(locationData.lat, locationData.lng);
+  document.getElementById('locationConfirm').classList.add('show');
+  document.getElementById('locationConfirmText').textContent = `✅ ${t('تم تحديد موقعك من الخريطة','Location selected from map')}`;
+  document.getElementById('locationError').classList.remove('show');
+  closeMapPicker();
+  showToast(t('✅ تم تحديد الموقع من الخريطة','✅ Location selected from map'), 'success');
 }
 
 function updateCharCount() {
@@ -8217,40 +8320,90 @@ let quickOrderRowCount = 0;
 
 function quickOrderRowHTML(idx) {
   return `
-  <div class="quick-order-row" id="quickOrderRow_${idx}" style="margin-bottom:12px">
-    <div style="display:flex;gap:8px;align-items:center;position:relative">
-      <div style="flex:2;position:relative">
-        <input type="text" class="form-input" placeholder="اكتب اسم المادة..." id="quickOrderName_${idx}"
-          oninput="onQuickOrderNameInput(${idx})" onfocus="onQuickOrderNameInput(${idx})" autocomplete="off">
-        <div id="quickOrderDropdown_${idx}"
-          style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:#fff;
-                 border:1.5px solid var(--border);border-radius:12px;max-height:220px;overflow-y:auto;
-                 z-index:80;box-shadow:var(--shadow-lg)"></div>
-      </div>
-      <input type="number" class="form-input" placeholder="الكمية" min="1" value="1" id="quickOrderQty_${idx}"
-        style="width:70px;text-align:center" oninput="onQuickOrderQtyChange(${idx})">
-      <button type="button" onclick="removeQuickOrderRow(${idx})"
-        style="width:38px;height:38px;flex-shrink:0;border-radius:50%;background:#fff5f5;color:var(--danger);border:none;cursor:pointer">
-        <i class="fas fa-trash-alt"></i>
-      </button>
+  <div class="quick-order-row" id="quickOrderRow_${idx}" style="display:flex;gap:8px;margin-bottom:10px;align-items:flex-start;position:relative">
+    <div style="flex:2;position:relative">
+      <input type="text" class="form-input" placeholder="اكتب اسم المادة أو وصفها..." id="quickOrderName_${idx}"
+        autocomplete="off" oninput="onQuickOrderInput(${idx})" onfocus="onQuickOrderInput(${idx})"
+        data-selected-id="">
+      <div id="quickOrderSuggestions_${idx}" style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;
+        background:#fff;border:1.5px solid var(--border);border-radius:12px;max-height:260px;overflow-y:auto;
+        z-index:50;box-shadow:var(--shadow-lg)"></div>
     </div>
-    <div id="quickOrderRowInfo_${idx}" style="font-size:12px;margin-top:6px;padding-right:4px"></div>
+    <input type="number" class="form-input" placeholder="الكمية" min="1" value="1" id="quickOrderQty_${idx}" style="width:70px;text-align:center;flex-shrink:0">
+    <button type="button" onclick="removeQuickOrderRow(${idx})" style="width:38px;height:38px;flex-shrink:0;border-radius:50%;background:#fff5f5;color:var(--danger);border:none;cursor:pointer">
+      <i class="fas fa-trash-alt"></i>
+    </button>
   </div>`;
 }
-
-let quickOrderMatches = {}; // idx -> productId | null
 
 function addQuickOrderRow() {
   quickOrderRowCount++;
   document.getElementById('quickOrderRows').insertAdjacentHTML('beforeend', quickOrderRowHTML(quickOrderRowCount));
-  updateQuickOrderSummary();
 }
+
+function onQuickOrderInput(idx) {
+  const input = document.getElementById(`quickOrderName_${idx}`);
+  const dropdown = document.getElementById(`quickOrderSuggestions_${idx}`);
+  if (!input || !dropdown) return;
+
+  input.dataset.selectedId = ''; // أي كتابة يدوية تلغي الاختيار السابق
+
+  const term = input.value.trim();
+  if (!term) { dropdown.style.display = 'none'; return; }
+
+  // productMatchesQuery يبحث بالاسم العربي/الإنجليزي + الماركة + الوصف العربي/الإنجليزي معاً
+  const scored = products
+    .map(p => ({ p, score: productMatchesQuery(p, term) }))
+    .filter(x => x.score > 0)
+    .sort((a,b) => b.score - a.score)
+    .slice(0, 8);
+
+  if (!scored.length) {
+    dropdown.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-muted);font-size:13px">
+      لا توجد نتائج مطابقة — سيتم إرسال المادة كطلب عرض سعر</div>`;
+    dropdown.style.display = 'block';
+    return;
+  }
+
+  dropdown.innerHTML = scored.map(({p}) => `
+    <div onclick="selectQuickOrderSuggestion(${idx}, ${p.id})"
+      style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+      <div style="width:34px;height:34px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
+                  display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden">
+        ${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:cover">` : p.icon}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.ar)}</div>
+        <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.brand)} — ${escHtml(p.desc_ar || '')}</div>
+      </div>
+      <div style="font-weight:800;font-size:12px;color:var(--primary);flex-shrink:0">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>
+    </div>`).join('');
+  dropdown.style.display = 'block';
+}
+
+function selectQuickOrderSuggestion(idx, productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+  const input = document.getElementById(`quickOrderName_${idx}`);
+  input.value = p.ar;
+  input.dataset.selectedId = productId;
+  document.getElementById(`quickOrderSuggestions_${idx}`).style.display = 'none';
+}
+
+document.addEventListener('click', (e) => {
+  document.querySelectorAll('[id^="quickOrderSuggestions_"]').forEach(dd => {
+    const rowIdx = dd.id.replace('quickOrderSuggestions_', '');
+    const input = document.getElementById(`quickOrderName_${rowIdx}`);
+    if (dd.style.display === 'block' && !dd.contains(e.target) && e.target !== input) {
+      dd.style.display = 'none';
+    }
+  });
+});
 
 function removeQuickOrderRow(idx) {
   const el = document.getElementById('quickOrderRow_' + idx);
   if (el) el.remove();
-  delete quickOrderMatches[idx];
-  updateQuickOrderSummary();
 }
 
 function openQuickOrderModal() {
@@ -8261,10 +8414,8 @@ function openQuickOrderModal() {
   }
   document.getElementById('quickOrderRows').innerHTML = '';
   quickOrderRowCount = 0;
-  quickOrderMatches = {};
   addQuickOrderRow();
   addQuickOrderRow();
-  updateQuickOrderSummary();
   document.getElementById('quickOrderModal').classList.add('open');
 }
 
@@ -8272,203 +8423,9 @@ function closeQuickOrderModal() {
   document.getElementById('quickOrderModal').classList.remove('open');
 }
 
-// اقتراحات مطابقة أثناء الكتابة داخل كل سطر
-function onQuickOrderNameInput(idx) {
-  const input = document.getElementById(`quickOrderName_${idx}`);
-  const dropdown = document.getElementById(`quickOrderDropdown_${idx}`);
-  if (!input || !dropdown) return;
-
-  const rawVal = input.value.trim();
-  const term = normalizeArabic(rawVal);
-
-  // أي كتابة يدوية تُلغي المطابقة السابقة حتى يختار المستخدم من جديد
-  quickOrderMatches[idx] = null;
-  updateQuickOrderRowInfo(idx);
-
-  if (!term) { dropdown.style.display = 'none'; return; }
-
-  const matches = products.filter(p =>
-    normalizeArabic(p.ar).includes(term) ||
-    normalizeArabic(p.brand).includes(term) ||
-    p.en.toLowerCase().includes(rawVal.toLowerCase())
-  ).slice(0, 6);
-
-  if (!matches.length) { dropdown.style.display = 'none'; return; }
-
-  dropdown.innerHTML = matches.map(p => `
-    <div onclick="selectQuickOrderProduct(${idx}, ${p.id})"
-      style="display:flex;align-items:center;gap:10px;padding:9px 12px;cursor:pointer;border-bottom:1px solid #f0f4f8"
-      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
-      <span style="font-size:16px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:22px;height:22px;border-radius:5px;object-fit:cover">`:p.icon}</span>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:12px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.ar)}</div>
-        <div style="font-size:10px;color:var(--text-muted)">${escHtml(p.brand)} — ${p.price.toLocaleString()} د.أ</div>
-      </div>
-    </div>`).join('');
-  dropdown.style.display = 'block';
-}
-
-function selectQuickOrderProduct(idx, productId) {
-  const p = products.find(x => x.id === productId);
-  if (!p) return;
-  document.getElementById(`quickOrderName_${idx}`).value = p.ar;
-  document.getElementById(`quickOrderDropdown_${idx}`).style.display = 'none';
-  quickOrderMatches[idx] = productId;
-  updateQuickOrderRowInfo(idx);
-  updateQuickOrderSummary();
-}
-
-function onQuickOrderQtyChange(idx) {
-  updateQuickOrderRowInfo(idx);
-  updateQuickOrderSummary();
-}
-
-function updateQuickOrderRowInfo(idx) {
-  const infoEl = document.getElementById(`quickOrderRowInfo_${idx}`);
-  if (!infoEl) return;
-  const nameVal = document.getElementById(`quickOrderName_${idx}`)?.value.trim();
-  const productId = quickOrderMatches[idx];
-
-  if (productId) {
-    const p = products.find(x => x.id === productId);
-    const qty = parseInt(document.getElementById(`quickOrderQty_${idx}`)?.value) || 1;
-    infoEl.innerHTML = p
-      ? `<span style="color:var(--success);font-weight:700"><i class="fas fa-check-circle"></i> متوفرة — ${p.price.toLocaleString()} د.أ × ${qty} = ${(p.price*qty).toLocaleString()} د.أ</span>`
-      : '';
-  } else if (nameVal) {
-    infoEl.innerHTML = `<span style="color:#7e22ce;font-weight:700"><i class="fas fa-info-circle"></i> غير موجودة بالكتالوج — ستُرسل كطلب عرض سعر</span>`;
-  } else {
-    infoEl.innerHTML = '';
-  }
-}
-
-function updateQuickOrderSummary() {
-  let total = 0, matchedCount = 0, unmatchedCount = 0;
-  document.querySelectorAll('.quick-order-row').forEach(row => {
-    const idx = row.id.replace('quickOrderRow_', '');
-    const nameVal = document.getElementById(`quickOrderName_${idx}`)?.value.trim();
-    const qty = parseInt(document.getElementById(`quickOrderQty_${idx}`)?.value) || 1;
-    const productId = quickOrderMatches[idx];
-    if (productId) {
-      const p = products.find(x => x.id === productId);
-      if (p) { total += p.price * qty; matchedCount++; }
-    } else if (nameVal) {
-      unmatchedCount++;
-    }
-  });
-
-  const label = document.getElementById('quickOrderTotalLabel');
-  if (!label) return;
-  if (!matchedCount && !unmatchedCount) {
-    label.textContent = 'الإجمالي: بانتظار التحديد الكامل';
-    return;
-  }
-  const parts = [];
-  if (matchedCount) parts.push(`${total.toLocaleString()} د.أ (${matchedCount} مادة متوفرة)`);
-  if (unmatchedCount) parts.push(`${unmatchedCount} مادة بانتظار التسعير`);
-  label.textContent = 'الإجمالي: ' + parts.join(' + ');
-}
-
-// إغلاق قوائم الاقتراحات عند الضغط خارجها
-document.addEventListener('click', (e) => {
-  document.querySelectorAll('[id^="quickOrderDropdown_"]').forEach(dd => {
-    const idx = dd.id.replace('quickOrderDropdown_', '');
-    const input = document.getElementById(`quickOrderName_${idx}`);
-    if (dd.style.display === 'block' && !dd.contains(e.target) && e.target !== input) {
-      dd.style.display = 'none';
-    }
-  });
-});
-
-async function submitQuickOrder() {
-  if (!currentUser) { openAuthModal('login'); return; }
-
-  const matchedItems = [];
-  const customItems = [];
-
-  document.querySelectorAll('.quick-order-row').forEach(row => {
-    const idx = row.id.replace('quickOrderRow_', '');
-    const nameVal = document.getElementById(`quickOrderName_${idx}`)?.value.trim();
-    const qty = parseInt(document.getElementById(`quickOrderQty_${idx}`)?.value) || 1;
-    if (!nameVal) return;
-    const productId = quickOrderMatches[idx];
-    if (productId) matchedItems.push({ productId, qty });
-    else customItems.push({ name: nameVal, qty });
-  });
-
-  if (!matchedItems.length && !customItems.length) {
-    showToast('⚠️ يرجى إضافة مادة واحدة على الأقل', 'error');
-    return;
-  }
-
-  const btn = document.querySelector('#quickOrderModal .btn-submit');
-  const originalHTML = btn.innerHTML;
-  btn.disabled = true;
-  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
-
-  try {
-    // المواد المتوفرة تُضاف للسلة مباشرة
-    matchedItems.forEach(item => {
-      const p = products.find(x => x.id === item.productId);
-      if (!p) return;
-      const existing = cart.find(c => String(c.id) === String(p.id));
-      if (existing) {
-        existing.qty += item.qty;
-        existing.price = getEffectiveUnitPrice(p, existing.qty);
-      } else {
-        cart.push({ ...p, qty: item.qty, basePrice: p.price, price: getEffectiveUnitPrice(p, item.qty) });
-      }
-    });
-    if (matchedItems.length) updateCartUI();
-
-    // المواد غير الموجودة بالكتالوج تُرسل كطلب عرض سعر
-    if (customItems.length) {
-      const ts = Date.now().toString(36).toUpperCase();
-      const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
-      const quote = {
-        id: quoteNum,
-        clientName: currentUser.name,
-        clientEmail: currentUser.email,
-        clientUid: currentUser.uid,
-        clinic: currentUser.clinic || '',
-        phone: currentUser.phone || '',
-        items: customItems.map(it => ({
-          productId: null, ar: it.name, en: '', icon: '✏️', image: null,
-          isCustom: true, qty: it.qty, unitPrice: null,
-        })),
-        notes: 'تم الإرسال عبر الطلب السريع',
-        attachedImage: null,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
-      };
-      await createQuoteRequest(quote);
-      createNotification({
-        scope: 'admin', icon: '⚡',
-        title: 'طلب سريع — مواد بحاجة تسعير',
-        message: `${currentUser.name} أرسل طلباً سريعاً فيه ${customItems.length} مادة غير موجودة بالكتالوج`,
-        link: 'adminquotes:open',
-      });
-    }
-
-    closeQuickOrderModal();
-
-    if (matchedItems.length && customItems.length) {
-      showToast(`✅ تمت إضافة ${matchedItems.length} مادة للسلة، و${customItems.length} مادة أُرسلت لتحديد السعر`, 'success');
-      openCart();
-    } else if (matchedItems.length) {
-      showToast(`✅ تمت إضافة ${matchedItems.length} مادة للسلة`, 'success');
-      openCart();
-    } else {
-      showToast(`✅ تم إرسال طلبك، سنوافيك بالأسعار قريباً`, 'success');
-      showPage('myQuotes');
-    }
-  } catch(e) {
-    console.error(e);
-    showToast('❌ حدث خطأ أثناء الإرسال، تحقق من الاتصال', 'error');
-  } finally {
-    btn.disabled = false;
-    btn.innerHTML = originalHTML;
-  }
+// مؤقت — راح نستبدلها بمنطق الإرسال الفعلي بالمرحلة الأخيرة
+function submitQuickOrder() {
+  showToast('⏳ منطق الإرسال جاري بناؤه بالمرحلة القادمة', '');
 }
 async function submitQuoteRequest() {
   const showErr = msg => {
