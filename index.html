@@ -2462,6 +2462,21 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           </div>
         </div>
         <div class="form-group">
+          <label class="form-label"><i class="fas fa-map-marker-alt" style="color:var(--primary-light)"></i> وصف الموقع اليدوي <small style="color:var(--text-muted);font-weight:500">(اختياري)</small></label>
+          <textarea class="form-textarea" id="regLocationText" placeholder="مثال: عمّان، الدوار السابع، مقابل..."></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-map-marked-alt" style="color:var(--primary-light)"></i> تحديد الموقع عبر GPS <small style="color:var(--text-muted);font-weight:500">(اختياري)</small></label>
+          <input type="hidden" id="regLocationLat" value="">
+          <input type="hidden" id="regLocationLng" value="">
+          <button type="button" onclick="detectRegLocation()" style="width:100%;padding:11px;border-radius:var(--radius-sm);
+            background:#f0f8ff;color:var(--primary);border:1.5px dashed var(--border);font-family:inherit;
+            font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            <i class="fas fa-crosshairs"></i> تحديد موقعي الحالي
+          </button>
+          <div id="regLocationStatus" style="display:none;margin-top:8px;font-size:12px;font-weight:600"></div>
+        </div>
+        <div class="form-group">
           <label class="form-label"><i class="fas fa-lock" style="color:var(--primary-light)"></i> كلمة المرور <span class="required">*</span></label>
           <div class="input-with-icon">
             <input type="password" class="form-input" id="regPassword" placeholder="8 أحرف على الأقل" oninput="checkPassStrength(this.value)">
@@ -3127,6 +3142,87 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <button class="btn-submit" onclick="submitQuickOrder()" style="width:100%">
         <i class="fas fa-paper-plane"></i> إرسال الطلب
       </button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK ORDER INFO MODAL -->
+<div class="modal-overlay" id="qoInfoModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title"><i class="fas fa-user-edit"></i> بيانات التواصل</div>
+      <button class="close-btn" onclick="closeQOInfoModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f0f8ff;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--text-muted)">
+        <i class="fas fa-info-circle" style="color:var(--primary)"></i> يرجى إدخال بياناتك لإتمام إرسال الطلب السريع
+      </div>
+      <div class="form-group">
+        <label class="form-label">اسم العيادة / المنشأة <span class="required">*</span></label>
+        <input type="text" class="form-input" id="qoClinicInput" placeholder="عيادة الدكتور...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">اسم الطبيب / المسؤول <span class="required">*</span></label>
+        <input type="text" class="form-input" id="qoDoctorInput" placeholder="د. محمد...">
+      </div>
+      <div class="form-group">
+        <label class="form-label">رقم الهاتف (واتساب) <span class="required">*</span></label>
+        <input type="tel" class="form-input" id="qoPhoneInput" placeholder="07xxxxxxxx">
+      </div>
+      <div id="qoInfoError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
+        <i class="fas fa-exclamation-circle"></i> يرجى ملء جميع الحقول المطلوبة
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeQOInfoModal()">إلغاء</button>
+      <button class="btn-next" onclick="submitQOInfo()"><span>التالي</span> <i class="fas fa-arrow-left"></i></button>
+    </div>
+  </div>
+</div>
+
+<!-- QUICK ORDER LOCATION MODAL -->
+<div class="modal-overlay" id="qoLocationModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title"><i class="fas fa-map-marker-alt"></i> تحديد الموقع</div>
+      <button class="close-btn" onclick="closeQOLocationModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <div style="background:#f0f8ff;border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:18px;font-size:13px;color:var(--text-muted)">
+        <i class="fas fa-info-circle" style="color:var(--primary)"></i> حدد موقعك لإتمام إرسال الطلب السريع
+      </div>
+      <div class="location-section">
+        <div class="location-methods">
+          <button class="loc-method-btn active" id="qoBtnManual" onclick="qoSwitchLocMethod('manual')">
+            <i class="fas fa-keyboard"></i> كتابة يدوية
+          </button>
+          <button class="loc-method-btn" id="qoBtnGPS" onclick="qoGetGPSLocation()">
+            <i class="fas fa-crosshairs"></i> موقعي الحالي
+          </button>
+        </div>
+        <div id="qoManualInput">
+          <input type="text" class="form-input" id="qoAddressInput" placeholder="المدينة، الحي، الشارع، رقم المبنى" oninput="qoOnAddressType()">
+        </div>
+        <div class="gps-loading" id="qoGpsLoading">
+          <div class="spinner"></div>
+          <span>جاري تحديد موقعك...</span>
+        </div>
+        <div class="map-preview" id="qoMapPreview">
+          <i class="fas fa-map-marked-alt"></i>
+          <div class="map-placeholder-text">حدد موقعك عبر GPS أو اكتب العنوان يدوياً</div>
+        </div>
+        <div class="location-confirm" id="qoLocationConfirm">
+          <i class="fas fa-check-circle"></i>
+          <span id="qoLocationConfirmText"></span>
+        </div>
+        <div class="field-error" id="qoLocationError" style="margin-top:8px">
+          <i class="fas fa-exclamation-circle"></i> يرجى تحديد الموقع
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeQOLocationModal()">إلغاء</button>
+      <button class="btn-submit" onclick="submitQOLocation()"><i class="fas fa-paper-plane"></i> إرسال الطلب</button>
     </div>
   </div>
 </div>
@@ -5685,6 +5781,30 @@ function closeCart() {
 // =====================
 // ORDER MODAL
 // =====================
+function applyProfileLocationToOrder() {
+  if (!currentUser) return;
+  const hasCoords = currentUser.profileLocationLat && currentUser.profileLocationLng;
+  const hasText   = currentUser.profileLocationText && currentUser.profileLocationText.trim();
+  if (!hasCoords && !hasText) return;
+
+  if (hasText) {
+    document.getElementById('addressInput').value = currentUser.profileLocationText;
+  }
+  if (hasCoords) {
+    locationData.lat = currentUser.profileLocationLat;
+    locationData.lng = currentUser.profileLocationLng;
+    showLocationOnMap(locationData.lat, locationData.lng);
+  }
+  locationData.address = hasText ? currentUser.profileLocationText
+    : `${t('خط العرض','Lat')}: ${locationData.lat}, ${t('خط الطول','Lng')}: ${locationData.lng}`;
+  locationData.method = hasCoords ? 'profile-map' : 'profile-manual';
+
+  document.getElementById('locationConfirm').classList.add('show');
+  document.getElementById('locationConfirmText').textContent =
+    `✅ ${t('تم تعبئة الموقع من ملفك الشخصي، يمكنك تعديله','Location filled from your profile, you can edit it')}`;
+  document.getElementById('locationError').classList.remove('show');
+}
+
 function openOrderModal() {
   if (!cart.length) { showToast(t('السلة فارغة!','Cart is empty!'), 'error'); return; }
   closeCart();
@@ -5703,6 +5823,7 @@ function openOrderModal() {
   document.getElementById('successScreen').classList.remove('show');
   document.getElementById('modalBody').querySelector('.modal-steps').style.display='flex';
   window._selectedPayMethod = 'money';
+  applyProfileLocationToOrder();
   renderModalStep();
   document.getElementById('orderModal').classList.add('open');
 }
@@ -6586,6 +6707,7 @@ function showPage(page) {
   } else if (page === 'orders') {
     activatePageSection('ordersPage');
     window.scrollTo(0, 0);
+    renderClientOrders();
     markNotifsByLinkPrefixRead(['page:orders']);
   } else if (page === 'productDetail') {
     activatePageSection('productDetailPage');
@@ -6602,6 +6724,7 @@ function showPage(page) {
   } else if (page === 'myQuotes') {
     activatePageSection('myQuotesPage');
     window.scrollTo(0, 0);
+    renderMyQuotesPage();
     markNotifsByLinkPrefixRead(['page:myQuotes']);
   } else if (page === 'messages') {
     activatePageSection('messagesPage');
@@ -6783,7 +6906,10 @@ async function resolveUserRole(fbUser) {
         role,
         name: data.firstName || fbUser.displayName || (role==='manager' ? 'مدير فرعي' : 'عميل'),
         clinic: data.clinic || '',
-        phone: data.phone || ''
+        phone: data.phone || '',
+        profileLocationText: data.profileLocationText || '',
+        profileLocationLat: data.profileLocationLat || null,
+        profileLocationLng: data.profileLocationLng || null
       };
     }
   } catch(e) {
@@ -6796,7 +6922,10 @@ async function resolveUserRole(fbUser) {
     role: 'client',
     name: profile.firstName || fbUser.displayName || 'عميل',
     clinic: profile.clinic || '',
-    phone: profile.phone || ''
+    phone: profile.phone || '',
+    profileLocationText: profile.profileLocationText || '',
+    profileLocationLat: profile.profileLocationLat || null,
+    profileLocationLng: profile.profileLocationLng || null
   };
 }
 
@@ -6933,12 +7062,39 @@ function showClientWelcome(user) {
   hero.insertBefore(banner, hero.firstChild);
 }
 
+function detectRegLocation() {
+  if (!navigator.geolocation) {
+    showToast(t('المتصفح لا يدعم تحديد الموقع','Browser does not support location'), 'error');
+    return;
+  }
+  const statusEl = document.getElementById('regLocationStatus');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري تحديد موقعك...`;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(5);
+      const lng = pos.coords.longitude.toFixed(5);
+      document.getElementById('regLocationLat').value = lat;
+      document.getElementById('regLocationLng').value = lng;
+      statusEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success)"></i>
+        <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--primary);text-decoration:underline">عرض الموقع على خرائط جوجل</a>`;
+      showToast(t('✅ تم تحديد موقعك بنجاح','✅ Location detected!'), 'success');
+    },
+    err => {
+      statusEl.innerHTML = `<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> تعذر تحديد الموقع، حاول مجدداً</span>`;
+    }
+  );
+}
+
 async function doRegister() {
   const firstName = document.getElementById('regFirstName').value.trim();
   const clinic    = document.getElementById('regClinic').value.trim();
   const email     = document.getElementById('regEmail').value.trim();
   const phone     = document.getElementById('regPhone').value.trim();
   const password  = document.getElementById('regPassword').value;
+  const locationText = document.getElementById('regLocationText').value.trim();
+  const locationLat  = document.getElementById('regLocationLat').value || null;
+  const locationLng  = document.getElementById('regLocationLng').value || null;
 
   const showRegError = (msg) => {
     document.getElementById('regErrorMsg').textContent = msg;
@@ -6958,18 +7114,24 @@ async function doRegister() {
     // حفظ بيانات العميل الإضافية في Firestore
     await window._fbSetDoc(
       window._fbDoc2('users', fbUser.uid),
-      { firstName, clinic, email, phone, role: 'client', createdAt: new Date().toISOString() }
+      { firstName, clinic, email, phone, role: 'client',
+        profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
+        createdAt: new Date().toISOString() }
     );
 
     // حفظ محلي أيضاً للتوافق
     const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
     if (!users.find(u => u.email === email)) {
-      users.push({ firstName, clinic, email, phone, role: 'client', uid: fbUser.uid, createdAt: Date.now() });
+      users.push({ firstName, clinic, email, phone, role: 'client', uid: fbUser.uid,
+        profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
+        createdAt: Date.now() });
       localStorage.setItem('dentapro_users', JSON.stringify(users));
     }
 
     document.getElementById('regError').style.display = 'none';
-    loginSuccess({ role: 'client', name: firstName, clinic, email, phone, uid: fbUser.uid });
+    loginSuccess({ role: 'client', name: firstName, clinic, email, phone,
+      profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
+      uid: fbUser.uid });
     logActivity('register');
 
   } catch(e) {
@@ -8532,11 +8694,6 @@ function removeQuickOrderRow(idx) {
 }
 
 function openQuickOrderModal() {
-  if (!currentUser) {
-    showToast('🔒 يرجى تسجيل الدخول أولاً لاستخدام الطلب السريع', 'error');
-    openAuthModal('login');
-    return;
-  }
   document.getElementById('quickOrderRows').innerHTML = '';
   quickOrderRowCount = 0;
   addQuickOrderRow();
@@ -8570,7 +8727,6 @@ async function submitQuickOrder() {
         return;
       }
     }
-    // لم يتم اختيار مادة من الاقتراحات → تُعتبر مادة غير معروفة (custom)
     hasCustomItem = true;
     items.push({ productId: null, ar: nameInput.value.trim(), en: '', icon: '✏️', image: null, isCustom: true, qty, unitPrice: null });
   });
@@ -8580,62 +8736,215 @@ async function submitQuickOrder() {
     return;
   }
 
-  if (!currentUser) {
-    showToast('🔒 يرجى تسجيل الدخول أولاً', 'error');
+  closeQuickOrderModal();
+  proceedQuickOrderCheckout(items, hasCustomItem);
+}
+
+function proceedQuickOrderCheckout(items, hasCustomItem) {
+  window._qoItems = items;
+  window._qoHasCustom = hasCustomItem;
+  window._qoClinic = null;
+  window._qoDoctor = null;
+  window._qoPhone = null;
+  window._qoLocationText = null;
+  window._qoLocationLat = null;
+  window._qoLocationLng = null;
+
+  const missingInfo = !currentUser || !currentUser.clinic || !currentUser.phone;
+  const missingLocation = !currentUser || !((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
+
+  if (!missingInfo && !missingLocation) {
+    // الحالة 1: بيانات كاملة → إرسال مباشر
+    finalizeQuickOrderSend();
+  } else if (!missingInfo && missingLocation) {
+    // الحالة 2: البيانات موجودة لكن الموقع ناقص فقط
+    openQOLocationModal();
+  } else {
+    // الحالة 3: عميل غير مسجل بيانات كاملة أو ضيف
+    openQOInfoModal();
+  }
+}
+
+// ── نافذة بيانات التواصل ──
+function openQOInfoModal() {
+  document.getElementById('qoClinicInput').value = (currentUser && currentUser.clinic) || '';
+  document.getElementById('qoDoctorInput').value = (currentUser && currentUser.name) || '';
+  document.getElementById('qoPhoneInput').value  = (currentUser && currentUser.phone) || '';
+  document.getElementById('qoInfoError').style.display = 'none';
+  document.getElementById('qoInfoModal').classList.add('open');
+}
+function closeQOInfoModal() {
+  document.getElementById('qoInfoModal').classList.remove('open');
+}
+function submitQOInfo() {
+  const clinic = document.getElementById('qoClinicInput').value.trim();
+  const doctor = document.getElementById('qoDoctorInput').value.trim();
+  const phone  = document.getElementById('qoPhoneInput').value.trim();
+  if (!clinic || !doctor || !phone || phone.length < 7) {
+    document.getElementById('qoInfoError').style.display = 'block';
     return;
   }
+  window._qoClinic = clinic;
+  window._qoDoctor = doctor;
+  window._qoPhone  = phone;
+  closeQOInfoModal();
 
-  const btn = document.querySelector('#quickOrderModal .btn-submit');
-  const originalHTML = btn ? btn.innerHTML : '';
-  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...'; }
+  const hasLocation = currentUser && ((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
+  if (hasLocation) {
+    finalizeQuickOrderSend();
+  } else {
+    openQOLocationModal();
+  }
+}
+
+// ── نافذة تحديد الموقع ──
+let qoLocationData = { lat: null, lng: null, address: '', method: '' };
+
+function qoSwitchLocMethod(method) {
+  document.querySelectorAll('#qoLocationModal .loc-method-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('qoBtn' + method.charAt(0).toUpperCase() + method.slice(1))?.classList.add('active');
+}
+
+function qoOnAddressType() {
+  const val = document.getElementById('qoAddressInput').value.trim();
+  if (val.length > 5) {
+    qoLocationData.address = val;
+    qoLocationData.method = 'manual';
+    document.getElementById('qoLocationConfirm').classList.add('show');
+    document.getElementById('qoLocationConfirmText').textContent = `📍 ${val}`;
+    document.getElementById('qoLocationError').classList.remove('show');
+  }
+}
+
+function qoGetGPSLocation() {
+  qoSwitchLocMethod('GPS');
+  if (!navigator.geolocation) {
+    showToast(t('المتصفح لا يدعم GPS','Browser does not support GPS'), 'error');
+    return;
+  }
+  document.getElementById('qoGpsLoading').classList.add('show');
+  document.getElementById('qoLocationConfirm').classList.remove('show');
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      qoLocationData.lat = pos.coords.latitude.toFixed(5);
+      qoLocationData.lng = pos.coords.longitude.toFixed(5);
+      qoLocationData.address = `${t('خط العرض','Lat')}: ${qoLocationData.lat}, ${t('خط الطول','Lng')}: ${qoLocationData.lng}`;
+      qoLocationData.method = 'gps';
+      document.getElementById('qoGpsLoading').classList.remove('show');
+      const box = document.getElementById('qoMapPreview');
+      box.classList.add('located');
+      box.innerHTML = `
+        <i class="fas fa-map-marker-alt" style="color:var(--success)"></i>
+        <div class="map-placeholder-text" style="color:var(--primary-dark)">تم تحديد الموقع</div>
+        <div class="map-coords">📍 ${qoLocationData.lat}, ${qoLocationData.lng}</div>`;
+      document.getElementById('qoLocationConfirm').classList.add('show');
+      document.getElementById('qoLocationConfirmText').textContent = `✅ تم تحديد موقعك بنجاح!`;
+      document.getElementById('qoLocationError').classList.remove('show');
+      showToast('✅ تم تحديد موقعك بنجاح', 'success');
+    },
+    err => {
+      document.getElementById('qoGpsLoading').classList.remove('show');
+      showToast('تعذر الحصول على الموقع. يرجى إدخاله يدوياً.', 'error');
+    }
+  );
+}
+
+function openQOLocationModal() {
+  qoLocationData = { lat: null, lng: null, address: '', method: '' };
+  document.getElementById('qoAddressInput').value = '';
+  document.getElementById('qoLocationConfirm').classList.remove('show');
+  document.getElementById('qoLocationError').classList.remove('show');
+  document.getElementById('qoGpsLoading').classList.remove('show');
+  const box = document.getElementById('qoMapPreview');
+  box.classList.remove('located');
+  box.innerHTML = `<i class="fas fa-map-marked-alt"></i><div class="map-placeholder-text">حدد موقعك عبر GPS أو اكتب العنوان يدوياً</div>`;
+  qoSwitchLocMethod('manual');
+  document.getElementById('qoLocationModal').classList.add('open');
+}
+function closeQOLocationModal() {
+  document.getElementById('qoLocationModal').classList.remove('open');
+}
+function submitQOLocation() {
+  const manualVal = document.getElementById('qoAddressInput').value.trim();
+  if (!qoLocationData.lat && !manualVal) {
+    document.getElementById('qoLocationError').classList.add('show');
+    return;
+  }
+  window._qoLocationText = qoLocationData.address || manualVal;
+  window._qoLocationLat  = qoLocationData.lat || null;
+  window._qoLocationLng  = qoLocationData.lng || null;
+  closeQOLocationModal();
+  finalizeQuickOrderSend();
+}
+
+// ── الإرسال الفعلي النهائي (بعد استكمال كل البيانات المطلوبة) ──
+async function finalizeQuickOrderSend() {
+  const items = window._qoItems || [];
+  const hasCustomItem = window._qoHasCustom;
+
+  const clinic = window._qoClinic || (currentUser ? currentUser.clinic : '') || '';
+  const doctor = window._qoDoctor || (currentUser ? currentUser.name   : '') || '';
+  const phone  = window._qoPhone  || (currentUser ? currentUser.phone  : '') || '';
+
+  const locText = window._qoLocationText || (currentUser ? currentUser.profileLocationText : '') || '';
+  const locLat  = window._qoLocationLat  || (currentUser ? currentUser.profileLocationLat  : null);
+  const locLng  = window._qoLocationLng  || (currentUser ? currentUser.profileLocationLng  : null);
+  const address = locText || (locLat && locLng ? `${t('خط العرض','Lat')}: ${locLat}, ${t('خط الطول','Lng')}: ${locLng}` : '');
 
   try {
     if (!hasCustomItem) {
-      // كل المواد معروفة وبسعر ثابت → أضفها للسلة مباشرة وافتح صفحة الطلب العادي
-      items.forEach(item => {
-        const p = products.find(x => x.id === item.productId);
-        if (!p) return;
-        const existing = cart.find(c => String(c.id) === String(p.id));
-        if (existing) existing.qty += item.qty;
-        else cart.push({ ...p, qty: item.qty, basePrice: p.price, price: getEffectiveUnitPrice(p, item.qty) });
+      // كل المواد معروفة السعر → إنشاء طلب مباشر
+      const ts = Date.now().toString(36).toUpperCase();
+      const orderNum = `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
+      const total = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
+      const order = {
+        id: orderNum,
+        clientName: doctor,
+        clientEmail: currentUser ? currentUser.email : 'guest',
+        clientUid: currentUser ? currentUser.uid : null,
+        clinic, doctor, phone,
+        address, locationLat: locLat || null, locationLng: locLng || null,
+        notes: 'تم الإرسال عبر ميزة الطلب السريع',
+        items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, qty: i.qty, points: 0 })),
+        total, totalPoints: 0, payMethod: 'money', pointsDeducted: false,
+        status: 'pending', createdAt: new Date().toISOString(),
+      };
+      await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
+      createNotification({
+        scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
+        message: `طلب سريع من ${clinic || doctor} بقيمة ${total.toLocaleString()} د.أ`,
+        link: 'adminorders:open',
       });
-      updateCartUI();
-      closeQuickOrderModal();
-      showToast('✅ تمت إضافة المواد للسلة، أكمل بيانات الطلب', 'success');
-      openOrderModal();
+      showToast('🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً', 'success');
     } else {
-      // يوجد مواد غير معروفة → يُرسل الكل كطلب عرض سعر واحد
+      // توجد مواد غير معروفة السعر → إرسال كطلب عرض سعر
       const ts = Date.now().toString(36).toUpperCase();
       const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const quote = {
         id: quoteNum,
-        clientName: currentUser.name,
-        clientEmail: currentUser.email,
-        clientUid: currentUser.uid,
-        clinic: currentUser.clinic || '',
-        phone: currentUser.phone || '',
-        items,
-        notes: 'تم الإرسال عبر ميزة الطلب السريع',
-        attachedImage: null,
-        status: 'pending',
-        createdAt: new Date().toISOString(),
+        clientName: doctor,
+        clientEmail: currentUser ? currentUser.email : 'guest',
+        clientUid: currentUser ? currentUser.uid : null,
+        clinic, phone,
+        items: items.map(i => ({ productId: i.productId, ar: i.ar, en: i.en, icon: i.icon, image: i.image || null, isCustom: i.isCustom, qty: i.qty, unitPrice: i.unitPrice || null })),
+        notes: `تم الإرسال عبر ميزة الطلب السريع${address ? ' — الموقع: ' + address : ''}`,
+        attachedImage: null, status: 'pending', createdAt: new Date().toISOString(),
       };
       await createQuoteRequest(quote);
       createNotification({
-        scope: 'admin',
-        icon: '⚡',
-        title: 'طلب سريع جديد',
-        message: `${quote.clientName} أرسل طلباً سريعاً لعدد ${items.length} مادة`,
+        scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
+        message: `${clinic || doctor} أرسل طلباً سريعاً لعدد ${items.length} مادة`,
         link: 'adminquotes:open',
       });
-      closeQuickOrderModal();
       showToast('🎉 تم إرسال طلبك، سنوافيك بعرض السعر النهائي قريباً', 'success');
     }
   } catch(e) {
     console.error(e);
     showToast('❌ حدث خطأ أثناء الإرسال، تحقق من الاتصال', 'error');
   } finally {
-    if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
+    window._qoItems = null; window._qoHasCustom = false;
+    window._qoClinic = null; window._qoDoctor = null; window._qoPhone = null;
+    window._qoLocationText = null; window._qoLocationLat = null; window._qoLocationLng = null;
   }
 }
 async function submitQuoteRequest() {
@@ -9844,6 +10153,23 @@ function openEditProfile() {
           <label class="form-label">رقم الهاتف</label>
           <input type="tel" class="form-input" id="epPhone" value="${escHtml(currentUser.phone||'')}" placeholder="05xxxxxxxx">
         </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-map-marker-alt" style="color:var(--primary-light)"></i> وصف الموقع اليدوي <small style="color:var(--text-muted);font-weight:500">(اختياري)</small></label>
+          <textarea class="form-textarea" id="epLocationText" placeholder="مثال: عمّان، الدوار السابع، مقابل...">${escHtml(currentUser.profileLocationText||'')}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-map-marked-alt" style="color:var(--primary-light)"></i> تحديد الموقع عبر خرائط جوجل <small style="color:var(--text-muted);font-weight:500">(اختياري)</small></label>
+          <input type="hidden" id="epLocationLat" value="${currentUser.profileLocationLat||''}">
+          <input type="hidden" id="epLocationLng" value="${currentUser.profileLocationLng||''}">
+          <button type="button" onclick="detectProfileLocation()" style="width:100%;padding:11px;border-radius:var(--radius-sm);
+            background:#f0f8ff;color:var(--primary);border:1.5px dashed var(--border);font-family:inherit;
+            font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+            <i class="fas fa-crosshairs"></i> تحديد موقعي الحالي
+          </button>
+          <div id="epLocationStatus" style="margin-top:8px;font-size:12px;font-weight:600;${currentUser.profileLocationLat ? '' : 'display:none;'}">
+            ${currentUser.profileLocationLat ? `<i class="fas fa-check-circle" style="color:var(--success)"></i> <a href="https://www.google.com/maps?q=${currentUser.profileLocationLat},${currentUser.profileLocationLng}" target="_blank" style="color:var(--primary);text-decoration:underline">عرض الموقع المحفوظ على خرائط جوجل</a>` : ''}
+          </div>
+        </div>
         <div id="epError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;
           padding:10px;background:#fff5f5;border-radius:8px;margin-top:8px">
           <i class="fas fa-exclamation-circle"></i> يرجى ملء الحقول المطلوبة
@@ -9861,10 +10187,37 @@ function openEditProfile() {
   document.body.appendChild(modal);
 }
 
+function detectProfileLocation() {
+  if (!navigator.geolocation) {
+    showToast(t('المتصفح لا يدعم تحديد الموقع','Browser does not support location'), 'error');
+    return;
+  }
+  const statusEl = document.getElementById('epLocationStatus');
+  statusEl.style.display = 'block';
+  statusEl.innerHTML = `<i class="fas fa-spinner fa-spin"></i> جاري تحديد موقعك...`;
+  navigator.geolocation.getCurrentPosition(
+    pos => {
+      const lat = pos.coords.latitude.toFixed(5);
+      const lng = pos.coords.longitude.toFixed(5);
+      document.getElementById('epLocationLat').value = lat;
+      document.getElementById('epLocationLng').value = lng;
+      statusEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success)"></i>
+        <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--primary);text-decoration:underline">عرض الموقع على خرائط جوجل</a>`;
+      showToast(t('✅ تم تحديد موقعك بنجاح','✅ Location detected!'), 'success');
+    },
+    err => {
+      statusEl.innerHTML = `<span style="color:var(--danger)"><i class="fas fa-exclamation-circle"></i> تعذر تحديد الموقع، حاول مجدداً</span>`;
+    }
+  );
+}
+
 async function saveProfile() {
   const name   = document.getElementById('epName').value.trim();
   const clinic = document.getElementById('epClinic').value.trim();
   const phone  = document.getElementById('epPhone').value.trim();
+  const locationText = document.getElementById('epLocationText').value.trim();
+  const locationLat  = document.getElementById('epLocationLat').value || null;
+  const locationLng  = document.getElementById('epLocationLng').value || null;
   if (!name || !clinic) {
     document.getElementById('epError').style.display = 'flex';
     return;
@@ -9872,6 +10225,9 @@ async function saveProfile() {
   currentUser.name   = name;
   currentUser.clinic = clinic;
   currentUser.phone  = phone;
+  currentUser.profileLocationText = locationText;
+  currentUser.profileLocationLat  = locationLat;
+  currentUser.profileLocationLng  = locationLng;
   localStorage.setItem('dentapro_session', JSON.stringify(currentUser));
 
   // حفظ في Firestore
@@ -9879,14 +10235,16 @@ async function saveProfile() {
     if (currentUser.uid && window._fbDoc2 && window._fbSetDoc) {
       await window._fbSetDoc(
         window._fbDoc2('users', currentUser.uid),
-        { firstName: name, clinic, phone, email: currentUser.email, role: 'client', updatedAt: new Date().toISOString() }
+        { firstName: name, clinic, phone, email: currentUser.email, role: 'client',
+          profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
+          updatedAt: new Date().toISOString() }
       );
     }
     // حفظ محلي
     const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
     const idx = users.findIndex(u => u.email === currentUser.email);
-    if (idx !== -1) { users[idx] = { ...users[idx], firstName: name, clinic, phone }; }
-    else { users.push({ firstName: name, clinic, phone, email: currentUser.email }); }
+    if (idx !== -1) { users[idx] = { ...users[idx], firstName: name, clinic, phone, profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng }; }
+    else { users.push({ firstName: name, clinic, phone, email: currentUser.email, profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng }); }
     localStorage.setItem('dentapro_users', JSON.stringify(users));
   } catch(e) { console.warn('saveProfile Firebase:', e); }
 
