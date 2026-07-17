@@ -355,7 +355,7 @@ body.en .filter-results-count{margin-right:0; margin-left:auto}
 body.en .product-badge{right:auto; left:-32px; transform:rotate(-45deg)}
 .product-img{
   width:100%; height:200px; object-fit:contain;
-  background:#ffffff;
+  background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
   display:flex; align-items:center; justify-content:center;
   font-size:72px; padding:16px; cursor:pointer;
 }
@@ -989,7 +989,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   /* ===== PRODUCT IMAGE ===== */
 .product-img-wrap {
   width:100%; height:200px;
-  background:#ffffff;
+  background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
   display:flex; align-items:center; justify-content:center;
   font-size:72px; padding:16px; cursor:pointer;
   position:relative; overflow:hidden;
@@ -6242,16 +6242,22 @@ logActivity('order_placed', { orderId: orderNum, total: getTotal() });
   }
 }
 
-// ينظف رقم الهاتف ليكون بصيغة دولية صحيحة لرابط واتساب (بدون +، بدون أصفار زائدة بالبداية)
+// ينظف رقم الهاتف ليكون بصيغة دولية صحيحة لرابط واتساب
+// يتعامل مع: +962..., 00962..., 962... (بدون رمز)، 0790408680 (محلي أردني بصفر)، 790408680 (محلي بدون صفر)
 function formatPhoneForWhatsApp(fullPhone) {
   if (!fullPhone) return '';
   let clean = fullPhone.replace(/[^\d+]/g, ''); // إزالة كل شيء غير الأرقام و +
 
-  // لو الرقم يحتوي فعلاً على + (رمز دولة مدمج بالبداية زي +962...)
+  // تحويل صيغة "00" الدولية إلى "+" أولاً (مثال: 00962... → +962...)
+  if (clean.startsWith('00')) {
+    clean = '+' + clean.slice(2);
+  }
+
+  const knownCodes = ['962','966','971','965','973','974','968','213','216','212'];
+
+  // لو الرقم يحتوي على + (رمز دولة مدمج بالبداية زي +962...)
   if (clean.startsWith('+')) {
     clean = clean.slice(1);
-    // بعد رمز الدولة أحياناً يبقى صفر زائد (مثال: +9620791234567) — نشيله
-    const knownCodes = ['962','966','971','965','973','974','968','213','216','212'];
     for (const code of knownCodes) {
       if (clean.startsWith(code)) {
         let rest = clean.slice(code.length);
@@ -6261,6 +6267,25 @@ function formatPhoneForWhatsApp(fullPhone) {
     }
     return clean;
   }
+
+  // لو الرقم ما فيه + أو 00 لكنه يبدأ برمز دولة معروف مباشرة (مثال: 962790408680)
+  for (const code of knownCodes) {
+    if (clean.startsWith(code)) {
+      let rest = clean.slice(code.length);
+      if (rest.startsWith('0')) rest = rest.slice(1);
+      return code + rest;
+    }
+  }
+
+  // رقم محلي أردني مجرد بدون أي رمز دولة (مثال: 0790408680 أو 790408680)
+  // نفترض رمز الأردن تلقائياً بما أن معظم العملاء أردنيون
+  if (clean.startsWith('0') && clean.length === 10) {
+    return '962' + clean.slice(1);
+  }
+  if (!clean.startsWith('0') && clean.length === 9) {
+    return '962' + clean;
+  }
+
   return clean;
 }
 
@@ -8727,6 +8752,7 @@ async function submitQuickOrder() {
         return;
       }
     }
+    // لم يتم اختيار مادة من الاقتراحات → تُعتبر مادة غير معروفة (custom)
     hasCustomItem = true;
     items.push({ productId: null, ar: nameInput.value.trim(), en: '', icon: '✏️', image: null, isCustom: true, qty, unitPrice: null });
   });
@@ -8736,215 +8762,62 @@ async function submitQuickOrder() {
     return;
   }
 
-  closeQuickOrderModal();
-  proceedQuickOrderCheckout(items, hasCustomItem);
-}
-
-function proceedQuickOrderCheckout(items, hasCustomItem) {
-  window._qoItems = items;
-  window._qoHasCustom = hasCustomItem;
-  window._qoClinic = null;
-  window._qoDoctor = null;
-  window._qoPhone = null;
-  window._qoLocationText = null;
-  window._qoLocationLat = null;
-  window._qoLocationLng = null;
-
-  const missingInfo = !currentUser || !currentUser.clinic || !currentUser.phone;
-  const missingLocation = !currentUser || !((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
-
-  if (!missingInfo && !missingLocation) {
-    // الحالة 1: بيانات كاملة → إرسال مباشر
-    finalizeQuickOrderSend();
-  } else if (!missingInfo && missingLocation) {
-    // الحالة 2: البيانات موجودة لكن الموقع ناقص فقط
-    openQOLocationModal();
-  } else {
-    // الحالة 3: عميل غير مسجل بيانات كاملة أو ضيف
-    openQOInfoModal();
-  }
-}
-
-// ── نافذة بيانات التواصل ──
-function openQOInfoModal() {
-  document.getElementById('qoClinicInput').value = (currentUser && currentUser.clinic) || '';
-  document.getElementById('qoDoctorInput').value = (currentUser && currentUser.name) || '';
-  document.getElementById('qoPhoneInput').value  = (currentUser && currentUser.phone) || '';
-  document.getElementById('qoInfoError').style.display = 'none';
-  document.getElementById('qoInfoModal').classList.add('open');
-}
-function closeQOInfoModal() {
-  document.getElementById('qoInfoModal').classList.remove('open');
-}
-function submitQOInfo() {
-  const clinic = document.getElementById('qoClinicInput').value.trim();
-  const doctor = document.getElementById('qoDoctorInput').value.trim();
-  const phone  = document.getElementById('qoPhoneInput').value.trim();
-  if (!clinic || !doctor || !phone || phone.length < 7) {
-    document.getElementById('qoInfoError').style.display = 'block';
+  if (!currentUser) {
+    showToast('🔒 يرجى تسجيل الدخول أولاً', 'error');
     return;
   }
-  window._qoClinic = clinic;
-  window._qoDoctor = doctor;
-  window._qoPhone  = phone;
-  closeQOInfoModal();
 
-  const hasLocation = currentUser && ((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
-  if (hasLocation) {
-    finalizeQuickOrderSend();
-  } else {
-    openQOLocationModal();
-  }
-}
-
-// ── نافذة تحديد الموقع ──
-let qoLocationData = { lat: null, lng: null, address: '', method: '' };
-
-function qoSwitchLocMethod(method) {
-  document.querySelectorAll('#qoLocationModal .loc-method-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('qoBtn' + method.charAt(0).toUpperCase() + method.slice(1))?.classList.add('active');
-}
-
-function qoOnAddressType() {
-  const val = document.getElementById('qoAddressInput').value.trim();
-  if (val.length > 5) {
-    qoLocationData.address = val;
-    qoLocationData.method = 'manual';
-    document.getElementById('qoLocationConfirm').classList.add('show');
-    document.getElementById('qoLocationConfirmText').textContent = `📍 ${val}`;
-    document.getElementById('qoLocationError').classList.remove('show');
-  }
-}
-
-function qoGetGPSLocation() {
-  qoSwitchLocMethod('GPS');
-  if (!navigator.geolocation) {
-    showToast(t('المتصفح لا يدعم GPS','Browser does not support GPS'), 'error');
-    return;
-  }
-  document.getElementById('qoGpsLoading').classList.add('show');
-  document.getElementById('qoLocationConfirm').classList.remove('show');
-  navigator.geolocation.getCurrentPosition(
-    pos => {
-      qoLocationData.lat = pos.coords.latitude.toFixed(5);
-      qoLocationData.lng = pos.coords.longitude.toFixed(5);
-      qoLocationData.address = `${t('خط العرض','Lat')}: ${qoLocationData.lat}, ${t('خط الطول','Lng')}: ${qoLocationData.lng}`;
-      qoLocationData.method = 'gps';
-      document.getElementById('qoGpsLoading').classList.remove('show');
-      const box = document.getElementById('qoMapPreview');
-      box.classList.add('located');
-      box.innerHTML = `
-        <i class="fas fa-map-marker-alt" style="color:var(--success)"></i>
-        <div class="map-placeholder-text" style="color:var(--primary-dark)">تم تحديد الموقع</div>
-        <div class="map-coords">📍 ${qoLocationData.lat}, ${qoLocationData.lng}</div>`;
-      document.getElementById('qoLocationConfirm').classList.add('show');
-      document.getElementById('qoLocationConfirmText').textContent = `✅ تم تحديد موقعك بنجاح!`;
-      document.getElementById('qoLocationError').classList.remove('show');
-      showToast('✅ تم تحديد موقعك بنجاح', 'success');
-    },
-    err => {
-      document.getElementById('qoGpsLoading').classList.remove('show');
-      showToast('تعذر الحصول على الموقع. يرجى إدخاله يدوياً.', 'error');
-    }
-  );
-}
-
-function openQOLocationModal() {
-  qoLocationData = { lat: null, lng: null, address: '', method: '' };
-  document.getElementById('qoAddressInput').value = '';
-  document.getElementById('qoLocationConfirm').classList.remove('show');
-  document.getElementById('qoLocationError').classList.remove('show');
-  document.getElementById('qoGpsLoading').classList.remove('show');
-  const box = document.getElementById('qoMapPreview');
-  box.classList.remove('located');
-  box.innerHTML = `<i class="fas fa-map-marked-alt"></i><div class="map-placeholder-text">حدد موقعك عبر GPS أو اكتب العنوان يدوياً</div>`;
-  qoSwitchLocMethod('manual');
-  document.getElementById('qoLocationModal').classList.add('open');
-}
-function closeQOLocationModal() {
-  document.getElementById('qoLocationModal').classList.remove('open');
-}
-function submitQOLocation() {
-  const manualVal = document.getElementById('qoAddressInput').value.trim();
-  if (!qoLocationData.lat && !manualVal) {
-    document.getElementById('qoLocationError').classList.add('show');
-    return;
-  }
-  window._qoLocationText = qoLocationData.address || manualVal;
-  window._qoLocationLat  = qoLocationData.lat || null;
-  window._qoLocationLng  = qoLocationData.lng || null;
-  closeQOLocationModal();
-  finalizeQuickOrderSend();
-}
-
-// ── الإرسال الفعلي النهائي (بعد استكمال كل البيانات المطلوبة) ──
-async function finalizeQuickOrderSend() {
-  const items = window._qoItems || [];
-  const hasCustomItem = window._qoHasCustom;
-
-  const clinic = window._qoClinic || (currentUser ? currentUser.clinic : '') || '';
-  const doctor = window._qoDoctor || (currentUser ? currentUser.name   : '') || '';
-  const phone  = window._qoPhone  || (currentUser ? currentUser.phone  : '') || '';
-
-  const locText = window._qoLocationText || (currentUser ? currentUser.profileLocationText : '') || '';
-  const locLat  = window._qoLocationLat  || (currentUser ? currentUser.profileLocationLat  : null);
-  const locLng  = window._qoLocationLng  || (currentUser ? currentUser.profileLocationLng  : null);
-  const address = locText || (locLat && locLng ? `${t('خط العرض','Lat')}: ${locLat}, ${t('خط الطول','Lng')}: ${locLng}` : '');
+  const btn = document.querySelector('#quickOrderModal .btn-submit');
+  const originalHTML = btn ? btn.innerHTML : '';
+  if (btn) { btn.disabled = true; btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...'; }
 
   try {
     if (!hasCustomItem) {
-      // كل المواد معروفة السعر → إنشاء طلب مباشر
-      const ts = Date.now().toString(36).toUpperCase();
-      const orderNum = `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
-      const total = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
-      const order = {
-        id: orderNum,
-        clientName: doctor,
-        clientEmail: currentUser ? currentUser.email : 'guest',
-        clientUid: currentUser ? currentUser.uid : null,
-        clinic, doctor, phone,
-        address, locationLat: locLat || null, locationLng: locLng || null,
-        notes: 'تم الإرسال عبر ميزة الطلب السريع',
-        items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, qty: i.qty, points: 0 })),
-        total, totalPoints: 0, payMethod: 'money', pointsDeducted: false,
-        status: 'pending', createdAt: new Date().toISOString(),
-      };
-      await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
-      createNotification({
-        scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
-        message: `طلب سريع من ${clinic || doctor} بقيمة ${total.toLocaleString()} د.أ`,
-        link: 'adminorders:open',
+      // كل المواد معروفة وبسعر ثابت → أضفها للسلة مباشرة وافتح صفحة الطلب العادي
+      items.forEach(item => {
+        const p = products.find(x => x.id === item.productId);
+        if (!p) return;
+        const existing = cart.find(c => String(c.id) === String(p.id));
+        if (existing) existing.qty += item.qty;
+        else cart.push({ ...p, qty: item.qty, basePrice: p.price, price: getEffectiveUnitPrice(p, item.qty) });
       });
-      showToast('🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً', 'success');
+      updateCartUI();
+      closeQuickOrderModal();
+      showToast('✅ تمت إضافة المواد للسلة، أكمل بيانات الطلب', 'success');
+      openOrderModal();
     } else {
-      // توجد مواد غير معروفة السعر → إرسال كطلب عرض سعر
+      // يوجد مواد غير معروفة → يُرسل الكل كطلب عرض سعر واحد
       const ts = Date.now().toString(36).toUpperCase();
       const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const quote = {
         id: quoteNum,
-        clientName: doctor,
-        clientEmail: currentUser ? currentUser.email : 'guest',
-        clientUid: currentUser ? currentUser.uid : null,
-        clinic, phone,
-        items: items.map(i => ({ productId: i.productId, ar: i.ar, en: i.en, icon: i.icon, image: i.image || null, isCustom: i.isCustom, qty: i.qty, unitPrice: i.unitPrice || null })),
-        notes: `تم الإرسال عبر ميزة الطلب السريع${address ? ' — الموقع: ' + address : ''}`,
-        attachedImage: null, status: 'pending', createdAt: new Date().toISOString(),
+        clientName: currentUser.name,
+        clientEmail: currentUser.email,
+        clientUid: currentUser.uid,
+        clinic: currentUser.clinic || '',
+        phone: currentUser.phone || '',
+        items,
+        notes: 'تم الإرسال عبر ميزة الطلب السريع',
+        attachedImage: null,
+        status: 'pending',
+        createdAt: new Date().toISOString(),
       };
       await createQuoteRequest(quote);
       createNotification({
-        scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
-        message: `${clinic || doctor} أرسل طلباً سريعاً لعدد ${items.length} مادة`,
+        scope: 'admin',
+        icon: '⚡',
+        title: 'طلب سريع جديد',
+        message: `${quote.clientName} أرسل طلباً سريعاً لعدد ${items.length} مادة`,
         link: 'adminquotes:open',
       });
+      closeQuickOrderModal();
       showToast('🎉 تم إرسال طلبك، سنوافيك بعرض السعر النهائي قريباً', 'success');
     }
   } catch(e) {
     console.error(e);
     showToast('❌ حدث خطأ أثناء الإرسال، تحقق من الاتصال', 'error');
   } finally {
-    window._qoItems = null; window._qoHasCustom = false;
-    window._qoClinic = null; window._qoDoctor = null; window._qoPhone = null;
-    window._qoLocationText = null; window._qoLocationLat = null; window._qoLocationLng = null;
+    if (btn) { btn.disabled = false; btn.innerHTML = originalHTML; }
   }
 }
 async function submitQuoteRequest() {
