@@ -5327,37 +5327,22 @@ async function acceptQuote(docId) {
   const quotes = window._cachedMyQuotes || [];
   const q = quotes.find(x => x._docId === docId);
   if (!q) return;
-  if (!confirm('سيتم إضافة مواد العرض إلى سلة التسوق لإكمال إجراءات الطلب. هل تريد المتابعة؟')) return;
+  if (!confirm('سيتم إرسال طلبك للإدارة بناءً على الأسعار المحددة. هل تريد المتابعة؟')) return;
 
-  q.items.forEach(item => {
-    const p = products.find(x => x.id === item.productId);
-    if (!p) return;
-    const qty = item.qty || 1;
-    const existing = cart.find(c => String(c.id) === String(p.id));
-    if (existing) {
-      existing.qty = qty;
-      existing.price = item.unitPrice || existing.price;
-    } else {
-      cart.push({ ...p, qty, basePrice: p.price, price: item.unitPrice || p.price });
-    }
-  });
-  updateCartUI();
+  const items = q.items.map(item => ({
+    productId: item.productId,
+    ar: item.ar,
+    en: item.en,
+    icon: item.icon,
+    image: item.image || null,
+    isCustom: item.isCustom || false,
+    qty: item.qty || 1,
+    unitPrice: item.unitPrice || 0,
+  }));
 
-  try {
-    await updateQuote(docId, { status: 'accepted', orderStatus: 'pending' });
-    createNotification({
-      scope: 'admin',
-      icon: '✅',
-      title: 'تم قبول عرض السعر',
-      message: `العميل وافق على عرض السعر #${q.id}، جاهز للتجهيز`,
-      link: 'adminquotes:open',
-    });
-    showToast('✅ تمت الموافقة على العرض وإضافة المواد للسلة', 'success');
-    renderMyQuotesPage();
-    openCart();
-  } catch(e) {
-    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
-  }
+  window._qoQuoteDocId = docId;
+  window._qoQuoteIdStr = q.id;
+  proceedQuickOrderCheckout(items, false);
 }
 
 async function rejectQuote(docId) {
@@ -8911,9 +8896,12 @@ async function finalizeQuickOrderSend() {
   const address = locText || (locLat && locLng ? `${t('خط العرض','Lat')}: ${locLat}, ${t('خط الطول','Lng')}: ${locLng}` : '');
 
   try {
+    const fromQuoteDocId = window._qoQuoteDocId || null;
+    const fromQuoteIdStr = window._qoQuoteIdStr || null;
+
     if (!hasCustomItem) {
       const ts = Date.now().toString(36).toUpperCase();
-      const orderNum = `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
+      const orderNum = fromQuoteIdStr ? `DP-${fromQuoteIdStr.replace('QT-','')}` : `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const total = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const order = {
         id: orderNum,
@@ -8922,18 +8910,29 @@ async function finalizeQuickOrderSend() {
         clientUid: currentUser ? currentUser.uid : null,
         clinic, doctor, phone,
         address, locationLat: locLat || null, locationLng: locLng || null,
-        notes: 'تم الإرسال عبر ميزة الطلب السريع',
+        notes: fromQuoteDocId ? `طلب ناتج عن عرض سعر مقبول #${fromQuoteIdStr}` : 'تم الإرسال عبر ميزة الطلب السريع',
         items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, qty: i.qty, points: 0 })),
         total, totalPoints: 0, payMethod: 'money', pointsDeducted: false,
         status: 'pending', createdAt: new Date().toISOString(),
       };
       await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
-      createNotification({
-        scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
-        message: `طلب سريع من ${clinic || doctor} بقيمة ${total.toLocaleString()} د.أ`,
-        link: 'adminorders:open',
-      });
+
+      if (fromQuoteDocId) {
+        await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
+        createNotification({
+          scope: 'admin', icon: '✅', title: 'تم قبول عرض السعر',
+          message: `العميل وافق على عرض السعر #${fromQuoteIdStr}، وأُنشئ الطلب #${orderNum}`,
+          link: 'adminquotes:open',
+        });
+      } else {
+        createNotification({
+          scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
+          message: `طلب سريع من ${clinic || doctor} بقيمة ${total.toLocaleString()} د.أ`,
+          link: 'adminorders:open',
+        });
+      }
       showToast('🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً', 'success');
+      if (fromQuoteDocId) renderMyQuotesPage();
     } else {
       const ts = Date.now().toString(36).toUpperCase();
       const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
@@ -8962,6 +8961,7 @@ async function finalizeQuickOrderSend() {
     window._qoItems = null; window._qoHasCustom = false;
     window._qoClinic = null; window._qoDoctor = null; window._qoPhone = null;
     window._qoLocationText = null; window._qoLocationLat = null; window._qoLocationLng = null;
+    window._qoQuoteDocId = null; window._qoQuoteIdStr = null;
   }
 }
 async function submitQuoteRequest() {
