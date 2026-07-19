@@ -4803,7 +4803,7 @@ function renderSearchSuggestions() {
     if (score > 0) scored.push({ p, score });
   }
   scored.sort((a,b) => b.score - a.score);
-  const matches = scored.slice(0, 8).map(s => s.p);
+  const matches = scored.slice(0, 30).map(s => s.p);
 
   if (!matches.length) {
     box.innerHTML = `<div style="padding:16px;text-align:center;color:var(--text-muted);font-size:13px">
@@ -6780,7 +6780,9 @@ function showPage(page) {
     markNotifsByLinkPrefixRead(['page:orders']);
   } else if (page === 'productDetail') {
     activatePageSection('productDetailPage');
-    scrollToProductImage();
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => scrollToProductImage());
+    });
   } else if (page === 'about') {
     activatePageSection('aboutPage');
     window.scrollTo(0, 0);
