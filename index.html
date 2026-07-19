@@ -4517,6 +4517,7 @@ function getProductSearchIndex(p) {
     catEn: (cat ? cat.en : '').toLowerCase(),
     descAr: normalizeArabic(p.desc_ar),
     descEn: (p.desc_en || '').toLowerCase(),
+    country: normalizeArabic(p.country || ''),
   };
   _searchIndexCache[p.id] = idx;
   return idx;
@@ -4531,6 +4532,7 @@ function productMatchesQuery(p, rawQuery) {
     const lowerT = term.toLowerCase();
     if (idx.nameAr.includes(normT) || idx.nameEn.includes(lowerT)) score += 10;
     else if (idx.brandAr.includes(normT) || idx.brandEn.includes(lowerT)) score += 5;
+    else if (idx.country.includes(normT)) score += 3;
     else if (idx.descAr.includes(normT) || idx.descEn.includes(lowerT)) score += 1;
     else return 0;
   }
@@ -11421,7 +11423,7 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
       <i class="fas fa-gift" style="color:#f59e0b"></i> العروض
     </button>
     <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('quotes')">
-      <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> عروض الأسعار
+      <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> طلبات عروض الأسعار
     </button>
     <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('messages')">
       <i class="fas fa-comment-dots" style="color:#0a5c8a"></i> الرسائل
