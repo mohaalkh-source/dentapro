@@ -1445,6 +1445,8 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
            signOut, onAuthStateChanged, updateProfile,
            deleteUser, EmailAuthProvider, reauthenticateWithCredential }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
+  import { getMessaging, getToken, onMessage, isSupported }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDVVEzXPlfJAD7NSV0tGHzzsx8LiyK2i4w",
@@ -1471,6 +1473,29 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
   window._fbDeleteUser        = deleteUser;
   window._fbEmailAuthProvider = EmailAuthProvider;
   window._fbReauthenticate    = reauthenticateWithCredential;
+
+  // إعداد Firebase Cloud Messaging (إشعارات فعلية حتى عند إغلاق المتصفح)
+  const FCM_VAPID_KEY = "BEOJcmas6Rpa_BT3UXB4d3Sjx9dNuAa4-N6s7Fm2MsjCoHudMD46W3wWEzZmUSapX4DSuN7Tt6QLtAxBBW91CPw";
+  window._fcmGetTokenFn = null;
+  isSupported().then((supported) => {
+    if (!supported) { console.warn('⚠️ هذا المتصفح لا يدعم Firebase Messaging'); return; }
+    const messaging = getMessaging(app);
+    window._fcmMessaging = messaging;
+    window._fcmGetTokenFn = async (swRegistration) => {
+      try {
+        return await getToken(messaging, { vapidKey: FCM_VAPID_KEY, serviceWorkerRegistration: swRegistration });
+      } catch(e) {
+        console.warn('⚠️ فشل جلب FCM token:', e.message);
+        return null;
+      }
+    };
+    onMessage(messaging, (payload) => {
+      // إشعار يصل والموقع مفتوح فعلياً بالمقدمة — نعرضه كـ toast بدل إشعار نظام مكرر
+      if (typeof window._onForegroundFCMMessage === 'function') {
+        window._onForegroundFCMMessage(payload);
+      }
+    });
+  }).catch(e => console.warn('⚠️ isSupported check failed:', e.message));
 
   window._db           = db;
   window._fbGetDoc     = getDoc;
@@ -4517,7 +4542,6 @@ function getProductSearchIndex(p) {
     catEn: (cat ? cat.en : '').toLowerCase(),
     descAr: normalizeArabic(p.desc_ar),
     descEn: (p.desc_en || '').toLowerCase(),
-    country: normalizeArabic(p.country || ''),
   };
   _searchIndexCache[p.id] = idx;
   return idx;
@@ -4532,7 +4556,6 @@ function productMatchesQuery(p, rawQuery) {
     const lowerT = term.toLowerCase();
     if (idx.nameAr.includes(normT) || idx.nameEn.includes(lowerT)) score += 10;
     else if (idx.brandAr.includes(normT) || idx.brandEn.includes(lowerT)) score += 5;
-    else if (idx.country.includes(normT)) score += 3;
     else if (idx.descAr.includes(normT) || idx.descEn.includes(lowerT)) score += 1;
     else return 0;
   }
@@ -6932,6 +6955,80 @@ function skeletonOrderCardsHTML(count = 3) {
   return html;
 }
 // =====================
+// PUSH NOTIFICATIONS (FCM)
+// =====================
+let _swRegistration = null;
+
+async function registerServiceWorkerForPush() {
+  if (!('serviceWorker' in navigator)) return null;
+  try {
+    if (_swRegistration) return _swRegistration;
+    _swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
+    return _swRegistration;
+  } catch(e) {
+    console.warn('⚠️ فشل تسجيل Service Worker:', e.message);
+    return null;
+  }
+}
+
+async function enablePushNotifications() {
+  if (!currentUser) return;
+  if (!('Notification' in window)) return;
+
+  try {
+    let permission = Notification.permission;
+    if (permission === 'default') {
+      permission = await Notification.requestPermission();
+    }
+    if (permission !== 'granted') return;
+
+    const swReg = await registerServiceWorkerForPush();
+    if (!swReg) return;
+
+    // ننتظر حتى تصبح دالة جلب التوكن جاهزة (isSupported قد يستغرق لحظة)
+    for (let i = 0; i < 20; i++) {
+      if (window._fcmGetTokenFn) break;
+      await new Promise(r => setTimeout(r, 300));
+    }
+    if (!window._fcmGetTokenFn) return;
+
+    const fcmToken = await window._fcmGetTokenFn(swReg);
+    if (!fcmToken) return;
+
+    // حفظ التوكن مرتبط بالمستخدم — يسمح بإرسال إشعار له لاحقاً حتى لو أغلق الموقع
+    await window._fbSetDoc(
+      window._fbDoc2('fcm_tokens', currentUser.uid || currentUser.email),
+      {
+        token: fcmToken,
+        email: currentUser.email,
+        role: currentUser.role,
+        updatedAt: new Date().toISOString()
+      }
+    );
+    console.log('✅ تم تفعيل الإشعارات الفعلية بنجاح');
+  } catch(e) {
+    console.warn('⚠️ enablePushNotifications:', e.message);
+  }
+}
+
+// إشعار يصل والموقع مفتوح بالمقدمة فعلياً — نعرضه toast بدل إشعار نظام مزدوج
+window._onForegroundFCMMessage = function(payload) {
+  const title = payload.notification?.title || '';
+  const body = payload.notification?.body || '';
+  showToast(`🔔 ${title}${body ? ' — ' + body : ''}`, 'success');
+  if (typeof loadAndRenderNotifIcon === 'function' && currentUser) loadAndRenderNotifIcon();
+};
+
+// استقبال نقرة المستخدم على إشعار نظام (يصل من الـ Service Worker بالخلفية)
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.addEventListener('message', (event) => {
+    if (event.data?.type === 'notification-click' && event.data.link) {
+      if (typeof onNotifClick === 'function') onNotifClick('', event.data.link);
+    }
+  });
+}
+
+// =====================
 // AUTH SYSTEM
 // =====================
 let currentUser = null;
@@ -6954,6 +7051,7 @@ window.addEventListener('load', () => {
       localStorage.setItem('dentapro_session', JSON.stringify(currentUser));
       renderAuthHeader();
       loadAndRenderNotifIcon();
+      enablePushNotifications();
       if (currentUser.role === 'client') renderPointsInHeader();
     } else {
       currentUser = null;
