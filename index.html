@@ -6810,10 +6810,15 @@ function initOffersTicker() {
   let repeated = [...items];
   while (repeated.length < MIN_ITEMS) repeated = repeated.concat(items);
 
-  // سرعة شبه ثابتة بغض النظر عن عدد العروض (~4 ثوانٍ لكل عنصر)
-  const duration = Math.max(repeated.length * 4, 14);
-
   track.innerHTML = repeated.join('') + repeated.join(''); // نسختان متطابقتان = تمرير سلس بلا قفزة
+
+  // نحسب المدة بناءً على العرض الفعلي بالبكسل (سرعة ثابتة) بدل عدد العناصر،
+  // حتى لا يمر عرض بنص قصير بسرعة خاطفة يصعب ملاحظتها بجانب عرض بنص طويل
+  const PIXELS_PER_SECOND = 55;
+  const fullWidth = track.scrollWidth || 0;
+  const halfWidth = fullWidth / 2; // نصف المسار = دورة واحدة كاملة
+  const computedDuration = halfWidth ? (halfWidth / PIXELS_PER_SECOND) : (repeated.length * 4);
+  const duration = Math.max(computedDuration, 14);
   track.style.animationDuration = duration + 's';
   ticker.style.display = 'block';
   document.body.classList.add('has-offers-ticker');
