@@ -6777,10 +6777,17 @@ function applySeasonalTheme() {
   document.body.classList.toggle('seasonal-ramadan', ramadanLikely || eidLikely);
 }
 
+let _tickerRAF = null;
+let _tickerPaused = false;
+
 function initOffersTicker() {
   const ticker = document.getElementById('offersTicker');
   const track = document.getElementById('offersTickerTrack');
   if (!ticker || !track) return;
+
+  // نلغي أي حركة سابقة قبل إعادة البناء، لمنع تراكب أكثر من حركة بنفس الوقت
+  if (_tickerRAF) { cancelAnimationFrame(_tickerRAF); _tickerRAF = null; }
+
   const items = [];
   const qtyProducts = getActiveQtyOfferProducts();
   qtyProducts.forEach(p => {
@@ -6805,23 +6812,44 @@ function initOffersTicker() {
 
   if (!items.length) { ticker.style.display = 'none'; document.body.classList.remove('has-offers-ticker'); return; }
 
-  // نكرر العروض حتى يمتلئ الشريط جيداً (شريط إخباري مستمر بلا فراغات) حتى لو كان هناك عرض واحد فقط
   const MIN_ITEMS = 6;
   let repeated = [...items];
   while (repeated.length < MIN_ITEMS) repeated = repeated.concat(items);
 
-  track.innerHTML = repeated.join('') + repeated.join(''); // نسختان متطابقتان = تمرير سلس بلا قفزة
-
-  // نحسب المدة بناءً على العرض الفعلي بالبكسل (سرعة ثابتة) بدل عدد العناصر،
-  // حتى لا يمر عرض بنص قصير بسرعة خاطفة يصعب ملاحظتها بجانب عرض بنص طويل
-  const PIXELS_PER_SECOND = 55;
-  const fullWidth = track.scrollWidth || 0;
-  const halfWidth = fullWidth / 2; // نصف المسار = دورة واحدة كاملة
-  const computedDuration = halfWidth ? (halfWidth / PIXELS_PER_SECOND) : (repeated.length * 4);
-  const duration = Math.max(computedDuration, 14);
-  track.style.animationDuration = duration + 's';
+  // تحريك مباشر عبر JS بدل الاعتماد على حركة CSS التلقائية — تحكم كامل بالموضع كل لحظة،
+  // بدون أي احتمال "قفزة" أو اختفاء مفاجئ عند إعادة اللف
+  track.style.animation = 'none';
+  track.innerHTML = repeated.join('') + repeated.join('');
   ticker.style.display = 'block';
   document.body.classList.add('has-offers-ticker');
+
+  requestAnimationFrame(() => runTickerLoop(ticker, track));
+}
+
+function runTickerLoop(ticker, track) {
+  const PIXELS_PER_SECOND = 55;
+  const isEn = currentLang === 'en';
+  let pos = 0;
+  let lastTime = null;
+  _tickerPaused = false;
+
+  ticker.onmouseenter = () => { _tickerPaused = true; };
+  ticker.onmouseleave = () => { _tickerPaused = false; };
+
+  function step(time) {
+    if (lastTime === null) lastTime = time;
+    const dt = (time - lastTime) / 1000;
+    lastTime = time;
+
+    const halfWidth = track.scrollWidth / 2;
+    if (halfWidth > 0 && !_tickerPaused) {
+      pos += PIXELS_PER_SECOND * dt;
+      if (pos >= halfWidth) pos -= halfWidth;
+      track.style.transform = isEn ? `translateX(${-pos}px)` : `translateX(${pos}px)`;
+    }
+    _tickerRAF = requestAnimationFrame(step);
+  }
+  _tickerRAF = requestAnimationFrame(step);
 }
 
 function setupReorderButtons() {
