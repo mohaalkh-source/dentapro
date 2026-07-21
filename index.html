@@ -6795,16 +6795,26 @@ function initOffersTicker() {
   });
   getActiveBundles().forEach(b => {
     const original = getBundleOriginalPrice(b);
-    const price = b.price || 0;
+    const price = b.bundlePrice || 0;
     const save = original - price;
     items.push(`<div class="offers-ticker-item" onclick="openBundleDetail(${b.id})">
       <i class="fas fa-box-open"></i>
       <span>${t('باقة','Bundle')}: ${escHtml(currentLang==='en'?b.name_en:b.name_ar)} — ${t('توفير','Save')} ${save.toLocaleString()} ${t('د.أ','SAR')}</span>
     </div>`);
   });
+
   if (!items.length) { ticker.style.display = 'none'; document.body.classList.remove('has-offers-ticker'); return; }
-  // duplicate items for seamless loop
-  track.innerHTML = items.join('') + items.join('');
+
+  // نكرر العروض حتى يمتلئ الشريط جيداً (شريط إخباري مستمر بلا فراغات) حتى لو كان هناك عرض واحد فقط
+  const MIN_ITEMS = 6;
+  let repeated = [...items];
+  while (repeated.length < MIN_ITEMS) repeated = repeated.concat(items);
+
+  // سرعة شبه ثابتة بغض النظر عن عدد العروض (~4 ثوانٍ لكل عنصر)
+  const duration = Math.max(repeated.length * 4, 14);
+
+  track.innerHTML = repeated.join('') + repeated.join(''); // نسختان متطابقتان = تمرير سلس بلا قفزة
+  track.style.animationDuration = duration + 's';
   ticker.style.display = 'block';
   document.body.classList.add('has-offers-ticker');
 }
@@ -12111,8 +12121,8 @@ body.dark-mode .trust-badge { background:var(--card); border-color:var(--border)
 body.has-offers-ticker { padding-top:38px; }
 body.has-offers-ticker header { top:38px; }
 .offers-ticker-track {
-  display:inline-flex; animation:tickerScroll 28s linear infinite reverse;
-  padding-left:100%;
+  display:inline-flex; animation:tickerScroll linear infinite;
+  will-change:transform;
 }
 .offers-ticker:hover .offers-ticker-track { animation-play-state:paused; }
 .offers-ticker-item {
@@ -12120,10 +12130,10 @@ body.has-offers-ticker header { top:38px; }
   padding:0 28px; cursor:pointer;
 }
 .offers-ticker-item i { color:#ffd700; font-size:14px; }
-@keyframes tickerScroll { 0%{transform:translateX(0)} 100%{transform:translateX(-100%)} }
+@keyframes tickerScroll { 0%{transform:translateX(-50%)} 100%{transform:translateX(0%)} }
 body.en .offers-ticker { direction:ltr; }
-body.en .offers-ticker-track { padding-left:0; padding-right:100%; animation-name:tickerScrollEn; }
-@keyframes tickerScrollEn { 0%{transform:translateX(0)} 100%{transform:translateX(100%)} }
+body.en .offers-ticker-track { animation-name:tickerScrollEn; }
+@keyframes tickerScrollEn { 0%{transform:translateX(0%)} 100%{transform:translateX(-50%)} }
 
 /* ─── Responsive enhancements ─── */
 @media(max-width:480px){
