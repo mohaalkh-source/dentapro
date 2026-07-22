@@ -140,11 +140,12 @@ header{
 }
 .logo-text span{color:var(--accent)}
 
-.logo-cube-scene { width:44px; height:44px; perspective:300px; display:inline-block; }
+.logo-cube-scene { width:44px; height:44px; perspective:300px; display:inline-block; isolation:isolate; }
 .logo-cube {
   position:relative; width:44px; height:44px;
   transform-style:preserve-3d;
   animation: logoCubeSpin 6s linear infinite;
+  will-change: transform;
 }
 .logo-cube-face {
   position:absolute; width:44px; height:44px;
