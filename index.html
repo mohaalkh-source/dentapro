@@ -1653,12 +1653,12 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 </style>
 
 <!-- TOP OFFERS TICKER -->
-<div class="offers-ticker" id="offersTicker" style="display:none">
-  <div class="offers-ticker-track" id="offersTickerTrack"></div>
-</div>
 
 <!-- HEADER -->
 <header>
+  <div class="offers-ticker" id="offersTicker" style="display:none">
+    <div class="offers-ticker-track" id="offersTickerTrack"></div>
+  </div>
   <div id="offlineBanner">
     <i class="fas fa-wifi" style="opacity:0.9"></i>
     <span data-ar="لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً" data-en="No internet connection — will retry automatically">لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً</span>
@@ -6896,9 +6896,6 @@ function initOffersTicker() {
   track.innerHTML = repeated.join('') + repeated.join('');
   ticker.style.display = 'block';
   document.body.classList.add('has-offers-ticker');
-  requestAnimationFrame(() => {
-    document.documentElement.style.setProperty('--ticker-height', ticker.offsetHeight + 'px');
-  });
 
   requestAnimationFrame(() => runTickerLoop(ticker, track));
 }
@@ -12224,15 +12221,12 @@ body.dark-mode .trust-badge { background:var(--card); border-color:var(--border)
 
 /* ─── Offers ticker at the top ─── */
 .offers-ticker {
-  position:fixed; top:0; left:0; right:0; z-index:1100;
+  position:relative; z-index:1100;
   background:linear-gradient(90deg, rgba(10,92,138,0.95), rgba(0,194,168,0.95));
   color:#fff; font-size:13px; font-weight:700;
   padding:8px 0; overflow:hidden; white-space:nowrap;
-  box-shadow:0 2px 12px rgba(0,0,0,0.1);
   min-height:38px;
 }
-body.has-offers-ticker { padding-top: var(--ticker-height, 38px); }
-body.has-offers-ticker header { top: var(--ticker-height, 38px); padding-top:0; }
 .offers-ticker-track {
   display:inline-flex; animation:tickerScroll linear infinite;
   will-change:transform;
