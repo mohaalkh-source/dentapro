@@ -1655,10 +1655,11 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <!-- TOP OFFERS TICKER -->
 
 <!-- HEADER -->
+<div class="offers-ticker" id="offersTicker" style="display:none">
+  <div class="offers-ticker-track" id="offersTickerTrack"></div>
+</div>
+<div id="tickerSpacer" style="height:0"></div>
 <header>
-  <div class="offers-ticker" id="offersTicker" style="display:none">
-    <div class="offers-ticker-track" id="offersTickerTrack"></div>
-  </div>
   <div id="offlineBanner">
     <i class="fas fa-wifi" style="opacity:0.9"></i>
     <span data-ar="لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً" data-en="No internet connection — will retry automatically">لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً</span>
@@ -5066,7 +5067,7 @@ function bundleCardHTML(b) {
           <div>
             <div class="product-price">${b.bundlePrice.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
             <div class="product-old-price">${original.toLocaleString()} ${t('د.أ','SAR')}</div>
-            ${savings>0?`<div style="font-size:11px;font-weight:800;color:var(--success)">${t('توفير','Save')} ${savings.toLocaleString()} ${t('د.أ','SAR')}</div>`:''}
+            ${savings>0?`<div style="font-size:11px;font-weight:800;color:var(--success)">${t('بسعر','Price')} ${b.bundlePrice.toLocaleString()} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${original.toLocaleString()} ${t('د.أ','SAR')}</div>`:''}
           </div>
           <button class="add-to-cart" onclick="addBundleToCart(${b.id})" title="${t('أضف الباقة للسلة','Add bundle to cart')}">
             <i class="fas fa-cart-plus"></i>
@@ -5117,6 +5118,7 @@ function renderOffers() {
     const offer = getActiveQtyOffer(p.id);
     const bestTier = offer.tiers[offer.tiers.length-1];
     const unitPrice = bestTier.price / bestTier.qty;
+    const allTiersText = offer.tiers.map(tr => `${t('اشتري','Buy')} ${tr.qty} ${t('بسعر','for')} ${tr.price.toLocaleString()} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
     return `
     <div class="product-card qty-offer-frame">
       <div class="product-badge" style="background:linear-gradient(135deg,var(--primary),var(--accent))">🏷️ ${t('عرض كمية','Qty Offer')}</div>
@@ -5129,7 +5131,7 @@ function renderOffers() {
         <button onclick="openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
           <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
         </button>
-        <div class="qty-offer-highlight">${t('اشتري','Buy')} ${bestTier.qty} ${t('بسعر','for')} ${bestTier.price.toLocaleString()} ${t('د.أ','SAR')} (${t('الوحدة','unit')} ${unitPrice.toFixed(2)} ${t('د.أ','SAR')})</div>
+        <div class="qty-offer-highlight">${allTiersText}</div>
         ${offer.expiresAt ? `<div class="offer-countdown-badge mini"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${offer.expiresAt}">${formatCountdown(offer.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
           <div>
@@ -6867,10 +6869,10 @@ function initOffersTicker() {
   qtyProducts.forEach(p => {
     const offer = getActiveQtyOffer(p.id);
     if (offer && offer.tiers && offer.tiers.length) {
-      const best = offer.tiers[offer.tiers.length - 1];
+      const tiersText = offer.tiers.map(tr => `${t('اشترِ','Buy')} ${tr.qty} ${t('بسعر','for')} ${tr.price.toLocaleString()} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
       items.push(`<div class="offers-ticker-item" onclick="openProductDetail(${p.id})">
         <i class="fas fa-tags"></i>
-        <span>${t('عرض كمية','Qty offer')}: ${escHtml(currentLang==='en'?p.en:p.ar)} — ${t('اشترِ','Buy')} ${best.qty} ${t('بسعر','for')} ${best.price.toLocaleString()} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${(p.price*best.qty).toLocaleString()} ${t('د.أ','SAR')}</span>
+        <span>${t('عرض كمية','Qty offer')}: ${escHtml(currentLang==='en'?p.en:p.ar)} — ${tiersText}</span>
       </div>`);
     }
   });
@@ -6880,11 +6882,16 @@ function initOffersTicker() {
     const save = original - price;
     items.push(`<div class="offers-ticker-item" onclick="openBundleDetail(${b.id})">
       <i class="fas fa-box-open"></i>
-      <span>${t('باقة','Bundle')}: ${escHtml(currentLang==='en'?b.name_en:b.name_ar)} — ${t('توفير','Save')} ${save.toLocaleString()} ${t('د.أ','SAR')}</span>
+      <span>${t('باقة','Bundle')}: ${escHtml(currentLang==='en'?b.name_en:b.name_ar)} — ${t('بسعر','for')} ${price.toLocaleString()} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${original.toLocaleString()} ${t('د.أ','SAR')}</span>
     </div>`);
   });
 
-  if (!items.length) { ticker.style.display = 'none'; document.body.classList.remove('has-offers-ticker'); return; }
+  if (!items.length) {
+    ticker.style.display = 'none';
+    const spacer = document.getElementById('tickerSpacer');
+    if (spacer) spacer.style.height = '0';
+    return;
+  }
 
   const MIN_ITEMS = 6;
   let repeated = [...items];
@@ -6895,7 +6902,10 @@ function initOffersTicker() {
   track.style.animation = 'none';
   track.innerHTML = repeated.join('') + repeated.join('');
   ticker.style.display = 'block';
-  document.body.classList.add('has-offers-ticker');
+  requestAnimationFrame(() => {
+    const spacer = document.getElementById('tickerSpacer');
+    if (spacer) spacer.style.height = ticker.offsetHeight + 'px';
+  });
 
   requestAnimationFrame(() => runTickerLoop(ticker, track));
 }
@@ -12221,10 +12231,11 @@ body.dark-mode .trust-badge { background:var(--card); border-color:var(--border)
 
 /* ─── Offers ticker at the top ─── */
 .offers-ticker {
-  position:relative; z-index:1100;
+  position:fixed; top:0; left:0; right:0; z-index:1100;
   background:linear-gradient(90deg, rgba(10,92,138,0.95), rgba(0,194,168,0.95));
   color:#fff; font-size:13px; font-weight:700;
   padding:8px 0; overflow:hidden; white-space:nowrap;
+  box-shadow:0 2px 12px rgba(0,0,0,0.1);
   min-height:38px;
 }
 .offers-ticker-track {
