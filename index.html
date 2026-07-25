@@ -4838,7 +4838,7 @@ function productCardHTML(p) {
       </div>
       <div class="product-info">
         <div class="product-brand compact-hide">${escHtml(p.brand)}</div>
-        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
+        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
         <button class="compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
           <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
         </button>
@@ -5070,7 +5070,7 @@ function renderSearchSuggestions() {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
-          ${currentLang==='en'?p.en:p.ar}
+          ${p.en}
         </div>
         <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
       </div>
@@ -5199,7 +5199,7 @@ function renderOffers() {
         <div class="compact-price-bar">${unitPrice.toFixed(2)} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
-        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
+        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
         <button class="compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
           <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
         </button>
@@ -5240,7 +5240,7 @@ function openBundleDetail(id) {
     return `
       <div class="order-item-row">
         <div class="order-item-icon">${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:contain">` : p.icon}</div>
-        <div style="flex:1;font-weight:600;color:var(--primary-dark)">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
+        <div style="flex:1;font-weight:600;color:var(--primary-dark)">${escHtml(p.en)}</div>
         <div style="color:var(--text-muted)">× ${it.qty}</div>
       </div>`;
   }).join('');
@@ -5410,7 +5410,7 @@ function renderCompareBar() {
     return `
       <div class="compare-bar-chip">
         ${p.image ? `<img src="${cldOptimize(p.image,60)}" loading="lazy">` : `<span class="emoji-mini">${p.icon}</span>`}
-        <span style="font-size:12px;font-weight:600;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${currentLang==='en'?p.en:p.ar}</span>
+        <span style="font-size:12px;font-weight:600;max-width:100px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.en}</span>
         <button onclick="toggleCompare(${id})"><i class="fas fa-times-circle"></i></button>
       </div>`;
   }).join('');
@@ -5434,7 +5434,7 @@ function renderCompareTable() {
   }
   const rows = [
     { label: 'الصورة', render: p => p.image ? `<img src="${cldOptimize(p.image,160)}" style="width:80px;height:80px;border-radius:10px;object-fit:cover" loading="lazy">` : `<span style="font-size:40px">${p.icon}</span>` },
-    { label: 'الاسم', render: p => escHtml(currentLang==='en'?p.en:p.ar) },
+    { label: 'الاسم', render: p => escHtml(p.en) },
     { label: 'الماركة', render: p => escHtml(p.brand) },
     { label: 'السعر', render: p => `<strong style="color:var(--primary)">${p.price.toLocaleString()} د.أ</strong>` },
     { label: 'السعر القديم', render: p => p.old ? `${p.old.toLocaleString()} د.أ` : '—' },
@@ -5528,7 +5528,7 @@ function renderFavoritesPage() {
       </div>
       <div class="product-info">
         <div class="product-brand">${escHtml(p.brand)}</div>
-        <div class="product-name" onclick="openProductDetail(${p.id})" style="cursor:pointer">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
+        <div class="product-name" onclick="openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
         <button onclick="openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
           <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
         </button>
@@ -5734,7 +5734,7 @@ function openProductDetail(id, _isRefresh) {
         </div>` : ''}
       </div>
       <div>
-        <div class="product-name" style="font-size:22px;margin-bottom:8px">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
+        <div class="product-name" style="font-size:22px;margin-bottom:8px">${escHtml(p.en)}</div>
         <div style="display:flex;gap:8px;margin-bottom:12px">
           <button onclick="shareProductWhatsApp(${p.id})"
             style="padding:6px 14px;border-radius:50px;background:#e8fdf2;color:#16a34a;
@@ -5873,7 +5873,7 @@ function shareProductWhatsApp(id) {
   if (!p) return;
   const url = getProductShareUrl(id);
   const text = encodeURIComponent(
-    `🦷 ${currentLang==='en'?p.en:p.ar}\n${p.price.toLocaleString()} ${t('د.أ','SAR')}\n${url}`
+    `🦷 ${p.en}\n${p.price.toLocaleString()} ${t('د.أ','SAR')}\n${url}`
   );
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
@@ -5950,11 +5950,11 @@ function addToCart(id) {
   }
   if (existing) {
     removeFromCart(id);
-    showToast(`🗑️ ${currentLang==='en'?p.en:p.ar} ${t('أُزيل من السلة','removed from cart')}`, 'success');
+    showToast(`🗑️ ${p.en} ${t('أُزيل من السلة','removed from cart')}`, 'success');
     return;
   }
   cart.push({...p, qty:1, basePrice: p.price, price: getEffectiveUnitPrice(p, 1)});
-  showToast(`✅ ${currentLang==='en'?p.en:p.ar} ${t('أُضيف للسلة','added to cart')}`, 'success');
+  showToast(`✅ ${p.en} ${t('أُضيف للسلة','added to cart')}`, 'success');
   updateCartUI();
   renderProducts();
   bumpCartIcon();
@@ -6814,7 +6814,7 @@ function openQuickView(id) {
   body.innerHTML = `
     <img src="${cldOptimize(p.image || '', 600)}" alt="${escHtml(p.ar)}" onerror="this.style.display='none'">
     <div>
-      <div style="font-size:18px;font-weight:900;margin-bottom:6px">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
+      <div style="font-size:18px;font-weight:900;margin-bottom:6px">${escHtml(p.en)}</div>
       <div style="color:var(--text-muted);line-height:1.8">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
       <div style="margin-top:14px;font-size:20px;font-weight:900;color:var(--primary)">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>
       <button class="btn-primary" style="margin-top:14px;width:100%" onclick="addToCart(${p.id});closeQuickView()">${t('أضف للسلة','Add to cart')}</button>
@@ -6944,7 +6944,7 @@ function initOffersTicker() {
       const tiersText = offer.tiers.map(tr => `${t('اشترِ','Buy')} ${tr.qty} ${t('بسعر','for')} ${tr.price.toLocaleString()} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
       items.push(`<div class="offers-ticker-item" onclick="openProductDetail(${p.id})">
         <i class="fas fa-tags"></i>
-        <span>${t('عرض كمية','Qty offer')}: ${escHtml(currentLang==='en'?p.en:p.ar)} — ${tiersText}</span>
+        <span>${t('عرض كمية','Qty offer')}: ${escHtml(p.en)} — ${tiersText}</span>
       </div>`);
     }
   });
