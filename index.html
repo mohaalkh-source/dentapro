@@ -12146,6 +12146,7 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
     </button>
     <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('orders')">
       <i class="fas fa-clipboard-list" style="color:var(--primary)"></i> الطلبات
+      <span id="adminOrdersBadge" style="margin-inline-start:6px;background:var(--danger,#e53e3e);color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;font-weight:800"></span>
     </button>
     <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('points')">
       <i class="fas fa-star" style="color:#f59e0b"></i> النقاط
@@ -12155,9 +12156,11 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
     </button>
     <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('quotes')">
       <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> طلبات عروض الأسعار
+      <span id="adminQuotesBadge" style="margin-inline-start:6px;background:var(--danger,#e53e3e);color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;font-weight:800"></span>
     </button>
     <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('messages')">
       <i class="fas fa-comment-dots" style="color:#0a5c8a"></i> الرسائل
+      <span id="adminMsgBadge" style="margin-inline-start:6px;background:var(--danger,#e53e3e);color:#fff;border-radius:50px;padding:1px 7px;font-size:11px;font-weight:800"></span>
     </button>
     ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('roles')">
       <i class="fas fa-user-shield" style="color:#e53e3e"></i> الصلاحيات
