@@ -2745,8 +2745,12 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     <div class="modal-body">
       <input type="hidden" id="textOfferId">
       <div class="form-group">
-        <label class="form-label"><i class="fas fa-align-right" style="color:#a855f7"></i> نص الإعلان <span class="required">*</span></label>
+        <label class="form-label"><i class="fas fa-align-right" style="color:#a855f7"></i> نص الإعلان (عربي) <span class="required">*</span></label>
         <textarea class="form-textarea" id="textOfferText" placeholder="مثال: توصيل مجاني لجميع الطلبات فوق 50 دينار"></textarea>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-align-right" style="color:#a855f7"></i> نص الإعلان (إنجليزي) <small style="color:var(--text-muted);font-weight:500">(اختياري)</small></label>
+        <textarea class="form-textarea" id="textOfferTextEn" placeholder="Example: Free delivery on all orders over 50 JOD"></textarea>
       </div>
       <div class="form-group">
         <label class="form-label"><i class="fas fa-hourglass-half" style="color:#a855f7"></i> تاريخ الانتهاء <small style="color:var(--text-muted);font-weight:500">(اختياري — اتركه فارغًا ليبقى دائمًا)</small></label>
@@ -3202,7 +3206,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <div class="modal-overlay" id="quoteRequestModal">
   <div class="modal" style="max-width:640px">
     <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
-      <div class="modal-title"><i class="fas fa-file-invoice-dollar"></i> طلب عرض سعر</div>
+      <div class="modal-title"><i class="fas fa-file-invoice-dollar"></i> <span data-ar="طلب عرض سعر" data-en="Request a Quote">طلب عرض سعر</span></div>
       <button class="close-btn" onclick="closeQuoteRequestModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
@@ -3294,7 +3298,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <div class="modal-overlay" id="quickOrderModal">
   <div class="modal" style="max-width:640px">
     <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
-      <div class="modal-title"><i class="fas fa-bolt"></i> طلب سريع</div>
+      <div class="modal-title"><i class="fas fa-bolt"></i> <span data-ar="طلب سريع" data-en="Quick Order">طلب سريع</span></div>
       <button class="close-btn" onclick="closeQuickOrderModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
@@ -3325,7 +3329,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <div class="modal-overlay" id="qoInfoModal">
   <div class="modal" style="max-width:480px">
     <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
-      <div class="modal-title"><i class="fas fa-user-edit"></i> بيانات التواصل</div>
+      <div class="modal-title"><i class="fas fa-user-edit"></i> <span data-ar="بيانات التواصل" data-en="Contact Details">بيانات التواصل</span></div>
       <button class="close-btn" onclick="closeQOInfoModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
@@ -3359,7 +3363,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <div class="modal-overlay" id="qoLocationModal">
   <div class="modal" style="max-width:480px">
     <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
-      <div class="modal-title"><i class="fas fa-map-marker-alt"></i> تحديد الموقع</div>
+      <div class="modal-title"><i class="fas fa-map-marker-alt"></i> <span data-ar="تحديد الموقع" data-en="Set Location">تحديد الموقع</span></div>
       <button class="close-btn" onclick="closeQOLocationModal()"><i class="fas fa-times"></i></button>
     </div>
     <div class="modal-body">
@@ -6993,7 +6997,7 @@ function initOffersTicker() {
   offers.filter(o => o.type === 'text' && o.active && !isOfferExpired(o)).forEach(o => {
     items.push(`<div class="offers-ticker-item">
       <i class="fas fa-bullhorn"></i>
-      <span>${escHtml(o.text)}</span>
+      <span>${escHtml(currentLang==='en' ? (o.textEn || o.text) : o.text)}</span>
     </div>`);
   });
   getActiveBundles().forEach(b => {
@@ -8790,12 +8794,14 @@ function renderAdminOffers() {
 function openAddTextOffer(id) {
   document.getElementById('textOfferId').value = id || '';
   document.getElementById('textOfferText').value = '';
+  document.getElementById('textOfferTextEn').value = '';
   document.getElementById('textOfferExpiry').value = '';
   document.getElementById('textOfferError').style.display = 'none';
   if (id) {
     const o = offers.find(x => x.id === id);
     if (o) {
       document.getElementById('textOfferText').value = o.text || '';
+      document.getElementById('textOfferTextEn').value = o.textEn || '';
       if (o.expiresAt) document.getElementById('textOfferExpiry').value = toDatetimeLocalValue(o.expiresAt);
     }
   }
@@ -8806,6 +8812,7 @@ function closeTextOfferModal() {
 }
 function saveTextOffer() {
   const text = document.getElementById('textOfferText').value.trim();
+  const textEn = document.getElementById('textOfferTextEn').value.trim();
   if (!text) {
     document.getElementById('textOfferError').style.display = 'flex';
     return;
@@ -8816,10 +8823,10 @@ function saveTextOffer() {
 
   if (editId) {
     const o = offers.find(x => x.id === editId);
-    if (o) { o.text = text; o.expiresAt = expiresAt; }
+    if (o) { o.text = text; o.textEn = textEn; o.expiresAt = expiresAt; }
   } else {
     const newId = offers.length ? Math.max(...offers.map(o => o.id)) + 1 : 1;
-    offers.push({ id: newId, type: 'text', text, expiresAt, active: true, createdAt: new Date().toISOString() });
+    offers.push({ id: newId, type: 'text', text, textEn, expiresAt, active: true, createdAt: new Date().toISOString() });
   }
   saveOffers();
   renderAdminOffers();
@@ -10944,7 +10951,7 @@ function openEditProfile() {
   modal.innerHTML = `
     <div class="modal" style="max-width:460px">
       <div class="modal-header" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary))">
-        <div class="modal-title"><i class="fas fa-user-edit"></i> تعديل الملف الشخصي</div>
+        <div class="modal-title"><i class="fas fa-user-edit"></i> <span data-ar="تعديل الملف الشخصي" data-en="Edit Profile">تعديل الملف الشخصي</span></div>
         <button class="close-btn" aria-label="إغلاق" onclick="document.getElementById('editProfileModal').remove()">
           <i class="fas fa-times"></i>
         </button>
@@ -11079,7 +11086,7 @@ function openDeleteAccountModal() {
   modal.innerHTML = `
     <div class="modal" style="max-width:460px">
       <div class="modal-header" style="background:linear-gradient(135deg,#be123c,#e53e3e)">
-        <div class="modal-title"><i class="fas fa-user-times"></i> حذف الحساب نهائياً</div>
+        <div class="modal-title"><i class="fas fa-user-times"></i> <span data-ar="حذف الحساب نهائياً" data-en="Delete Account">حذف الحساب نهائياً</span></div>
         <button class="close-btn" aria-label="إغلاق" onclick="document.getElementById('deleteAccountModal').remove()">
           <i class="fas fa-times"></i>
         </button>
