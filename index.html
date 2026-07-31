@@ -158,10 +158,14 @@ style="width:44px;height:44px;object-fit:cover;-webkit-mask-image:radial-gradien
 .header-actions{display:flex; align-items:center; gap:8px}
 .lang-btn{
   padding:7px 14px; border-radius:50px;
-  border:2px solid var(--border); background:transparent;
+  border:1px solid rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
   font-family:inherit; font-size:13px; font-weight:700;
   color:var(--primary); cursor:pointer; transition:all 0.2s;
   display:flex; align-items:center; gap:5px;
+  box-shadow:0 4px 14px rgba(10,92,138,0.12);
 }
 .lang-btn:hover{background:var(--primary); color:#fff; border-color:var(--primary)}
 
@@ -728,12 +732,15 @@ footer{
 /* ===== NOTIFICATIONS BELL ===== */
 .notif-btn{
   position:relative; width:44px; height:44px; border-radius:50%;
-  background: transparent; color:var(--primary); border:2px solid var(--border);
+  background: rgba(255,255,255,0.55);
+  backdrop-filter: blur(14px) saturate(160%);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+  color:var(--primary); border:1px solid rgba(255,255,255,0.7);
   cursor:pointer; font-size:17px;
   display:flex; align-items:center; justify-content:center;
-  transition:all 0.2s; box-shadow:0 3px 10px rgba(10,92,138,0.08);
+  transition:all 0.2s; box-shadow:0 4px 14px rgba(10,92,138,0.12);
 }
-.notif-btn:hover{background:rgba(10,92,138,0.06); border-color:var(--primary-light); transform:scale(1.05)}
+.notif-btn:hover{background:rgba(255,255,255,0.8); border-color:var(--primary-light); transform:scale(1.05)}
 .notif-badge{
   position:absolute; top:-4px; right:-4px;
   background:var(--danger); color:#fff; border-radius:50%;
@@ -4625,8 +4632,8 @@ function toggleLang() {
   renderProducts();
   renderOffers();
   updateCartUI();
+  initOffersTicker();
 }
-
 function t(ar, en) {
   return currentLang === 'en' ? en : ar;
 }
@@ -4917,7 +4924,7 @@ function productCardHTML(p) {
           <button class="add-to-cart ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}
             title="${outOfStock?t('نفذت الكمية','Out of stock'):t('أضف للسلة','Add to Cart')}">
-            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-plus')}"></i>
+            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-cart-plus')}"></i>
           </button>
         </div>
       </div>
@@ -5112,7 +5119,7 @@ function renderSearchSuggestions() {
       onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
       <div style="width:36px;height:36px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
                   display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden">
-        ${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:cover">` : p.icon}
+        ${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">` : p.icon}
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">
@@ -5169,7 +5176,7 @@ function bundleCardHTML(b) {
     <div class="product-card offer-bundle-card">
       <div class="product-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🎁 ${t('باقة','Bundle')}</div>
       <div class="product-img-wrap" onclick="openBundleDetail(${b.id})" style="cursor:pointer">
-        ${b.image ? `<img src="${cldOptimize(b.image,400)}" alt="${escHtml(b.name_ar)}">` : `<span class="emoji-fallback">${b.icon||'🎁'}</span>`}
+        ${b.image ? `<img src="${cldOptimize(b.image,400)}" alt="${escHtml(b.name_ar)}" loading="lazy">` : `<span class="emoji-fallback">${b.icon||'🎁'}</span>`}
         <div class="compact-price-bar">${b.bundlePrice.toLocaleString()} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
@@ -5240,7 +5247,7 @@ function renderOffers() {
     <div class="product-card qty-offer-frame">
       <div class="product-badge" style="background:linear-gradient(135deg,var(--primary),var(--accent))">🏷️ ${t('عرض كمية','Qty Offer')}</div>
       <div class="product-img-wrap qty-offer-icon-pulse" onclick="openProductDetail(${p.id})" style="cursor:pointer" title="${t('التفاصيل','Details')}">
-        ${p.image ? `<img src="${cldOptimize(p.image,400)}" alt="${escHtml(p.ar)}">` : `<span class="emoji-fallback">${p.icon}</span>`}
+        ${p.image ? `<img src="${cldOptimize(p.image,400)}" alt="${escHtml(p.ar)}" loading="lazy">` : `<span class="emoji-fallback">${p.icon}</span>`}
         <div class="qty-offer-ribbon compact-hide">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>
         <div class="compact-price-bar">${unitPrice.toFixed(2)} ${t('د.أ','SAR')}</div>
       </div>
@@ -5285,7 +5292,7 @@ function openBundleDetail(id) {
     if (!p) return '';
     return `
       <div class="order-item-row">
-        <div class="order-item-icon">${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:contain">` : p.icon}</div>
+        <div class="order-item-icon">${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:contain" loading="lazy">` : p.icon}</div>
         <div style="flex:1;font-weight:600;color:var(--primary-dark)">${escHtml(p.en)}</div>
         <div style="color:var(--text-muted)">× ${it.qty}</div>
       </div>`;
@@ -5295,7 +5302,7 @@ function openBundleDetail(id) {
     <div class="product-detail-grid">
       <div class="product-img-wrap product-detail-img">
         <div class="product-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🎁 ${t('باقة','Bundle')}</div>
-        ${b.image ? `<img src="${cldOptimize(b.image,600)}" alt="${b.name_ar}">` : `<span class="emoji-fallback">${b.icon||'🎁'}</span>`}
+        ${b.image ? `<img src="${cldOptimize(b.image,600)}" alt="${b.name_ar}" loading="lazy">` : `<span class="emoji-fallback">${b.icon||'🎁'}</span>`}
       </div>
       <div>
         <div class="product-name" style="font-size:22px;margin-bottom:8px">${escHtml(currentLang==='en'?b.name_en:b.name_ar)}</div>
@@ -5586,7 +5593,7 @@ function renderFavoritesPage() {
           </div>
           <button class="add-to-cart ${inCart?'added':''}" onclick="${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
-            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-plus')}"></i>
+            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-cart-plus')}"></i>
           </button>
         </div>
       </div>
@@ -5632,7 +5639,7 @@ async function renderMyQuotesPage() {
 
     const itemsHtml = q.items.map(i => `
       <div class="order-item-row">
-        <div class="order-item-icon">${i.image ? `<img src="${cldOptimize(i.image,60)}" style="width:100%;height:100%;object-fit:contain">` : i.icon}</div>
+        <div class="order-item-icon">${i.image ? `<img src="${cldOptimize(i.image,60)}" style="width:100%;height:100%;object-fit:contain" loading="lazy">` : i.icon}</div>
         <div style="flex:1;font-weight:600;color:var(--primary-dark)">${escHtml(i.ar)}</div>
         <div style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : t('الكمية غير محددة','Qty not specified')}</div>
         ${isPriced ? `<div style="font-weight:800;color:var(--primary)">${(i.unitPrice||0).toLocaleString()} د.أ${i.qty?` × ${i.qty} = ${((i.unitPrice||0)*i.qty).toLocaleString()} د.أ`:''}</div>` : ''}
@@ -6103,7 +6110,7 @@ function updateCartUI() {
     el.className = 'cart-item';
     el.id = `cartItem-${item.id}`;
     const imgHtml = item.image
-      ? `<img src="${cldOptimize(item.image,80)}" style="width:100%;height:100%;object-fit:contain">`
+      ? `<img src="${cldOptimize(item.image,80)}" style="width:100%;height:100%;object-fit:contain" loading="lazy">`
       : item.icon;
     const bundleSubHtml = item.isBundle ? `
       <div style="font-size:11px;color:var(--text-muted);margin-top:4px">
@@ -6135,15 +6142,7 @@ function updateCartUI() {
 function updateFreeShippingBar() {
   const wrap = document.getElementById('freeShipWrap');
   if (!wrap) return;
-  const total = getTotal();
-  const threshold = 100;
-  const pct = Math.min(100, Math.round((total / threshold) * 100));
-  wrap.innerHTML = `
-    <div class="free-ship-row">
-      <span>${total >= threshold ? t('🎉 وصلت للشحن المجاني','🎉 You qualified for free shipping') : t('أضف المزيد للشحن المجاني','Add more for free shipping')}</span>
-      <span>${Math.max(0, (threshold - total)).toFixed(0)} ${t('د.أ','JD')} ${t('متبقي','left')}</span>
-    </div>
-    <div class="free-ship-bar"><div class="free-ship-fill" style="width:${pct}%"></div></div>`;
+  wrap.innerHTML = '';
 }
 
 function openCart() {
@@ -7693,14 +7692,7 @@ function renderAuthHeader() {
   const avatarIcon = isAdminRole ? '🔧' : (isManagerRole ? '🗂️' : '👤');
   const roleLabel = isAdminRole ? 'مدير النظام' : (isManagerRole ? 'مدير فرعي' : 'عميل');
 
-  area.innerHTML = `
-    <div class="user-chip" style="cursor:default">
-      <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
-      <div>
-        <div class="user-chip-name">${currentUser.name}</div>
-        <div class="user-chip-role">${roleLabel}</div>
-      </div>
-    </div>`;
+  area.innerHTML = '';
 }
 
 function openAuthModal(tab = 'login') {
@@ -8769,7 +8761,7 @@ function renderAdminOffers() {
       <div class="points-admin-card">
         <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
           <div style="width:44px;height:44px;border-radius:10px;background:linear-gradient(135deg,#fffbeb,#fef3c7);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0;overflow:hidden">
-            ${o.image?`<img src="${cldOptimize(o.image,80)}" style="width:100%;height:100%;object-fit:cover">`:(o.icon||'🎁')}
+            ${o.image?`<img src="${cldOptimize(o.image,80)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">`:(o.icon||'🎁')}
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">🎁 ${o.name_ar}</div>
@@ -9231,7 +9223,7 @@ function filterQuoteProductList() {
       <div onclick="selectQuoteProduct(${p.id})"
         style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
         onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
-        <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover">`:p.icon}</span>
+        <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">`:p.icon}</span>
         <div style="flex:1;min-width:0">
           <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</div>
           <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
@@ -9309,7 +9301,7 @@ function renderQuoteItemsList() {
   list.innerHTML = currentQuoteItems.map((it, idx) => {
     const p = it.productId ? products.find(x => x.id === it.productId) : null;
     const name = p ? p.ar : (it.customName || 'مادة');
-    const icon = p ? (p.image ? `<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover">` : p.icon) : '✏️';
+    const icon = p ? (p.image ? `<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">` : p.icon) : '✏️';
     const customBadge = !p ? `<span style="font-size:10px;background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;border-radius:50px;padding:1px 8px;margin-right:6px">مادة جديدة</span>` : '';
     return `
     <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
@@ -9401,7 +9393,7 @@ function onQuickOrderInput(idx) {
       onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
       <div style="width:34px;height:34px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
                   display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden">
-        ${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:cover">` : p.icon}
+        ${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">` : p.icon}
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.ar)}</div>
@@ -10660,7 +10652,7 @@ async function renderAdminQuotes() {
       <div style="background:#f8fbfd;border-radius:10px;padding:10px 14px">${itemsHtml}</div>
       ${q.attachedImage ? `
       <div>
-        <img src="${cldOptimize(q.attachedImage,200)}" onclick="window.open('${q.attachedImage}','_blank')"
+        <img src="${cldOptimize(q.attachedImage,200)}" loading="lazy" onclick="window.open('${q.attachedImage}','_blank')"
           style="max-width:120px;max-height:120px;border-radius:10px;border:2px solid var(--border);cursor:pointer" title="اضغط لعرض الصورة بالحجم الكامل">
       </div>` : ''}
       ${q.notes ? `<div style="font-size:13px;color:var(--text-muted);background:#fffbeb;padding:8px 12px;border-radius:8px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>` : ''}
@@ -10832,7 +10824,7 @@ function showQuoteOrderDetail(docId) {
       ${q.attachedImage ? `
       <div style="margin-bottom:12px">
         <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px"><i class="fas fa-image" style="color:var(--primary-light)"></i> صورة مرفقة من العميل</div>
-        <img src="${cldOptimize(q.attachedImage,400)}" onclick="window.open('${q.attachedImage}','_blank')"
+        <img src="${cldOptimize(q.attachedImage,400)}" loading="lazy" onclick="window.open('${q.attachedImage}','_blank')"
           style="max-width:220px;max-height:220px;border-radius:12px;border:2px solid var(--border);cursor:pointer" title="اضغط لعرض الصورة بالحجم الكامل">
       </div>` : ''}
       ${q.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>`:''}
@@ -11683,7 +11675,7 @@ async function renderClientMessagesThread() {
   wrap.innerHTML = thread.map(m => {
     const isAdmin = m.fromRole === 'admin';
     const time = timeAgo(m.createdAt);
-    const imgHtml = m.imageUrl ? `<img src="${cldOptimize(m.imageUrl,320)}" onclick="window.open('${m.imageUrl}','_blank')"
+    const imgHtml = m.imageUrl ? `<img src="${cldOptimize(m.imageUrl,320)}" loading="lazy" onclick="window.open('${m.imageUrl}','_blank')"
       style="max-width:220px;max-height:220px;border-radius:10px;cursor:pointer;display:block;${m.text?'margin-bottom:6px':''}">` : '';
     return `
     <div style="display:flex;justify-content:${isAdmin?'flex-start':'flex-end'}">
@@ -11846,7 +11838,7 @@ function renderAdminThreadBody(thread) {
   if (!body) return;
   body.innerHTML = thread.map(m => {
     const isAdmin = m.fromRole === 'admin';
-    const imgHtml = m.imageUrl ? `<img src="${cldOptimize(m.imageUrl,320)}" onclick="window.open('${m.imageUrl}','_blank')"
+    const imgHtml = m.imageUrl ? `<img src="${cldOptimize(m.imageUrl,320)}" loading="lazy" onclick="window.open('${m.imageUrl}','_blank')"
       style="max-width:220px;max-height:220px;border-radius:10px;cursor:pointer;display:block;${m.text?'margin-bottom:6px':''}">` : '';
     return `
     <div style="display:flex;justify-content:${isAdmin?'flex-end':'flex-start'}">
@@ -12232,6 +12224,7 @@ function openAccountMenu() {
 async function refreshAdminMenuBadges() {
   if (!isStaff()) return;
   try {
+    if (typeof updateHeaderMsgBadge === 'function') updateHeaderMsgBadge();
     const ordersBadge = document.getElementById('adminOrdersBadge');
     if (ordersBadge) {
       let orders = window._cachedOrders;
