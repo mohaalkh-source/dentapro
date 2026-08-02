@@ -45,8 +45,6 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
 <link rel="preconnect" href="https://res.cloudinary.com">
 <style>
 :root {
@@ -1732,11 +1730,6 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     <span data-ar="لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً" data-en="No internet connection — will retry automatically">لا يوجد اتصال بالإنترنت — سيتم إعادة المحاولة تلقائياً</span>
   </div>
   <div class="header-inner">
-    <button id="headerBackBtn" onclick="goBack()" style="display:none;width:38px;height:38px;border-radius:50%;
-      border:2px solid var(--border);background:#fff;color:var(--primary);cursor:pointer;font-size:15px;
-      align-items:center;justify-content:center;flex-shrink:0" title="رجوع">
-      <i class="fas fa-arrow-right"></i>
-    </button>
     <a href="#" class="logo" onclick="goHome()">
   <span class="logo-3d-wrap"><img class="logo-3d-spin" src="data:image/png;base64,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
@@ -4459,21 +4452,28 @@ function getActiveBundles() {
   return offers.filter(o => o.type === 'bundle' && o.active && !isOfferExpired(o) && isBundleInStock(o));
 }
 
-function getActiveQtyOfferProducts() {
-  const activeQtyOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o));
-  console.log('🔍 عروض الكمية الفعّالة:', activeQtyOffers);
-  const result = activeQtyOffers
-    .map(o => {
-      const match = products.find(p => p.id === o.productId);
-      if (!match) {
-        console.warn('⚠️ عرض كمية بدون منتج مطابق! productId المطلوب:', o.productId,
-          'typeof:', typeof o.productId,
-          '— الـ IDs المتوفرة في المنتجات:', products.map(p => p.id));
+// يجيب فقط المنتجات المطلوبة (بمعرّفاتها) من Firestore مباشرة إذا لم تكن محمّلة أصلاً بالذاكرة —
+// بدل تحميل الكتالوج بالكامل، فالأداء يبقى ثابتاً بغض النظر عن حجم المتجر (120 أو 1000 منتج)
+async function fetchProductsByIds(ids) {
+  const missing = ids.filter(id => !products.find(p => p.id === id));
+  if (!missing.length) return;
+  await Promise.all(missing.map(async (id) => {
+    try {
+      const snap = await window._fbGetDoc(window._fbDoc2('products', String(id)));
+      if (snap.exists() && !products.find(p => p.id === id)) {
+        products.push({ ...snap.data(), id });
       }
-      return match;
-    })
+    } catch(e) { /* تجاهل بصمت — سيظهر تحذير المطابقة أدناه عند الحاجة */ }
+  }));
+}
+
+async function getActiveQtyOfferProducts() {
+  const activeQtyOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o));
+  await fetchProductsByIds(activeQtyOffers.map(o => o.productId));
+
+  const result = activeQtyOffers
+    .map(o => products.find(p => p.id === o.productId))
     .filter(p => p && !(p.stock !== undefined && p.stock !== null && p.stock <= 0));
-  console.log('✅ منتجات عروض الكمية النهائية:', result);
   return result;
 }
 
@@ -4566,11 +4566,12 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // تحميل باقي المنتجات بالخلفية دون توقيف عرض الصفحة —
   // يضمن أن الأقسام والبحث وزر "عرض المزيد" تعمل على كامل الكتالوج
+  initOffersTicker(); // يجيب بس المنتجات المطلوبة له، بدون انتظار الكتالوج بالكامل
+
   ensureAllProductsLoaded().then(() => {
     renderProducts();
     renderCategories();
     populateCategorySelects();
-    initOffersTicker();
   });
 });
 
@@ -4641,13 +4642,13 @@ function t(ar, en) {
 // =====================
 // CATEGORIES
 // =====================
-function renderCategories() {
+async function renderCategories() {
   const grid = document.getElementById('categoriesGrid');
   const visibleCats = categories.filter(c =>
     c.id === 'all' || products.filter(p => p.cat === c.id).length > 0
   );
 
-  const qtyProducts = getActiveQtyOfferProducts();
+  const qtyProducts = await getActiveQtyOfferProducts();
   const bundles = getActiveBundles();
   const extraCards = [];
   if (bundles.length) {
@@ -4931,14 +4932,14 @@ function productCardHTML(p) {
     </div>`;
 }
 
-function renderProducts() {
+async function renderProducts() {
   populateBrandFilter();
 
   let list;
   if (currentCat === '__cat_bundles') {
     list = [];
   } else if (currentCat === '__cat_qty_offers') {
-    list = getActiveQtyOfferProducts();
+    list = await getActiveQtyOfferProducts();
   } else {
     list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
   }
@@ -5201,14 +5202,14 @@ function bundleCardHTML(b) {
     </div>`;
 }
 
-function renderOffers() {
+async function renderOffers() {
   const section = document.getElementById('offersSection');
   const grid = document.getElementById('offersGrid');
   const quickAccess = document.getElementById('quickAccessWrap');
   if (!section || !grid) return;
 
   const bundles = getActiveBundles();
-  const qtyProducts = getActiveQtyOfferProducts();
+  const qtyProducts = await getActiveQtyOfferProducts();
 
   // إظهار/إخفاء أزرار الوصول السريع حسب توفر كل نوع
   if (quickAccess) {
@@ -6467,7 +6468,23 @@ function showLocationOnMap(lat, lng) {
 let _pickerMap = null;
 let _pickerMarker = null;
 
-function openMapPicker() {
+let _leafletLoaded = false;
+function loadLeafletIfNeeded() {
+  if (_leafletLoaded) return Promise.resolve();
+  return new Promise((resolve) => {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css';
+    document.head.appendChild(css);
+    const script = document.createElement('script');
+    script.src = 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js';
+    script.onload = () => { _leafletLoaded = true; resolve(); };
+    document.head.appendChild(script);
+  });
+}
+
+async function openMapPicker() {
+  await loadLeafletIfNeeded();
   switchLocMethod('MapPick');
   document.getElementById('mapPickerModal').classList.add('open');
   setTimeout(initPickerMap, 150);
@@ -6973,7 +6990,7 @@ function applySeasonalTheme() {
 let _tickerRAF = null;
 let _tickerPaused = false;
 
-function initOffersTicker() {
+async function initOffersTicker() {
   const ticker = document.getElementById('offersTicker');
   const track = document.getElementById('offersTickerTrack');
   if (!ticker || !track) return;
@@ -6982,7 +6999,7 @@ function initOffersTicker() {
   if (_tickerRAF) { cancelAnimationFrame(_tickerRAF); _tickerRAF = null; }
 
   const items = [];
-  const qtyProducts = getActiveQtyOfferProducts();
+  const qtyProducts = await getActiveQtyOfferProducts();
   qtyProducts.forEach(p => {
     const offer = getActiveQtyOffer(p.id);
     if (offer && offer.tiers && offer.tiers.length) {
@@ -7288,9 +7305,7 @@ function goBack() {
 }
 
 function updateHeaderBackBtn() {
-  const btn = document.getElementById('headerBackBtn');
-  if (!btn) return;
-  btn.style.display = pageHistory.length > 1 ? 'flex' : 'none';
+  return; // تم إلغاء زر الرجوع بجانب الشعار نهائياً بناءً على طلب المستخدم
 }
 
 // معالج زر الرجوع في Android WebView
