@@ -69,7 +69,7 @@
   --shadow-lg: 0 20px 60px rgba(10,92,138,0.16), 0 8px 20px rgba(10,92,138,0.1);
 
   /* حواف موحّدة حسب نوع العنصر */
-  --radius: 24px;        /* كروت */
+  --radius: 28px;        /* كروت */
   --radius-sm: 14px;     /* حقول إدخال */
   --radius-pill: 50px;   /* أزرار */
 
@@ -88,9 +88,11 @@ html{scroll-behavior:smooth; overflow-x:hidden; max-width:100vw}
 body{
   font-family: var(--font-ar);
   background:
-    radial-gradient(circle at 15% 8%, rgba(0,194,168,0.05) 0%, transparent 35%),
-    radial-gradient(circle at 90% 25%, rgba(10,92,138,0.05) 0%, transparent 40%),
-    var(--bg);
+    radial-gradient(circle at 15% 8%, rgba(0,194,168,0.06) 0%, transparent 35%),
+    radial-gradient(circle at 90% 25%, rgba(10,92,138,0.06) 0%, transparent 40%),
+    radial-gradient(circle at 20% 70%, rgba(0,194,168,0.05) 0%, transparent 40%),
+    radial-gradient(circle at 85% 90%, rgba(10,92,138,0.05) 0%, transparent 45%),
+    linear-gradient(180deg, #f4faff 0%, #eef6fb 50%, #f4faff 100%);
   color: var(--text);
   min-height: 100vh;
   max-width: 100vw;
@@ -334,11 +336,19 @@ body.en .filter-results-count{margin-right:0; margin-left:auto}
   display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:20px;
 }
 .product-card{
-  background:var(--card); border-radius:var(--radius);
-  border:1px solid var(--border); overflow:hidden;
+  background:linear-gradient(145deg, #ffffff, var(--card));
+  border-radius:var(--radius);
+  border:1.5px solid rgba(255,255,255,0.9);
+  overflow:hidden;
   transition:all 0.35s cubic-bezier(0.16,1,0.3,1); position:relative;
-  box-shadow:0 4px 16px rgba(10,92,138,0.05), 0 1px 3px rgba(10,92,138,0.03);
+  box-shadow:0 16px 40px rgba(10,92,138,0.14), 0 6px 16px rgba(10,92,138,0.08),
+             inset 0 2px 0 rgba(255,255,255,1);
   display:flex; flex-direction:column;
+}
+.product-card::before{
+  content:''; position:absolute; top:0; left:0; right:0; height:14px;
+  background:linear-gradient(180deg, rgba(255,255,255,0.9), transparent);
+  pointer-events:none; z-index:1;
 }
 .product-card:hover{
   box-shadow:0 20px 48px rgba(10,92,138,0.14), 0 6px 16px rgba(10,92,138,0.07);
@@ -994,7 +1004,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   background:#ffffff;
   display:flex; align-items:center; justify-content:center;
   font-size:72px; padding:16px; cursor:pointer;
-  position:relative; overflow:hidden;
+  position:relative; overflow:hidden; z-index:2;
 }
 .product-img-wrap img {
   width:100%; height:100%; object-fit:contain;
@@ -1847,13 +1857,15 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   </div>
 </section>
 <!-- LATEST PRODUCTS -->
-<section id="latestProductsSection" style="padding:32px 24px 16px;display:none">
+<section id="latestProductsSection" style="padding:24px 24px 8px;display:none">
   <div class="section-inner">
-    <div class="section-header" style="text-align:right;margin-bottom:24px">
-      <div class="section-tag" style="background:rgba(0,194,168,0.1);color:#00a896">🆕 <span data-ar="جديدنا" data-en="New In">جديدنا</span></div>
-      <h2 class="section-title" style="margin-bottom:0"><span data-ar="آخر المنتجات المضافة" data-en="Latest Arrivals">آخر المنتجات المضافة</span></h2>
-    </div>
-    <div class="products-grid" id="latestProductsGrid"></div>
+    <button id="reorderEntryBtn" onclick="openReorderedProductsPage()" style="width:100%;padding:20px;border-radius:20px;
+      background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;cursor:pointer;
+      display:flex;align-items:center;justify-content:center;gap:12px;font-family:inherit;font-size:15px;font-weight:800;
+      box-shadow:0 8px 24px rgba(10,92,138,0.2)">
+      <i class="fas fa-history" style="font-size:20px"></i>
+      <span id="reorderEntryBtnText"></span>
+    </button>
   </div>
 </section>
 <!-- PRODUCTS -->
@@ -2352,6 +2364,28 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 </div>
 
 <!-- ===== MY QUOTES PAGE ===== -->
+<div class="page-section" id="reorderedProductsPage">
+  <div class="orders-page">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+      <div>
+        <div class="section-tag">🔄 إعادة الطلب</div>
+        <h2 class="section-title" style="margin-bottom:0">منتجاتك المطلوبة سابقاً</h2>
+      </div>
+      <button onclick="showPage('home')" class="btn-back" style="display:flex">
+        <i class="fas fa-arrow-right"></i> العودة للمتجر
+      </button>
+    </div>
+    <div style="display:flex;gap:8px;margin-bottom:18px">
+      <button id="reorderSortRecentBtn" onclick="setReorderSort('recent')" style="padding:8px 16px;border-radius:50px;border:1.5px solid var(--primary-light);background:var(--primary);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="fas fa-clock"></i> الأحدث
+      </button>
+      <button id="reorderSortFrequentBtn" onclick="setReorderSort('frequent')" style="padding:8px 16px;border-radius:50px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+        <i class="fas fa-fire"></i> الأكثر طلباً
+      </button>
+    </div>
+    <div class="products-grid" id="reorderedProductsGrid"></div>
+  </div>
+</div>
 <div class="page-section" id="myQuotesPage">
   <div class="orders-page">
     <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:28px;flex-wrap:wrap;gap:12px">
@@ -4942,6 +4976,11 @@ async function renderProducts() {
     list = await getActiveQtyOfferProducts();
   } else {
     list = currentCat === 'all' ? products : products.filter(p => p.cat === currentCat);
+    list = [...list].sort((a, b) => {
+      const da = a.createdAt ? new Date(a.createdAt).getTime() : a.id;
+      const db = b.createdAt ? new Date(b.createdAt).getTime() : b.id;
+      return db - da;
+    });
   }
   const searchValRaw = document.getElementById('searchInput').value.trim();
   let filtered = list;
@@ -5605,6 +5644,112 @@ function renderFavoritesPage() {
 // =====================
 // MY QUOTES PAGE (CLIENT)
 // =====================
+// =====================
+// REORDERED PRODUCTS PAGE (CLIENT)
+// =====================
+let _reorderSortMode = 'recent';
+let _cachedReorderData = null;
+
+async function updateLatestSectionButton() {
+  const section = document.getElementById('latestProductsSection');
+  const btnText = document.getElementById('reorderEntryBtnText');
+  if (!section || !btnText) return;
+  if (!currentUser || currentUser.role !== 'client') {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = 'block';
+  const clinic = currentUser.clinic || currentUser.name || '';
+  btnText.textContent = `${t('المنتجات التي طلبتها','Products you ordered from')} ${clinic} ${t('سابقاً','before')}`;
+}
+
+async function openReorderedProductsPage() {
+  if (!currentUser) { openAuthModal('login'); return; }
+  showPage('reordered');
+  await renderReorderedProductsPage();
+}
+
+async function fetchReorderData() {
+  if (_cachedReorderData) return _cachedReorderData;
+  const snap = await window._fbGetDocs(window._fbOrdersRef());
+  const myOrders = snap.docs.map(d => d.data()).filter(o => o.clientEmail === currentUser.email);
+
+  const map = {}; // productId -> { product, count, lastDate }
+  myOrders.forEach(o => {
+    (o.items || []).forEach(item => {
+      if (!item.id) return; // تجاهل المواد المخصصة بدون معرّف منتج حقيقي
+      const key = String(item.id);
+      if (!map[key]) map[key] = { id: item.id, count: 0, lastDate: o.createdAt };
+      map[key].count += 1;
+      if (new Date(o.createdAt) > new Date(map[key].lastDate)) map[key].lastDate = o.createdAt;
+    });
+  });
+
+  const ids = Object.keys(map).map(k => isNaN(k) ? k : parseInt(k));
+  await fetchProductsByIds(ids);
+
+  const result = Object.values(map)
+    .map(entry => {
+      const product = products.find(p => String(p.id) === String(entry.id));
+      return product ? { product, count: entry.count, lastDate: entry.lastDate } : null;
+    })
+    .filter(Boolean);
+
+  _cachedReorderData = result;
+  return result;
+}
+
+function setReorderSort(mode) {
+  _reorderSortMode = mode;
+  const recentBtn = document.getElementById('reorderSortRecentBtn');
+  const freqBtn = document.getElementById('reorderSortFrequentBtn');
+  const activeStyle = 'background:var(--primary);color:#fff;border-color:var(--primary-light)';
+  const inactiveStyle = 'background:#fff;color:var(--text-muted);border-color:var(--border)';
+  if (recentBtn) recentBtn.style.cssText = recentBtn.style.cssText.split(';')[0] + ';padding:8px 16px;border-radius:50px;border:1.5px solid;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;' + (mode==='recent'?activeStyle:inactiveStyle);
+  if (freqBtn) freqBtn.style.cssText = freqBtn.style.cssText.split(';')[0] + ';padding:8px 16px;border-radius:50px;border:1.5px solid;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;' + (mode==='frequent'?activeStyle:inactiveStyle);
+  renderReorderedProductsPage();
+}
+
+async function renderReorderedProductsPage() {
+  const grid = document.getElementById('reorderedProductsGrid');
+  if (!grid) return;
+  grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:40px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>جاري التحميل...</div>`;
+
+  let data = await fetchReorderData();
+  if (!data.length) {
+    grid.innerHTML = `<div style="grid-column:1/-1;text-align:center;padding:48px;color:var(--text-muted)"><i class="fas fa-box-open" style="font-size:40px;opacity:0.2;display:block;margin-bottom:12px"></i>لم تطلب أي منتج بعد</div>`;
+    return;
+  }
+
+  data = [...data].sort((a, b) => _reorderSortMode === 'frequent'
+    ? b.count - a.count
+    : new Date(b.lastDate) - new Date(a.lastDate));
+
+  grid.innerHTML = data.map(entry => reorderedCardHTML(entry.product)).join('');
+}
+
+function reorderedCardHTML(p) {
+  const inCart = cart.find(c => String(c.id) === String(p.id));
+  const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
+  return `
+    <div class="product-card" onclick="openProductDetail(${p.id})" style="cursor:pointer;height:190px">
+      <div class="product-img-wrap" style="height:150px;position:relative">
+        ${p.image ? `<img src="${cldOptimize(p.image,300)}" alt="${escHtml(p.en)}" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span class="emoji-fallback">${p.icon}</span>`}
+        <div style="position:absolute;bottom:0;left:0;right:0;height:55px;background:linear-gradient(to top, rgba(0,0,0,0.28), transparent);pointer-events:none"></div>
+        <div style="position:absolute;bottom:8px;left:8px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;font-weight:800;font-size:12px;padding:5px 12px;border-radius:50px;width:fit-content">
+          ${p.price.toLocaleString()} ${t('د.أ','SAR')}
+        </div>
+        <button onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}" ${outOfStock?'disabled style="opacity:0.4"':''}
+          style="position:absolute;bottom:8px;right:12px;width:36px;height:36px;border-radius:50%;border:none;background:#fff;color:var(--primary);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
+          <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-cart-plus')}"></i>
+        </button>
+      </div>
+      <div class="product-info" style="padding:8px 10px">
+        <div class="product-name" style="font-size:13px;margin:0;line-height:1.25">${escHtml(p.en)}</div>
+      </div>
+    </div>`;
+}
+
 async function openMyQuotesPage() {
   if (!currentUser) { openAuthModal('login'); return; }
   showPage('myQuotes');
@@ -7395,6 +7540,9 @@ function showPage(page) {
   } else if (page === 'favorites') {
     activatePageSection('favoritesPage');
     window.scrollTo(0, 0);
+  } else if (page === 'reordered') {
+    activatePageSection('reorderedProductsPage');
+    window.scrollTo(0, 0);
   } else if (page === 'myQuotes') {
     activatePageSection('myQuotesPage');
     window.scrollTo(0, 0);
@@ -7630,7 +7778,7 @@ window.addEventListener('load', () => {
       renderAuthHeader();
       loadAndRenderNotifIcon();
       enablePushNotifications();
-      if (currentUser.role === 'client') renderPointsInHeader();
+      if (currentUser.role === 'client') { renderPointsInHeader(); updateLatestSectionButton(); }
     } else {
       currentUser = null;
       localStorage.removeItem('dentapro_session');
@@ -12429,7 +12577,7 @@ body.dark-mode .brand-item { border-color:#1e3044; color:#5a7a90; }
   display:flex; align-items:center; justify-content:center; gap:6px;
 }
 .product-card:hover .quick-view-btn { transform:translateY(0); }
-.product-img-wrap { position:relative; overflow:hidden; }
+.product-img-wrap { position:relative; overflow:hidden; z-index:2; }
 
 /* ─── Notification bell shake ─── */
 @keyframes notifBellPulse {
