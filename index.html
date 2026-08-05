@@ -5671,8 +5671,9 @@ async function openReorderedProductsPage() {
 
 async function fetchReorderData() {
   if (_cachedReorderData) return _cachedReorderData;
-  const snap = await window._fbGetDocs(window._fbOrdersRef());
-  const myOrders = snap.docs.map(d => d.data()).filter(o => o.clientEmail === currentUser.email);
+  const q = window._fbQuery(window._fbOrdersRef(), window._fbWhere('clientEmail', '==', currentUser.email));
+  const snap = await window._fbGetDocs(q);
+  const myOrders = snap.docs.map(d => d.data());
 
   const map = {}; // productId -> { product, count, lastDate }
   myOrders.forEach(o => {
