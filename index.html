@@ -116,7 +116,6 @@ header{
   border-bottom: 3px solid transparent;
   border-image: linear-gradient(90deg, var(--primary), var(--accent)) 1;
   box-shadow: 0 1px 24px rgba(10,92,138,0.06);
-  padding-top: env(safe-area-inset-top, 0);
 }
 .header-inner{
   max-width:1320px; margin:0 auto;
@@ -1728,6 +1727,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <div class="offers-ticker" id="offersTicker" style="display:none">
   <div class="offers-ticker-track" id="offersTickerTrack"></div>
 </div>
+
 <div id="tickerSpacer" style="height:0"></div>
 <header>
   <div id="offlineBanner">
@@ -1792,6 +1792,11 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </button>
   </div>
 </header>
+
+<div id="adBannerSection" style="display:none;padding:26px;background:#fff;border-bottom:1px solid var(--border)">
+  <div id="adBannerSlide" style="display:flex;align-items:center;gap:28px;max-width:900px;margin:0 auto;cursor:pointer;
+    transition:opacity 0.4s ease"></div>
+</div>
 
 <!-- HERO -->
 <div class="page-section active" id="homePage">
@@ -3128,6 +3133,12 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           <small style="color:var(--text-muted);font-weight:500">(اختياري — اتركه فارغاً ليبقى العرض بدون تاريخ انتهاء)</small>
         </label>
         <input type="datetime-local" class="form-input" id="qtyOfferExpiry">
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;background:#f8fbfd;padding:12px 16px;border-radius:12px">
+        <input type="checkbox" id="qtyOfferShowBanner" style="width:20px;height:20px;cursor:pointer">
+        <label for="qtyOfferShowBanner" style="margin:0;cursor:pointer;font-size:13px;font-weight:700">
+          عرضه أيضاً بخانة الإعلان العريضة (تحت الشريط المتحرك)
+        </label>
       </div>
       <div id="qtyOfferError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px;background:#fff5f5;border-radius:8px">
         <i class="fas fa-exclamation-circle"></i> <span id="qtyOfferErrorMsg">يرجى ملء الحقول بشكل صحيح</span>
@@ -4598,7 +4609,9 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // تحميل باقي المنتجات بالخلفية دون توقيف عرض الصفحة —
   // يضمن أن الأقسام والبحث وزر "عرض المزيد" تعمل على كامل الكتالوج
-  initOffersTicker(); // يجيب بس المنتجات المطلوبة له، بدون انتظار الكتالوج بالكامل
+  ggggg
+  renderAdBanner();
+  renderAdBanner();
 
   ensureAllProductsLoaded().then(() => {
     renderProducts();
@@ -9028,6 +9041,7 @@ function openAddQtyOffer() {
   document.getElementById('qtyOfferId').value = '';
   document.getElementById('qtyOfferError').style.display = 'none';
   document.getElementById('qtyOfferExpiry').value = '';
+  document.getElementById('qtyOfferShowBanner').checked = false;
   const sel = document.getElementById('qtyOfferProduct');
   sel.innerHTML = products.map(p => `<option value="${p.id}">${p.ar} — ${p.brand}</option>`).join('');
   document.getElementById('qtyTiersList').innerHTML = '';
@@ -9044,12 +9058,75 @@ function openEditQtyOffer(id) {
   document.getElementById('qtyOfferId').value = id;
   document.getElementById('qtyOfferProduct').value = o.productId;
   document.getElementById('qtyOfferExpiry').value = toDatetimeLocalValue(o.expiresAt);
+  document.getElementById('qtyOfferShowBanner').checked = !!o.showInBanner;
   document.getElementById('qtyTiersList').innerHTML = '';
   (o.tiers || []).forEach(tr => addTierRow(tr.qty, tr.price));
 }
 
 function closeQtyOfferModal() {
   document.getElementById('qtyOfferModal').classList.remove('open');
+}
+
+let _adBannerInterval = null;
+let _adBannerOffers = [];
+let _adBannerIndex = 0;
+
+async function renderAdBanner() {
+  const section = document.getElementById('adBannerSection');
+  const slide = document.getElementById('adBannerSlide');
+  if (!section || !slide) return;
+
+  const bannerOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o) && o.showInBanner);
+  if (!bannerOffers.length) {
+    section.style.display = 'none';
+    if (_adBannerInterval) { clearInterval(_adBannerInterval); _adBannerInterval = null; }
+    return;
+  }
+
+  await fetchProductsByIds(bannerOffers.map(o => o.productId));
+  _adBannerOffers = bannerOffers
+    .map(o => ({ offer: o, product: products.find(p => p.id === o.productId) }))
+    .filter(x => x.product);
+
+  if (!_adBannerOffers.length) { section.style.display = 'none'; return; }
+
+  section.style.display = 'block';
+  _adBannerIndex = 0;
+  showAdBannerSlide();
+
+  if (_adBannerInterval) clearInterval(_adBannerInterval);
+  if (_adBannerOffers.length > 1) {
+    _adBannerInterval = setInterval(() => {
+      _adBannerIndex = (_adBannerIndex + 1) % _adBannerOffers.length;
+      showAdBannerSlide();
+    }, 4500);
+  }
+}
+
+function showAdBannerSlide() {
+  const slide = document.getElementById('adBannerSlide');
+  if (!slide || !_adBannerOffers.length) return;
+  const { offer, product: p } = _adBannerOffers[_adBannerIndex];
+  const bestTier = offer.tiers[offer.tiers.length - 1];
+  const unitPrice = bestTier.price / bestTier.qty;
+
+  slide.style.opacity = '0';
+  setTimeout(() => {
+    slide.setAttribute('onclick', `openProductDetail(${p.id})`);
+    slide.innerHTML = `
+      <div style="width:128px;height:128px;border-radius:20px;overflow:hidden;flex-shrink:0;background:#f8fbfd;display:flex;align-items:center;justify-content:center">
+        ${p.image ? `<img src="${cldOptimize(p.image,240)}" alt="${escHtml(p.en)}" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span style="font-size:56px">${p.icon}</span>`}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:800;font-size:22px;color:var(--primary-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.en)}</div>
+        <div style="display:flex;align-items:baseline;gap:14px;margin-top:8px">
+          <span style="font-size:30px;font-weight:900;color:#e53e3e">${unitPrice.toFixed(2)} ${t('د.أ','SAR')}</span>
+          <span style="font-size:20px;color:var(--text-muted);text-decoration:line-through">${p.price.toLocaleString()} ${t('د.أ','SAR')}</span>
+        </div>
+      </div>
+      <i class="fas fa-chevron-left" style="color:var(--primary);font-size:24px;flex-shrink:0"></i>`;
+    slide.style.opacity = '1';
+  }, 200);
 }
 
 function saveQtyOffer() {
@@ -9079,12 +9156,14 @@ function saveQtyOffer() {
   if (existingDup) return showErr('يوجد عرض كمية بالفعل لهذا المنتج');
 
   if (editId) {
+    const showInBanner = document.getElementById('qtyOfferShowBanner').checked;
     const idx = offers.findIndex(o => o.id === editId);
-    if (idx !== -1) offers[idx] = { ...offers[idx], productId, tiers, expiresAt };
+    if (idx !== -1) offers[idx] = { ...offers[idx], productId, tiers, expiresAt, showInBanner };
     showToast('✅ تم تعديل عرض الكمية', 'success');
   } else {
+    const showInBanner = document.getElementById('qtyOfferShowBanner').checked;
     const newId = offers.length ? Math.max(...offers.map(o => o.id)) + 1 : 1;
-    offers.push({ id: newId, type: 'qty', productId, tiers, expiresAt, active: true, createdAt: new Date().toISOString() });
+    offers.push({ id: newId, type: 'qty', productId, tiers, expiresAt, showInBanner, active: true, createdAt: new Date().toISOString() });
     showToast('✅ تم إضافة عرض الكمية', 'success');
   }
   saveOffers();
@@ -9094,6 +9173,7 @@ function saveQtyOffer() {
   renderOffers();
   renderProducts();
   initOffersTicker();
+  renderAdBanner();
 }
 
 let currentBundleItems = [];
