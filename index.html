@@ -1804,20 +1804,9 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   <div class="hero-inner">
     <div class="hero-content">
       <div class="hero-badge"><i class="fas fa-certificate"></i> <span data-ar="متجر مستلزمات الأسنان #1" data-en="Dental Supplies Store #1">متجر مستلزمات الأسنان #1</span></div>
-      <h1 data-ar="كل ما تحتاجه<br>لعيادتك في مكان<br><span>واحد</span>" data-en="Everything Your Clinic<br>Needs In One<br><span>Place</span>">
+      <h1 id="heroTitleEl">
         كل ما تحتاجه<br>لعيادتك في مكان<br><span>واحد</span>
       </h1>
-      <p data-ar="أجهزة، أدوات، مواد طبية — أفضل العلامات العالمية بأسعار تنافسية حقيقية." data-en="Devices, instruments, dental materials — top global brands at wholesale prices. Fast delivery across the Gulf region.">
-        أجهزة، أدوات، مواد طبية — أفضل العلامات العالمية بأسعار تنافسية حقيقية.
-      </p>
-      <div class="hero-btns">
-        <button class="btn-primary" onclick="scrollToProducts()">
-          <span data-ar="تسوّق الآن" data-en="Shop Now">تسوّق الآن</span>
-        </button>
-        <button class="btn-outline" onclick="openQuoteRequestModal()">
-          <span data-ar="طلب عرض سعر" data-en="Request a Quote">طلب عرض سعر</span>
-        </button>
-      </div>
       
   </div>
 </section>
@@ -3560,6 +3549,23 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="heroTitleEditModal">
+  <div class="modal" style="max-width:480px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-heading"></i> تعديل عنوان الصفحة الرئيسية</div>
+      <button class="close-btn" onclick="closeHeroTitleEditModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div style="padding:20px">
+      <label style="display:block;font-weight:700;font-size:13px;margin-bottom:6px">العنوان بالعربي (سطر جديد = Enter، آخر سطر يظهر بلون مميز)</label>
+      <textarea id="heroTitleArInput" rows="3" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--border);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:16px"></textarea>
+      <label style="display:block;font-weight:700;font-size:13px;margin-bottom:6px">العنوان بالإنجليزي</label>
+      <textarea id="heroTitleEnInput" rows="3" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--border);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:20px"></textarea>
+      <button class="btn-primary" style="width:100%" onclick="saveHeroTitle()">
+        <i class="fas fa-save"></i> حفظ التعديل
+      </button>
+    </div>
+  </div>
+</div>
 <!-- ACCOUNT MENU MODAL (تُستخدم من زر "حسابي" بالشريط السفلي، بنفس محتوى قائمة الحساب العلوية) -->
 <div class="modal-overlay" id="accountMenuModal" style="align-items:flex-end;padding:0">
   <div class="modal" style="max-width:100%;width:100%;border-radius:20px 20px 0 0;margin:0">
@@ -3788,6 +3794,70 @@ async function saveCategories() {
 }
 
 let categories = loadCategories();
+
+// ============================
+// HERO TITLE — قابل للتعديل من الأدمن (محفوظ في Firestore: store_data/hero_settings)
+// ============================
+let heroTitleAr = 'كل ما تحتاجه\nلعيادتك في مكان\nواحد';
+let heroTitleEn = 'Everything Your Clinic\nNeeds In One\nPlace';
+
+function renderHeroTitle() {
+  const el = document.getElementById('heroTitleEl');
+  if (!el) return;
+  const raw = currentLang === 'en' ? heroTitleEn : heroTitleAr;
+  const lines = raw.split('\n');
+  const last = lines.pop();
+  el.innerHTML = (lines.length ? lines.map(l => escHtml(l)).join('<br>') + '<br>' : '') + `<span>${escHtml(last)}</span>`;
+}
+
+async function loadHeroSettings() {
+  try {
+    if (!await waitForFirebase(15)) return;
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'hero_settings'));
+    if (snap.exists()) {
+      const d = snap.data();
+      if (d.titleAr) heroTitleAr = d.titleAr;
+      if (d.titleEn) heroTitleEn = d.titleEn;
+      renderHeroTitle();
+    }
+  } catch(e) {
+    console.warn('Firebase loadHeroSettings:', e.message);
+  }
+}
+
+function openHeroTitleEditModal() {
+  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+  document.getElementById('heroTitleArInput').value = heroTitleAr;
+  document.getElementById('heroTitleEnInput').value = heroTitleEn;
+  document.getElementById('heroTitleEditModal').classList.add('open');
+}
+function closeHeroTitleEditModal() {
+  document.getElementById('heroTitleEditModal').classList.remove('open');
+}
+
+async function saveHeroTitle() {
+  const ar = document.getElementById('heroTitleArInput').value.trim();
+  const en = document.getElementById('heroTitleEnInput').value.trim();
+  if (!ar || !en) { showToast('⚠️ الرجاء تعبئة الحقلين', 'error'); return; }
+  heroTitleAr = ar;
+  heroTitleEn = en;
+  renderHeroTitle();
+  closeHeroTitleEditModal();
+  showToast('✅ تم حفظ التعديل', 'success');
+  try {
+    for (let i = 0; i < 15; i++) {
+      if (window._fbDoc2 && window._fbSetDoc) break;
+      await new Promise(r => setTimeout(r, 200));
+    }
+    await window._fbSetDoc(
+      window._fbDoc2('store_data', 'hero_settings'),
+      { titleAr: ar, titleEn: en, updatedAt: new Date().toISOString() }
+    );
+  } catch(e) {
+    console.warn('Firebase saveHeroTitle:', e.message);
+    showToast('⚠️ تعذّر الحفظ على السحابة، التعديل ظاهر على جهازك فقط الآن', 'error');
+  }
+}
 
 const DEFAULT_PRODUCTS = [
   {id:1,  cat:'dev',   icon:'🦷', brand:'ADEC',       ar:'كرسي أسنان احترافي A-dec 500',           en:'A-dec 500 Professional Dental Chair',     price:18500, old:21000, desc_ar:'كرسي متكامل مع وحدة ضوء وشاشة تحكم',       desc_en:'Complete unit with light and control screen',   badge:'الأكثر مبيعاً'},
@@ -4584,12 +4654,14 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderOffers();
   updateCartUI();
   renderCompareBar();
+  renderHeroTitle();
 
   // تحميل البيانات من Firebase
   // المنتجات أولاً لضمان توافرها قبل فلترة العروض المرتبطة بها
   await Promise.all([
     loadProductsFromFirebase(),
-    loadCategoriesFromFirebase()
+    loadCategoriesFromFirebase(),
+    loadHeroSettings()
   ]);
   await loadOffersFromFirebase();
 
@@ -4609,8 +4681,6 @@ document.addEventListener('DOMContentLoaded', async () => {
 
   // تحميل باقي المنتجات بالخلفية دون توقيف عرض الصفحة —
   // يضمن أن الأقسام والبحث وزر "عرض المزيد" تعمل على كامل الكتالوج
-  ggggg
-  renderAdBanner();
   renderAdBanner();
 
   ensureAllProductsLoaded().then(() => {
@@ -4679,6 +4749,7 @@ function toggleLang() {
   renderOffers();
   updateCartUI();
   initOffersTicker();
+  renderHeroTitle();
 }
 function t(ar, en) {
   return currentLang === 'en' ? en : ar;
@@ -12408,7 +12479,10 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
     </button>` : ''}
     <button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('products')">
       <i class="fas fa-box" style="color:var(--primary)"></i> ${t('المنتجات','Products')}
-    </button>`;
+    </button>
+    ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openHeroTitleEditModal()">
+      <i class="fas fa-heading" style="color:#0a5c8a"></i> ${t('تعديل عنوان الرئيسية','Edit Homepage Title')}
+    </button>` : ''}`;
 }
 
 // يفتح لوحة التحكم مباشرة على تبويب محدد
