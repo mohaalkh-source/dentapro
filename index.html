@@ -2781,6 +2781,26 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <label class="form-label"><i class="fas fa-hourglass-half" style="color:#a855f7"></i> تاريخ الانتهاء <small style="color:var(--text-muted);font-weight:500">(اختياري — اتركه فارغًا ليبقى دائمًا)</small></label>
         <input type="datetime-local" class="form-input" id="textOfferExpiry">
       </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;background:#f8fbfd;padding:12px 16px;border-radius:12px">
+        <input type="checkbox" id="textOfferShowBanner" style="width:20px;height:20px;cursor:pointer">
+        <label for="textOfferShowBanner" style="margin:0;cursor:pointer;font-size:13px;font-weight:700">
+          عرضه أيضاً بخانة الإعلان العريضة (تحت الشريط المتحرك)
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-image" style="color:var(--primary-light)"></i> صورة (اختياري — تظهر فقط في الإعلان العريضة)</label>
+        <div class="img-upload-area" id="textOfferImgUploadArea" onclick="triggerTextOfferImgUpload()">
+          <input type="file" id="textOfferImageFile" accept="image/*" onchange="handleTextOfferImageUpload(event)" onclick="event.stopPropagation()">
+          <img class="img-preview-box" id="textOfferImgPreviewBox" src="" alt="preview">
+          <span class="img-upload-icon">📷</span>
+          <div class="img-upload-text">انقر لاختيار صورة</div>
+          <div class="img-upload-hint">PNG، JPG، WEBP — بحد أقصى 2MB</div>
+        </div>
+        <button type="button" id="removeTextOfferImgBtn" onclick="removeTextOfferImage()"
+          style="display:none;margin-top:8px;padding:6px 16px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fas fa-trash-alt"></i> حذف الصورة
+        </button>
+      </div>
       <div id="textOfferError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
         <i class="fas fa-exclamation-circle"></i> يرجى كتابة نص الإعلان
       </div>
@@ -3215,6 +3235,12 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           <small style="color:var(--text-muted);font-weight:500">(اختياري — اتركه فارغاً ليبقى العرض بدون تاريخ انتهاء)</small>
         </label>
         <input type="datetime-local" class="form-input" id="bundleExpiry">
+      </div>
+      <div class="form-group" style="display:flex;align-items:center;gap:10px;background:#f8fbfd;padding:12px 16px;border-radius:12px">
+        <input type="checkbox" id="bundleShowBanner" style="width:20px;height:20px;cursor:pointer">
+        <label for="bundleShowBanner" style="margin:0;cursor:pointer;font-size:13px;font-weight:700">
+          عرضها أيضاً بخانة الإعلان العريضة (تحت الشريط المتحرك)
+        </label>
       </div>
 
       <div style="background:#f8fbfd;border-radius:10px;padding:12px;margin-top:8px;display:flex;justify-content:space-between;font-size:13px">
@@ -9076,13 +9102,17 @@ function openAddTextOffer(id) {
   document.getElementById('textOfferText').value = '';
   document.getElementById('textOfferTextEn').value = '';
   document.getElementById('textOfferExpiry').value = '';
+  document.getElementById('textOfferShowBanner').checked = false;
   document.getElementById('textOfferError').style.display = 'none';
+  removeTextOfferImage();
   if (id) {
     const o = offers.find(x => x.id === id);
     if (o) {
       document.getElementById('textOfferText').value = o.text || '';
       document.getElementById('textOfferTextEn').value = o.textEn || '';
       if (o.expiresAt) document.getElementById('textOfferExpiry').value = toDatetimeLocalValue(o.expiresAt);
+      document.getElementById('textOfferShowBanner').checked = !!o.showInBanner;
+      if (o.image) loadTextOfferImagePreview(o.image);
     }
   }
   document.getElementById('textOfferModal').classList.add('open');
@@ -9101,18 +9131,72 @@ function saveTextOffer() {
   const expiryVal = document.getElementById('textOfferExpiry').value;
   const expiresAt = normalizeOfferExpiry(expiryVal);
 
+  const showInBanner = document.getElementById('textOfferShowBanner').checked;
   if (editId) {
     const o = offers.find(x => x.id === editId);
-    if (o) { o.text = text; o.textEn = textEn; o.expiresAt = expiresAt; }
+    if (o) { o.text = text; o.textEn = textEn; o.expiresAt = expiresAt; o.showInBanner = showInBanner; o.image = currentTextOfferImage; }
   } else {
     const newId = offers.length ? Math.max(...offers.map(o => o.id)) + 1 : 1;
-    offers.push({ id: newId, type: 'text', text, textEn, expiresAt, active: true, createdAt: new Date().toISOString() });
+    offers.push({ id: newId, type: 'text', text, textEn, expiresAt, showInBanner, image: currentTextOfferImage, active: true, createdAt: new Date().toISOString() });
   }
   saveOffers();
   renderAdminOffers();
   initOffersTicker();
   closeTextOfferModal();
   showToast('✅ تم حفظ النص الإعلاني', 'success');
+}
+
+let currentTextOfferImage = null;
+function triggerTextOfferImgUpload() { document.getElementById('textOfferImageFile').click(); }
+
+async function handleTextOfferImageUpload(event) {
+  const file = event.target.files[0];
+  if (!file) return;
+  if (file.size > 2 * 1024 * 1024) { showToast('❌ حجم الصورة يتجاوز 2MB', 'error'); return; }
+  const preview = document.getElementById('textOfferImgPreviewBox');
+  const area = document.getElementById('textOfferImgUploadArea');
+  const removeBtn = document.getElementById('removeTextOfferImgBtn');
+  area.querySelector('.img-upload-text').textContent = '⏳ جاري رفع الصورة...';
+  try {
+    const url = await uploadToCloudinary(file);
+    currentTextOfferImage = url;
+    preview.src = url; preview.classList.add('show');
+    area.classList.add('has-image');
+    area.querySelector('.img-upload-icon').style.display = 'none';
+    area.querySelector('.img-upload-text').textContent = '✅ تم تحميل الصورة';
+    area.querySelector('.img-upload-hint').textContent = file.name;
+    removeBtn.style.display = 'inline-flex';
+  } catch (e) {
+    showToast('❌ فشل رفع الصورة، تحقق من الاتصال', 'error');
+    area.querySelector('.img-upload-text').textContent = 'انقر لاختيار صورة';
+  }
+}
+
+function removeTextOfferImage() {
+  currentTextOfferImage = null;
+  const preview = document.getElementById('textOfferImgPreviewBox');
+  const area = document.getElementById('textOfferImgUploadArea');
+  const removeBtn = document.getElementById('removeTextOfferImgBtn');
+  preview.src = ''; preview.classList.remove('show');
+  area.classList.remove('has-image');
+  area.querySelector('.img-upload-icon').style.display = 'block';
+  area.querySelector('.img-upload-text').textContent = 'انقر لاختيار صورة';
+  area.querySelector('.img-upload-hint').textContent = 'PNG، JPG، WEBP — بحد أقصى 2MB';
+  removeBtn.style.display = 'none';
+  document.getElementById('textOfferImageFile').value = '';
+}
+
+function loadTextOfferImagePreview(url) {
+  currentTextOfferImage = url;
+  const preview = document.getElementById('textOfferImgPreviewBox');
+  const area = document.getElementById('textOfferImgUploadArea');
+  const removeBtn = document.getElementById('removeTextOfferImgBtn');
+  preview.src = url; preview.classList.add('show');
+  area.classList.add('has-image');
+  area.querySelector('.img-upload-icon').style.display = 'none';
+  area.querySelector('.img-upload-text').textContent = '✅ صورة محفوظة';
+  area.querySelector('.img-upload-hint').textContent = 'انقر لتغييرها';
+  removeBtn.style.display = 'inline-flex';
 }
 
 function toggleOfferActive(id) {
@@ -9191,17 +9275,36 @@ async function renderAdBanner() {
   const slide = document.getElementById('adBannerSlide');
   if (!section || !slide) return;
 
-  const bannerOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o) && o.showInBanner);
-  if (!bannerOffers.length) {
+  const bannerQtyOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o) && o.showInBanner);
+  const bannerBundles = offers.filter(o => o.type === 'bundle' && o.active && !isOfferExpired(o) && o.showInBanner);
+  const bannerTexts = offers.filter(o => o.type === 'text' && o.active && !isOfferExpired(o) && o.showInBanner);
+
+  if (!bannerQtyOffers.length && !bannerBundles.length && !bannerTexts.length) {
     section.style.display = 'none';
     if (_adBannerInterval) { clearInterval(_adBannerInterval); _adBannerInterval = null; }
     return;
   }
 
-  await fetchProductsByIds(bannerOffers.map(o => o.productId));
-  _adBannerOffers = bannerOffers
-    .map(o => ({ offer: o, product: products.find(p => p.id === o.productId) }))
+  await fetchProductsByIds([
+    ...bannerQtyOffers.map(o => o.productId),
+    ...bannerBundles.flatMap(o => o.items.map(it => it.productId))
+  ]);
+
+  const qtySlides = bannerQtyOffers
+    .map(o => ({ kind: 'qty', offer: o, product: products.find(p => p.id === o.productId) }))
     .filter(x => x.product);
+
+  const bundleSlides = bannerBundles
+    .map(o => ({
+      kind: 'bundle',
+      offer: o,
+      bundleProducts: o.items.map(it => products.find(p => p.id === it.productId)).filter(Boolean)
+    }))
+    .filter(x => x.bundleProducts.length);
+
+  const textSlides = bannerTexts.map(o => ({ kind: 'text', offer: o }));
+
+  _adBannerOffers = [...qtySlides, ...bundleSlides, ...textSlides];
 
   if (!_adBannerOffers.length) { section.style.display = 'none'; return; }
 
@@ -9246,31 +9349,135 @@ function initAdBannerSwipe() {
 function showAdBannerSlide() {
   const slide = document.getElementById('adBannerSlide');
   if (!slide || !_adBannerOffers.length) return;
-  const { offer, product: p } = _adBannerOffers[_adBannerIndex];
+  const current = _adBannerOffers[_adBannerIndex];
+
+  slide.style.opacity = '0';
+  setTimeout(() => {
+    if (current.kind === 'bundle') {
+      renderBannerBundleSlide(slide, current);
+    } else if (current.kind === 'text') {
+      renderBannerTextSlide(slide, current);
+    } else {
+      renderBannerQtySlide(slide, current);
+    }
+    slide.style.opacity = '1';
+  }, 200);
+}
+
+function renderBannerTextSlide(slide, current) {
+  const { offer } = current;
+  const text = currentLang === 'en' ? (offer.textEn || offer.text) : offer.text;
+  const imgUrl = offer.image ? cldOptimize(offer.image, 700) : '';
+
+  slide.removeAttribute('onclick');
+  slide.style.cursor = 'default';
+
+  if (imgUrl) {
+    slide.innerHTML = `
+      <div style="width:42%;flex-shrink:0;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;padding:12px">
+        <img src="${imgUrl}" alt="announcement" loading="lazy" style="width:100%;height:100%;object-fit:contain">
+      </div>
+      <div style="flex:1;display:flex;align-items:center;justify-content:center;padding:0 26px;background:#fff;min-width:0">
+        <p style="font-size:19px;font-weight:800;color:var(--primary-dark);line-height:1.5;margin:0">${escHtml(text)}</p>
+      </div>`;
+  } else {
+    slide.innerHTML = `
+      <div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;padding:0 32px;
+        background:linear-gradient(135deg,var(--primary),var(--primary-light))">
+        <p style="font-size:22px;font-weight:800;color:#fff;line-height:1.5;margin:0;text-align:center">
+          <i class="fas fa-bullhorn" style="margin-left:8px;opacity:0.85"></i>${escHtml(text)}
+        </p>
+      </div>`;
+  }
+}
+
+function renderBannerQtySlide(slide, current) {
+  const { offer, product: p } = current;
   const bestTier = offer.tiers[offer.tiers.length - 1];
   const unitPrice = bestTier.price / bestTier.qty;
   const discountPct = p.price > 0 ? Math.round((1 - unitPrice / p.price) * 100) : 0;
   const imgUrl = p.image ? cldOptimize(p.image, 500) : '';
 
-  slide.style.opacity = '0';
-  setTimeout(() => {
-    slide.setAttribute('onclick', `openProductDetail(${p.id})`);
-    slide.innerHTML = `
-      <div style="width:42%;flex-shrink:0;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;padding:12px">
-        ${imgUrl ? `<img src="${imgUrl}" alt="offer" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span style="font-size:56px">${p.icon}</span>`}
+  slide.setAttribute('onclick', `openProductDetail(${p.id})`);
+  slide.innerHTML = `
+    <div style="width:42%;flex-shrink:0;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;padding:12px">
+      ${imgUrl ? `<img src="${imgUrl}" alt="offer" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span style="font-size:56px">${p.icon}</span>`}
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:0 26px;background:#fff">
+      ${discountPct > 0 ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:50px;background:rgba(229,62,62,0.1);color:#e53e3e;font-size:13px;font-weight:800">
+        <i class="fas fa-bolt" style="font-size:11px"></i> ${t('خصم','SAVE')} ${discountPct}%
+      </span>` : ''}
+      <div style="display:flex;align-items:baseline;gap:6px">
+        <span style="font-size:36px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${unitPrice.toFixed(2)}</span>
+        <span style="font-size:16px;font-weight:700;color:#e53e3e">${t('د.أ','JD')}</span>
       </div>
-      <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:0 26px;background:#fff">
-        ${discountPct > 0 ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:50px;background:rgba(229,62,62,0.1);color:#e53e3e;font-size:13px;font-weight:800">
-          <i class="fas fa-bolt" style="font-size:11px"></i> ${t('خصم','SAVE')} ${discountPct}%
-        </span>` : ''}
-        <div style="display:flex;align-items:baseline;gap:6px">
-          <span style="font-size:36px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${unitPrice.toFixed(2)}</span>
-          <span style="font-size:16px;font-weight:700;color:#e53e3e">${t('د.أ','JD')}</span>
-        </div>
-        <span style="font-size:16px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${p.price.toLocaleString()} ${t('د.أ','JD')}</span>
-      </div>`;
-    slide.style.opacity = '1';
-  }, 200);
+      <span style="font-size:16px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${p.price.toLocaleString()} ${t('د.أ','JD')}</span>
+    </div>`;
+}
+
+function bundleImageBoxHTML(p, size) {
+  const imgUrl = p.image ? cldOptimize(p.image, size * 2) : '';
+  return `<div style="width:${size}px;height:${size}px;border-radius:14px;overflow:hidden;flex-shrink:0;background:#fff;display:flex;align-items:center;justify-content:center;padding:4px">
+    ${imgUrl ? `<img src="${imgUrl}" alt="${escHtml(p.en)}" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span style="font-size:${Math.round(size*0.4)}px">${p.icon}</span>`}
+  </div>`;
+}
+
+function bundlePlusIconHTML(absolute) {
+  const pos = absolute ? 'position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);' : '';
+  return `<span style="${pos}color:var(--primary);font-size:32px;font-weight:900;line-height:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;z-index:2">+</span>`;
+}
+
+function bundleImagesLayoutHTML(products) {
+  const list = products.slice(0, 4);
+
+  if (list.length <= 1) {
+    return bundleImageBoxHTML(list[0], 100);
+  }
+  if (list.length === 2) {
+    return `<div style="display:flex;align-items:center;gap:10px">
+      ${bundleImageBoxHTML(list[0], 84)}
+      ${bundlePlusIconHTML(false)}
+      ${bundleImageBoxHTML(list[1], 84)}
+    </div>`;
+  }
+  if (list.length === 3) {
+    return `<div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:6px">
+      ${bundleImageBoxHTML(list[0], 68)}
+      <div style="display:flex;gap:6px">
+        ${bundleImageBoxHTML(list[1], 68)}
+        ${bundleImageBoxHTML(list[2], 68)}
+      </div>
+      ${bundlePlusIconHTML(true)}
+    </div>`;
+  }
+  // 4 منتجات
+  return `<div style="position:relative;display:grid;grid-template-columns:repeat(2,1fr);gap:6px">
+    ${list.map(p => bundleImageBoxHTML(p, 66)).join('')}
+    ${bundlePlusIconHTML(true)}
+  </div>`;
+}
+
+function renderBannerBundleSlide(slide, current) {
+  const { offer, bundleProducts } = current;
+  const original = getBundleOriginalPrice(offer);
+  const bundlePrice = offer.bundlePrice;
+  const discountPct = original > 0 ? Math.round((1 - bundlePrice / original) * 100) : 0;
+
+  slide.setAttribute('onclick', `openBundleDetail(${offer.id})`);
+  slide.innerHTML = `
+    <div style="width:56%;flex-shrink:0;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;padding:10px">
+      ${bundleImagesLayoutHTML(bundleProducts)}
+    </div>
+    <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:8px;padding:0 12px;background:#fff;min-width:0">
+      <span style="display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:50px;background:rgba(16,185,129,0.1);color:var(--success);font-size:12px;font-weight:800;white-space:nowrap">
+        <i class="fas fa-box-open" style="font-size:10px"></i> ${t('باقة','Bundle')}${discountPct > 0 ? ` — ${discountPct}%` : ''}
+      </span>
+      <div style="display:flex;align-items:baseline;gap:5px">
+        <span style="font-size:28px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${bundlePrice.toLocaleString()}</span>
+        <span style="font-size:14px;font-weight:700;color:#e53e3e">${t('د.أ','JD')}</span>
+      </div>
+      <span style="font-size:14px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${original.toLocaleString()} ${t('د.أ','JD')}</span>
+    </div>`;
 }
 
 function saveQtyOffer() {
@@ -9449,6 +9656,7 @@ function openAddBundle() {
   document.getElementById('bundleModalTitle').innerHTML = '<i class="fas fa-gift"></i> إضافة باقة جديدة';
   document.getElementById('bundleId').value = '';
   document.getElementById('bundleExpiry').value = '';
+  document.getElementById('bundleShowBanner').checked = false;
   ['bundleNameAr','bundleNameEn','bundleDescAr','bundleDescEn','bundlePrice','bundlePoints'].forEach(id => document.getElementById(id).value = '');
   document.getElementById('bundleError').style.display = 'none';
   currentBundleItems = [];
@@ -9474,6 +9682,7 @@ function openEditBundle(id) {
   document.getElementById('bundlePrice').value = o.bundlePrice;
   document.getElementById('bundlePoints').value = o.points || '';
   document.getElementById('bundleExpiry').value = toDatetimeLocalValue(o.expiresAt);
+  document.getElementById('bundleShowBanner').checked = !!o.showInBanner;
   currentBundleItems = (o.items || []).map(it => ({...it}));
   if (o.image) loadBundleImagePreview(o.image);
   renderBundleItemsList();
@@ -9505,6 +9714,7 @@ function saveBundle() {
     image: currentBundleImage || null,
     icon: '🎁',
     expiresAt: bundleExpiryVal ? new Date(bundleExpiryVal).toISOString() : null,
+    showInBanner: document.getElementById('bundleShowBanner').checked,
   };
 
   const editId = parseInt(document.getElementById('bundleId').value) || null;
