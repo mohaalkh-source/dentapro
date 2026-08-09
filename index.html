@@ -1793,9 +1793,8 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   </div>
 </header>
 
-<div id="adBannerSection" style="display:none;padding:26px;background:#fff;border-bottom:1px solid var(--border)">
-  <div id="adBannerSlide" style="display:flex;align-items:center;gap:28px;max-width:900px;margin:0 auto;cursor:pointer;
-    transition:opacity 0.4s ease"></div>
+<div id="adBannerSection" style="display:none;background:#fff;border-bottom:1px solid var(--border)">
+  <div id="adBannerSlide" style="width:100%;max-width:1180px;margin:0 auto;height:180px;cursor:pointer;overflow:hidden;display:flex;align-items:stretch;transition:opacity 0.4s ease"></div>
 </div>
 
 <!-- HERO -->
@@ -7288,6 +7287,49 @@ function runTickerLoop(ticker, track) {
   ticker.onmouseenter = () => { _tickerPaused = true; };
   ticker.onmouseleave = () => { _tickerPaused = false; };
 
+  function applyTransform() {
+    track.style.transform = isEn ? `translateX(${-pos}px)` : `translateX(${pos}px)`;
+  }
+
+  // ===== سحب الشريط بالإصبع =====
+  let dragging = false;
+  let dragStartX = 0;
+  let dragStartPos = 0;
+  let dragMoved = false;
+
+  ticker.addEventListener('touchstart', (e) => {
+    dragging = true;
+    _tickerPaused = true;
+    dragMoved = false;
+    dragStartX = e.touches[0].clientX;
+    dragStartPos = pos;
+  }, { passive: true });
+
+  ticker.addEventListener('touchmove', (e) => {
+    if (!dragging) return;
+    const dx = e.touches[0].clientX - dragStartX;
+    if (Math.abs(dx) > 4) dragMoved = true;
+    const halfWidth = track.scrollWidth / 2;
+    if (halfWidth <= 0) return;
+    let newPos = dragStartPos + (isEn ? -dx : dx);
+    newPos = ((newPos % halfWidth) + halfWidth) % halfWidth;
+    pos = newPos;
+    applyTransform();
+  }, { passive: true });
+
+  const endDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    _tickerPaused = false;
+    if (dragMoved) {
+      // إن كانت سحبًا فعليًا، نمنع نقرة الفتح العرضية التي قد تلي الإفلات
+      const suppressClick = (e) => { e.preventDefault(); e.stopPropagation(); ticker.removeEventListener('click', suppressClick, true); };
+      ticker.addEventListener('click', suppressClick, true);
+    }
+  };
+  ticker.addEventListener('touchend', endDrag, { passive: true });
+  ticker.addEventListener('touchcancel', endDrag, { passive: true });
+
   function step(time) {
     if (lastTime === null) lastTime = time;
     const dt = (time - lastTime) / 1000;
@@ -7297,7 +7339,7 @@ function runTickerLoop(ticker, track) {
     if (halfWidth > 0 && !_tickerPaused) {
       pos += PIXELS_PER_SECOND * dt;
       if (pos >= halfWidth) pos -= halfWidth;
-      track.style.transform = isEn ? `translateX(${-pos}px)` : `translateX(${pos}px)`;
+      applyTransform();
     }
     _tickerRAF = requestAnimationFrame(step);
   }
@@ -9142,6 +9184,8 @@ let _adBannerInterval = null;
 let _adBannerOffers = [];
 let _adBannerIndex = 0;
 
+let _adBannerTouchStartX = null;
+
 async function renderAdBanner() {
   const section = document.getElementById('adBannerSection');
   const slide = document.getElementById('adBannerSlide');
@@ -9164,7 +9208,11 @@ async function renderAdBanner() {
   section.style.display = 'block';
   _adBannerIndex = 0;
   showAdBannerSlide();
+  initAdBannerSwipe();
+  restartAdBannerAutoplay();
+}
 
+function restartAdBannerAutoplay() {
   if (_adBannerInterval) clearInterval(_adBannerInterval);
   if (_adBannerOffers.length > 1) {
     _adBannerInterval = setInterval(() => {
@@ -9174,28 +9222,53 @@ async function renderAdBanner() {
   }
 }
 
+function adBannerNav(dir) {
+  if (!_adBannerOffers.length) return;
+  _adBannerIndex = (_adBannerIndex + dir + _adBannerOffers.length) % _adBannerOffers.length;
+  showAdBannerSlide();
+  restartAdBannerAutoplay();
+}
+
+function initAdBannerSwipe() {
+  const slide = document.getElementById('adBannerSlide');
+  if (!slide || slide.dataset.swipeBound) return;
+  slide.dataset.swipeBound = '1';
+  slide.addEventListener('touchstart', e => { _adBannerTouchStartX = e.touches[0].clientX; }, { passive: true });
+  slide.addEventListener('touchend', e => {
+    if (_adBannerTouchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - _adBannerTouchStartX;
+    _adBannerTouchStartX = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) adBannerNav(1); else adBannerNav(-1);
+  }, { passive: true });
+}
+
 function showAdBannerSlide() {
   const slide = document.getElementById('adBannerSlide');
   if (!slide || !_adBannerOffers.length) return;
   const { offer, product: p } = _adBannerOffers[_adBannerIndex];
   const bestTier = offer.tiers[offer.tiers.length - 1];
   const unitPrice = bestTier.price / bestTier.qty;
+  const discountPct = p.price > 0 ? Math.round((1 - unitPrice / p.price) * 100) : 0;
+  const imgUrl = p.image ? cldOptimize(p.image, 500) : '';
 
   slide.style.opacity = '0';
   setTimeout(() => {
     slide.setAttribute('onclick', `openProductDetail(${p.id})`);
     slide.innerHTML = `
-      <div style="width:128px;height:128px;border-radius:20px;overflow:hidden;flex-shrink:0;background:#f8fbfd;display:flex;align-items:center;justify-content:center">
-        ${p.image ? `<img src="${cldOptimize(p.image,240)}" alt="${escHtml(p.en)}" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span style="font-size:56px">${p.icon}</span>`}
+      <div style="width:42%;flex-shrink:0;overflow:hidden;background:#fff;display:flex;align-items:center;justify-content:center;padding:12px">
+        ${imgUrl ? `<img src="${imgUrl}" alt="offer" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span style="font-size:56px">${p.icon}</span>`}
       </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:800;font-size:22px;color:var(--primary-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.en)}</div>
-        <div style="display:flex;align-items:baseline;gap:14px;margin-top:8px">
-          <span style="font-size:30px;font-weight:900;color:#e53e3e">${unitPrice.toFixed(2)} ${t('د.أ','SAR')}</span>
-          <span style="font-size:20px;color:var(--text-muted);text-decoration:line-through">${p.price.toLocaleString()} ${t('د.أ','SAR')}</span>
+      <div style="flex:1;display:flex;flex-direction:column;align-items:flex-start;justify-content:center;gap:10px;padding:0 26px;background:#fff">
+        ${discountPct > 0 ? `<span style="display:inline-flex;align-items:center;gap:4px;padding:4px 12px;border-radius:50px;background:rgba(229,62,62,0.1);color:#e53e3e;font-size:13px;font-weight:800">
+          <i class="fas fa-bolt" style="font-size:11px"></i> ${t('خصم','SAVE')} ${discountPct}%
+        </span>` : ''}
+        <div style="display:flex;align-items:baseline;gap:6px">
+          <span style="font-size:36px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${unitPrice.toFixed(2)}</span>
+          <span style="font-size:16px;font-weight:700;color:#e53e3e">${t('د.أ','JD')}</span>
         </div>
-      </div>
-      <i class="fas fa-chevron-left" style="color:var(--primary);font-size:24px;flex-shrink:0"></i>`;
+        <span style="font-size:16px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${p.price.toLocaleString()} ${t('د.أ','JD')}</span>
+      </div>`;
     slide.style.opacity = '1';
   }, 200);
 }
