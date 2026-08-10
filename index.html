@@ -3591,6 +3591,112 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </div>
   </div>
 </div>
+<div class="modal-overlay" id="adminSendOrderModal">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#16a34a,#22c55e)">
+      <div class="modal-title"><i class="fas fa-paper-plane"></i> إرسال طلبية لـ <span id="sendOrderClientName"></span></div>
+      <button class="close-btn" onclick="closeAdminSendOrderModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="sendOrderClientEmail">
+      <input type="hidden" id="sendOrderClientUid">
+      <input type="hidden" id="sendOrderClientPhone">
+      <input type="hidden" id="sendOrderClientClinic">
+
+      <div class="form-group" style="position:relative">
+        <label class="form-label"><i class="fas fa-search"></i> البحث عن مادة في المتجر</label>
+        <input type="text" class="form-input" id="sendOrderProductSearch" placeholder="اكتب اسم المادة..." oninput="searchSendOrderProducts()" autocomplete="off">
+        <div id="sendOrderSearchResults" style="display:none;position:absolute;top:100%;right:0;left:0;background:#fff;border:1.5px solid var(--border);border-radius:14px;max-height:260px;overflow-y:auto;z-index:20;box-shadow:var(--shadow-lg)"></div>
+      </div>
+
+      <button type="button" onclick="toggleSendOrderCustomForm()" style="width:100%;padding:10px;border-radius:12px;border:2px dashed var(--border);background:#f8fbfd;color:var(--primary);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px">
+        <i class="fas fa-plus-circle"></i> إضافة مادة غير موجودة في المتجر
+      </button>
+
+      <div id="sendOrderCustomForm" style="display:none;background:#f8fbfd;border-radius:14px;padding:14px;margin-bottom:14px">
+        <div style="display:flex;gap:8px;margin-bottom:8px">
+          <input type="text" id="sendOrderCustomName" placeholder="اسم المادة" class="form-input" style="flex:2">
+          <input type="number" id="sendOrderCustomPrice" placeholder="السعر" class="form-input" style="flex:1" min="0" step="0.01">
+        </div>
+        <button type="button" onclick="addSendOrderCustomItem()" class="btn-primary" style="width:100%">
+          <i class="fas fa-check"></i> إضافة للطلبية
+        </button>
+      </div>
+
+      <div id="sendOrderItemsList" style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px"></div>
+      <div id="sendOrderEmptyState" style="text-align:center;padding:24px;color:var(--text-muted);font-size:13px">
+        لم تُضف أي مادة بعد
+      </div>
+
+      <div class="form-group">
+        <label class="form-label"><i class="fas fa-wallet"></i> طريقة الدفع</label>
+        <div style="display:flex;gap:8px" id="sendOrderPayMethodGroup">
+          <button type="button" class="pay-method-mini" data-val="money" onclick="setSendOrderPayMethod('money')" style="flex:1;padding:10px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">نقدًا</button>
+          <button type="button" class="pay-method-mini" data-val="points" onclick="setSendOrderPayMethod('points')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#f8fbfd;color:var(--text-muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">من النقاط</button>
+          <button type="button" class="pay-method-mini" data-val="free" onclick="setSendOrderPayMethod('free')" style="flex:1;padding:10px;border-radius:10px;border:none;background:#f8fbfd;color:var(--text-muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">مجانًا</button>
+        </div>
+      </div>
+
+      <div style="background:#f8fbfd;border-radius:12px;padding:14px;display:flex;justify-content:space-between;align-items:center;margin-top:8px">
+        <span style="font-weight:700;color:var(--text-muted)">الإجمالي</span>
+        <strong id="sendOrderTotalDisplay" style="font-size:20px;color:var(--primary)">0.00 د.أ</strong>
+      </div>
+
+      <div id="sendOrderError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px;margin-top:12px">
+        <i class="fas fa-exclamation-circle"></i> أضف مادة واحدة على الأقل
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeAdminSendOrderModal()"><i class="fas fa-times"></i> إلغاء</button>
+      <button class="btn-submit" id="sendOrderSubmitBtn" onclick="submitAdminSendOrder()" style="background:linear-gradient(135deg,#16a34a,#22c55e)"><i class="fas fa-paper-plane"></i> إرسال الطلبية</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="clientOrdersReportModal">
+  <div class="modal" style="max-width:720px;max-height:88vh">
+    <div class="modal-header" style="background:linear-gradient(135deg,#7e22ce,#a855f7)">
+      <div class="modal-title"><i class="fas fa-file-invoice"></i> تفاصيل طلبات العميل</div>
+      <button class="close-btn" onclick="closeClientOrdersReportModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="reportClientEmail">
+      <input type="hidden" id="reportClientName">
+      <input type="hidden" id="reportClientClinic">
+
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:16px;align-items:end">
+        <div style="flex:1;min-width:130px">
+          <label class="form-label" style="font-size:12px">من تاريخ</label>
+          <input type="date" class="form-input" id="reportFromDate">
+        </div>
+        <div style="flex:1;min-width:130px">
+          <label class="form-label" style="font-size:12px">إلى تاريخ</label>
+          <input type="date" class="form-input" id="reportToDate">
+        </div>
+        <div style="flex:1;min-width:150px">
+          <label class="form-label" style="font-size:12px">حالة الطلب</label>
+          <select class="form-input" id="reportStatusFilter">
+            <option value="all">كل الحالات</option>
+            <option value="pending">في الانتظار</option>
+            <option value="confirmed">تم التأكيد</option>
+            <option value="preparing">جاري التجهيز</option>
+            <option value="shipped">في الشحن</option>
+            <option value="delivered">تم التسليم</option>
+            <option value="cancelled">ملغي</option>
+          </select>
+        </div>
+        <button onclick="runClientOrdersReport()" style="padding:10px 20px;border-radius:10px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;height:42px">
+          <i class="fas fa-search"></i> بحث
+        </button>
+      </div>
+
+      <div id="clientOrdersReportBody"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeClientOrdersReportModal()"><i class="fas fa-times"></i> إغلاق</button>
+      <button class="btn-submit" onclick="printClientOrdersReport()" style="background:linear-gradient(135deg,#7e22ce,#a855f7)"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
+    </div>
+  </div>
+</div>
 <!-- ACCOUNT MENU MODAL (تُستخدم من زر "حسابي" بالشريط السفلي، بنفس محتوى قائمة الحساب العلوية) -->
 <div class="modal-overlay" id="accountMenuModal" style="align-items:flex-end;padding:0">
   <div class="modal" style="max-width:100%;width:100%;border-radius:20px 20px 0 0;margin:0">
@@ -11787,6 +11893,394 @@ async function confirmDeleteAccount() {
 // =====================
 // CLIENT RECORD (ADMIN)
 // =====================
+// ============================
+// إرسال طلبية يدوية للعميل (هاتف / واتساب)
+// ============================
+let _sendOrderItems = [];
+let _sendOrderPayMethod = 'money';
+
+function openAdminSendOrderModal(email, uid, name, clinic, phone) {
+  _sendOrderItems = [];
+  _sendOrderPayMethod = 'money';
+  document.getElementById('sendOrderClientEmail').value = email;
+  document.getElementById('sendOrderClientUid').value = uid || '';
+  document.getElementById('sendOrderClientPhone').value = phone || '';
+  document.getElementById('sendOrderClientClinic').value = clinic || '';
+  document.getElementById('sendOrderClientName').textContent = name || 'العميل';
+  document.getElementById('sendOrderProductSearch').value = '';
+  document.getElementById('sendOrderSearchResults').style.display = 'none';
+  document.getElementById('sendOrderCustomForm').style.display = 'none';
+  document.getElementById('sendOrderCustomName').value = '';
+  document.getElementById('sendOrderCustomPrice').value = '';
+  document.getElementById('sendOrderError').style.display = 'none';
+  setSendOrderPayMethod('money');
+  renderSendOrderItems();
+  document.getElementById('adminSendOrderModal').classList.add('open');
+}
+function closeAdminSendOrderModal() {
+  document.getElementById('adminSendOrderModal').classList.remove('open');
+}
+
+function toggleSendOrderCustomForm() {
+  const el = document.getElementById('sendOrderCustomForm');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function searchSendOrderProducts() {
+  const term = document.getElementById('sendOrderProductSearch').value.trim().toLowerCase();
+  const box = document.getElementById('sendOrderSearchResults');
+  if (!term) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  const matches = products.filter(p =>
+    (p.ar && p.ar.toLowerCase().includes(term)) || (p.en && p.en.toLowerCase().includes(term))
+  ).slice(0, 15);
+  if (!matches.length) {
+    box.innerHTML = `<div style="padding:14px;color:var(--text-muted);font-size:13px;text-align:center">لا توجد نتائج</div>`;
+    box.style.display = 'block';
+    return;
+  }
+  box.innerHTML = matches.map(p => `
+    <div onclick="addSendOrderProduct(${p.id})" style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid var(--border)">
+      <div style="width:36px;height:36px;border-radius:8px;overflow:hidden;flex-shrink:0;background:#f8fbfd;display:flex;align-items:center;justify-content:center">
+        ${p.image ? `<img src="${cldOptimize(p.image,80)}" style="width:100%;height:100%;object-fit:contain">` : `<span>${p.icon||'📦'}</span>`}
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--primary-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.ar||p.en)}</div>
+        <div style="font-size:12px;color:var(--text-muted)">${(p.price||0).toLocaleString()} د.أ</div>
+      </div>
+    </div>`).join('');
+  box.style.display = 'block';
+}
+
+function addSendOrderProduct(productId) {
+  const p = products.find(x => x.id === productId);
+  if (!p) return;
+  const existing = _sendOrderItems.find(i => i.kind === 'catalog' && i.id === productId);
+  if (existing) { existing.qty += 1; }
+  else {
+    _sendOrderItems.push({
+      kind: 'catalog', id: p.id, ar: p.ar, en: p.en, icon: p.icon || '📦',
+      price: p.price, points: p.points || 0, qty: 1
+    });
+  }
+  document.getElementById('sendOrderProductSearch').value = '';
+  document.getElementById('sendOrderSearchResults').style.display = 'none';
+  renderSendOrderItems();
+}
+
+function addSendOrderCustomItem() {
+  const name = document.getElementById('sendOrderCustomName').value.trim();
+  const price = parseFloat(document.getElementById('sendOrderCustomPrice').value);
+  if (!name || isNaN(price) || price < 0) {
+    showToast('⚠️ أدخل اسم المادة وسعرًا صحيحًا', 'error');
+    return;
+  }
+  _sendOrderItems.push({
+    kind: 'custom', id: `custom-${Date.now()}`, ar: name, en: name, icon: '📦',
+    price, points: 0, qty: 1
+  });
+  document.getElementById('sendOrderCustomName').value = '';
+  document.getElementById('sendOrderCustomPrice').value = '';
+  document.getElementById('sendOrderCustomForm').style.display = 'none';
+  renderSendOrderItems();
+}
+
+function updateSendOrderQty(index, delta) {
+  const item = _sendOrderItems[index];
+  if (!item) return;
+  item.qty = Math.max(1, item.qty + delta);
+  renderSendOrderItems();
+}
+function updateSendOrderPrice(index, value) {
+  const item = _sendOrderItems[index];
+  if (!item) return;
+  const v = parseFloat(value);
+  item.price = isNaN(v) ? 0 : v;
+  updateSendOrderTotalDisplay();
+}
+function removeSendOrderItem(index) {
+  _sendOrderItems.splice(index, 1);
+  renderSendOrderItems();
+}
+
+function renderSendOrderItems() {
+  const list = document.getElementById('sendOrderItemsList');
+  const empty = document.getElementById('sendOrderEmptyState');
+  if (!_sendOrderItems.length) {
+    list.innerHTML = '';
+    empty.style.display = 'block';
+    updateSendOrderTotalDisplay();
+    return;
+  }
+  empty.style.display = 'none';
+  list.innerHTML = _sendOrderItems.map((item, i) => `
+    <div style="display:flex;align-items:center;gap:10px;padding:10px;border:1.5px solid var(--border);border-radius:12px">
+      <div style="display:flex;align-items:center;gap:4px;background:#f8fbfd;border-radius:50px;padding:4px;flex-shrink:0">
+        <button type="button" onclick="updateSendOrderQty(${i},-1)" style="width:26px;height:26px;border-radius:50%;border:none;background:#fff;cursor:pointer;font-weight:900;color:var(--primary)">−</button>
+        <span style="min-width:20px;text-align:center;font-weight:800;font-size:13px">${item.qty}</span>
+        <button type="button" onclick="updateSendOrderQty(${i},1)" style="width:26px;height:26px;border-radius:50%;border:none;background:#fff;cursor:pointer;font-weight:900;color:var(--primary)">+</button>
+      </div>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:13px;font-weight:700;color:var(--primary-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(item.ar)}</div>
+      </div>
+      <input type="number" value="${item.price}" min="0" step="0.01" oninput="updateSendOrderPrice(${i}, this.value)"
+        style="width:72px;padding:6px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center">
+      <button type="button" onclick="removeSendOrderItem(${i})" style="width:28px;height:28px;border-radius:50%;border:none;background:#fff5f5;color:var(--danger);cursor:pointer;flex-shrink:0">
+        <i class="fas fa-times" style="font-size:11px"></i>
+      </button>
+    </div>`).join('');
+  updateSendOrderTotalDisplay();
+}
+
+function setSendOrderPayMethod(method) {
+  _sendOrderPayMethod = method;
+  document.querySelectorAll('#sendOrderPayMethodGroup .pay-method-mini').forEach(btn => {
+    const active = btn.dataset.val === method;
+    btn.style.background = active ? 'var(--primary)' : '#f8fbfd';
+    btn.style.color = active ? '#fff' : 'var(--text-muted)';
+  });
+  updateSendOrderTotalDisplay();
+}
+
+function updateSendOrderTotalDisplay() {
+  const total = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const totalPoints = _sendOrderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
+  const disp = document.getElementById('sendOrderTotalDisplay');
+  if (_sendOrderPayMethod === 'points') {
+    disp.textContent = `${totalPoints} نقطة`;
+  } else if (_sendOrderPayMethod === 'free') {
+    disp.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px">${total.toLocaleString()} د.أ</span> مجانًا`;
+  } else {
+    disp.textContent = `${total.toLocaleString()} د.أ`;
+  }
+}
+
+async function submitAdminSendOrder() {
+  if (!_sendOrderItems.length) {
+    document.getElementById('sendOrderError').style.display = 'flex';
+    return;
+  }
+  document.getElementById('sendOrderError').style.display = 'none';
+
+  const btn = document.getElementById('sendOrderSubmitBtn');
+  btn.disabled = true;
+  const originalHTML = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الإرسال...';
+
+  const email  = document.getElementById('sendOrderClientEmail').value;
+  const uid    = document.getElementById('sendOrderClientUid').value || null;
+  const phone  = document.getElementById('sendOrderClientPhone').value;
+  const clinic = document.getElementById('sendOrderClientClinic').value;
+  const name   = document.getElementById('sendOrderClientName').textContent;
+
+  const total       = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const totalPoints = _sendOrderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
+
+  const ts = Date.now().toString(36).toUpperCase();
+  const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
+  const orderNum = `DP-${ts}-${rand}`;
+
+  const order = {
+    id: orderNum,
+    clientName: name,
+    clientEmail: email,
+    clientUid: uid,
+    clinic: clinic,
+    doctor: name,
+    phone: phone,
+    address: '',
+    notes: 'طلبية أُدخلت يدوياً من الأدمن (هاتف/واتساب)',
+    items: _sendOrderItems.map(i => ({
+      id: i.id, ar: i.ar, en: i.en, icon: i.icon, price: i.price, qty: i.qty, points: i.points || 0
+    })),
+    total,
+    totalPoints,
+    payMethod: _sendOrderPayMethod,
+    pointsDeducted: false,
+    status: 'confirmed',
+    createdByAdmin: true,
+    createdAt: new Date().toISOString(),
+  };
+
+  try {
+    await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
+  } catch (e) {
+    showToast('❌ تعذّر إرسال الطلبية، تحقق من الاتصال', 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+    return;
+  }
+
+  if (email && email !== 'guest') {
+    createNotification({
+      scope: 'client',
+      targetEmail: email,
+      icon: '🛒',
+      title: 'طلبية جديدة',
+      message: `تم تجهيز طلبية لك بقيمة ${_sendOrderPayMethod === 'points' ? totalPoints + ' نقطة' : total.toLocaleString() + ' د.أ'}`,
+      link: 'page:orders',
+    });
+  }
+
+  showToast('✅ تم إرسال الطلبية بنجاح', 'success');
+  closeAdminSendOrderModal();
+  btn.disabled = false;
+  btn.innerHTML = originalHTML;
+
+  if (email) showClientRecord(uid, email); // تحديث فوري لعدد الطلبات في سجل العميل
+}
+
+// ============================
+// تقرير تفاصيل طلبات العميل (فلترة بالتاريخ + الحالة، مع طباعة)
+// ============================
+function openClientOrdersReportModal(email, name, clinic) {
+  document.getElementById('reportClientEmail').value = email;
+  document.getElementById('reportClientName').value = name;
+  document.getElementById('reportClientClinic').value = clinic;
+  document.getElementById('reportFromDate').value = '';
+  document.getElementById('reportToDate').value = '';
+  document.getElementById('reportStatusFilter').value = 'all';
+  document.getElementById('clientOrdersReportBody').innerHTML = '';
+  document.getElementById('clientOrdersReportModal').classList.add('open');
+  runClientOrdersReport();
+}
+function closeClientOrdersReportModal() {
+  document.getElementById('clientOrdersReportModal').classList.remove('open');
+}
+
+async function runClientOrdersReport() {
+  const email  = document.getElementById('reportClientEmail').value;
+  const name   = document.getElementById('reportClientName').value;
+  const clinic = document.getElementById('reportClientClinic').value;
+  const fromVal = document.getElementById('reportFromDate').value;
+  const toVal   = document.getElementById('reportToDate').value;
+  const statusFilter = document.getElementById('reportStatusFilter').value;
+  const body = document.getElementById('clientOrdersReportBody');
+  body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 12px;width:26px;height:26px;border-width:4px"></div>جاري تجهيز التقرير...</div>`;
+
+  try {
+    const [ordersSnap, allQuotes] = await Promise.all([
+      window._fbGetDocs(window._fbOrdersRef()),
+      getAllQuotes()
+    ]);
+    let orders = ordersSnap.docs.map(d => d.data()).filter(o => o.clientEmail === email);
+    let quoteOrders = (allQuotes || [])
+      .filter(q => q.clientEmail === email && q.status === 'accepted')
+      .map(q => ({
+        id: q.id || q._docId,
+        createdAt: q.createdAt,
+        status: q.orderStatus || 'pending',
+        items: q.items || [],
+      }));
+    let all = [...orders, ...quoteOrders];
+
+    const fromDate = fromVal ? new Date(fromVal) : null;
+    const toDate   = toVal ? new Date(toVal + 'T23:59:59') : null;
+    all = all.filter(o => {
+      const d = new Date(o.createdAt);
+      if (fromDate && d < fromDate) return false;
+      if (toDate && d > toDate) return false;
+      return true;
+    });
+
+    if (statusFilter !== 'all') {
+      all = all.filter(o => (o.status || 'pending') === statusFilter);
+    }
+
+    all.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    if (!all.length) {
+      body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">لا توجد طلبات ضمن هذه الفترة/الحالة</div>`;
+      return;
+    }
+
+    let grandTotal = 0;
+    let invoicesHTML = '';
+    all.forEach(order => {
+      const isCancelled = (order.status || 'pending') === 'cancelled';
+      const items = order.items || [];
+      let invoiceTotal = 0;
+      const rowsHTML = items.map((it, idx) => {
+        const lineTotal = (it.price || 0) * (it.qty || 1);
+        invoiceTotal += lineTotal;
+        return `
+          <tr>
+            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6">${idx + 1}</td>
+            <td style="padding:8px;border-bottom:1px solid #eef2f6">${escHtml(it.ar || it.en || '—')}</td>
+            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6">${it.qty || 1}</td>
+            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6">${(it.price || 0).toFixed(2)}</td>
+            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6;font-weight:700">${lineTotal.toFixed(2)}</td>
+          </tr>`;
+      }).join('');
+      if (!isCancelled) grandTotal += invoiceTotal;
+
+      const dateStr = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year: 'numeric', month: 'long', day: 'numeric' });
+      const s = getStatusObj(order.status || 'pending');
+
+      invoicesHTML += `
+        <div style="margin-bottom:24px;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;${isCancelled ? 'opacity:0.6' : ''}">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 16px;background:#f8fbfd;flex-wrap:wrap;gap:8px">
+            <div style="font-weight:800;color:var(--primary-dark);font-size:13px">
+              <i class="fas fa-file-invoice"></i> فاتورة #${escHtml(String(order.id || ''))} — ${dateStr}
+            </div>
+            <span class="status-badge ${s.class}"><i class="fas ${s.icon}"></i> ${s.label}${isCancelled ? ' (ملغاة)' : ''}</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;font-size:12px">
+            <thead>
+              <tr style="background:#fff">
+                <th style="padding:8px;text-align:center;color:var(--text-muted);font-size:11px">#</th>
+                <th style="padding:8px;text-align:right;color:var(--text-muted);font-size:11px">المادة</th>
+                <th style="padding:8px;text-align:center;color:var(--text-muted);font-size:11px">الكمية</th>
+                <th style="padding:8px;text-align:center;color:var(--text-muted);font-size:11px">سعر الوحدة</th>
+                <th style="padding:8px;text-align:center;color:var(--text-muted);font-size:11px">الإجمالي</th>
+              </tr>
+            </thead>
+            <tbody>${rowsHTML}</tbody>
+          </table>
+          <div style="display:flex;justify-content:flex-end;padding:10px 16px;background:#f8fbfd;font-weight:900;color:var(--primary)">
+            إجمالي الفاتورة: ${invoiceTotal.toFixed(2)} د.أ
+          </div>
+        </div>`;
+    });
+
+    body.innerHTML = `
+      <div id="clientOrdersReportPrintArea">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-weight:900;font-size:17px;color:var(--primary-dark)">${escHtml(name)}</div>
+          <div style="font-size:13px;color:var(--text-muted)">${escHtml(clinic || '—')}</div>
+        </div>
+        ${invoicesHTML}
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:14px;color:#fff;margin-top:8px">
+          <span style="font-weight:800">الإجمالي العام لكل الفواتير</span>
+          <strong style="font-size:20px">${grandTotal.toFixed(2)} د.أ</strong>
+        </div>
+      </div>`;
+  } catch (e) {
+    body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger)">خطأ: ${e.message}</div>`;
+  }
+}
+
+function printClientOrdersReport() {
+  const printArea = document.getElementById('clientOrdersReportPrintArea');
+  if (!printArea) { showToast('⚠️ لا يوجد تقرير لطباعته', 'error'); return; }
+  const win = window.open('', '_blank');
+  win.document.write(`
+    <html dir="rtl" lang="ar">
+    <head>
+      <meta charset="UTF-8">
+      <title>تقرير طلبات العميل</title>
+      <style>
+        body{font-family:Tahoma,Arial,sans-serif;padding:24px;color:#1a2332}
+        table{width:100%;border-collapse:collapse}
+        .status-badge{display:inline-flex;align-items:center;gap:4px;padding:4px 10px;border-radius:50px;font-size:11px;font-weight:700;background:#eef2f6}
+      </style>
+    </head>
+    <body>${printArea.innerHTML}</body>
+    </html>`);
+  win.document.close();
+  win.focus();
+  setTimeout(() => { win.print(); }, 300);
+}
+
 async function showClientRecord(uid, email) {
   const existing = document.getElementById('clientRecordModal');
   if (existing) existing.remove();
@@ -12070,6 +12564,12 @@ async function openClientDetailModal(uid, email) {
         </button>
         <button onclick="openClientAllOrdersModal('${email}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-receipt"></i> طلباته (${allOrders.length + clientQuotes.length})
+        </button>
+        <button onclick="openAdminSendOrderModal('${email}','${uid||''}','${escHtml(u.firstName||u.name||'عميل')}','${escHtml(u.clinic||'')}','${escHtml(u.phone||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          <i class="fas fa-paper-plane"></i> إرسال طلبية
+        </button>
+        <button onclick="openClientOrdersReportModal('${email}','${escHtml(u.firstName||u.name||'عميل')}','${escHtml(u.clinic||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#7e22ce,#a855f7);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          <i class="fas fa-file-invoice"></i> تفاصيل طلبات العميل
         </button>
       </div>
     `;
