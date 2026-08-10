@@ -12101,9 +12101,26 @@ async function submitAdminSendOrder() {
     createdAt: new Date().toISOString(),
   };
 
+  function stripUndefinedDeep(obj) {
+    if (Array.isArray(obj)) {
+      return obj.map(stripUndefinedDeep);
+    } else if (obj !== null && typeof obj === 'object') {
+      const clean = {};
+      Object.keys(obj).forEach(key => {
+        const val = obj[key];
+        if (val === undefined) return;
+        clean[key] = stripUndefinedDeep(val);
+      });
+      return clean;
+    }
+    return obj;
+  }
+  const cleanOrder = stripUndefinedDeep(order);
+
   try {
-    await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
+    await window._fbSetDoc(window._fbDoc2('orders', orderNum), cleanOrder);
   } catch (e) {
+    console.error('❌ Firebase error:', e.code || e.message, e);
     showToast('❌ تعذّر إرسال الطلبية، تحقق من الاتصال', 'error');
     btn.disabled = false;
     btn.innerHTML = originalHTML;
