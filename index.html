@@ -12143,7 +12143,7 @@ async function submitAdminSendOrder() {
   btn.disabled = false;
   btn.innerHTML = originalHTML;
 
-  if (email) showClientRecord(uid, email); // تحديث فوري لعدد الطلبات في سجل العميل
+  if (email) openClientDetailModal(uid, email); // تحديث فوري لعدد الطلبات في سجل العميل
 }
 
 // ============================
