@@ -3288,8 +3288,14 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         </div>
       </div>
       <div style="position:relative;margin-bottom:10px">
+        <div id="quoteNoResultsHint"
+          style="display:none;position:absolute;bottom:calc(100% + 6px);right:0;left:0;background:#fff;
+                 border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center;
+                 font-size:13px;font-weight:700;color:var(--primary);z-index:60;box-shadow:var(--shadow-lg)">
+          اضغط على زر ( اضافة +)
+        </div>
         <input type="text" class="form-input" id="quoteProductSearch"
-          placeholder="🔍 ابحث عن المادة بالاسم أو الماركة..."
+          placeholder="🔍 ابحث عن المادة بالاسم أو الماركة، أو اكتب اسم مادة غير موجودة..."
           oninput="filterQuoteProductList()" onfocus="showQuoteProductList()" autocomplete="off">
         <input type="hidden" id="quoteAddProductSelect">
         <div id="quoteProductDropdown"
@@ -3298,24 +3304,10 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
                  z-index:60;box-shadow:var(--shadow-lg)"></div>
       </div>
 
-      <div style="display:flex;gap:8px;margin-bottom:10px">
+      <div style="display:flex;gap:8px;margin-bottom:16px">
         <input type="number" class="form-input" id="quoteAddProductQty" placeholder="الكمية (اختياري)" min="1" style="flex:1">
         <button type="button" onclick="addQuoteItemRow()" style="padding:0 18px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">
           <i class="fas fa-plus"></i>إضافة
-        </button>
-      </div>
-
-      <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-        <span style="font-size:12px;color:var(--text-muted);font-weight:700">ان لم تجد المادة اكتبها هنا بالاسفل</span>
-        <div style="flex:1;height:1px;background:var(--border)"></div>
-      </div>
-
-      <div style="display:flex;gap:8px;margin-bottom:16px">
-        <input type="text" class="form-input" id="quoteCustomItemName" placeholder="✏️ المادة غير موجودة؟ اكتب اسمها هنا" style="flex:2">
-        <input type="number" class="form-input" id="quoteCustomItemQty" placeholder="الكمية (اختياري)" min="1" style="flex:1">
-        <button type="button" onclick="addQuoteCustomItem()" style="padding:0 18px;border-radius:50px;background:#7e22ce;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">
-          <i class="fas fa-plus"></i> إضافة
         </button>
       </div>
 
@@ -3364,11 +3356,31 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <span>اكتب اسم كل مادة تحتاجها. إذا اخترت من الاقتراحات المطابقة يظهر سعرها فوراً، وإذا كتبت اسم غير موجود بالكتالوج تُرسل كطلب عرض سعر لتُسعَّر لاحقاً.</span>
       </div>
 
-      <div id="quickOrderRows"></div>
+      <div style="position:relative;margin-bottom:10px">
+        <div id="qoNoResultsHint"
+          style="display:none;position:absolute;bottom:calc(100% + 6px);right:0;left:0;background:#fff;
+                 border:1.5px solid var(--border);border-radius:12px;padding:10px 14px;text-align:center;
+                 font-size:13px;font-weight:700;color:var(--primary);z-index:60;box-shadow:var(--shadow-lg)">
+          اضغط "إضافة" +
+        </div>
+        <input type="text" class="form-input" id="qoProductSearch"
+          placeholder="🔍 ابحث عن المادة بالاسم أو الماركة، أو اكتب اسم مادة غير موجودة..."
+          oninput="filterQOProductList()" onfocus="showQOProductList()" autocomplete="off">
+        <input type="hidden" id="qoAddProductSelect">
+        <div id="qoProductDropdown"
+          style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;background:#fff;
+                 border:1.5px solid var(--border);border-radius:12px;max-height:240px;overflow-y:auto;
+                 z-index:60;box-shadow:var(--shadow-lg)"></div>
+      </div>
 
-      <button type="button" onclick="addQuickOrderRow()" style="width:100%;padding:12px;border-radius:var(--radius-sm);background:#f0f8ff;color:var(--primary);border:1.5px dashed var(--border);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-top:6px">
-        <i class="fas fa-plus"></i> إضافة سطر
-      </button>
+      <div style="display:flex;gap:8px;margin-bottom:16px">
+        <input type="number" class="form-input" id="qoAddProductQty" placeholder="الكمية" min="1" value="1" style="flex:1">
+        <button type="button" onclick="addQOItemRow()" style="padding:0 18px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0">
+          <i class="fas fa-plus"></i>إضافة
+        </button>
+      </div>
+
+      <div id="qoItemsList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px"></div>
 
       <div style="margin-top:20px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center">
         <span style="font-size:13px;color:var(--text-muted);font-weight:700" id="quickOrderTotalLabel">الإجمالي: بانتظار التحديد الكامل</span>
@@ -8092,7 +8104,15 @@ function isStaff()    { return isAdmin() || isManager(); }
 document.addEventListener('DOMContentLoaded', () => {
   const saved = localStorage.getItem('dentapro_session');
   if (saved) {
-    try { currentUser = JSON.parse(saved); renderAuthHeader(); loadAndRenderNotifIcon(); } catch(e) {}
+    try {
+      currentUser = JSON.parse(saved);
+      renderAuthHeader();
+      loadAndRenderNotifIcon();
+      if (currentUser && currentUser.role !== 'admin' && currentUser.role !== 'manager') {
+        showClientWelcome(currentUser);
+        renderPointsInHeader();
+      }
+    } catch(e) {}
   } else { renderAuthHeader(); }
 });
 
@@ -8204,7 +8224,7 @@ function showClientWelcome(user) {
     <i class="fas fa-hand-sparkles"></i>
     <div>
       <div style="font-weight:800;font-size:15px;color:var(--primary-dark)">أهلاً بك ${user.name}! ${user.clinic ? '— ' + user.clinic : ''}</div>
-      <div style="font-size:13px;color:var(--text-muted);margin-top:2px">تمتع بأسعار العيادات الحصرية وتتبع طلباتك</div>
+      <div style="font-size:13px;color:#fff;margin-top:2px">تمتع بأسعار العيادات الحصرية وتتبع طلباتك</div>
     </div>`;
   hero.insertBefore(banner, hero.firstChild);
 }
@@ -9854,9 +9874,9 @@ function openQuoteRequestModal() {
   document.getElementById('quoteProductSearch').value = '';
   document.getElementById('quoteAddProductSelect').value = '';
   document.getElementById('quoteAddProductQty').value = '';
-  document.getElementById('quoteCustomItemName').value = '';
-  document.getElementById('quoteCustomItemQty').value = '';
   document.getElementById('quoteProductDropdown').style.display = 'none';
+  const hintEl = document.getElementById('quoteNoResultsHint');
+  if (hintEl) hintEl.style.display = 'none';
   clearQuoteImage();
 
   const guestFields = document.getElementById('quoteGuestFields');
@@ -9917,21 +9937,24 @@ function filterQuoteProductList() {
     !term || normalizeArabic(p.ar).includes(term) || normalizeArabic(p.brand).includes(term) || p.en.toLowerCase().includes(term)
   );
   const dd = document.getElementById('quoteProductDropdown');
+  const hint = document.getElementById('quoteNoResultsHint');
   if (!list.length) {
-    dd.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-muted);font-size:13px">
-      لا توجد نتائج — جرّب كتابة اسم المادة في الحقل اليدوي بالأسفل</div>`;
-  } else {
-    dd.innerHTML = list.map(p => `
-      <div onclick="selectQuoteProduct(${p.id})"
-        style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
-        onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
-        <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">`:p.icon}</span>
-        <div style="flex:1;min-width:0">
-          <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</div>
-          <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
-        </div>
-      </div>`).join('');
+    dd.innerHTML = '';
+    dd.style.display = 'none';
+    hint.style.display = term ? 'block' : 'none';
+    return;
   }
+  hint.style.display = 'none';
+  dd.innerHTML = list.map(p => `
+    <div onclick="selectQuoteProduct(${p.id})"
+      style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+      <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">`:p.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
+      </div>
+    </div>`).join('');
   dd.style.display = 'block';
 }
 
@@ -9951,20 +9974,6 @@ document.addEventListener('click', (e) => {
   }
 });
 
-function addQuoteCustomItem() {
-  const name = document.getElementById('quoteCustomItemName').value.trim();
-  const qtyVal = document.getElementById('quoteCustomItemQty').value;
-  if (!name) {
-    showToast('⚠️ يرجى كتابة اسم المادة أولاً', 'error');
-    return;
-  }
-  currentQuoteItems.push({ productId: null, customName: name, qty: qtyVal ? parseInt(qtyVal) : null });
-  document.getElementById('quoteCustomItemName').value = '';
-  document.getElementById('quoteCustomItemQty').value = '';
-  showToast(`✅ تمت إضافة "${name}"`, 'success');
-  renderQuoteItemsList();
-}
-
 function closeQuoteRequestModal() {
   document.getElementById('quoteRequestModal').classList.remove('open');
 }
@@ -9974,20 +9983,28 @@ function addQuoteItemRow() {
   const productId = parseInt(select.value);
   const qtyVal = document.getElementById('quoteAddProductQty').value;
   const qty = qtyVal ? parseInt(qtyVal) : null;
+  const typedText = document.getElementById('quoteProductSearch').value.trim();
 
-  if (!productId) {
-    showToast('⚠️ يرجى اختيار مادة من القائمة أولاً', 'error');
+  if (productId) {
+    // مادة مختارة من نتائج البحث (موجودة بالمتجر)
+    const p = products.find(x => x.id === productId);
+    const existing = currentQuoteItems.find(it => it.productId === productId);
+    if (existing) {
+      existing.qty = qty;
+      showToast(`✏️ تم تحديث "${p ? p.ar : 'المادة'}"`, 'success');
+    } else {
+      currentQuoteItems.push({ productId, qty });
+      showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}"`, 'success');
+    }
+  } else if (typedText) {
+    // لم يُختر منتج من القائمة — نعتمد النص المكتوب كمادة غير موجودة بالمتجر
+    currentQuoteItems.push({ productId: null, customName: typedText, qty });
+    showToast(`✅ تمت إضافة "${typedText}"`, 'success');
+  } else {
+    showToast('⚠️ يرجى كتابة اسم المادة أو اختيارها من القائمة أولاً', 'error');
     return;
   }
-  const p = products.find(x => x.id === productId);
-  const existing = currentQuoteItems.find(it => it.productId === productId);
-  if (existing) {
-    existing.qty = qty;
-    showToast(`✏️ تم تحديث "${p ? p.ar : 'المادة'}"`, 'success');
-  } else {
-    currentQuoteItems.push({ productId, qty });
-    showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}"`, 'success');
-  }
+
   document.getElementById('quoteAddProductQty').value = '';
   select.value = '';
   document.getElementById('quoteProductSearch').value = '';
@@ -10006,12 +10023,12 @@ function renderQuoteItemsList() {
     const icon = p ? (p.image ? `<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">` : p.icon) : '✏️';
     const customBadge = !p ? `<span style="font-size:10px;background:#fdf4ff;color:#7e22ce;border:1px solid #e9d5ff;border-radius:50px;padding:1px 8px;margin-right:6px">مادة جديدة</span>` : '';
     return `
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
-      <div style="display:flex;align-items:center;gap:8px;flex:1;min-width:0">
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;flex:1 1 140px;min-width:100px">
         <span style="font-size:18px;flex-shrink:0">${icon}</span>
-        <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(name)}</span>
-        ${customBadge}
+        <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${escHtml(name)}</span>
       </div>
+      ${customBadge}
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <span style="font-size:12px;color:var(--text-muted)">الكمية:</span>
         <input type="number" min="1" placeholder="غير محددة" value="${it.qty || ''}" style="width:90px;padding:5px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center"
@@ -10032,141 +10049,142 @@ function removeQuoteItemRowByIdx(idx) {
 // =====================
 // QUICK ORDER (طلب سريع)
 // =====================
-let quickOrderRowCount = 0;
+let currentQuickOrderItems = [];
 
-function quickOrderRowHTML(idx) {
-  return `
-  <div class="quick-order-row" id="quickOrderRow_${idx}" style="margin-bottom:14px">
-    <div style="display:flex;gap:8px;align-items:flex-start;position:relative">
-      <div style="flex:2;position:relative">
-        <input type="text" class="form-input" placeholder="اكتب اسم المادة أو وصفها..." id="quickOrderName_${idx}"
-          autocomplete="off" oninput="onQuickOrderInput(${idx})" onfocus="onQuickOrderInput(${idx})"
-          data-selected-id="" data-unit-price="">
-        <div id="quickOrderSuggestions_${idx}" style="display:none;position:absolute;top:calc(100% + 4px);right:0;left:0;
-          background:#fff;border:1.5px solid var(--border);border-radius:12px;max-height:260px;overflow-y:auto;
-          z-index:50;box-shadow:var(--shadow-lg)"></div>
+function showQOProductList() {
+  filterQOProductList();
+  document.getElementById('qoProductDropdown').style.display = 'block';
+}
+
+function filterQOProductList() {
+  const term = normalizeArabic(document.getElementById('qoProductSearch').value);
+  const list = getSortedProductsAr().filter(p =>
+    !term || normalizeArabic(p.ar).includes(term) || normalizeArabic(p.brand).includes(term) || p.en.toLowerCase().includes(term)
+  );
+  const dd = document.getElementById('qoProductDropdown');
+  const hint = document.getElementById('qoNoResultsHint');
+  if (!list.length) {
+    dd.innerHTML = '';
+    dd.style.display = 'none';
+    hint.style.display = term ? 'block' : 'none';
+    return;
+  }
+  hint.style.display = 'none';
+  dd.innerHTML = list.map(p => `
+    <div onclick="selectQOProduct(${p.id})"
+      style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+      <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${cldOptimize(p.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">`:p.icon}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.ar}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
       </div>
-      <input type="number" class="form-input" placeholder="الكمية" min="1" value="1" id="quickOrderQty_${idx}"
-        style="width:70px;text-align:center;flex-shrink:0" oninput="updateQuickOrderRowPrice(${idx});updateQuickOrderTotal()">
-      <button type="button" onclick="removeQuickOrderRow(${idx})" style="width:38px;height:38px;flex-shrink:0;border-radius:50%;background:#fff5f5;color:var(--danger);border:none;cursor:pointer">
-        <i class="fas fa-trash-alt"></i>
-      </button>
-    </div>
-    <div id="quickOrderRowInfo_${idx}" style="margin-top:6px;font-size:12px;font-weight:700"></div>
-  </div>`;
+      <div style="font-weight:800;font-size:12px;color:var(--primary);flex-shrink:0">${p.price.toLocaleString()} ${t('د.أ','JD')}</div>
+    </div>`).join('');
+  dd.style.display = 'block';
 }
 
-function addQuickOrderRow() {
-  quickOrderRowCount++;
-  document.getElementById('quickOrderRows').insertAdjacentHTML('beforeend', quickOrderRowHTML(quickOrderRowCount));
-  updateQuickOrderTotal();
+function selectQOProduct(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('qoAddProductSelect').value = id;
+  document.getElementById('qoProductSearch').value = `${p.ar} — ${p.brand}`;
+  document.getElementById('qoProductDropdown').style.display = 'none';
 }
 
-function onQuickOrderInput(idx) {
-  const input = document.getElementById(`quickOrderName_${idx}`);
-  const dropdown = document.getElementById(`quickOrderSuggestions_${idx}`);
-  if (!input || !dropdown) return;
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('qoProductDropdown');
+  const input = document.getElementById('qoProductSearch');
+  if (dd && dd.style.display === 'block' && !dd.contains(e.target) && e.target !== input) {
+    dd.style.display = 'none';
+  }
+});
 
-  input.dataset.selectedId = ''; // أي كتابة يدوية تلغي الاختيار السابق
-  input.dataset.unitPrice = '';
-  updateQuickOrderRowInfo(idx);
-  updateQuickOrderTotal();
+function addQOItemRow() {
+  const select = document.getElementById('qoAddProductSelect');
+  const productId = parseInt(select.value);
+  const qtyVal = document.getElementById('qoAddProductQty').value;
+  const qty = qtyVal ? parseInt(qtyVal) : 1;
+  const typedText = document.getElementById('qoProductSearch').value.trim();
 
-  const term = input.value.trim();
-  if (!term) { dropdown.style.display = 'none'; return; }
-
-  // productMatchesQuery يبحث بالاسم العربي/الإنجليزي + الماركة + الوصف العربي/الإنجليزي معاً
-  const scored = products
-    .map(p => ({ p, score: productMatchesQuery(p, term) }))
-    .filter(x => x.score > 0)
-    .sort((a,b) => b.score - a.score)
-    .slice(0, 8);
-
-  if (!scored.length) {
-    dropdown.innerHTML = `<div style="padding:14px;text-align:center;color:var(--text-muted);font-size:13px">
-      لا توجد نتائج مطابقة — سيتم إرسال المادة كطلب عرض سعر</div>`;
-    dropdown.style.display = 'block';
+  if (productId) {
+    const p = products.find(x => x.id === productId);
+    const existing = currentQuickOrderItems.find(it => it.productId === productId);
+    if (existing) {
+      existing.qty = qty;
+      showToast(`✏️ تم تحديث "${p ? p.ar : 'المادة'}"`, 'success');
+    } else {
+      currentQuickOrderItems.push({ productId, ar: p.ar, en: p.en, icon: p.icon, image: p.image || null, isCustom: false, qty, unitPrice: p.price });
+      showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}"`, 'success');
+    }
+  } else if (typedText) {
+    currentQuickOrderItems.push({ productId: null, ar: typedText, en: '', icon: '✏️', image: null, isCustom: true, qty, unitPrice: null });
+    showToast(`✅ تمت إضافة "${typedText}"`, 'success');
+  } else {
+    showToast('⚠️ يرجى كتابة اسم المادة أو اختيارها من القائمة أولاً', 'error');
     return;
   }
 
-  dropdown.innerHTML = scored.map(({p}) => `
-    <div onclick="selectQuickOrderSuggestion(${idx}, ${p.id})"
-      style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
-      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
-      <div style="width:34px;height:34px;border-radius:8px;flex-shrink:0;background:linear-gradient(135deg,#f0f8ff,#e8f3fb);
-                  display:flex;align-items:center;justify-content:center;font-size:17px;overflow:hidden">
-        ${p.image ? `<img src="${cldOptimize(p.image,60)}" style="width:100%;height:100%;object-fit:cover" loading="lazy">` : p.icon}
-      </div>
-      <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.ar)}</div>
-        <div style="font-size:11px;color:var(--text-muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.brand)} — ${escHtml(p.desc_ar || '')}</div>
-      </div>
-      <div style="font-weight:800;font-size:12px;color:var(--primary);flex-shrink:0">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>
-    </div>`).join('');
-  dropdown.style.display = 'block';
+  document.getElementById('qoAddProductQty').value = '1';
+  select.value = '';
+  document.getElementById('qoProductSearch').value = '';
+  renderQOItemsList();
 }
 
-function selectQuickOrderSuggestion(idx, productId) {
-  const p = products.find(x => x.id === productId);
-  if (!p) return;
-  const input = document.getElementById(`quickOrderName_${idx}`);
-  input.value = p.ar;
-  input.dataset.selectedId = productId;
-  input.dataset.unitPrice = p.price;
-  document.getElementById(`quickOrderSuggestions_${idx}`).style.display = 'none';
-  updateQuickOrderRowInfo(idx);
+function renderQOItemsList() {
+  const list = document.getElementById('qoItemsList');
+  if (!currentQuickOrderItems.length) {
+    list.innerHTML = `<div style="text-align:center;color:var(--text-muted);font-size:13px;padding:10px">لم تتم إضافة مواد بعد</div>`;
+    updateQuickOrderTotal();
+    return;
+  }
+  list.innerHTML = currentQuickOrderItems.map((it, idx) => {
+    const icon = it.image ? `<img src="${cldOptimize(it.image,40)}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">` : it.icon;
+    const customBadge = it.isCustom ? `<span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:50px;padding:1px 8px;flex-shrink:0">سيُسعَّر لاحقاً</span>` : '';
+    const priceInfo = it.isCustom
+      ? ''
+      : `<span style="font-size:12px;font-weight:800;color:var(--primary);flex-shrink:0">${it.unitPrice.toLocaleString()} × ${it.qty} = ${(it.unitPrice*it.qty).toLocaleString()} ${t('د.أ','JD')}</span>`;
+    return `
+    <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
+      <div style="display:flex;align-items:center;gap:8px;flex:1 1 140px;min-width:100px">
+        <span style="font-size:18px;flex-shrink:0">${icon}</span>
+        <span style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;min-width:0">${escHtml(it.ar)}</span>
+      </div>
+      ${customBadge}
+      ${priceInfo}
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span style="font-size:12px;color:var(--text-muted)">الكمية:</span>
+        <input type="number" min="1" value="${it.qty}" style="width:70px;padding:5px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center"
+          onchange="updateQOItemQtyByIdx(${idx}, this.value)">
+      </div>
+      <button onclick="removeQOItemRowByIdx(${idx})" style="background:none;border:none;color:var(--danger);cursor:pointer;flex-shrink:0"><i class="fas fa-times-circle"></i></button>
+    </div>`;
+  }).join('');
   updateQuickOrderTotal();
 }
 
-function updateQuickOrderRowPrice(idx) {
-  updateQuickOrderRowInfo(idx);
+function updateQOItemQtyByIdx(idx, newQty) {
+  if (currentQuickOrderItems[idx]) currentQuickOrderItems[idx].qty = parseInt(newQty) || 1;
+  renderQOItemsList();
 }
-
-function updateQuickOrderRowInfo(idx) {
-  const input = document.getElementById(`quickOrderName_${idx}`);
-  const qtyInput = document.getElementById(`quickOrderQty_${idx}`);
-  const infoBox = document.getElementById(`quickOrderRowInfo_${idx}`);
-  if (!input || !infoBox) return;
-
-  const unitPrice = parseFloat(input.dataset.unitPrice);
-  const qty = parseInt(qtyInput?.value) || 1;
-
-  if (input.dataset.selectedId && unitPrice) {
-    infoBox.style.color = 'var(--primary)';
-    infoBox.innerHTML = `<i class="fas fa-tag"></i> ${unitPrice.toLocaleString()} ${t('د.أ','SAR')} × ${qty} = <strong>${(unitPrice*qty).toLocaleString()} ${t('د.أ','SAR')}</strong>`;
-  } else if (input.value.trim()) {
-    infoBox.style.color = '#d97706';
-    infoBox.innerHTML = `<i class="fas fa-info-circle"></i> ${t('سيتم تحديد السعر من قبل الإدارة','Price to be set by admin')}`;
-  } else {
-    infoBox.innerHTML = '';
-  }
+function removeQOItemRowByIdx(idx) {
+  currentQuickOrderItems.splice(idx, 1);
+  renderQOItemsList();
 }
 
 function updateQuickOrderTotal() {
-  const rows = document.querySelectorAll('.quick-order-row');
-  let total = 0;
-  let hasUnknown = false;
-  let hasAny = false;
-
-  rows.forEach(row => {
-    const idx = row.id.replace('quickOrderRow_', '');
-    const input = document.getElementById(`quickOrderName_${idx}`);
-    const qtyInput = document.getElementById(`quickOrderQty_${idx}`);
-    if (!input || !input.value.trim()) return;
-    hasAny = true;
-    const qty = parseInt(qtyInput?.value) || 1;
-    if (input.dataset.selectedId && input.dataset.unitPrice) {
-      total += parseFloat(input.dataset.unitPrice) * qty;
-    } else {
-      hasUnknown = true;
-    }
-  });
-
   const label = document.getElementById('quickOrderTotalLabel');
   if (!label) return;
-  if (!hasAny) {
+  if (!currentQuickOrderItems.length) {
     label.textContent = 'الإجمالي: بانتظار التحديد الكامل';
-  } else if (hasUnknown) {
+    return;
+  }
+  let total = 0, hasUnknown = false;
+  currentQuickOrderItems.forEach(it => {
+    if (!it.isCustom && it.unitPrice) total += it.unitPrice * it.qty;
+    else hasUnknown = true;
+  });
+  if (hasUnknown) {
     label.innerHTML = `الإجمالي التقديري: <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
       <span style="color:#d97706;font-weight:600"> + مواد بانتظار تسعير الإدارة</span>`;
   } else {
@@ -10174,28 +10192,14 @@ function updateQuickOrderTotal() {
   }
 }
 
-document.addEventListener('click', (e) => {
-  document.querySelectorAll('[id^="quickOrderSuggestions_"]').forEach(dd => {
-    const rowIdx = dd.id.replace('quickOrderSuggestions_', '');
-    const input = document.getElementById(`quickOrderName_${rowIdx}`);
-    if (dd.style.display === 'block' && !dd.contains(e.target) && e.target !== input) {
-      dd.style.display = 'none';
-    }
-  });
-});
-
-function removeQuickOrderRow(idx) {
-  const el = document.getElementById('quickOrderRow_' + idx);
-  if (el) el.remove();
-  updateQuickOrderTotal();
-}
-
 function openQuickOrderModal() {
-  document.getElementById('quickOrderRows').innerHTML = '';
-  quickOrderRowCount = 0;
-  addQuickOrderRow();
-  addQuickOrderRow();
-  updateQuickOrderTotal();
+  currentQuickOrderItems = [];
+  document.getElementById('qoProductSearch').value = '';
+  document.getElementById('qoAddProductSelect').value = '';
+  document.getElementById('qoAddProductQty').value = '1';
+  document.getElementById('qoProductDropdown').style.display = 'none';
+  document.getElementById('qoNoResultsHint').style.display = 'none';
+  renderQOItemsList();
   document.getElementById('quickOrderModal').classList.add('open');
 }
 
@@ -10212,34 +10216,14 @@ function closeQuickOrderModal() {
 }
 
 async function submitQuickOrder() {
-  const rows = document.querySelectorAll('.quick-order-row');
-  const items = [];
-  let hasCustomItem = false;
-
-  rows.forEach(row => {
-    const idx = row.id.replace('quickOrderRow_', '');
-    const nameInput = document.getElementById(`quickOrderName_${idx}`);
-    const qtyInput = document.getElementById(`quickOrderQty_${idx}`);
-    if (!nameInput || !nameInput.value.trim()) return;
-
-    const selectedId = nameInput.dataset.selectedId ? parseInt(nameInput.dataset.selectedId) : null;
-    const qty = parseInt(qtyInput.value) || 1;
-
-    if (selectedId) {
-      const p = products.find(x => x.id === selectedId);
-      if (p) {
-        items.push({ productId: p.id, ar: p.ar, en: p.en, icon: p.icon, image: p.image || null, isCustom: false, qty, unitPrice: p.price });
-        return;
-      }
-    }
-    hasCustomItem = true;
-    items.push({ productId: null, ar: nameInput.value.trim(), en: '', icon: '✏️', image: null, isCustom: true, qty, unitPrice: null });
-  });
-
-  if (!items.length) {
+  if (!currentQuickOrderItems.length) {
     showToast('⚠️ يرجى إضافة مادة واحدة على الأقل', 'error');
     return;
   }
+  const items = currentQuickOrderItems.map(it => ({
+    productId: it.productId, ar: it.ar, en: it.en, icon: it.icon, image: it.image, isCustom: it.isCustom, qty: it.qty, unitPrice: it.unitPrice
+  }));
+  const hasCustomItem = items.some(it => it.isCustom);
 
   closeQuickOrderModal();
   proceedQuickOrderCheckout(items, hasCustomItem);
@@ -10537,6 +10521,7 @@ async function submitQuoteRequest() {
       'success'
     );
   } catch(e) {
+    console.error('❌ submitQuoteRequest error:', e.code || e.message, e);
     showErr('حدث خطأ أثناء الإرسال، تحقق من الاتصال');
   }
 }
@@ -11337,6 +11322,7 @@ async function renderAdminQuotes() {
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:13px">
         <span style="font-size:18px">${i.icon}</span>
         <span style="flex:1;font-weight:600">${escHtml(i.ar)}</span>
+        ${i.isCustom ? `<span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:50px;padding:2px 8px;font-weight:700;flex-shrink:0">⚠️ غير مدرجة بالمتجر</span>` : ''}
         <span style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : 'كمية غير محددة'}</span>
         ${i.unitPrice ? `<span style="font-weight:800;color:var(--primary)">${i.unitPrice.toLocaleString()} د.أ</span>` : ''}
       </div>`).join('');
@@ -11405,7 +11391,7 @@ function openPriceQuoteModal(docId) {
     <div style="display:flex;align-items:center;gap:10px;padding:10px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
       <span style="font-size:22px;flex-shrink:0">${i.icon}</span>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:700;font-size:13px">${escHtml(i.ar)}</div>
+        <div style="font-weight:700;font-size:13px">${escHtml(i.ar)} ${i.isCustom ? `<span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:50px;padding:2px 8px;font-weight:700;margin-right:6px">⚠️ غير مدرجة بالمتجر</span>` : ''}</div>
         <div style="font-size:11px;color:var(--text-muted)">${i.qty ? `الكمية المطلوبة: ${i.qty}` : 'الكمية غير محددة من العميل'}</div>
       </div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
@@ -12143,7 +12129,7 @@ async function submitAdminSendOrder() {
   btn.disabled = false;
   btn.innerHTML = originalHTML;
 
-  if (email) openClientDetailModal(uid, email); // تحديث فوري لعدد الطلبات في سجل العميل
+  if (email) showClientRecord(uid, email); // تحديث فوري لعدد الطلبات في سجل العميل
 }
 
 // ============================
