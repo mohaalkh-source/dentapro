@@ -2486,7 +2486,7 @@ body.en .favorite-toggle-btn { left: auto; right: 12px; }
           const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
           if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
           if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
-          const pending = snap.docs.filter(d => d.data().status === 'pending').length;
+          const pending = snap.docs.filter(d => !['delivered','cancelled'].includes(d.data().status)).length;
           const badge = document.getElementById('adminOrdersBadge');
           if (badge) badge.textContent = pending > 0 ? pending : '';
         }, (err) => console.warn('⚠️ مراقبة الطلبات:', err.message));
@@ -4528,7 +4528,10 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   <div class="modal" style="max-width:720px;max-height:88vh">
     <div class="modal-header" style="background:linear-gradient(135deg,#7e22ce,#a855f7)">
       <div class="modal-title"><i class="fas fa-file-invoice"></i> تفاصيل طلبات العميل</div>
-      <button class="close-btn" onclick="closeClientOrdersReportModal()"><i class="fas fa-times"></i></button>
+      <div style="display:flex;align-items:center;gap:8px">
+        <button onclick="printClientOrdersReport()" style="padding:8px 16px;border-radius:50px;background:rgba(255,255,255,0.18);color:#fff;border:1.5px solid rgba(255,255,255,0.5);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px;white-space:nowrap"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
+        <button class="close-btn" onclick="closeClientOrdersReportModal()"><i class="fas fa-times"></i></button>
+      </div>
     </div>
     <div class="modal-body">
       <input type="hidden" id="reportClientEmail">
@@ -4546,7 +4549,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         </div>
         <div style="flex:1;min-width:150px">
           <label class="form-label" style="font-size:12px">حالة الطلب</label>
-          <select class="form-input" id="reportStatusFilter">
+          <select class="form-input" id="reportStatusFilter" onchange="runClientOrdersReport()">
             <option value="all">كل الحالات</option>
             <option value="pending">في الانتظار</option>
             <option value="confirmed">تم التأكيد</option>
@@ -4556,16 +4559,21 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
             <option value="cancelled">ملغي</option>
           </select>
         </div>
+        <div style="flex:1;min-width:150px">
+          <label class="form-label" style="font-size:12px">طريقة الدفع</label>
+          <select class="form-input" id="reportPayMethodFilter" onchange="runClientOrdersReport()">
+            <option value="all">كل الطرق</option>
+            <option value="money">نقدًا</option>
+            <option value="points">نقاط</option>
+            <option value="free">مجانًا</option>
+          </select>
+        </div>
         <button onclick="runClientOrdersReport()" style="padding:10px 20px;border-radius:10px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;height:42px">
           <i class="fas fa-search"></i> بحث
         </button>
       </div>
 
       <div id="clientOrdersReportBody"></div>
-    </div>
-    <div class="modal-footer" style="justify-content:space-between">
-      <button class="btn-back" onclick="closeClientOrdersReportModal()"><i class="fas fa-times"></i> إغلاق</button>
-      <button class="btn-submit" onclick="printClientOrdersReport()" style="background:linear-gradient(135deg,#7e22ce,#a855f7)"><i class="fas fa-print"></i> طباعة / تصدير PDF</button>
     </div>
   </div>
 </div>
@@ -4611,21 +4619,14 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 
   <div class="bottom-nav-item" data-page="quoteRequest" onclick="openQuoteRequestModal()"
     style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
-    padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px">
+    padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:96px">
     <i class="fas fa-file-invoice-dollar" style="font-size:20px"></i>
-    <span style="font-size:10px;font-weight:700" data-ar="عرض سعر" data-en="Quote">عرض سعر</span>
-  </div>
-
-  <div class="bottom-nav-item" data-page="orders" onclick="openClientOrders();updateBottomNav('orders')"
-    style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
-    padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px">
-    <i class="fas fa-shopping-bag" style="font-size:20px"></i>
-    <span style="font-size:10px;font-weight:700" data-ar="طلباتي" data-en="My Orders">طلباتي</span>
+    <span style="font-size:10px;font-weight:700" data-ar="طلب عرض سعر" data-en="Request Quote">طلب عرض</span>
   </div>
 
   <div class="bottom-nav-item" data-page="account" onclick="handleBottomNavAccount();updateBottomNav('account')"
     style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;
-    padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px">
+    padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:96px">
     <i class="fas fa-bars" style="font-size:22px"></i>
   </div>
 </div>
@@ -8685,8 +8686,10 @@ function showPage(page) {
     markNotifsByLinkPrefixRead(['page:myQuotes']);
   } else if (page === 'messages') {
     activatePageSection('messagesPage');
-    window.scrollTo(0, 0);
-    renderClientMessagesThread();
+    renderClientMessagesThread().then(() => {
+      const input = document.getElementById('clientMsgInput');
+      if (input) input.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    });
     markNotifsByLinkPrefixRead(['page:messages']);
   } else if (page === 'trackOrder') {
     activatePageSection('trackOrderPage');
@@ -11872,7 +11875,7 @@ async function renderAdminOrders() {
     const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
     window._cachedOrders = orders;
 
-    const pending = orders.filter(o => o.status === 'pending').length;
+    const pending = orders.filter(o => !['delivered','cancelled'].includes(o.status)).length;
     const ordersBadge = document.getElementById('adminOrdersBadge');
     if (ordersBadge) ordersBadge.textContent = pending > 0 ? pending : '';
 
@@ -12168,7 +12171,20 @@ async function renderAdminQuotes() {
   const quotes = await getAllQuotes();
   window._cachedAdminQuotes = quotes;
 
-  const pendingCount = quotes.filter(q => q.status === 'pending').length;
+  let ordersForBadge = window._cachedOrders;
+  if (!ordersForBadge) {
+    try {
+      const snap = await window._fbGetDocs(window._fbOrdersRef());
+      ordersForBadge = snap.docs.map(d => d.data());
+    } catch(e) { ordersForBadge = []; }
+  }
+  const activeAcceptedCount = quotes.filter(q => {
+    if (q.status !== 'accepted') return false;
+    const orderId = 'DP-' + String(q.id || '').replace('QT-', '');
+    const order = ordersForBadge.find(o => o.id === orderId);
+    return !order || !['delivered','cancelled'].includes(order.status);
+  }).length;
+  const pendingCount = quotes.filter(q => q.status === 'pending').length + activeAcceptedCount;
   const badge = document.getElementById('adminQuotesBadge');
   if (badge) badge.textContent = pendingCount > 0 ? pendingCount : '';
 
@@ -13008,6 +13024,7 @@ function openClientOrdersReportModal(email, name, clinic) {
   document.getElementById('reportFromDate').value = '';
   document.getElementById('reportToDate').value = '';
   document.getElementById('reportStatusFilter').value = 'all';
+  document.getElementById('reportPayMethodFilter').value = 'all';
   document.getElementById('clientOrdersReportBody').innerHTML = '';
   document.getElementById('clientOrdersReportModal').classList.add('open');
   runClientOrdersReport();
@@ -13023,6 +13040,7 @@ async function runClientOrdersReport() {
   const fromVal = document.getElementById('reportFromDate').value;
   const toVal   = document.getElementById('reportToDate').value;
   const statusFilter = document.getElementById('reportStatusFilter').value;
+  const payMethodFilter = document.getElementById('reportPayMethodFilter').value;
   const body = document.getElementById('clientOrdersReportBody');
   body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 12px;width:26px;height:26px;border-width:4px"></div>جاري تجهيز التقرير...</div>`;
 
@@ -13055,7 +13073,11 @@ async function runClientOrdersReport() {
       all = all.filter(o => (o.status || 'pending') === statusFilter);
     }
 
-    all.sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+    if (payMethodFilter !== 'all') {
+      all = all.filter(o => (o.payMethod || 'money') === payMethodFilter);
+    }
+
+    all.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
 
     if (!all.length) {
       body.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">لا توجد طلبات ضمن هذه الفترة/الحالة</div>`;
@@ -14200,14 +14222,25 @@ async function refreshAdminMenuBadges() {
         const snap = await window._fbGetDocs(window._fbOrdersRef());
         orders = snap.docs.map(d => d.data());
       }
-      const pending = orders.filter(o => o.status === 'pending').length;
+      const pending = orders.filter(o => !['delivered','cancelled'].includes(o.status)).length;
       ordersBadge.textContent = pending > 0 ? pending : '';
     }
     const quotesBadge = document.getElementById('adminQuotesBadge');
     if (quotesBadge) {
       let quotes = window._cachedAdminQuotes;
       if (!quotes) quotes = await getAllQuotes();
-      const pendingQ = quotes.filter(q => q.status === 'pending').length;
+      let ordersForBadge = window._cachedOrders;
+      if (!ordersForBadge) {
+        const snap = await window._fbGetDocs(window._fbOrdersRef());
+        ordersForBadge = snap.docs.map(d => d.data());
+      }
+      const activeAcceptedCount = quotes.filter(q => {
+        if (q.status !== 'accepted') return false;
+        const orderId = 'DP-' + String(q.id || '').replace('QT-', '');
+        const order = ordersForBadge.find(o => o.id === orderId);
+        return !order || !['delivered','cancelled'].includes(order.status);
+      }).length;
+      const pendingQ = quotes.filter(q => q.status === 'pending').length + activeAcceptedCount;
       quotesBadge.textContent = pendingQ > 0 ? pendingQ : '';
     }
   } catch(e) { console.warn('refreshAdminMenuBadges:', e.message); }
