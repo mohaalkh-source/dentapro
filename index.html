@@ -484,7 +484,7 @@ body.en .product-badge{right:auto; left:-32px; transform:rotate(-45deg)}
 .product-brand{font-size:11px; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:4px}
 .product-name{font-weight:700; font-size:15px; color:var(--primary-dark); margin-bottom:6px; line-height:1.45; letter-spacing:-0.2px; cursor:pointer}
 .product-name:hover{color:var(--primary)}
-.product-desc{font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; flex:1; overflow:hidden; min-height:0; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:5}
+.product-desc{font-size:13px; color:var(--text-muted); line-height:1.6; margin-bottom:14px; flex:1; overflow:hidden; min-height:0; display:-webkit-box; -webkit-box-orient:vertical; -webkit-line-clamp:5; line-clamp:5}
 .product-price-row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:auto; padding-top:10px}
 .product-price{font-size:20px; font-weight:900; color:var(--primary)}
 .product-old-price{font-size:13px; color:var(--text-muted); text-decoration:line-through}
@@ -1368,7 +1368,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
   .hero-visual{display:none}
   .hero-badge{display:none}
   .hero p{
-    display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical;
+    display:-webkit-box; -webkit-line-clamp:2; line-clamp:2; -webkit-box-orient:vertical;
     overflow:hidden; font-size:14px; margin-bottom:20px;
   }
   .form-row{grid-template-columns:1fr}
@@ -3678,6 +3678,9 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <div style="font-size:17px;font-weight:900;color:var(--primary-dark)">طلبات عروض الأسعار</div>
       <div style="font-size:13px;color:var(--text-muted);margin-top:4px">حدد السعر لكل مادة وأرسل العرض للعميل</div>
     </div>
+    <button onclick="resetQuotesBadgeCounter()" style="padding:9px 16px;border-radius:50px;border:1.5px solid var(--border);background:#fff;color:var(--text-muted);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <i class="fas fa-broom"></i> تصفير العداد
+    </button>
   </div>
   <div id="adminQuotesList"></div>
 </div>
@@ -11259,6 +11262,7 @@ async function finalizeQuickOrderSend() {
         clinic, doctor, phone,
         address, locationLat: locLat || null, locationLng: locLng || null,
         notes: fromQuoteDocId ? `طلب ناتج عن عرض سعر مقبول #${fromQuoteIdStr}` : 'تم الإرسال عبر ميزة الطلب السريع',
+        sourceQuoteId: fromQuoteIdStr || null,
         items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, qty: i.qty, points: 0 })),
         total, totalPoints: 0, payMethod: 'money', pointsDeducted: false,
         status: 'pending', createdAt: new Date().toISOString(),
@@ -12160,6 +12164,28 @@ function showAdminOrderDetail(orderId) {
 // =====================
 // ADMIN: QUOTES MANAGEMENT
 // =====================
+
+// ─── عداد طلبات عروض الأسعار (يستثني ما تم تصفيره يدويًا) ───
+function resetQuotesBadgeCounter() {
+  if (!confirm('سيتم تصفير عداد "طلبات عروض الأسعار" بحيث لا تُحتسب الطلبات الحالية بعد الآن (تبقى الطلبات نفسها موجودة كما هي، فقط لن تُحسب ضمن العداد). هل تريد المتابعة؟')) return;
+  localStorage.setItem('dp_quotesBadgeResetAt', new Date().toISOString());
+  renderAdminQuotes();
+  refreshAdminMenuBadges();
+  showToast('تم تصفير العداد بنجاح', 'success');
+}
+function computeQuotesBadgeCount(quotes, ordersForBadge) {
+  const resetAt = localStorage.getItem('dp_quotesBadgeResetAt');
+  const countable = resetAt ? quotes.filter(q => new Date(q.createdAt) > new Date(resetAt)) : quotes;
+  const activeAcceptedCount = countable.filter(q => {
+    if (q.status !== 'accepted') return false;
+    const order = ordersForBadge.find(o =>
+      o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
+    );
+    return !order || !['delivered','cancelled'].includes(order.status);
+  }).length;
+  return countable.filter(q => q.status === 'pending').length + activeAcceptedCount;
+}
+
 async function renderAdminQuotes() {
   const container = document.getElementById('adminQuotesList');
   container.innerHTML = `
@@ -12176,15 +12202,10 @@ async function renderAdminQuotes() {
     try {
       const snap = await window._fbGetDocs(window._fbOrdersRef());
       ordersForBadge = snap.docs.map(d => d.data());
+      window._cachedOrders = ordersForBadge;
     } catch(e) { ordersForBadge = []; }
   }
-  const activeAcceptedCount = quotes.filter(q => {
-    if (q.status !== 'accepted') return false;
-    const orderId = 'DP-' + String(q.id || '').replace('QT-', '');
-    const order = ordersForBadge.find(o => o.id === orderId);
-    return !order || !['delivered','cancelled'].includes(order.status);
-  }).length;
-  const pendingCount = quotes.filter(q => q.status === 'pending').length + activeAcceptedCount;
+  const pendingCount = computeQuotesBadgeCount(quotes, ordersForBadge);
   const badge = document.getElementById('adminQuotesBadge');
   if (badge) badge.textContent = pendingCount > 0 ? pendingCount : '';
 
@@ -14231,16 +14252,13 @@ async function refreshAdminMenuBadges() {
       if (!quotes) quotes = await getAllQuotes();
       let ordersForBadge = window._cachedOrders;
       if (!ordersForBadge) {
-        const snap = await window._fbGetDocs(window._fbOrdersRef());
-        ordersForBadge = snap.docs.map(d => d.data());
+        try {
+          const snap = await window._fbGetDocs(window._fbOrdersRef());
+          ordersForBadge = snap.docs.map(d => d.data());
+          window._cachedOrders = ordersForBadge;
+        } catch(e) { ordersForBadge = []; }
       }
-      const activeAcceptedCount = quotes.filter(q => {
-        if (q.status !== 'accepted') return false;
-        const orderId = 'DP-' + String(q.id || '').replace('QT-', '');
-        const order = ordersForBadge.find(o => o.id === orderId);
-        return !order || !['delivered','cancelled'].includes(order.status);
-      }).length;
-      const pendingQ = quotes.filter(q => q.status === 'pending').length + activeAcceptedCount;
+      const pendingQ = computeQuotesBadgeCount(quotes, ordersForBadge);
       quotesBadge.textContent = pendingQ > 0 ? pendingQ : '';
     }
   } catch(e) { console.warn('refreshAdminMenuBadges:', e.message); }
