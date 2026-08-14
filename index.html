@@ -5144,6 +5144,18 @@ async function waitForQuoteFirebase(timeoutMs = 10000) {
   throw new Error('Firebase غير جاهز أو تعذر الاتصال بالخادم');
 }
 
+async function getVerifiedFirebaseUser(timeoutMs = 10000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    const fbUser = window._auth?.currentUser;
+    if (fbUser?.uid && fbUser.email) return fbUser;
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  const error = new Error('جلسة Firebase غير موجودة، يرجى تسجيل الدخول بحساب العميل');
+  error.code = 'unauthenticated';
+  throw error;
+}
+
 function quoteFavoritesStorageKey() {
   return `dentapro_quote_favorites_${currentUser?.email || 'guest'}`;
 }
@@ -11328,11 +11340,15 @@ async function finalizeQuickOrderSend() {
     showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
     return;
   }
+  let verifiedUser;
   try {
     await waitForQuoteFirebase();
+    verifiedUser = await getVerifiedFirebaseUser();
   } catch (readyError) {
-    console.error('finalizeQuickOrderSend readiness:', readyError);
-    showToast('❌ تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى', 'error');
+    console.error('finalizeQuickOrderSend readiness/auth:', readyError);
+    showToast(readyError.code === 'unauthenticated'
+      ? '❌ انتهت جلسة الدخول، يرجى تسجيل الدخول بحساب العميل ثم المحاولة مرة أخرى'
+      : '❌ تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى', 'error');
     return;
   }
   const hasCustomItem = window._qoHasCustom;
@@ -11357,8 +11373,8 @@ async function finalizeQuickOrderSend() {
       const order = {
         id: orderNum,
         clientName: doctor,
-        clientEmail: currentUser ? currentUser.email : 'guest',
-        clientUid: currentUser ? currentUser.uid : null,
+        clientEmail: verifiedUser.email,
+        clientUid: verifiedUser.uid,
         clinic, doctor, phone,
         address, locationLat: locLat || null, locationLng: locLng || null,
         notes: fromQuoteDocId ? `طلب ناتج عن عرض سعر مقبول #${fromQuoteIdStr}` : 'تم الإرسال عبر ميزة الطلب السريع',
@@ -11421,8 +11437,10 @@ async function finalizeQuickOrderSend() {
   } catch(e) {
     console.error('finalizeQuickOrderSend:', e);
     const reason = e?.code === 'permission-denied'
-      ? 'ليس لديك صلاحية إنشاء الطلب. تأكد من تسجيل الدخول بحساب العميل الصحيح'
-      : (e?.message || 'تحقق من الاتصال');
+      ? 'رفض Firebase إنشاء الطلب لهذا الحساب. سجّل الخروج ثم ادخل بحساب العميل الصحيح'
+      : e?.code === 'unauthenticated'
+        ? 'انتهت جلسة الدخول، يرجى تسجيل الدخول من جديد'
+        : (e?.message || 'تحقق من الاتصال');
     showToast(`❌ تعذر إرسال الطلب: ${reason}`, 'error');
   } finally {
     window._qoItems = null; window._qoHasCustom = false;
