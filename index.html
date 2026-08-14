@@ -5131,6 +5131,37 @@ let offers = loadOffers();
 // =====================
 // QUOTE REQUESTS (عروض الأسعار)
 // =====================
+async function waitForQuoteFirebase(timeoutMs = 10000) {
+  const started = Date.now();
+  while (Date.now() - started < timeoutMs) {
+    if (window._db && window._fbDoc2 && window._fbSetDoc && window._fbUpdateDoc && window._fbGetDocs) return true;
+    await new Promise(resolve => setTimeout(resolve, 200));
+  }
+  throw new Error('Firebase غير جاهز أو تعذر الاتصال بالخادم');
+}
+
+function quoteFavoritesStorageKey() {
+  return `dentapro_quote_favorites_${currentUser?.email || 'guest'}`;
+}
+
+function loadQuoteFavorites() {
+  try { return JSON.parse(localStorage.getItem(quoteFavoritesStorageKey()) || '[]'); }
+  catch (e) { return []; }
+}
+
+function saveQuoteFavoriteId(docId) {
+  const ids = loadQuoteFavorites();
+  if (!ids.includes(docId)) {
+    ids.push(docId);
+    localStorage.setItem(quoteFavoritesStorageKey(), JSON.stringify(ids));
+  }
+}
+
+function removeQuoteFavoriteId(docId) {
+  const ids = loadQuoteFavorites().filter(id => id !== docId);
+  localStorage.setItem(quoteFavoritesStorageKey(), JSON.stringify(ids));
+}
+
 function quotesRef() {
   return window._fbCollection(window._db, 'quotes');
 }
@@ -5175,7 +5206,9 @@ async function getAllQuotes() {
 
 async function updateQuote(docId, data) {
   try {
-    await window._fbUpdateDoc(window._fbDoc2('quotes', docId), data);
+    await waitForQuoteFirebase();
+    if (!docId) throw new Error('معرّف عرض السعر غير موجود');
+    await window._fbUpdateDoc(window._fbDoc2('quotes', String(docId)), data);
   } catch(e) {
     console.error('updateQuote:', e);
     throw e;
@@ -6949,6 +6982,10 @@ async function renderMyQuotesPage() {
 }
 
 async function acceptQuote(docId) {
+  if (!navigator.onLine) {
+    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
+    return;
+  }
   const quotes = window._cachedMyQuotes || [];
   const q = quotes.find(x => x._docId === docId);
   if (!q) return;
@@ -6972,22 +7009,34 @@ async function acceptQuote(docId) {
 
 async function rejectQuote(docId) {
   if (!confirm('هل أنت متأكد من رفض عرض السعر؟')) return;
+  if (!navigator.onLine) {
+    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
+    return;
+  }
   try {
     await updateQuote(docId, { status: 'rejected' });
+    removeQuoteFavoriteId(String(docId));
     showToast('🚫 تم رفض العرض', '');
-    renderMyQuotesPage();
+    await renderMyQuotesPage();
   } catch(e) {
-    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
+    console.error('rejectQuote:', e);
+    showToast(`❌ تعذر رفض العرض: ${e.message || 'تحقق من الاتصال'}`, 'error');
   }
 }
 
 async function saveQuoteToFavorites(docId) {
+  if (!navigator.onLine) {
+    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
+    return;
+  }
   try {
     await updateQuote(docId, { status: 'saved' });
-    showToast('🔖 تم حفظ العرض، يمكنك إكمال الطلب لاحقاً من نفس الصفحة', 'success');
-    renderMyQuotesPage();
+    saveQuoteFavoriteId(String(docId));
+    showToast('🔖 تم حفظ عرض السعر في المفضلة، ويمكنك إكماله لاحقاً من صفحة عروض الأسعار', 'success');
+    await renderMyQuotesPage();
   } catch(e) {
-    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
+    console.error('saveQuoteToFavorites:', e);
+    showToast(`❌ تعذر حفظ العرض: ${e.message || 'تحقق من الاتصال'}`, 'error');
   }
 }
 
@@ -11235,6 +11284,21 @@ function submitQOLocation() {
 
 async function finalizeQuickOrderSend() {
   const items = window._qoItems || [];
+  if (!currentUser) {
+    showToast('❌ يجب تسجيل الدخول قبل إرسال الطلب', 'error');
+    return;
+  }
+  if (!navigator.onLine) {
+    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
+    return;
+  }
+  try {
+    await waitForQuoteFirebase();
+  } catch (readyError) {
+    console.error('finalizeQuickOrderSend readiness:', readyError);
+    showToast('❌ تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى', 'error');
+    return;
+  }
   const hasCustomItem = window._qoHasCustom;
 
   const clinic = window._qoClinic || (currentUser ? currentUser.clinic : '') || '';
@@ -11307,8 +11371,11 @@ async function finalizeQuickOrderSend() {
       showToast('🎉 تم إرسال طلبك، سنوافيك بعرض السعر النهائي قريباً', 'success');
     }
   } catch(e) {
-    console.error(e);
-    showToast('❌ حدث خطأ أثناء الإرسال، تحقق من الاتصال', 'error');
+    console.error('finalizeQuickOrderSend:', e);
+    const reason = e?.code === 'permission-denied'
+      ? 'ليس لديك صلاحية إرسال الطلب، يرجى تسجيل الدخول من جديد'
+      : (e?.message || 'تحقق من الاتصال');
+    showToast(`❌ تعذر إرسال الطلب: ${reason}`, 'error');
   } finally {
     window._qoItems = null; window._qoHasCustom = false;
     window._qoClinic = null; window._qoDoctor = null; window._qoPhone = null;
