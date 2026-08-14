@@ -3210,6 +3210,10 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <i class="fas fa-arrow-right"></i> العودة للمتجر
       </button>
     </div>
+    <div id="favoriteQuotesSection" style="margin:0 0 28px;display:none">
+      <div class="section-tag">🔖 عروض الأسعار المحفوظة</div>
+      <div id="favoriteQuotesList" style="display:grid;gap:14px;margin-top:14px"></div>
+    </div>
     <div class="products-grid" id="favoritesGrid"></div>
   </div>
 </div>
@@ -6719,9 +6723,39 @@ function openFavoritesPage() {
   renderFavoritesPage();
 }
 
-function renderFavoritesPage() {
+async function renderFavoriteQuotes() {
+  const section = document.getElementById('favoriteQuotesSection');
+  const list = document.getElementById('favoriteQuotesList');
+  if (!section || !list) return;
+  if (!currentUser) { section.style.display = 'none'; return; }
+
+  const localIds = loadQuoteFavorites().map(String);
+  let quotes = [];
+  try { quotes = await getClientQuotes(currentUser.email); } catch (e) { console.warn('renderFavoriteQuotes:', e); }
+  const savedQuotes = quotes.filter(q => q.status === 'saved' || localIds.includes(String(q._docId)));
+
+  if (!savedQuotes.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
+  section.style.display = 'block';
+  list.innerHTML = savedQuotes.map(q => {
+    const total = (q.items || []).reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.qty || 1)), 0);
+    const names = (q.items || []).slice(0, 3).map(item => escHtml(item.ar || item.en || '')).join('، ');
+    return `<div style="background:#fff;border:1px solid #e9d5ff;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
+        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
+      </div>
+      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
+        <i class="fas fa-check"></i> أوافق وأكمل الطلب
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function renderFavoritesPage() {
   const wrap = document.getElementById('favoritesGrid');
   if (!wrap) return;
+  renderFavoriteQuotes();
   const items = favoritesList.map(id => products.find(x => x.id === id)).filter(Boolean);
   if (!items.length) {
     wrap.innerHTML = `
@@ -7029,15 +7063,17 @@ async function saveQuoteToFavorites(docId) {
     showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
     return;
   }
+  // الحفظ المحلي هو المصدر الفوري لصفحة المفضلة، ولا يتوقف على صلاحية updateQuote.
+  saveQuoteFavoriteId(String(docId));
+  let synced = true;
   try {
     await updateQuote(docId, { status: 'saved' });
-    saveQuoteFavoriteId(String(docId));
-    showToast('🔖 تم حفظ عرض السعر في المفضلة، ويمكنك إكماله لاحقاً من صفحة عروض الأسعار', 'success');
-    await renderMyQuotesPage();
   } catch(e) {
-    console.error('saveQuoteToFavorites:', e);
-    showToast(`❌ تعذر حفظ العرض: ${e.message || 'تحقق من الاتصال'}`, 'error');
+    synced = false;
+    console.warn('تعذر مزامنة حالة العرض مع Firebase، تم حفظه محلياً:', e);
   }
+  showToast(synced ? '🔖 تم حفظ عرض السعر في المفضلة' : '🔖 تم حفظ العرض في مفضلتك على هذا الجهاز', 'success');
+  await renderMyQuotesPage();
 }
 
 // =====================
@@ -11334,7 +11370,19 @@ async function finalizeQuickOrderSend() {
       await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
 
       if (fromQuoteDocId) {
-        await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
+        // قد تسمح قواعد Firestore للعميل بإنشاء الطلب فقط دون تعديل عرض السعر.
+        // لذلك لا نعتبر فشل تحديث العرض فشلاً في إنشاء الطلب بعد نجاح setDoc.
+        try {
+          await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
+        } catch (quoteUpdateError) {
+          console.warn('تعذر تحديث حالة عرض السعر بعد إنشاء الطلب:', quoteUpdateError);
+          const acceptedKey = `dentapro_accepted_quotes_${currentUser.email}`;
+          const acceptedIds = JSON.parse(localStorage.getItem(acceptedKey) || '[]');
+          if (!acceptedIds.includes(String(fromQuoteDocId))) {
+            acceptedIds.push(String(fromQuoteDocId));
+            localStorage.setItem(acceptedKey, JSON.stringify(acceptedIds));
+          }
+        }
         createNotification({
           scope: 'admin', icon: '✅', title: 'تم قبول عرض السعر',
           message: `العميل وافق على عرض السعر #${fromQuoteIdStr}، وأُنشئ الطلب #${orderNum}`,
@@ -11373,7 +11421,7 @@ async function finalizeQuickOrderSend() {
   } catch(e) {
     console.error('finalizeQuickOrderSend:', e);
     const reason = e?.code === 'permission-denied'
-      ? 'ليس لديك صلاحية إرسال الطلب، يرجى تسجيل الدخول من جديد'
+      ? 'ليس لديك صلاحية إنشاء الطلب. تأكد من تسجيل الدخول بحساب العميل الصحيح'
       : (e?.message || 'تحقق من الاتصال');
     showToast(`❌ تعذر إرسال الطلب: ${reason}`, 'error');
   } finally {
