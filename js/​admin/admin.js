@@ -1,10 +1,4 @@
 // DentaPro domain module: extracted from the original implementation.
-
-function updateBottomNav(page) {
-  document.querySelectorAll('.bottom-nav-item').forEach(el => {
-    el.classList.toggle('active', el.dataset.page === page);
-  });
-}
 // [جديد] محتوى قائمة الحساب — نفس عناصر قائمة user-dropdown العلوية بالضبط
 // يبني بنود قائمة حساب الأدمن/المدير (تُستخدم بهيدر الديسكتوب وبالـ Bottom Sheet معاً)
 function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
