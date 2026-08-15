@@ -107,6 +107,7 @@ body.en .cart-sidebar.open{left:auto; right:0}
   .header-actions .lang-btn #langLabel{display:none}
   #msgBtn{
     display:flex !important;
+    position:static;
     left:12px; right:auto; top:auto; bottom:12px;
     width:calc((100% - 36px) / 3); height:43px;
     padding:0 8px; border:1px solid #e4e4e4;
