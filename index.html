@@ -3210,10 +3210,6 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <i class="fas fa-arrow-right"></i> العودة للمتجر
       </button>
     </div>
-    <div id="favoriteQuotesSection" style="margin:0 0 28px;display:none">
-      <div class="section-tag">🔖 عروض الأسعار المحفوظة</div>
-      <div id="favoriteQuotesList" style="display:grid;gap:14px;margin-top:14px"></div>
-    </div>
     <div class="products-grid" id="favoritesGrid"></div>
   </div>
 </div>
@@ -4628,7 +4624,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
     padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:96px">
     <i class="fas fa-file-invoice-dollar" style="font-size:20px"></i>
-    <span style="font-size:10px;font-weight:700" data-ar="طلب عرض سعر" data-en="Request Quote">طلب عرض</span>
+    <span style="font-size:10px;font-weight:700" data-ar="طلب عرض سعر" data-en="Request Quote">طلب عرض سعر</span>
   </div>
 
   <div class="bottom-nav-item" data-page="account" onclick="handleBottomNavAccount();updateBottomNav('account')"
@@ -5135,49 +5131,6 @@ let offers = loadOffers();
 // =====================
 // QUOTE REQUESTS (عروض الأسعار)
 // =====================
-async function waitForQuoteFirebase(timeoutMs = 10000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    if (window._db && window._fbDoc2 && window._fbSetDoc && window._fbUpdateDoc && window._fbGetDocs) return true;
-    await new Promise(resolve => setTimeout(resolve, 200));
-  }
-  throw new Error('Firebase غير جاهز أو تعذر الاتصال بالخادم');
-}
-
-async function getVerifiedFirebaseUser(timeoutMs = 10000) {
-  const started = Date.now();
-  while (Date.now() - started < timeoutMs) {
-    const fbUser = window._auth?.currentUser;
-    if (fbUser?.uid && fbUser.email) return fbUser;
-    await new Promise(resolve => setTimeout(resolve, 200));
-  }
-  const error = new Error('جلسة Firebase غير موجودة، يرجى تسجيل الدخول بحساب العميل');
-  error.code = 'unauthenticated';
-  throw error;
-}
-
-function quoteFavoritesStorageKey() {
-  return `dentapro_quote_favorites_${currentUser?.email || 'guest'}`;
-}
-
-function loadQuoteFavorites() {
-  try { return JSON.parse(localStorage.getItem(quoteFavoritesStorageKey()) || '[]'); }
-  catch (e) { return []; }
-}
-
-function saveQuoteFavoriteId(docId) {
-  const ids = loadQuoteFavorites();
-  if (!ids.includes(docId)) {
-    ids.push(docId);
-    localStorage.setItem(quoteFavoritesStorageKey(), JSON.stringify(ids));
-  }
-}
-
-function removeQuoteFavoriteId(docId) {
-  const ids = loadQuoteFavorites().filter(id => id !== docId);
-  localStorage.setItem(quoteFavoritesStorageKey(), JSON.stringify(ids));
-}
-
 function quotesRef() {
   return window._fbCollection(window._db, 'quotes');
 }
@@ -5222,9 +5175,7 @@ async function getAllQuotes() {
 
 async function updateQuote(docId, data) {
   try {
-    await waitForQuoteFirebase();
-    if (!docId) throw new Error('معرّف عرض السعر غير موجود');
-    await window._fbUpdateDoc(window._fbDoc2('quotes', String(docId)), data);
+    await window._fbUpdateDoc(window._fbDoc2('quotes', docId), data);
   } catch(e) {
     console.error('updateQuote:', e);
     throw e;
@@ -6735,39 +6686,9 @@ function openFavoritesPage() {
   renderFavoritesPage();
 }
 
-async function renderFavoriteQuotes() {
-  const section = document.getElementById('favoriteQuotesSection');
-  const list = document.getElementById('favoriteQuotesList');
-  if (!section || !list) return;
-  if (!currentUser) { section.style.display = 'none'; return; }
-
-  const localIds = loadQuoteFavorites().map(String);
-  let quotes = [];
-  try { quotes = await getClientQuotes(currentUser.email); } catch (e) { console.warn('renderFavoriteQuotes:', e); }
-  const savedQuotes = quotes.filter(q => q.status === 'saved' || localIds.includes(String(q._docId)));
-
-  if (!savedQuotes.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
-  section.style.display = 'block';
-  list.innerHTML = savedQuotes.map(q => {
-    const total = (q.items || []).reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.qty || 1)), 0);
-    const names = (q.items || []).slice(0, 3).map(item => escHtml(item.ar || item.en || '')).join('، ');
-    return `<div style="background:#fff;border:1px solid #e9d5ff;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
-        <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
-        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
-      </div>
-      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
-        <i class="fas fa-check"></i> أوافق وأكمل الطلب
-      </button>
-    </div>`;
-  }).join('');
-}
-
-async function renderFavoritesPage() {
+function renderFavoritesPage() {
   const wrap = document.getElementById('favoritesGrid');
   if (!wrap) return;
-  renderFavoriteQuotes();
   const items = favoritesList.map(id => products.find(x => x.id === id)).filter(Boolean);
   if (!items.length) {
     wrap.innerHTML = `
@@ -6942,6 +6863,18 @@ async function renderMyQuotesPage() {
   const quotes = await getClientQuotes(currentUser.email);
   window._cachedMyQuotes = quotes;
 
+  let myOrdersForLink = [];
+  try {
+    const oq = window._fbQuery(window._fbOrdersRef(), window._fbWhere('clientEmail', '==', currentUser.email));
+    const osnap = await window._fbGetDocs(oq);
+    myOrdersForLink = osnap.docs.map(d => d.data());
+  } catch(e) { myOrdersForLink = []; }
+  function findMyLinkedOrder(q) {
+    return myOrdersForLink.find(o =>
+      o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
+    );
+  }
+
   if (!quotes.length) {
     container.innerHTML = `
       <div class="empty-orders">
@@ -6991,7 +6924,8 @@ async function renderMyQuotesPage() {
           </button>
         </div>`;
     } else if (q.status === 'accepted') {
-      const orderStatus = q.orderStatus || 'pending';
+      const linkedOrder = findMyLinkedOrder(q);
+      const orderStatus = linkedOrder ? (linkedOrder.status || 'pending') : 'pending';
       actionsHtml = `
         <div style="margin-top:14px">
           <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:8px;margin-bottom:6px">
@@ -7028,10 +6962,6 @@ async function renderMyQuotesPage() {
 }
 
 async function acceptQuote(docId) {
-  if (!navigator.onLine) {
-    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
-    return;
-  }
   const quotes = window._cachedMyQuotes || [];
   const q = quotes.find(x => x._docId === docId);
   if (!q) return;
@@ -7055,37 +6985,23 @@ async function acceptQuote(docId) {
 
 async function rejectQuote(docId) {
   if (!confirm('هل أنت متأكد من رفض عرض السعر؟')) return;
-  if (!navigator.onLine) {
-    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
-    return;
-  }
   try {
     await updateQuote(docId, { status: 'rejected' });
-    removeQuoteFavoriteId(String(docId));
     showToast('🚫 تم رفض العرض', '');
-    await renderMyQuotesPage();
+    renderMyQuotesPage();
   } catch(e) {
-    console.error('rejectQuote:', e);
-    showToast(`❌ تعذر رفض العرض: ${e.message || 'تحقق من الاتصال'}`, 'error');
+    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
   }
 }
 
 async function saveQuoteToFavorites(docId) {
-  if (!navigator.onLine) {
-    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
-    return;
-  }
-  // الحفظ المحلي هو المصدر الفوري لصفحة المفضلة، ولا يتوقف على صلاحية updateQuote.
-  saveQuoteFavoriteId(String(docId));
-  let synced = true;
   try {
     await updateQuote(docId, { status: 'saved' });
+    showToast('🔖 تم حفظ العرض، يمكنك إكمال الطلب لاحقاً من نفس الصفحة', 'success');
+    renderMyQuotesPage();
   } catch(e) {
-    synced = false;
-    console.warn('تعذر مزامنة حالة العرض مع Firebase، تم حفظه محلياً:', e);
+    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
   }
-  showToast(synced ? '🔖 تم حفظ عرض السعر في المفضلة' : '🔖 تم حفظ العرض في مفضلتك على هذا الجهاز', 'success');
-  await renderMyQuotesPage();
 }
 
 // =====================
@@ -11332,25 +11248,6 @@ function submitQOLocation() {
 
 async function finalizeQuickOrderSend() {
   const items = window._qoItems || [];
-  if (!currentUser) {
-    showToast('❌ يجب تسجيل الدخول قبل إرسال الطلب', 'error');
-    return;
-  }
-  if (!navigator.onLine) {
-    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
-    return;
-  }
-  let verifiedUser;
-  try {
-    await waitForQuoteFirebase();
-    verifiedUser = await getVerifiedFirebaseUser();
-  } catch (readyError) {
-    console.error('finalizeQuickOrderSend readiness/auth:', readyError);
-    showToast(readyError.code === 'unauthenticated'
-      ? '❌ انتهت جلسة الدخول، يرجى تسجيل الدخول بحساب العميل ثم المحاولة مرة أخرى'
-      : '❌ تعذر الاتصال بالخادم، يرجى المحاولة مرة أخرى', 'error');
-    return;
-  }
   const hasCustomItem = window._qoHasCustom;
 
   const clinic = window._qoClinic || (currentUser ? currentUser.clinic : '') || '';
@@ -11373,8 +11270,8 @@ async function finalizeQuickOrderSend() {
       const order = {
         id: orderNum,
         clientName: doctor,
-        clientEmail: verifiedUser.email,
-        clientUid: verifiedUser.uid,
+        clientEmail: currentUser ? currentUser.email : 'guest',
+        clientUid: currentUser ? currentUser.uid : null,
         clinic, doctor, phone,
         address, locationLat: locLat || null, locationLng: locLng || null,
         notes: fromQuoteDocId ? `طلب ناتج عن عرض سعر مقبول #${fromQuoteIdStr}` : 'تم الإرسال عبر ميزة الطلب السريع',
@@ -11386,19 +11283,7 @@ async function finalizeQuickOrderSend() {
       await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
 
       if (fromQuoteDocId) {
-        // قد تسمح قواعد Firestore للعميل بإنشاء الطلب فقط دون تعديل عرض السعر.
-        // لذلك لا نعتبر فشل تحديث العرض فشلاً في إنشاء الطلب بعد نجاح setDoc.
-        try {
-          await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
-        } catch (quoteUpdateError) {
-          console.warn('تعذر تحديث حالة عرض السعر بعد إنشاء الطلب:', quoteUpdateError);
-          const acceptedKey = `dentapro_accepted_quotes_${currentUser.email}`;
-          const acceptedIds = JSON.parse(localStorage.getItem(acceptedKey) || '[]');
-          if (!acceptedIds.includes(String(fromQuoteDocId))) {
-            acceptedIds.push(String(fromQuoteDocId));
-            localStorage.setItem(acceptedKey, JSON.stringify(acceptedIds));
-          }
-        }
+        await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
         createNotification({
           scope: 'admin', icon: '✅', title: 'تم قبول عرض السعر',
           message: `العميل وافق على عرض السعر #${fromQuoteIdStr}، وأُنشئ الطلب #${orderNum}`,
@@ -11435,13 +11320,8 @@ async function finalizeQuickOrderSend() {
       showToast('🎉 تم إرسال طلبك، سنوافيك بعرض السعر النهائي قريباً', 'success');
     }
   } catch(e) {
-    console.error('finalizeQuickOrderSend:', e);
-    const reason = e?.code === 'permission-denied'
-      ? 'رفض Firebase إنشاء الطلب لهذا الحساب. سجّل الخروج ثم ادخل بحساب العميل الصحيح'
-      : e?.code === 'unauthenticated'
-        ? 'انتهت جلسة الدخول، يرجى تسجيل الدخول من جديد'
-        : (e?.message || 'تحقق من الاتصال');
-    showToast(`❌ تعذر إرسال الطلب: ${reason}`, 'error');
+    console.error(e);
+    showToast('❌ حدث خطأ أثناء الإرسال، تحقق من الاتصال', 'error');
   } finally {
     window._qoItems = null; window._qoHasCustom = false;
     window._qoClinic = null; window._qoDoctor = null; window._qoPhone = null;
@@ -12306,17 +12186,10 @@ function resetQuotesBadgeCounter() {
   refreshAdminMenuBadges();
   showToast('تم تصفير العداد بنجاح', 'success');
 }
-function computeQuotesBadgeCount(quotes, ordersForBadge) {
+function computeQuotesBadgeCount(quotes) {
   const resetAt = localStorage.getItem('dp_quotesBadgeResetAt');
   const countable = resetAt ? quotes.filter(q => new Date(q.createdAt) > new Date(resetAt)) : quotes;
-  const activeAcceptedCount = countable.filter(q => {
-    if (q.status !== 'accepted') return false;
-    const order = ordersForBadge.find(o =>
-      o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
-    );
-    return !order || !['delivered','cancelled'].includes(order.status);
-  }).length;
-  return countable.filter(q => q.status === 'pending').length + activeAcceptedCount;
+  return countable.filter(q => q.status === 'pending').length;
 }
 
 async function renderAdminQuotes() {
@@ -12330,17 +12203,23 @@ async function renderAdminQuotes() {
   const quotes = await getAllQuotes();
   window._cachedAdminQuotes = quotes;
 
-  let ordersForBadge = window._cachedOrders;
-  if (!ordersForBadge) {
-    try {
-      const snap = await window._fbGetDocs(window._fbOrdersRef());
-      ordersForBadge = snap.docs.map(d => d.data());
-      window._cachedOrders = ordersForBadge;
-    } catch(e) { ordersForBadge = []; }
-  }
-  const pendingCount = computeQuotesBadgeCount(quotes, ordersForBadge);
+  const pendingCount = computeQuotesBadgeCount(quotes);
   const badge = document.getElementById('adminQuotesBadge');
   if (badge) badge.textContent = pendingCount > 0 ? pendingCount : '';
+
+  let ordersForLink = window._cachedOrders;
+  if (!ordersForLink) {
+    try {
+      const snap = await window._fbGetDocs(window._fbOrdersRef());
+      ordersForLink = snap.docs.map(d => d.data());
+      window._cachedOrders = ordersForLink;
+    } catch(e) { ordersForLink = []; }
+  }
+  function findLinkedOrder(q) {
+    return ordersForLink.find(o =>
+      o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
+    );
+  }
 
   if (!quotes.length) {
     container.innerHTML = `
@@ -12354,6 +12233,7 @@ async function renderAdminQuotes() {
 
   container.innerHTML = quotes.map(q => {
     const date = new Date(q.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
+    const linkedOrder = q.status === 'accepted' ? findLinkedOrder(q) : null;
     const itemsHtml = q.items.map(i => `
       <div style="display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:13px">
         <span style="font-size:18px">${i.icon}</span>
@@ -12383,9 +12263,8 @@ async function renderAdminQuotes() {
       ${q.status === 'accepted' ? `
       <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap">
         <span style="font-size:12px;font-weight:700;color:var(--text-muted)">حالة تنفيذ الطلب:</span>
-        <select class="status-select" style="width:auto" onchange="updateQuoteOrderStatus('${q._docId}','${q.id}',this.value)">
-          ${ORDER_STATUSES.map(s => `<option value="${s.key}" ${((q.orderStatus||'pending')===s.key)?'selected':''}>${s.label}</option>`).join('')}
-        </select>
+        ${linkedOrder ? statusBadgeHTML(linkedOrder.status || 'pending') : `<span style="font-size:12px;color:var(--text-muted);font-style:italic">تعذر إيجاد الطلب المرتبط</span>`}
+        <span style="font-size:11px;color:var(--text-muted)">(تُحدَّث من صفحة "الطلبات")</span>
       </div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${(q.status === 'pending' || q.status === 'priced') ? `
@@ -12508,7 +12387,10 @@ function showQuoteOrderDetail(docId) {
   if (!q) return;
   const date = new Date(q.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
   const total = getQuoteTotal(q);
-  const orderStatus = q.orderStatus || 'pending';
+  const linkedOrderForDetail = (window._cachedOrders || []).find(o =>
+    o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
+  );
+  const orderStatus = linkedOrderForDetail ? (linkedOrderForDetail.status || 'pending') : 'pending';
 
   document.querySelector('#deleteConfirmModal .modal-header').style.background = 'linear-gradient(135deg,#0a5c8a,#1a8bbf)';
   document.querySelector('#deleteConfirmModal .modal-title').innerHTML = `<i class="fas fa-file-invoice-dollar"></i> تفاصيل طلب عرض السعر #${q.id}`;
@@ -13206,10 +13088,13 @@ async function runClientOrdersReport() {
     let orders = ordersSnap.docs.map(d => d.data()).filter(o => o.clientEmail === email);
     let quoteOrders = (allQuotes || [])
       .filter(q => q.clientEmail === email && q.status === 'accepted')
+      .filter(q => !orders.some(o =>
+        o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
+      ))
       .map(q => ({
         id: q.id || q._docId,
         createdAt: q.createdAt,
-        status: q.orderStatus || 'pending',
+        status: 'pending',
         items: q.items || [],
       }));
     let all = [...orders, ...quoteOrders];
@@ -14383,15 +14268,7 @@ async function refreshAdminMenuBadges() {
     if (quotesBadge) {
       let quotes = window._cachedAdminQuotes;
       if (!quotes) quotes = await getAllQuotes();
-      let ordersForBadge = window._cachedOrders;
-      if (!ordersForBadge) {
-        try {
-          const snap = await window._fbGetDocs(window._fbOrdersRef());
-          ordersForBadge = snap.docs.map(d => d.data());
-          window._cachedOrders = ordersForBadge;
-        } catch(e) { ordersForBadge = []; }
-      }
-      const pendingQ = computeQuotesBadgeCount(quotes, ordersForBadge);
+      const pendingQ = computeQuotesBadgeCount(quotes);
       quotesBadge.textContent = pendingQ > 0 ? pendingQ : '';
     }
   } catch(e) { console.warn('refreshAdminMenuBadges:', e.message); }
