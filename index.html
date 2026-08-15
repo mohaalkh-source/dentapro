@@ -6823,9 +6823,14 @@ async function renderFavoriteQuotes() {
           <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
         <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
       </div>
-      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
-        <i class="fas fa-check"></i> أوافق وأكمل الطلب
-      </button>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
+        <button class="btn-primary" style="padding:8px 18px;font-size:12px" onclick="acceptQuote('${q._docId}')">
+          <i class="fas fa-check"></i> أوافق وأكمل الطلب
+        </button>
+        <button onclick="removeQuoteFromFavorites('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+          <i class="fas fa-trash"></i> حذف من المفضلة
+        </button>
+      </div>
     </div>`;
   }).join('');
 }
@@ -7160,6 +7165,21 @@ async function saveQuoteToFavorites(docId) {
   }
   showToast(synced ? '🔖 تم حفظ عرض السعر في المفضلة' : '🔖 تم حفظ العرض في مفضلتك على هذا الجهاز', 'success');
   await renderMyQuotesPage();
+  await renderFavoriteQuotes();
+}
+  async function removeQuoteFromFavorites(docId) {
+  if (!confirm('هل تريد إزالة عرض السعر هذا من المفضلة؟')) return;
+  removeQuoteFavoriteId(String(docId));
+  if (Array.isArray(window._cachedMyQuotes)) {
+    const cached = window._cachedMyQuotes.find(q => String(q._docId) === String(docId));
+    if (cached && cached.status === 'saved') cached.status = 'priced';
+  }
+  try {
+    await updateQuote(docId, { status: 'priced' });
+  } catch(e) {
+    console.warn('تعذر تحديث الحالة على Firebase، تمت الإزالة محلياً فقط:', e);
+  }
+  showToast('🗑️ تم حذف عرض السعر من المفضلة', '');
   await renderFavoriteQuotes();
 }
 // =====================
@@ -11442,6 +11462,7 @@ async function finalizeQuickOrderSend() {
 
       if (fromQuoteDocId) {
         await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
+        removeQuoteFavoriteId(String(fromQuoteDocId));
         createNotification({
           scope: 'admin', icon: '✅', title: 'تم قبول عرض السعر',
           message: `العميل وافق على عرض السعر #${fromQuoteIdStr}، وأُنشئ الطلب #${orderNum}`,
