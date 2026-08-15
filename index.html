@@ -3210,6 +3210,10 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <i class="fas fa-arrow-right"></i> العودة للمتجر
       </button>
     </div>
+    <div id="favoriteQuotesSection" style="margin:0 0 28px;display:none">
+      <div class="section-tag">🔖 عروض الأسعار المحفوظة</div>
+      <div id="favoriteQuotesList" style="display:grid;gap:14px;margin-top:14px"></div>
+    </div>
     <div class="products-grid" id="favoritesGrid"></div>
   </div>
 </div>
@@ -5181,7 +5185,27 @@ async function updateQuote(docId, data) {
     throw e;
   }
 }
+function quoteFavoritesStorageKey() {
+  return `dentapro_quote_favorites_${currentUser?.email || 'guest'}`;
+}
 
+function loadQuoteFavorites() {
+  try { return JSON.parse(localStorage.getItem(quoteFavoritesStorageKey()) || '[]'); }
+  catch (e) { return []; }
+}
+
+function saveQuoteFavoriteId(docId) {
+  const ids = loadQuoteFavorites();
+  if (!ids.includes(docId)) {
+    ids.push(docId);
+    localStorage.setItem(quoteFavoritesStorageKey(), JSON.stringify(ids));
+  }
+}
+
+function removeQuoteFavoriteId(docId) {
+  const ids = loadQuoteFavorites().filter(id => id !== docId);
+  localStorage.setItem(quoteFavoritesStorageKey(), JSON.stringify(ids));
+}
 const QUOTE_STATUSES = {
   pending:   { label:'قيد المراجعة',     icon:'fa-clock',          color:'#c2410c', bg:'#fff7ed' },
   priced:    { label:'تم تحديد السعر',   icon:'fa-tag',            color:'#1d4ed8', bg:'#eff6ff' },
@@ -6686,9 +6710,132 @@ function openFavoritesPage() {
   renderFavoritesPage();
 }
 
+async function renderFavoriteQuotes() {
+  const section = document.getElementById('favoriteQuotesSection');
+  const list = document.getElementById('favoriteQuotesList');
+  if (!section || !list) return;
+  if (!currentUser) { section.style.display = 'none'; return; }
+
+  const localIds = loadQuoteFavorites().map(String);
+  let quotes = [];
+  try {
+    quotes = await getClientQuotes(currentUser.email);
+    window._cachedMyQuotes = quotes;
+  } catch (e) {
+    console.warn('renderFavoriteQuotes:', e);
+  }
+  if (Array.isArray(window._cachedMyQuotes)) {
+    const byId = new Map(quotes.map(q => [String(q._docId), q]));
+    window._cachedMyQuotes.forEach(q => {
+      if (!byId.has(String(q._docId))) quotes.push(q);
+    });
+  }
+  const savedQuotes = quotes.filter(q => q.status === 'saved' || localIds.includes(String(q._docId)));
+
+  if (!savedQuotes.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
+  section.style.display = 'block';
+  list.innerHTML = savedQuotes.map(q => {
+    const total = (q.items || []).reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.qty || 1)), 0);
+    const names = (q.items || []).slice(0, 3).map(item => escHtml(item.ar || item.en || '')).join('، ');
+    return `<div style="background:#fff;border:1px solid #e9d5ff;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
+        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
+      </div>
+      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
+        <i class="fas fa-check"></i> أوافق وأكمل الطلب
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function renderFavoriteQuotes() {
+  const section = document.getElementById('favoriteQuotesSection');
+  const list = document.getElementById('favoriteQuotesList');
+  if (!section || !list) return;
+  if (!currentUser) { section.style.display = 'none'; return; }
+
+  const localIds = loadQuoteFavorites().map(String);
+  let quotes = [];
+  try {
+    quotes = await getClientQuotes(currentUser.email);
+    window._cachedMyQuotes = quotes;
+  } catch (e) {
+    console.warn('renderFavoriteQuotes:', e);
+  }
+  if (Array.isArray(window._cachedMyQuotes)) {
+    const byId = new Map(quotes.map(q => [String(q._docId), q]));
+    window._cachedMyQuotes.forEach(q => {
+      if (!byId.has(String(q._docId))) quotes.push(q);
+    });
+  }
+  const savedQuotes = quotes.filter(q => q.status === 'saved' || localIds.includes(String(q._docId)));
+
+  if (!savedQuotes.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
+  section.style.display = 'block';
+  list.innerHTML = savedQuotes.map(q => {
+    const total = (q.items || []).reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.qty || 1)), 0);
+    const names = (q.items || []).slice(0, 3).map(item => escHtml(item.ar || item.en || '')).join('، ');
+    return `<div style="background:#fff;border:1px solid #e9d5ff;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
+        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
+      </div>
+      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
+        <i class="fas fa-check"></i> أوافق وأكمل الطلب
+      </button>
+    </div>`;
+  }).join('');
+}
+
+async function renderFavoriteQuotes() {
+  const section = document.getElementById('favoriteQuotesSection');
+  const list = document.getElementById('favoriteQuotesList');
+  if (!section || !list) return;
+  if (!currentUser) { section.style.display = 'none'; return; }
+
+  const localIds = loadQuoteFavorites().map(String);
+  let quotes = [];
+  try {
+    quotes = await getClientQuotes(currentUser.email);
+    window._cachedMyQuotes = quotes;
+  } catch (e) {
+    console.warn('renderFavoriteQuotes:', e);
+  }
+  if (Array.isArray(window._cachedMyQuotes)) {
+    const byId = new Map(quotes.map(q => [String(q._docId), q]));
+    window._cachedMyQuotes.forEach(q => {
+      if (!byId.has(String(q._docId))) quotes.push(q);
+    });
+  }
+  const savedQuotes = quotes.filter(q => q.status === 'saved' || localIds.includes(String(q._docId)));
+
+  if (!savedQuotes.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
+  section.style.display = 'block';
+  list.innerHTML = savedQuotes.map(q => {
+    const total = (q.items || []).reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.qty || 1)), 0);
+    const names = (q.items || []).slice(0, 3).map(item => escHtml(item.ar || item.en || '')).join('، ');
+    return `<div style="background:#fff;border:1px solid #e9d5ff;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)">
+      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
+        <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
+          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
+        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
+      </div>
+      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
+        <i class="fas fa-check"></i> أوافق وأكمل الطلب
+      </button>
+    </div>`;
+  }).join('');
+}
+
 function renderFavoritesPage() {
   const wrap = document.getElementById('favoritesGrid');
   if (!wrap) return;
+  renderFavoriteQuotes();
+  renderFavoriteQuotes();
+  renderFavoriteQuotes();
   const items = favoritesList.map(id => products.find(x => x.id === id)).filter(Boolean);
   if (!items.length) {
     wrap.innerHTML = `
@@ -6995,15 +7142,26 @@ async function rejectQuote(docId) {
 }
 
 async function saveQuoteToFavorites(docId) {
+  if (!navigator.onLine) {
+    showToast('❌ لا يوجد اتصال بالإنترنت حالياً', 'error');
+    return;
+  }
+  saveQuoteFavoriteId(String(docId));
+  if (Array.isArray(window._cachedMyQuotes)) {
+    const cached = window._cachedMyQuotes.find(q => String(q._docId) === String(docId));
+    if (cached) cached.status = 'saved';
+  }
+  let synced = true;
   try {
     await updateQuote(docId, { status: 'saved' });
-    showToast('🔖 تم حفظ العرض، يمكنك إكمال الطلب لاحقاً من نفس الصفحة', 'success');
-    renderMyQuotesPage();
   } catch(e) {
-    showToast('❌ حدث خطأ، تحقق من الاتصال', 'error');
+    synced = false;
+    console.warn('تعذر مزامنة حالة العرض مع Firebase، تم حفظه محلياً:', e);
   }
+  showToast(synced ? '🔖 تم حفظ عرض السعر في المفضلة' : '🔖 تم حفظ العرض في مفضلتك على هذا الجهاز', 'success');
+  await renderMyQuotesPage();
+  await renderFavoriteQuotes();
 }
-
 // =====================
 // PRODUCT DETAIL PAGE
 // =====================
