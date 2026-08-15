@@ -2,7 +2,7 @@
 
 DentaPro هو متجر ثابت لمستلزمات طب الأسنان مبني على HTML وCSS وJavaScript في المتصفح، مع Firebase Authentication/Firestore/Messaging وCloudinary لمعالجة صور المنتجات.
 
-## التشغيل المحلي
+## التشغيل المحلي. 
 
 يمكن تشغيل المشروع من أي خادم ملفات ثابت، لأن JavaScript يستخدم الوحدات القياسية ومسارات نسبية. مثال باستخدام خادم Python:
 
