@@ -208,20 +208,30 @@ async function fetchProductsPage() {
   if (_productsAllLoaded) return [];
   if (!navigator.onLine) throw new Error('لا يوجد اتصال بالإنترنت');
   if (!await waitForFirebase()) throw new Error('Firebase غير جاهز');
-  const constraints = [window._fbOrderBy('id', 'asc'), window._fbLimit(FIRESTORE_PAGE_SIZE)];
-  if (_productsLastDoc) constraints.push(window._fbStartAfter(_productsLastDoc));
-  const q = window._fbQuery(window._fbCollection(window._db, 'products'), ...constraints);
+  // تم إلغاء الاعتماد على orderBy('id') لأنه يستثني بصمت أي منتج
+  // ناقصه حقل id أو نوعه مختلف (نص بدل رقم). بدلاً من ذلك نجلب كل
+  // المنتجات دفعة واحدة (المجموعة صغيرة) ونرتبها محلياً بالجافاسكربت.
+  const q = window._fbCollection(window._db, 'products');
   const snap = await window._fbGetDocs(q);
-  if (snap.empty) { _productsAllLoaded = true; return []; }
-  _productsLastDoc = snap.docs[snap.docs.length - 1];
-  if (snap.docs.length < FIRESTORE_PAGE_SIZE) _productsAllLoaded = true;
-  return snap.docs.map(d => d.data());
+  _productsAllLoaded = true;
+  if (snap.empty) return [];
+  const list = snap.docs.map(d => d.data());
+  list.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
+  return list;
 }
 
 // التحميل الأولي عند فتح المتجر: أول صفحة فقط من Firestore (لا يتم تحميل كل المنتجات دفعة واحدة)
 async function loadProductsFromFirebase() {
   try {
-    const firstPage = await fetchProductsPage();
+    let firstPage = await fetchProductsPage();
+    // إعادة محاولة واحدة: التخزين المحلي لـ Firestore (persistentLocalCache) قد
+    // يرجّع نتيجة فارغة للحظة عند أول تحميل قبل اكتمال المزامنة مع السيرفر.
+    // لا نعتبرها فارغة فعلياً إلا بعد إعادة محاولة واحدة بعد فاصل قصير.
+    if (firstPage.length === 0 && _productsAllLoaded) {
+      await new Promise(r => setTimeout(r, 800));
+      _productsAllLoaded = false;
+      firstPage = await fetchProductsPage();
+    }
     if (firstPage.length > 0) {
       products.length = 0;
       firstPage.forEach(p => products.push(p));
