@@ -324,3 +324,52 @@
 @keyframes tickerScroll { 0%{transform:translateX(-50%)} 100%{transform:translateX(0%)} }
 
 @keyframes tickerScrollEn { 0%{transform:translateX(0%)} 100%{transform:translateX(-50%)} }
+/* ===== توحيد نهائي لأزرار الهيدر (يفوز على كل التعارضات السابقة) =====
+   صف علوي دائري: اللغة + المفضلة + الإشعارات
+   صف بللات تحت البحث: العروض + طلباتي السابقة + الرسائل
+   نفس التصميم على كل المقاسات (جوال وحاسوب) */
+.lang-btn, #favBtn, #notifBtn {
+  display: flex !important;
+  position: absolute !important;
+  top: 14px !important; bottom: auto !important; left: auto !important;
+  width: 34px !important; height: 34px !important; min-width: 34px !important;
+  padding: 0 !important; border: 0 !important;
+  border-radius: 50% !important; background: transparent !important; color: #13283e !important;
+  align-items: center !important; justify-content: center !important;
+  font-size: 18px !important; gap: 0 !important; z-index: 8 !important;
+}
+.lang-btn::after, #favBtn::after, #notifBtn::after { display: none !important; }
+.lang-btn #langLabel, .lang-btn .fa-chevron-down { display: none !important; }
+.lang-btn i.fa-globe, #favBtn i, #notifBtn i { font-size: 18px !important; color: #13283e !important; }
+#notifBtn { right: 12px !important; }
+#favBtn   { right: 54px !important; }
+.lang-btn { right: 96px !important; }
+
+.offers-pill-btn, #reorderMobileBtn, #msgBtn {
+  display: flex !important;
+  position: absolute !important;
+  top: auto !important; bottom: 12px !important; right: auto !important;
+  width: calc((100% - 36px) / 3) !important; height: 43px !important;
+  padding: 0 8px !important; border: 1px solid #e4e4e4 !important; border-radius: 999px !important;
+  background: #fff !important; color: #3e3e3e !important; font-family: inherit !important; font-size: 0 !important;
+  align-items: center !important; justify-content: center !important;
+  gap: 6px !important; z-index: 7 !important;
+}
+.offers-pill-btn i, #reorderMobileBtn i, #msgBtn i { font-size: 15px !important; color: #13283e !important; }
+.offers-pill-btn span, #reorderMobileBtn::after, #msgBtn::after {
+  font-size: 12px !important; font-weight: 700 !important; color: #3e3e3e !important;
+}
+#reorderMobileBtn::after { content: 'طلباتي السابقة'; }
+#msgBtn::after { content: 'الرسائل'; }
+
+.offers-pill-btn  { left: 12px !important; }
+#reorderMobileBtn { left: calc((100% - 36px) / 3 + 18px) !important; }
+#msgBtn           { left: calc(2 * (100% - 36px) / 3 + 24px) !important; }
+
+#favBtn .notif-badge, #msgBtn .notif-badge {
+  top: -4px !important; right: -4px !important; width: auto !important; height: 16px !important; font-size: 9px !important;
+}
+
+.cart-btn, .dark-toggle-inline {
+  display: none !important;
+}
