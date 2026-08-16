@@ -369,3 +369,7 @@
 #favBtn .notif-badge, #msgBtn .notif-badge {
   top: -4px !important; right: -4px !important; width: auto !important; height: 16px !important; font-size: 9px !important;
 }
+/* ===== إخفاء زر السلة والوضع الليلي من الهيدر بكل المقاسات (السلة متاحة من شريط التنقل السفلي أصلاً) ===== */
+.cart-btn, .dark-toggle-inline {
+  display: none !important;
+}
