@@ -33,6 +33,13 @@ function loadDomainScript(src) {
 for (const src of DOMAIN_SCRIPTS) {
   await loadDomainScript(src);
 }
+
+// products.js يُحمّل مبكراً، لكن تهيئته تعتمد على cart/auth/navigation.
+// شغّلها بعد اكتمال تحميل جميع الوحدات حتى لا يفوت الرسم الأول للمنتجات.
+if (typeof window.initializeProductsModule === 'function') {
+  await window.initializeProductsModule();
+}
+
 await waitForFirebase();
 setState({ initialized: true });
 document.documentElement.dataset.app = APP_NAME;
