@@ -240,9 +240,31 @@ async function loadProductsFromFirebase() {
     if (typeof renderAdminTable === 'function' && document.getElementById('adminPanel')?.classList.contains('open')) {
       renderAdminTable();
     }
-  } catch(e) {
-    // فشل تحميل Collection الجديدة → جرّب البنية القديمة صامتاً قبل إظهار أي خطأ
+} catch(e) {
+    // فشل تحميل Collection الجديدة (غالباً تعثّر شبكة مؤقت عند أول اتصال بـ Firestore
+    // على شبكات الجوال) → نعيد المحاولة مرتين بفاصل قصير قبل اللجوء للبنية القديمة
     console.warn('⚠️ Firebase loadProducts (new collection):', e.message);
+    let retried = false;
+    for (let i = 0; i < 2 && !retried; i++) {
+      await new Promise(r => setTimeout(r, 1200));
+      try {
+        _productsAllLoaded = false;
+        const retryPage = await fetchProductsPage();
+        if (retryPage.length > 0) {
+          products.length = 0;
+          retryPage.forEach(p => products.push(p));
+          _productsCollectionReady = true;
+          cacheProductsLocally();
+          renderProducts();
+          renderCategories();
+          console.log(`✅ نجحت إعادة المحاولة (${products.length} منتج)`);
+          retried = true;
+        }
+      } catch(e3) {
+        console.warn(`⚠️ إعادة المحاولة ${i+1} فشلت:`, e3.message);
+      }
+    }
+    if (retried) return;
     try {
       await loadProductsLegacyFallback();
     } catch(e2) {
