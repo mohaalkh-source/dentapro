@@ -240,31 +240,9 @@ async function loadProductsFromFirebase() {
     if (typeof renderAdminTable === 'function' && document.getElementById('adminPanel')?.classList.contains('open')) {
       renderAdminTable();
     }
-} catch(e) {
-    // فشل تحميل Collection الجديدة (غالباً تعثّر شبكة مؤقت عند أول اتصال بـ Firestore
-    // على شبكات الجوال) → نعيد المحاولة مرتين بفاصل قصير قبل اللجوء للبنية القديمة
+  } catch(e) {
+    // فشل تحميل Collection الجديدة → جرّب البنية القديمة صامتاً قبل إظهار أي خطأ
     console.warn('⚠️ Firebase loadProducts (new collection):', e.message);
-    let retried = false;
-    for (let i = 0; i < 2 && !retried; i++) {
-      await new Promise(r => setTimeout(r, 1200));
-      try {
-        _productsAllLoaded = false;
-        const retryPage = await fetchProductsPage();
-        if (retryPage.length > 0) {
-          products.length = 0;
-          retryPage.forEach(p => products.push(p));
-          _productsCollectionReady = true;
-          cacheProductsLocally();
-          renderProducts();
-          renderCategories();
-          console.log(`✅ نجحت إعادة المحاولة (${products.length} منتج)`);
-          retried = true;
-        }
-      } catch(e3) {
-        console.warn(`⚠️ إعادة المحاولة ${i+1} فشلت:`, e3.message);
-      }
-    }
-    if (retried) return;
     try {
       await loadProductsLegacyFallback();
     } catch(e2) {
@@ -988,8 +966,17 @@ var orderSubmitted = false;
 // =====================
 // INIT
 // =====================
-document.addEventListener('DOMContentLoaded', async () => {
-  showPage('home');
+// يتم تحميل هذا الملف ديناميكياً من app.js، وقد يصل بعد DOMContentLoaded.
+// لذلك لا نعتمد على الحدث وحده حتى لا تفوت تهيئة المنتجات عند أول تحميل.
+function runWhenDomReady(callback) {
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', callback, { once: true });
+  } else {
+    callback();
+  }
+}
+
+runWhenDomReady(async () => {
   renderCategories();
   populateCategorySelects();
   renderProducts();
@@ -1210,7 +1197,7 @@ function setupInfiniteScroll() {
   _infiniteScrollObserver.observe(sentinel);
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+runWhenDomReady(() => {
   setupInfiniteScroll();
 });
 
@@ -1523,7 +1510,7 @@ function renderSimilarProducts(product) {
   grid.innerHTML = items.map(p => productCardHTML(p)).join('');
 }
 
-document.addEventListener('DOMContentLoaded', () => {
+runWhenDomReady(() => {
   const searchEl = document.getElementById('searchInput');
   const searchBtnEl = document.querySelector('.header-search .search-btn');
   if (searchEl) {
