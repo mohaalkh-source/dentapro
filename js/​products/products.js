@@ -223,15 +223,7 @@ async function fetchProductsPage() {
 // التحميل الأولي عند فتح المتجر: أول صفحة فقط من Firestore (لا يتم تحميل كل المنتجات دفعة واحدة)
 async function loadProductsFromFirebase() {
   try {
-    let firstPage = await fetchProductsPage();
-    // إعادة محاولة واحدة: التخزين المحلي لـ Firestore (persistentLocalCache) قد
-    // يرجّع نتيجة فارغة للحظة عند أول تحميل قبل اكتمال المزامنة مع السيرفر.
-    // لا نعتبرها فارغة فعلياً إلا بعد إعادة محاولة واحدة بعد فاصل قصير.
-    if (firstPage.length === 0 && _productsAllLoaded) {
-      await new Promise(r => setTimeout(r, 800));
-      _productsAllLoaded = false;
-      firstPage = await fetchProductsPage();
-    }
+    const firstPage = await fetchProductsPage();
     if (firstPage.length > 0) {
       products.length = 0;
       firstPage.forEach(p => products.push(p));
