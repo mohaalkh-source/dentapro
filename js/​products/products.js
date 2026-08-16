@@ -967,6 +967,7 @@ var orderSubmitted = false;
 // INIT
 // =====================
 document.addEventListener('DOMContentLoaded', async () => {
+  showPage('home');
   renderCategories();
   populateCategorySelects();
   renderProducts();
