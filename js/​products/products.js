@@ -1005,6 +1005,12 @@ async function initializeProductsModule() {
   renderCategories();
   initOffersTicker();
 
+  // بعد refresh قد تكون بعض الوحدات أزالت active من homePage.
+  // أعد تفعيل الصفحة الرئيسية صراحة قبل معالجة أي رابط منتج مباشر.
+  if (typeof showPage === 'function' && !new URLSearchParams(window.location.search).has('product')) {
+    showPage('home');
+  }
+
   // دعم فتح منتج مباشرة من رابط مشاركة
   openProductFromUrlIfPresent();
 
@@ -1020,6 +1026,9 @@ async function initializeProductsModule() {
     renderProducts();
     renderCategories();
     populateCategorySelects();
+    if (!new URLSearchParams(window.location.search).has('product')) {
+      document.getElementById('homePage')?.classList.add('active');
+    }
   });
 }
 
