@@ -339,10 +339,13 @@ async function initOffersTicker() {
   track.style.animation = 'none';
   track.innerHTML = repeated.join('') + repeated.join('');
   ticker.style.display = 'block';
-  requestAnimationFrame(() => {
+  const updateSpacerHeight = () => {
     const spacer = document.getElementById('tickerSpacer');
     if (spacer) spacer.style.height = ticker.offsetHeight + 'px';
-  });
+  };
+  requestAnimationFrame(updateSpacerHeight);
+  // إعادة الحساب بعد لحظة إضافية لضمان دقة الارتفاع حتى لو تأخر تخطيط الهيدر (position:sticky)
+  setTimeout(updateSpacerHeight, 150);
 
   requestAnimationFrame(() => runTickerLoop(ticker, track));
 }
