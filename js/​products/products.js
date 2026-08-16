@@ -976,7 +976,7 @@ function runWhenDomReady(callback) {
   }
 }
 
-runWhenDomReady(async () => {
+async function initializeProductsModule() {
   renderCategories();
   populateCategorySelects();
   renderProducts();
@@ -1017,7 +1017,10 @@ runWhenDomReady(async () => {
     renderCategories();
     populateCategorySelects();
   });
-});
+}
+
+// يستدعيه app.js بعد تحميل جميع الوحدات، ويمنع تشغيل التهيئة قبل cart/auth/navigation.
+window.initializeProductsModule = initializeProductsModule;
 
 function syncCartWithProducts() {
   if (!cart.length) return;
