@@ -1044,6 +1044,9 @@ window.initializeProductsModule = initializeProductsModule;
     const dependenciesReady =
       typeof window.updateCartUI === 'function' &&
       typeof window.renderCategories === 'function' &&
+      typeof window.cldOptimize === 'function' &&
+      typeof window.escHtml === 'function' &&
+      typeof window.isStaff === 'function' &&
       document.getElementById('productsGrid');
     if (dependenciesReady) {
       initializeProductsModule().catch(err => console.error('Products init:', err));
