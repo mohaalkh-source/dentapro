@@ -1,4 +1,3 @@
-import './firebase/firebase-init.js';
 import { APP_CONFIG } from './config.js';
 import { APP_NAME } from './constants.js';
 import { setState } from './state.js';
@@ -34,19 +33,13 @@ for (const src of DOMAIN_SCRIPTS) {
   await loadDomainScript(src);
 }
 
-// products.js يُحمّل مبكراً، لكن تهيئته تعتمد على cart/auth/navigation.
-// شغّلها بعد اكتمال تحميل جميع الوحدات حتى لا يفوت الرسم الأول للمنتجات.
+// لا ننتظر Firebase أو تهيئة المنتجات قبل إخفاء شاشة البداية.
+// أي تأخير أو خطأ في الشبكة يجب ألا يمنع المستخدم من دخول الصفحة الرئيسية.
 if (typeof window.initializeProductsModule === 'function') {
-  await window.initializeProductsModule();
+  window.initializeProductsModule().catch(err => console.error('Products init:', err));
 }
 
-await waitForFirebase();
-setState({ initialized: true });
-document.documentElement.dataset.app = APP_NAME;
-document.documentElement.dataset.language = APP_CONFIG.defaultLanguage;
-await wait(0);
-
-// يحافظ على توقيت شاشة البداية حتى عند تحميل الوحدات ديناميكيًا بعد حدث load.
+// مؤقت أمان مستقل عن Firebase والمنتجات لإخفاء شاشة البداية دائماً.
 setTimeout(() => {
   const splash = document.getElementById('splashScreen');
   if (splash) {
@@ -55,5 +48,11 @@ setTimeout(() => {
     setTimeout(() => splash.remove(), 500);
   }
 }, 1200);
+
+await waitForFirebase();
+setState({ initialized: true });
+document.documentElement.dataset.app = APP_NAME;
+document.documentElement.dataset.language = APP_CONFIG.defaultLanguage;
+await wait(0);
 
 export { DOMAIN_SCRIPTS, loadDomainScript };
