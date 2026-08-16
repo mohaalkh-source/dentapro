@@ -1,4 +1,26 @@
-// pCat.value = currentVal;
+// DentaPro domain module: extracted from the original implementation.
+// =====================
+// DATA
+// =====================
+var DEFAULT_CATEGORIES = [
+  {id:'all',   icon:'🦷', ar:'الكل',              en:'All'},
+  {id:'dev',   icon:'🔬', ar:'أجهزة ومعدات',       en:'Devices'},
+  {id:'hand',  icon:'🛠️', ar:'أدوات يدوية',        en:'Instruments'},
+  {id:'mat',   icon:'💊', ar:'مواد طبية',           en:'Materials'},
+  {id:'prot',  icon:'🧤', ar:'الوقاية والتعقيم',    en:'Protection'},
+  {id:'ortho', icon:'🦷', ar:'التقويم',             en:'Orthodontics'},
+  {id:'impl',  icon:'🏥', ar:'زراعة الأسنان',       en:'Implants'},
+  {id:'home',  icon:'🌟', ar:'العناية المنزلية',     en:'Home Care'},
+];
+// يبني قائمتي الفئات (نموذج المنتج + فلتر جدول الأدمن) من مصفوفة categories الفعلية
+function populateCategorySelects() {
+  const realCats = categories.filter(c => c.id !== 'all');
+
+  const pCat = document.getElementById('pCat');
+  if (pCat) {
+    const currentVal = pCat.value;
+    pCat.innerHTML = realCats.map(c => `<option value="${c.id}">${escHtml(c.ar)}</option>`).join('');
+    if (realCats.find(c => c.id === currentVal)) pCat.value = currentVal;
   }
 
   const adminFilter = document.getElementById('adminCatFilter');
