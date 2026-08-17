@@ -198,7 +198,10 @@ function initVoiceSearch() {
     rec.onresult = e => { search.value = e.results[0][0].transcript; search.dispatchEvent(new Event('input', {bubbles:true})); };
     rec.onstart = () => btn.classList.add('listening');
     rec.onend = () => btn.classList.remove('listening');
-    rec.onerror = () => showToast(t('تعذّر تشغيل البحث الصوتي','Unable to start voice search'), 'error');
+    rec.onerror = (e) => {
+      console.warn('⚠️ خطأ البحث الصوتي:', e.error);
+      showToast(t('تعذّر تشغيل البحث الصوتي','Unable to start voice search') + ' (' + e.error + ')', 'error');
+    };
     rec.start();
   };
   search.parentElement.appendChild(btn);
@@ -490,11 +493,7 @@ window.addEventListener('offline', () => {
 
 document.addEventListener('DOMContentLoaded', updateOfflineBanner);
 if (document.readyState === 'loading') {
-  if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', enhanceQuickViewAndReorder);
-} else {
-  enhanceQuickViewAndReorder();
-}
 } else {
   enhanceQuickViewAndReorder();
 }
