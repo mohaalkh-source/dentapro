@@ -741,12 +741,6 @@ function markAllNotifsRead() {
   renderNotifList();
   showToast('✅ تم تعليم الكل كمقروء', 'success');
 }
-function markAllNotifsRead() {
-  _cachedNotifs.forEach(n => markNotifIdRead(n._docId));
-  updateNotifBadge();
-  renderNotifList();
-  showToast('✅ تم تعليم الكل كمقروء', 'success');
-}
 
 // تعليم كل الإشعارات المرتبطة بقسم معيّن كمقروءة، فقط عند فتح ذلك القسم فعلياً
 function markNotifsByLinkPrefixRead(prefixes) {
@@ -2047,86 +2041,6 @@ function toggleFavorite(id) {
 function openFavoritesPage() {
   showPage('favorites');
   renderFavoritesPage();
-}
-
-async function renderFavoriteQuotes() {
-  const section = document.getElementById('favoriteQuotesSection');
-  const list = document.getElementById('favoriteQuotesList');
-  if (!section || !list) return;
-  if (!currentUser) { section.style.display = 'none'; return; }
-
-  const localIds = loadQuoteFavorites().map(String);
-  let quotes = [];
-  try {
-    quotes = await getClientQuotes(currentUser.email);
-    window._cachedMyQuotes = quotes;
-  } catch (e) {
-    console.warn('renderFavoriteQuotes:', e);
-  }
-  if (Array.isArray(window._cachedMyQuotes)) {
-    const byId = new Map(quotes.map(q => [String(q._docId), q]));
-    window._cachedMyQuotes.forEach(q => {
-      if (!byId.has(String(q._docId))) quotes.push(q);
-    });
-  }
-  const savedQuotes = quotes.filter(q => q.status === 'saved' || localIds.includes(String(q._docId)));
-
-  if (!savedQuotes.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
-  section.style.display = 'block';
-  list.innerHTML = savedQuotes.map(q => {
-    const total = (q.items || []).reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.qty || 1)), 0);
-    const names = (q.items || []).slice(0, 3).map(item => escHtml(item.ar || item.en || '')).join('، ');
-    return `<div style="background:#fff;border:1px solid #e9d5ff;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
-        <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
-        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
-      </div>
-      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
-        <i class="fas fa-check"></i> أوافق وأكمل الطلب
-      </button>
-    </div>`;
-  }).join('');
-}
-
-async function renderFavoriteQuotes() {
-  const section = document.getElementById('favoriteQuotesSection');
-  const list = document.getElementById('favoriteQuotesList');
-  if (!section || !list) return;
-  if (!currentUser) { section.style.display = 'none'; return; }
-
-  const localIds = loadQuoteFavorites().map(String);
-  let quotes = [];
-  try {
-    quotes = await getClientQuotes(currentUser.email);
-    window._cachedMyQuotes = quotes;
-  } catch (e) {
-    console.warn('renderFavoriteQuotes:', e);
-  }
-  if (Array.isArray(window._cachedMyQuotes)) {
-    const byId = new Map(quotes.map(q => [String(q._docId), q]));
-    window._cachedMyQuotes.forEach(q => {
-      if (!byId.has(String(q._docId))) quotes.push(q);
-    });
-  }
-  const savedQuotes = quotes.filter(q => q.status === 'saved' || localIds.includes(String(q._docId)));
-
-  if (!savedQuotes.length) { section.style.display = 'none'; list.innerHTML = ''; return; }
-  section.style.display = 'block';
-  list.innerHTML = savedQuotes.map(q => {
-    const total = (q.items || []).reduce((sum, item) => sum + ((item.unitPrice || 0) * (item.qty || 1)), 0);
-    const names = (q.items || []).slice(0, 3).map(item => escHtml(item.ar || item.en || '')).join('، ');
-    return `<div style="background:#fff;border:1px solid #e9d5ff;border-radius:16px;padding:16px;box-shadow:var(--shadow-sm)">
-      <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
-        <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
-          <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
-        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
-      </div>
-      <button class="btn-primary" style="padding:8px 18px;font-size:12px;margin-top:12px" onclick="acceptQuote('${q._docId}')">
-        <i class="fas fa-check"></i> أوافق وأكمل الطلب
-      </button>
-    </div>`;
-  }).join('');
 }
 
 async function renderFavoriteQuotes() {
