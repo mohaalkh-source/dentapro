@@ -489,7 +489,15 @@ window.addEventListener('offline', () => {
 });
 
 document.addEventListener('DOMContentLoaded', updateOfflineBanner);
-document.addEventListener('DOMContentLoaded', enhanceQuickViewAndReorder);
+if (document.readyState === 'loading') {
+  if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', enhanceQuickViewAndReorder);
+} else {
+  enhanceQuickViewAndReorder();
+}
+} else {
+  enhanceQuickViewAndReorder();
+}
 // =====================
 // HELPERS
 // =====================
