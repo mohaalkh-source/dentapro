@@ -182,6 +182,9 @@ function openQuickView(id) {
 }
 function closeQuickView(){ document.getElementById('quickViewModal').classList.remove('open'); }
 
+var _voiceRec = null;
+var _voiceActive = false;
+
 function initVoiceSearch() {
   const search = document.getElementById('searchInput');
   if (!search || document.getElementById('voiceSearchBtn')) return;
@@ -193,16 +196,33 @@ function initVoiceSearch() {
   btn.onclick = () => {
     const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SR) return showToast(t('المتصفح لا يدعم البحث الصوتي','Voice search is not supported'), 'error');
+    // منع تشغيل نسخة ثانية أثناء وجود نسخة شغّالة أصلاً (السبب الشائع لخطأ aborted)
+    if (_voiceActive) { try { _voiceRec.stop(); } catch(e) {} return; }
     const rec = new SR();
+    _voiceRec = rec;
     rec.lang = currentLang === 'en' ? 'en-US' : 'ar-JO';
     rec.onresult = e => { search.value = e.results[0][0].transcript; search.dispatchEvent(new Event('input', {bubbles:true})); };
-    rec.onstart = () => btn.classList.add('listening');
-    rec.onend = () => btn.classList.remove('listening');
+    rec.onstart = () => { _voiceActive = true; btn.classList.add('listening'); };
+    rec.onend = () => { _voiceActive = false; btn.classList.remove('listening'); };
     rec.onerror = (e) => {
+      _voiceActive = false;
       console.warn('⚠️ خطأ البحث الصوتي:', e.error);
-      showToast(t('تعذّر تشغيل البحث الصوتي','Unable to start voice search') + ' (' + e.error + ')', 'error');
+      const messages = {
+        'not-allowed': t('الرجاء السماح باستخدام الميكروفون','Please allow microphone access'),
+        'service-not-allowed': t('خدمة البحث الصوتي غير متاحة حاليًا','Voice service unavailable'),
+        'no-speech': t('لم يتم رصد أي صوت','No speech detected'),
+        'audio-capture': t('تعذّر الوصول للميكروفون','Microphone unavailable'),
+        'network': t('تحقق من اتصال الإنترنت','Check your internet connection'),
+        'aborted': t('تم إيقاف التسجيل، حاول مجددًا','Recording stopped, try again'),
+      };
+      showToast(messages[e.error] || (t('تعذّر تشغيل البحث الصوتي','Unable to start voice search') + ' (' + e.error + ')'), 'error');
     };
-    rec.start();
+    try {
+      rec.start();
+    } catch(e) {
+      _voiceActive = false;
+      console.warn('⚠️ فشل بدء التسجيل:', e.message);
+    }
   };
   search.parentElement.appendChild(btn);
 }
