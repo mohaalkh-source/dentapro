@@ -1235,9 +1235,9 @@ async function saveProfile() {
   // حفظ في Firestore
   try {
     if (currentUser.uid && window._fbDoc2 && window._fbSetDoc) {
-      await window._fbSetDoc(
+      await window._fbUpdateDoc(
         window._fbDoc2('users', currentUser.uid),
-        { firstName: name, clinic, phone, email: currentUser.email, role: 'client',
+        { firstName: name, clinic, phone, email: currentUser.email,
           profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
           updatedAt: new Date().toISOString() }
       );
