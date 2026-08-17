@@ -84,23 +84,6 @@ function insertBrandsSection(){
 }
 
 // ─── Add quick-view button to product cards ───
-function enhanceProductCards(){
-  return; // تم إلغاء زر "عرض سريع" التلقائي نهائياً بناءً على طلب المستخدم
-  document.querySelectorAll('.product-card').forEach(card => {
-    if(card.querySelector('.quick-view-btn')) return;
-    const imgWrap = card.querySelector('.product-img-wrap');
-    if(!imgWrap) return;
-    const btn = document.createElement('button');
-    btn.className = 'quick-view-btn';
-    btn.innerHTML = '<i class="fas fa-eye"></i> عرض سريع';
-    const nameEl = card.querySelector('.product-name');
-    if(nameEl){
-      const onclick = nameEl.getAttribute('onclick');
-      if(onclick) btn.setAttribute('onclick', onclick);
-    }
-    imgWrap.appendChild(btn);
-  });
-}
 
 // ─── Notification bell shake when unread ───
 function updateBellState(){
@@ -118,9 +101,9 @@ document.addEventListener('DOMContentLoaded', function(){
 
   // Re-enhance after products render
   const observer = new MutationObserver(() => {
-    enhanceProductCards();
+    // إعادة تفعيل عرض شارة الجرس عند أي تحديث للمنتجات
+    // (تم حذف enableCardTilt من هنا لأنها مكررة مع المراقب الثاني بالأسفل)
     updateBellState();
-    enableCardTilt();
   });
   const grid = document.getElementById('productsGrid');
   if(grid) observer.observe(grid, {childList:true, subtree:false});
@@ -146,9 +129,6 @@ function enableCardTilt(){
 (function(){
   const old = document.querySelectorAll('.product-card');
   if(old.length) enableCardTilt();
-  setTimeout(() => {
-  }, 8000);
-
   const grid = document.getElementById('productsGrid');
   if(grid){
     const mo = new MutationObserver(() => { enableCardTilt(); updateBellState(); });
