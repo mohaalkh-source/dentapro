@@ -79,71 +79,335 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   window._fbIsOnline   = () => navigator.onLine;
 
   // التخزين المحلي مُفعَّل تلقائياً عبر persistentLocalCache() في إعداد Firestore
-
   let _ordersUnsub = null;
   let _messagesUnsub = null;
+  let _roleUnsub = null;
   let _notifsUnsub = [];
 
   window.addEventListener('load', () => {
     onAuthStateChanged(auth, async (fbUser) => {
-      if (_ordersUnsub)   { _ordersUnsub();   _ordersUnsub = null; }
-      if (_messagesUnsub) { _messagesUnsub(); _messagesUnsub = null; }
-      if (_notifsUnsub.length) { _notifsUnsub.forEach(u => u()); _notifsUnsub = []; }
-      if (!fbUser) { window._currentRole = null; return; }
+
+      // تنظيف الـ listeners القديمة
+      if (_ordersUnsub) {
+        _ordersUnsub();
+        _ordersUnsub = null;
+      }
+
+      if (_messagesUnsub) {
+        _messagesUnsub();
+        _messagesUnsub = null;
+      }
+
+      if (_roleUnsub) {
+        _roleUnsub();
+        _roleUnsub = null;
+      }
+
+      if (_notifsUnsub.length) {
+        _notifsUnsub.forEach(u => u());
+        _notifsUnsub = [];
+      }
+
+      if (!fbUser) {
+        window._currentRole = null;
+        return;
+      }
+
       try {
-        // جلب الدور الحقيقي من Firestore (users/{uid}.role) — البريد الإداري يبقى كحساب احتياطي فقط
+
+        // =====================================================
+        // تحديد الدور الحالي للمستخدم
+        // =====================================================
         let role = 'customer';
+
         if (fbUser.email === 'moh.a.alkh@gmail.com') {
           role = 'admin';
         } else {
           try {
             const uSnap = await getDoc(doc(db, 'users', fbUser.uid));
-            if (uSnap.exists() && uSnap.data().role) role = uSnap.data().role;
+
+            if (uSnap.exists() && uSnap.data().role) {
+              role = uSnap.data().role;
+            }
+
           } catch(roleErr) {
-            console.warn('⚠️ تعذّر جلب صلاحية المستخدم من Firestore:', roleErr.message);
+            console.warn(
+              '⚠️ تعذّر جلب صلاحية المستخدم من Firestore:',
+              roleErr.message
+            );
           }
         }
-        window._currentRole = role;
-        const isStaffUser = (role === 'admin' || role === 'manager');
-        const q = isStaffUser
-          ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
-          : query(collection(db, 'orders'), where('clientEmail', '==', fbUser.email));
-        _ordersUnsub = onSnapshot(q, (snap) => {
-          const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
-          const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
-          if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
-          if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
-          const pending = snap.docs.filter(d => !['delivered','cancelled'].includes(d.data().status)).length;
-          const badge = document.getElementById('adminOrdersBadge');
-          if (badge) badge.textContent = pending > 0 ? pending : '';
-        }, (err) => console.warn('⚠️ مراقبة الطلبات:', err.message));
 
-        // مراقبة الرسائل لحظياً (لتحديث شارة الإشعار فوراً)
+        window._currentRole = role;
+
+        // =====================================================
+        // مراقبة تغيير صلاحية المستخدم لحظياً
+        // =====================================================
+        if (fbUser.email !== 'moh.a.alkh@gmail.com') {
+
+          _roleUnsub = onSnapshot(
+            doc(db, 'users', fbUser.uid),
+
+            (userSnap) => {
+              if (!userSnap.exists()) return;
+
+              const data = userSnap.data();
+
+              const newRole =
+                data.role === 'admin'
+                  ? 'admin'
+                  : data.role === 'manager'
+                    ? 'manager'
+                    : 'client';
+
+              // إذا تغير الدور فعلاً
+              if (newRole !== window._currentRole) {
+
+                console.log(
+                  `🔄 تم تغيير صلاحية المستخدم: ${window._currentRole} → ${newRole}`
+                );
+
+                window._currentRole = newRole;
+
+                /*
+                 * إعادة تحميل الصفحة ضرورية هنا لأن:
+                 * - auth-ui.js يعيد بناء currentUser
+                 * - قوائم الأدمن/المدير تعاد بناؤها
+                 * - استعلامات الطلبات والرسائل تعاد حسب الدور الجديد
+                 * - localStorage يتم تحديثه بالدور الجديد
+                 */
+                window.location.reload();
+              }
+            },
+
+            (err) => {
+              console.warn(
+                '⚠️ مراقبة صلاحية المستخدم:',
+                err.message
+              );
+            }
+          );
+        }
+
+        // =====================================================
+        // تشغيل مراقبة الطلبات حسب الدور الحالي
+        // =====================================================
+        const isStaffUser =
+          role === 'admin' ||
+          role === 'manager';
+
+        const q = isStaffUser
+          ? query(
+              collection(db, 'orders'),
+              orderBy('createdAt', 'desc')
+            )
+          : query(
+              collection(db, 'orders'),
+              where(
+                'clientEmail',
+                '==',
+                fbUser.email
+              )
+            );
+
+        _ordersUnsub = onSnapshot(
+          q,
+
+          (snap) => {
+
+            const adminOpen =
+              document
+                .getElementById('adminPanel')
+                ?.classList
+                .contains('open');
+
+            const ordersOpen =
+              document
+                .getElementById('ordersPage')
+                ?.classList
+                .contains('active');
+
+            if (
+              adminOpen &&
+              typeof renderAdminOrders === 'function'
+            ) {
+              renderAdminOrders();
+            }
+
+            if (
+              ordersOpen &&
+              typeof renderClientOrders === 'function'
+            ) {
+              renderClientOrders();
+            }
+
+            const pending =
+              snap.docs.filter(
+                d =>
+                  ![
+                    'delivered',
+                    'cancelled'
+                  ].includes(
+                    d.data().status
+                  )
+              ).length;
+
+            const badge =
+              document.getElementById(
+                'adminOrdersBadge'
+              );
+
+            if (badge) {
+              badge.textContent =
+                pending > 0 ? pending : '';
+            }
+
+          },
+
+          (err) => {
+            console.warn(
+              '⚠️ مراقبة الطلبات:',
+              err.message
+            );
+          }
+        );
+
+        // =====================================================
+        // مراقبة الرسائل
+        // =====================================================
         const msgsQ = isStaffUser
           ? collection(db, 'messages')
-          : query(collection(db, 'messages'), where('clientEmail', 'in', [fbUser.email, 'broadcast']));
-        _messagesUnsub = onSnapshot(msgsQ, () => {
-          if (typeof window._onMessagesUpdate === 'function') window._onMessagesUpdate();
-        }, (err) => console.warn('⚠️ مراقبة الرسائل:', err.message));
+          : query(
+              collection(db, 'messages'),
+              where(
+                'clientEmail',
+                'in',
+                [
+                  fbUser.email,
+                  'broadcast'
+                ]
+              )
+            );
 
-        // مراقبة جرس الإشعارات لحظياً (طلب جديد / تغيير حالة / منتج جديد)
+        _messagesUnsub = onSnapshot(
+          msgsQ,
+
+          () => {
+            if (
+              typeof window._onMessagesUpdate ===
+              'function'
+            ) {
+              window._onMessagesUpdate();
+            }
+          },
+
+          (err) => {
+            console.warn(
+              '⚠️ مراقبة الرسائل:',
+              err.message
+            );
+          }
+        );
+
+        // =====================================================
+        // مراقبة الإشعارات
+        // =====================================================
         _notifsUnsub.forEach(u => u());
         _notifsUnsub = [];
+
         if (isStaffUser) {
-          const nq = query(collection(db, 'notifications'), where('scope', '==', 'admin'));
-          _notifsUnsub.push(onSnapshot(nq, () => {
-            if (typeof window._onNotificationsUpdate === 'function') window._onNotificationsUpdate();
-          }, (err) => console.warn('⚠️ مراقبة الإشعارات:', err.message)));
+
+          const nq = query(
+            collection(db, 'notifications'),
+            where('scope', '==', 'admin')
+          );
+
+          _notifsUnsub.push(
+            onSnapshot(
+              nq,
+              () => {
+                if (
+                  typeof window._onNotificationsUpdate ===
+                  'function'
+                ) {
+                  window._onNotificationsUpdate();
+                }
+              },
+              (err) => {
+                console.warn(
+                  '⚠️ مراقبة الإشعارات:',
+                  err.message
+                );
+              }
+            )
+          );
+
         } else {
-          const nq1 = query(collection(db, 'notifications'), where('targetEmail', '==', fbUser.email));
-          const nq2 = query(collection(db, 'notifications'), where('scope', '==', 'broadcast'));
-          _notifsUnsub.push(onSnapshot(nq1, () => {
-            if (typeof window._onNotificationsUpdate === 'function') window._onNotificationsUpdate();
-          }, (err) => console.warn('⚠️ مراقبة الإشعارات:', err.message)));
-          _notifsUnsub.push(onSnapshot(nq2, () => {
-            if (typeof window._onNotificationsUpdate === 'function') window._onNotificationsUpdate();
-          }, (err) => console.warn('⚠️ مراقبة الإشعارات:', err.message)));
+
+          const nq1 = query(
+            collection(db, 'notifications'),
+            where(
+              'targetEmail',
+              '==',
+              fbUser.email
+            )
+          );
+
+          const nq2 = query(
+            collection(db, 'notifications'),
+            where(
+              'scope',
+              '==',
+              'broadcast'
+            )
+          );
+
+          _notifsUnsub.push(
+            onSnapshot(
+              nq1,
+              () => {
+                if (
+                  typeof window._onNotificationsUpdate ===
+                  'function'
+                ) {
+                  window._onNotificationsUpdate();
+                }
+              },
+              (err) => {
+                console.warn(
+                  '⚠️ مراقبة الإشعارات:',
+                  err.message
+                );
+              }
+            )
+          );
+
+          _notifsUnsub.push(
+            onSnapshot(
+              nq2,
+              () => {
+                if (
+                  typeof window._onNotificationsUpdate ===
+                  'function'
+                ) {
+                  window._onNotificationsUpdate();
+                }
+              },
+              (err) => {
+                console.warn(
+                  '⚠️ مراقبة الإشعارات:',
+                  err.message
+                );
+              }
+            )
+          );
         }
-      } catch(e) { console.warn('Listener:', e); }
+
+      } catch(e) {
+        console.warn(
+          '⚠️ Firebase Listener:',
+          e
+        );
+      }
     });
   });
