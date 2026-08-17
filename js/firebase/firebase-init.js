@@ -91,9 +91,16 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
       if (_notifsUnsub.length) { _notifsUnsub.forEach(u => u()); _notifsUnsub = []; }
       if (!fbUser) { window._currentRole = null; return; }
       try {
-        // جلب الدور الحقيقي من Firestore (users/{uid}.role) — البريد الإداري يبقى كحساب احتياطي فقط
+        // استخدام نفس نتيجة الصلاحية اللي جابها auth-ui.js (لو جاهزة) بدل قراءة Firestore مرة ثانية
         let role = 'customer';
-        if (fbUser.email === 'moh.a.alkh@gmail.com') {
+        if (typeof window.resolveUserRole === 'function') {
+          try {
+            const resolved = await window.resolveUserRole(fbUser);
+            role = resolved.role || 'customer';
+          } catch(roleErr) {
+            console.warn('⚠️ تعذّر جلب صلاحية المستخدم عبر resolveUserRole:', roleErr.message);
+          }
+        } else if (fbUser.email === 'moh.a.alkh@gmail.com') {
           role = 'admin';
         } else {
           try {
