@@ -1233,22 +1233,58 @@ async function saveProfile() {
   localStorage.setItem('dentapro_session', JSON.stringify(currentUser));
 
   // حفظ في Firestore
+  // مهم: لا نرسل role هنا حتى لا يتم تحويل المدير الفرعي إلى عميل
   try {
     if (currentUser.uid && window._fbDoc2 && window._fbSetDoc) {
       await window._fbSetDoc(
         window._fbDoc2('users', currentUser.uid),
-        { firstName: name, clinic, phone, email: currentUser.email, role: 'client',
-          profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
-          updatedAt: new Date().toISOString() }
+        {
+          firstName: name,
+          clinic,
+          phone,
+          email: currentUser.email,
+          profileLocationText: locationText,
+          profileLocationLat: locationLat,
+          profileLocationLng: locationLng,
+          updatedAt: new Date().toISOString()
+        },
+        { merge: true }
       );
     }
-    // حفظ محلي
+
+    // حفظ محلي بدون تغيير role
     const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
     const idx = users.findIndex(u => u.email === currentUser.email);
-    if (idx !== -1) { users[idx] = { ...users[idx], firstName: name, clinic, phone, profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng }; }
-    else { users.push({ firstName: name, clinic, phone, email: currentUser.email, profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng }); }
+
+    if (idx !== -1) {
+      users[idx] = {
+        ...users[idx],
+        firstName: name,
+        clinic,
+        phone,
+        profileLocationText: locationText,
+        profileLocationLat: locationLat,
+        profileLocationLng: locationLng
+      };
+    } else {
+      users.push({
+        firstName: name,
+        clinic,
+        phone,
+        email: currentUser.email,
+        uid: currentUser.uid,
+        role: currentUser.role || 'client',
+        profileLocationText: locationText,
+        profileLocationLat: locationLat,
+        profileLocationLng: locationLng
+      });
+    }
+
     localStorage.setItem('dentapro_users', JSON.stringify(users));
-  } catch(e) { console.warn('saveProfile Firebase:', e); }
+
+  } catch(e) {
+    console.warn('saveProfile Firebase:', e);
+  }
 
   document.getElementById('editProfileModal').remove();
   renderAuthHeader();
