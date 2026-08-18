@@ -206,7 +206,7 @@ function openOrderModal() {
   document.getElementById('locationConfirm').classList.remove('show');
   document.getElementById('mapPreview').classList.remove('located');
   document.getElementById('gpsLoading').classList.remove('show');
-  ['clinicName','doctorName','phoneNumber','altPhone','addressInput','orderNotes'].forEach(id => {
+  ['clinicName','doctorName','phoneNumber','altPhone','addressInput','orderNotes','guestTrackCode'].forEach(id => {
     const el = document.getElementById(id);
     if(el){ el.value=''; el.classList.remove('error'); }
   });
@@ -254,6 +254,9 @@ function renderModalStep() {
       if (!ph.value && currentUser.phone)  ph.value = currentUser.phone.replace(/^\+\d+/, '');
       window._autoFilledOnce = true;
     }
+    // خانة رمز التتبع تظهر فقط للزوار غير المسجّلين دخول
+    const trackCodeWrap = document.getElementById('guestTrackCodeWrap');
+    if (trackCodeWrap) trackCodeWrap.style.display = currentUser ? 'none' : 'block';
   }
   if (currentStep === 4) renderConfirmDetails();
 }
@@ -403,6 +406,13 @@ function validateStep(step) {
     const phoneVal = ph.value.replace(/\s/g,'');
     if (!phoneVal || phoneVal.length < 7) { ph.classList.add('error'); document.getElementById('phoneError').classList.add('show'); ok=false; }
     else { ph.classList.remove('error'); document.getElementById('phoneError').classList.remove('show'); }
+    // رمز التتبع مطلوب فقط للزوار غير المسجّلين دخول
+    if (!currentUser) {
+      const tc = document.getElementById('guestTrackCode');
+      const tcVal = tc.value.replace(/\D/g,'');
+      if (tcVal.length < 4) { tc.classList.add('error'); document.getElementById('guestTrackCodeError').classList.add('show'); ok=false; }
+      else { tc.classList.remove('error'); document.getElementById('guestTrackCodeError').classList.remove('show'); }
+    }
     return ok;
   }
   if (step === 3) {
