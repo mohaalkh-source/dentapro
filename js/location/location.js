@@ -156,6 +156,7 @@ async function submitOrder() {
     clinic:      document.getElementById('clinicName').value,
     doctor:      document.getElementById('doctorName').value,
     phone:       formatPhoneForWhatsApp(document.getElementById('countryCode').value + document.getElementById('phoneNumber').value),
+    guestTrackCode: currentUser ? null : document.getElementById('guestTrackCode').value.replace(/\D/g,''),
     address:     locationData.address || document.getElementById('addressInput').value,
     locationLat: locationData.lat || null,
     locationLng: locationData.lng || null,
