@@ -833,7 +833,8 @@ async function trackGuestOrder() {
     const data = snap.data();
     const cleanPhone  = (data.phone || '').replace(/\D/g,'');
     const inputPhone  = phoneInput.replace(/\D/g,'');
-    const matches = cleanPhone.slice(-7) === inputPhone.slice(-7) && inputPhone.length >= 7;
+    // مقارنة آخر 9 أرقام (تغطي الرقم المحلي الكامل بدون رمز الدولة، أدق من 7 أرقام)
+    const matches = cleanPhone.length >= 9 && inputPhone.length >= 9 && cleanPhone.slice(-9) === inputPhone.slice(-9);
     if (!matches) return showTrackError('رقم الهاتف لا يطابق بيانات هذا الطلب');
 
     const date = new Date(data.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
