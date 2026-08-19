@@ -136,16 +136,35 @@ function trackStepsHTML(currentStatus) {
 
 
 
-function normalizeAdminPhone(phone) { return (phone || '').replace(/\D/g, '').slice(-9); }
-async function normalizeAdminIdentity(records) {
+// توحيد هوية العميل في لوحة الإدارة بالاعتماد على رقم الهاتف،
+// مع الاحتفاظ بباقي بيانات الطلب الأصلية دون حذفها.
+function normalizeAdminPhone(phone) {
+  return (phone || '').replace(/\D/g, '').slice(-9);
+}
+
+async function resolveAdminClientIdentity(records) {
   let users = [];
   try { users = await fetchAllUsersList(); } catch(e) { return records; }
   const byPhone = {};
-  users.filter(u => u.role === 'client').forEach(u => { const p = normalizeAdminPhone(u.phone); if (p) byPhone[p] = u; });
-  return records.map(r => {
-    const u = byPhone[normalizeAdminPhone(r.phone)];
-    if (!u) return r;
-    return { ...r, clientName: u.firstName || u.name || r.clientName, clinic: u.clinic || r.clinic, doctor: u.firstName || u.name || r.doctor, clientEmail: u.email || r.clientEmail, clientUid: u.uid || r.clientUid, phone: u.phone || r.phone };
+  users.filter(u => u.role === 'client').forEach(u => {
+    const phone = normalizeAdminPhone(u.phone);
+    if (phone) byPhone[phone] = u;
+  });
+  return records.map(record => {
+    const member = byPhone[normalizeAdminPhone(record.phone)];
+    if (!member) return record;
+    return {
+      ...record,
+      _matchedMember: true,
+      _guestSubmittedName: record.clientName,
+      _guestSubmittedClinic: record.clinic,
+      clientName: member.firstName || member.name || record.clientName,
+      doctor: member.firstName || member.name || record.doctor,
+      clinic: member.clinic || record.clinic,
+      clientEmail: member.email || record.clientEmail,
+      clientUid: member.uid || record.clientUid,
+      phone: member.phone || record.phone,
+    };
   });
 }
 
@@ -491,7 +510,7 @@ async function renderAdminOrders() {
     const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
     const snap = await window._fbGetDocs(q);
     let orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
-    orders = await normalizeAdminIdentity(orders);
+    orders = await resolveAdminClientIdentity(orders);
     window._cachedOrders = orders;
 
     const pending = orders.filter(o => !['delivered','cancelled'].includes(o.status)).length;
@@ -802,7 +821,8 @@ async function renderAdminQuotes() {
       جاري تحميل طلبات عروض الأسعار...
     </div>`;
 
-  const quotes = await getAllQuotes();
+  let quotes = await getAllQuotes();
+  quotes = await resolveAdminClientIdentity(quotes);
   window._cachedAdminQuotes = quotes;
 
   const pendingCount = computeQuotesBadgeCount(quotes);
@@ -957,6 +977,9 @@ async function sendQuotePricing() {
         message: `تم تحديد سعر طلبك #${q.id}، يمكنك مراجعته الآن`,
         link: 'page:myQuotes',
       });
+    } else if (q.phone) {
+      // الزائر يستلم العرض عبر مرجع الهاتف المحفوظ في نفس المتصفح، ويمكن للأدمن التواصل معه واتساب.
+      console.info('Guest quote priced; quote remains available by phone reference:', q.phone);
     }
     closePriceQuoteModal();
     showToast('✅ تم إرسال عرض السعر للعميل', 'success');
