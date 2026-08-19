@@ -367,10 +367,10 @@ async function submitQuickOrder(event) {
   const hasCustomItem = items.some(it => it.isCustom);
 
   closeQuickOrderModal();
-  proceedQuickOrderCheckout(items, hasCustomItem);
+  await proceedQuickOrderCheckout(items, hasCustomItem);
 }
 
-function proceedQuickOrderCheckout(items, hasCustomItem) {
+async function proceedQuickOrderCheckout(items, hasCustomItem) {
   window._qoItems = items;
   window._qoHasCustom = hasCustomItem;
   window._qoClinic = null;
@@ -385,7 +385,7 @@ function proceedQuickOrderCheckout(items, hasCustomItem) {
   const missingLocation = !clientSession || !((clientSession.profileLocationText && clientSession.profileLocationText.trim()) || (clientSession.profileLocationLat && clientSession.profileLocationLng));
 
   if (!missingInfo && !missingLocation) {
-    finalizeQuickOrderSend();
+    await finalizeQuickOrderSend();
   } else if (!missingInfo && missingLocation) {
     openQOLocationModal();
   } else {
@@ -421,7 +421,8 @@ async function submitQOInfo(event) {
   }
   closeQOInfoModal();
 
-  const hasLocation = currentUser && ((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
+  const resolvedClient = getActiveClientSession() || window._guestResolvedClient || null;
+  const hasLocation = resolvedClient && ((resolvedClient.profileLocationText && resolvedClient.profileLocationText.trim()) || (resolvedClient.profileLocationLat && resolvedClient.profileLocationLng));
   if (hasLocation) {
     finalizeQuickOrderSend();
   } else {
@@ -534,7 +535,7 @@ async function finalizeQuickOrderSend() {
       const total = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const order = {
         id: orderNum,
-        clientName: doctor,
+        clientName: guestClient ? (guestClient.name || doctor) : doctor,
         clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
         clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, doctor, phone,
@@ -569,7 +570,7 @@ async function finalizeQuickOrderSend() {
       const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const quote = {
         id: quoteNum,
-        clientName: doctor,
+        clientName: guestClient ? (guestClient.name || doctor) : doctor,
         clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
         clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, phone,
