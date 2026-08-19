@@ -172,6 +172,52 @@ function closeCart() {
 // =====================
 // ORDER MODAL
 // =====================
+
+function setOrderGuestFieldsLocked(locked) {
+  ['clinicName','doctorName','phoneNumber','altPhone','addressInput'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.readOnly = locked;
+    el.disabled = false;
+    el.style.background = locked ? '#f1f5f9' : '';
+    el.style.cursor = locked ? 'not-allowed' : '';
+  });
+  const country = document.getElementById('countryCode');
+  if (country) {
+    country.disabled = locked;
+    country.style.cursor = locked ? 'not-allowed' : '';
+  }
+}
+
+async function autofillOrderClientByPhone() {
+  const phoneEl = document.getElementById('phoneNumber');
+  if (!phoneEl || typeof findRegisteredClientByPhone !== 'function') return null;
+  const value = phoneEl.value.trim();
+  if (normalizeClientPhone(value).length < 7) return null;
+  const client = await findRegisteredClientByPhone(value);
+  window._orderGuestResolvedClient = client || null;
+  if (!client) {
+    setOrderGuestFieldsLocked(false);
+    return null;
+  }
+  document.getElementById('clinicName').value = client.clinic || '';
+  document.getElementById('doctorName').value = client.name || '';
+  document.getElementById('phoneNumber').value = client.phone || value;
+  if (document.getElementById('altPhone')) document.getElementById('altPhone').value = client.phone || value;
+  if (client.profileLocationText && document.getElementById('addressInput')) {
+    document.getElementById('addressInput').value = client.profileLocationText;
+  }
+  if (client.profileLocationLat && client.profileLocationLng) {
+    locationData.lat = client.profileLocationLat;
+    locationData.lng = client.profileLocationLng;
+    locationData.address = client.profileLocationText || `${client.profileLocationLat}, ${client.profileLocationLng}`;
+    locationData.method = 'member-profile';
+  }
+  setOrderGuestFieldsLocked(true);
+  showToast('✅ تم التعرف على العضو وتعبئة بياناته', 'success');
+  return client;
+}
+
 function applyProfileLocationToOrder() {
   if (!currentUser) return;
   const hasCoords = currentUser.profileLocationLat && currentUser.profileLocationLng;
@@ -202,6 +248,8 @@ function openOrderModal() {
   currentStep = 1;
   orderSubmitted = false;
   window._autoFilledOnce = false;
+  window._orderGuestResolvedClient = null;
+  setOrderGuestFieldsLocked(false);
   locationData = { lat: null, lng: null, address: '', method: '' };
   document.getElementById('locationConfirm').classList.remove('show');
   document.getElementById('mapPreview').classList.remove('located');
@@ -215,6 +263,7 @@ function openOrderModal() {
   document.getElementById('modalBody').querySelector('.modal-steps').style.display='flex';
   window._selectedPayMethod = 'money';
   applyProfileLocationToOrder();
+  if (getActiveClientSession()) setOrderGuestFieldsLocked(true);
   renderModalStep();
   document.getElementById('orderModal').classList.add('open');
 }
