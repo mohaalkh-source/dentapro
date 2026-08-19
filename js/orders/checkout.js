@@ -4,6 +4,18 @@
 var currentQuoteItems = [];
 var quotePendingImage = null;
 
+
+function rememberGuestQuote(quote) {
+  if (!quote || !quote.id) return;
+  try {
+    const key = 'dentapro_guest_quote_refs';
+    const refs = JSON.parse(localStorage.getItem(key) || '[]');
+    const next = refs.filter(r => r.id !== quote.id);
+    next.push({ id: quote.id, phone: quote.phone || '', createdAt: quote.createdAt || new Date().toISOString() });
+    localStorage.setItem(key, JSON.stringify(next.slice(-30)));
+  } catch(e) { console.warn('guest quote reference:', e); }
+}
+
 function openQuoteRequestModal() {
   currentQuoteItems = [];
   window._guestResolvedClient = null;
@@ -367,10 +379,10 @@ async function submitQuickOrder(event) {
   const hasCustomItem = items.some(it => it.isCustom);
 
   closeQuickOrderModal();
-  await proceedQuickOrderCheckout(items, hasCustomItem);
+  proceedQuickOrderCheckout(items, hasCustomItem);
 }
 
-async function proceedQuickOrderCheckout(items, hasCustomItem) {
+function proceedQuickOrderCheckout(items, hasCustomItem) {
   window._qoItems = items;
   window._qoHasCustom = hasCustomItem;
   window._qoClinic = null;
@@ -385,7 +397,7 @@ async function proceedQuickOrderCheckout(items, hasCustomItem) {
   const missingLocation = !clientSession || !((clientSession.profileLocationText && clientSession.profileLocationText.trim()) || (clientSession.profileLocationLat && clientSession.profileLocationLng));
 
   if (!missingInfo && !missingLocation) {
-    await finalizeQuickOrderSend();
+    finalizeQuickOrderSend();
   } else if (!missingInfo && missingLocation) {
     openQOLocationModal();
   } else {
@@ -421,8 +433,7 @@ async function submitQOInfo(event) {
   }
   closeQOInfoModal();
 
-  const resolvedClient = getActiveClientSession() || window._guestResolvedClient || null;
-  const hasLocation = resolvedClient && ((resolvedClient.profileLocationText && resolvedClient.profileLocationText.trim()) || (resolvedClient.profileLocationLat && resolvedClient.profileLocationLng));
+  const hasLocation = currentUser && ((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
   if (hasLocation) {
     finalizeQuickOrderSend();
   } else {
@@ -535,7 +546,7 @@ async function finalizeQuickOrderSend() {
       const total = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const order = {
         id: orderNum,
-        clientName: guestClient ? (guestClient.name || doctor) : doctor,
+        clientName: doctor,
         clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
         clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, doctor, phone,
@@ -570,7 +581,7 @@ async function finalizeQuickOrderSend() {
       const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const quote = {
         id: quoteNum,
-        clientName: guestClient ? (guestClient.name || doctor) : doctor,
+        clientName: doctor,
         clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
         clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, phone,
@@ -579,6 +590,7 @@ async function finalizeQuickOrderSend() {
         attachedImage: null, status: 'pending', createdAt: new Date().toISOString(),
       };
       await createQuoteRequest(quote);
+      if (!guestClient) rememberGuestQuote(quote);
       createNotification({
         scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
         message: `${clinic || doctor} أرسل طلباً سريعاً لعدد ${items.length} مادة`,
