@@ -47,7 +47,7 @@ setTimeout(() => {
     splash.style.visibility = 'hidden';
     setTimeout(() => splash.remove(), 500);
   }
-}, 1200);
+}, 450);
 
 await waitForFirebase();
 setState({ initialized: true });
