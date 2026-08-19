@@ -6,6 +6,7 @@ var quotePendingImage = null;
 
 function openQuoteRequestModal() {
   currentQuoteItems = [];
+  window._guestResolvedClient = null;
   document.getElementById('quoteNotes').value = '';
   document.getElementById('quoteFormError').style.display = 'none';
   document.getElementById('quoteProductSearch').value = '';
@@ -18,10 +19,11 @@ function openQuoteRequestModal() {
 
   const guestFields = document.getElementById('quoteGuestFields');
   if (guestFields) {
-    guestFields.style.display = currentUser ? 'none' : 'block';
+    guestFields.style.display = getActiveClientSession() ? 'none' : 'block';
     document.getElementById('quoteGuestName').value = '';
     document.getElementById('quoteGuestPhone').value = '';
     document.getElementById('quoteGuestClinic').value = '';
+    window._guestResolvedClient = null;
   }
 
   renderQuoteItemsList();
@@ -331,6 +333,7 @@ function updateQuickOrderTotal() {
 
 function openQuickOrderModal() {
   currentQuickOrderItems = [];
+  window._guestResolvedClient = null;
   document.getElementById('qoProductSearch').value = '';
   document.getElementById('qoAddProductSelect').value = '';
   document.getElementById('qoAddProductQty').value = '1';
@@ -352,7 +355,8 @@ function closeQuickOrderModal() {
   document.getElementById('quickOrderModal').classList.remove('open');
 }
 
-async function submitQuickOrder() {
+async function submitQuickOrder(event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
   if (!currentQuickOrderItems.length) {
     showToast('⚠️ يرجى إضافة مادة واحدة على الأقل', 'error');
     return;
@@ -376,8 +380,9 @@ function proceedQuickOrderCheckout(items, hasCustomItem) {
   window._qoLocationLat = null;
   window._qoLocationLng = null;
 
-  const missingInfo = !currentUser || !currentUser.clinic || !currentUser.phone;
-  const missingLocation = !currentUser || !((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
+  const clientSession = getActiveClientSession();
+  const missingInfo = !clientSession || !clientSession.clinic || !clientSession.phone;
+  const missingLocation = !clientSession || !((clientSession.profileLocationText && clientSession.profileLocationText.trim()) || (clientSession.profileLocationLat && clientSession.profileLocationLng));
 
   if (!missingInfo && !missingLocation) {
     finalizeQuickOrderSend();
@@ -389,16 +394,19 @@ function proceedQuickOrderCheckout(items, hasCustomItem) {
 }
 
 function openQOInfoModal() {
-  document.getElementById('qoClinicInput').value = (currentUser && currentUser.clinic) || '';
-  document.getElementById('qoDoctorInput').value = (currentUser && currentUser.name) || '';
-  document.getElementById('qoPhoneInput').value  = (currentUser && currentUser.phone) || '';
+  const clientSession = getActiveClientSession();
+  document.getElementById('qoClinicInput').value = (clientSession && clientSession.clinic) || '';
+  document.getElementById('qoDoctorInput').value = (clientSession && clientSession.name) || '';
+  document.getElementById('qoPhoneInput').value  = (clientSession && clientSession.phone) || '';
+  if (!clientSession) window._guestResolvedClient = null;
   document.getElementById('qoInfoError').style.display = 'none';
   document.getElementById('qoInfoModal').classList.add('open');
 }
 function closeQOInfoModal() {
   document.getElementById('qoInfoModal').classList.remove('open');
 }
-function submitQOInfo() {
+async function submitQOInfo(event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
   const clinic = document.getElementById('qoClinicInput').value.trim();
   const doctor = document.getElementById('qoDoctorInput').value.trim();
   const phone  = document.getElementById('qoPhoneInput').value.trim();
@@ -409,6 +417,7 @@ function submitQOInfo() {
   window._qoClinic = clinic;
   window._qoDoctor = doctor;
   window._qoPhone  = phone;
+  if (!getActiveClientSession()) await autofillClientByPhone('qoPhoneInput', 'qoDoctorInput', 'qoClinicInput');
   closeQOInfoModal();
 
   const hasLocation = currentUser && ((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
@@ -485,7 +494,8 @@ function openQOLocationModal() {
 function closeQOLocationModal() {
   document.getElementById('qoLocationModal').classList.remove('open');
 }
-function submitQOLocation() {
+function submitQOLocation(event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
   const manualVal = document.getElementById('qoAddressInput').value.trim();
   if (!qoLocationData.lat && !manualVal) {
     document.getElementById('qoLocationError').classList.add('show');
@@ -501,14 +511,16 @@ function submitQOLocation() {
 async function finalizeQuickOrderSend() {
   const items = window._qoItems || [];
   const hasCustomItem = window._qoHasCustom;
+  const clientSession = getActiveClientSession();
+  const guestClient = clientSession || window._guestResolvedClient || null;
 
-  const clinic = window._qoClinic || (currentUser ? currentUser.clinic : '') || '';
-  const doctor = window._qoDoctor || (currentUser ? currentUser.name   : '') || '';
-  const phone  = window._qoPhone  || (currentUser ? currentUser.phone  : '') || '';
+  const clinic = window._qoClinic || (guestClient ? guestClient.clinic : '') || '';
+  const doctor = window._qoDoctor || (guestClient ? guestClient.name : '') || '';
+  const phone  = window._qoPhone  || (guestClient ? guestClient.phone : '') || '';
 
-  const locText = window._qoLocationText || (currentUser ? currentUser.profileLocationText : '') || '';
-  const locLat  = window._qoLocationLat  || (currentUser ? currentUser.profileLocationLat  : null);
-  const locLng  = window._qoLocationLng  || (currentUser ? currentUser.profileLocationLng  : null);
+  const locText = window._qoLocationText || (guestClient ? guestClient.profileLocationText : '') || '';
+  const locLat  = window._qoLocationLat  || (guestClient ? guestClient.profileLocationLat  : null);
+  const locLng  = window._qoLocationLng  || (guestClient ? guestClient.profileLocationLng  : null);
   const address = locText || (locLat && locLng ? `${t('خط العرض','Lat')}: ${locLat}, ${t('خط الطول','Lng')}: ${locLng}` : '');
 
   try {
@@ -522,8 +534,8 @@ async function finalizeQuickOrderSend() {
       const order = {
         id: orderNum,
         clientName: doctor,
-        clientEmail: currentUser ? currentUser.email : 'guest',
-        clientUid: currentUser ? currentUser.uid : null,
+        clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
+        clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, doctor, phone,
         address, locationLat: locLat || null, locationLng: locLng || null,
         notes: fromQuoteDocId ? `طلب ناتج عن عرض سعر مقبول #${fromQuoteIdStr}` : 'تم الإرسال عبر ميزة الطلب السريع',
@@ -557,8 +569,8 @@ async function finalizeQuickOrderSend() {
       const quote = {
         id: quoteNum,
         clientName: doctor,
-        clientEmail: currentUser ? currentUser.email : 'guest',
-        clientUid: currentUser ? currentUser.uid : null,
+        clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
+        clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, phone,
         items: items.map(i => ({ productId: i.productId, ar: i.ar, en: i.en, icon: i.icon, image: i.image || null, isCustom: i.isCustom, qty: i.qty, unitPrice: i.unitPrice || null })),
         notes: `تم الإرسال عبر ميزة الطلب السريع${address ? ' — الموقع: ' + address : ''}`,
@@ -582,15 +594,18 @@ async function finalizeQuickOrderSend() {
     window._qoQuoteDocId = null; window._qoQuoteIdStr = null;
   }
 }
-async function submitQuoteRequest() {
+async function submitQuoteRequest(event) {
+  if (event) { event.preventDefault(); event.stopPropagation(); }
   const showErr = msg => {
     document.getElementById('quoteFormErrorMsg').textContent = msg;
     document.getElementById('quoteFormError').style.display = 'block';
   };
   if (!currentQuoteItems.length) return showErr('يرجى إضافة مادة واحدة على الأقل');
 
+  const clientSession = getActiveClientSession();
   let guestName = '', guestPhone = '', guestClinic = '';
-  if (!currentUser) {
+  let guestClient = clientSession;
+  if (!clientSession) {
     guestName   = document.getElementById('quoteGuestName').value.trim();
     guestPhone  = document.getElementById('quoteGuestPhone').value.trim();
     guestClinic = document.getElementById('quoteGuestClinic').value.trim();
@@ -600,6 +615,8 @@ async function submitQuoteRequest() {
     if (guestPhone.length < 7) {
       return showErr('رقم الهاتف غير صحيح');
     }
+    guestClient = await findRegisteredClientByPhone(guestPhone);
+    window._guestResolvedClient = guestClient || null;
   }
 
   let attachedImageUrl = null;
@@ -618,11 +635,11 @@ async function submitQuoteRequest() {
 
   const quote = {
     id: quoteNum,
-    clientName: currentUser ? currentUser.name : guestName,
-    clientEmail: currentUser ? currentUser.email : 'guest',
-    clientUid: currentUser ? currentUser.uid : null,
-    clinic: currentUser ? (currentUser.clinic || '') : guestClinic,
-    phone: currentUser ? (currentUser.phone || '') : guestPhone,
+    clientName: guestClient ? guestClient.name : guestName,
+    clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
+    clientUid: guestClient ? (guestClient.uid || null) : null,
+    clinic: guestClient ? (guestClient.clinic || guestClinic || '') : guestClinic,
+    phone: guestClient ? (guestClient.phone || guestPhone) : guestPhone,
     items: currentQuoteItems.map(it => {
       const p = it.productId ? products.find(x => x.id === it.productId) : null;
       return {
