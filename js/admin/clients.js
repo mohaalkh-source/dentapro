@@ -12,6 +12,7 @@ async function openClientsListModal() {
   document.getElementById('clientsListModal').classList.add('open');
   document.getElementById('clientsListSearch').value = '';
   document.getElementById('clientsListSort').value = 'name';
+  document.getElementById('clientsListType').value = 'all';
   document.getElementById('clientsListBody').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>جاري تحميل العملاء...</div>`;
   try {
     const allUsers = await fetchAllUsersList();
@@ -85,11 +86,18 @@ function renderClientsList() {
   const term = normalizeArabic(rawSearch);
   const termDigits = rawSearch.replace(/\D/g,'');
   const sortMode = document.getElementById('clientsListSort').value;
+  const typeMode = document.getElementById('clientsListType').value;
 
   let list = _cachedClientsList.filter(u => {
+    const isMember = !u.isGuest;
+    if (typeMode === 'members' && !isMember) return false;
+    if (typeMode === 'guests' && isMember) return false;
     if (!rawSearch.trim()) return true;
-    const nameMatch = normalizeArabic(u.firstName||u.name||'').includes(term) || normalizeArabic(u.clinic||'').includes(term);
-    const phoneMatch = termDigits.length >= 3 && (u.phone||'').replace(/\D/g,'').includes(termDigits);
+    const searchableName = normalizeArabic(u.firstName||u.name||'');
+    const searchableClinic = normalizeArabic(u.clinic||'');
+    const normalizedPhone = normalizePhone(u.phone || '');
+    const nameMatch = searchableName.includes(term) || searchableClinic.includes(term);
+    const phoneMatch = termDigits.length > 0 && (normalizedPhone.includes(termDigits) || (u.phone||'').replace(/\D/g,'').includes(termDigits));
     return nameMatch || phoneMatch;
   });
 
@@ -99,7 +107,8 @@ function renderClientsList() {
     list = [...list].sort((a,b) => (a.firstName||a.name||'').localeCompare(b.firstName||b.name||'', 'ar'));
   }
 
-  document.getElementById('clientsListCount').textContent = `إجمالي العملاء: ${list.length}`;
+  const typeLabel = typeMode === 'members' ? 'الأعضاء' : (typeMode === 'guests' ? 'غير الأعضاء' : 'الكل');
+  document.getElementById('clientsListCount').textContent = `${typeLabel}: ${list.length}`;
   const body = document.getElementById('clientsListBody');
   if (!list.length) {
     body.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)"><i class="fas fa-user-slash" style="font-size:40px;opacity:0.2;display:block;margin-bottom:12px"></i>لا يوجد عملاء مطابقون</div>`;
