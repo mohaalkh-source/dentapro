@@ -46,6 +46,50 @@ async function findRegisteredClientByPhone(phone) {
   } : null;
 }
 
+// دمج الطلبات السابقة كزائر (سلة + طلب سريع + طلب عرض سعر) مع الحساب الجديد
+// عند التسجيل، بناءً على تطابق رقم الهاتف. لا يمس أي طلبات أخرى ولا يغيّر
+// مسار الحفظ الحالي — يعمل فقط بعد نجاح التسجيل كخطوة إضافية منفصلة.
+async function mergeGuestOrdersIntoAccount({ uid, email, name, clinic, phone }) {
+  const normalized = normalizeClientPhone(phone);
+  if (!normalized) return;
+  try {
+    // 1) طلبات السلة + الطلب السريع (مجموعة orders)
+    if (window._fbGetDocs && window._fbOrdersRef && window._fbUpdateDoc && window._fbDoc2) {
+      const ordersSnap = await window._fbGetDocs(window._fbOrdersRef());
+      const guestOrders = ordersSnap.docs.filter(d => {
+        const o = d.data();
+        return o.clientEmail === 'guest' && normalizeClientPhone(o.phone) === normalized;
+      });
+      await Promise.all(guestOrders.map(d =>
+        window._fbUpdateDoc(window._fbDoc2('orders', d.id), {
+          clientEmail: email, clientName: name, clientUid: uid,
+          doctor: name, clinic: clinic
+        }).catch(e => console.warn('دمج الطلب فشل:', d.id, e.message))
+      ));
+
+      // 2) طلبات عروض الأسعار (مجموعة quotes)
+      if (window._fbCollection && window._db) {
+        const quotesSnap = await window._fbGetDocs(window._fbCollection(window._db, 'quotes'));
+        const guestQuotes = quotesSnap.docs.filter(d => {
+          const q = d.data();
+          return q.clientEmail === 'guest' && normalizeClientPhone(q.phone) === normalized;
+        });
+        await Promise.all(guestQuotes.map(d =>
+          window._fbUpdateDoc(window._fbDoc2('quotes', d.id), {
+            clientEmail: email, clientName: name, clientUid: uid, clinic: clinic
+          }).catch(e => console.warn('دمج طلب العرض فشل:', d.id, e.message))
+        ));
+
+        if (guestOrders.length || guestQuotes.length) {
+          console.log(`✅ تم ربط ${guestOrders.length + guestQuotes.length} طلب/طلبات سابقة كزائر بالحساب الجديد`);
+        }
+      }
+    }
+  } catch (e) {
+    console.warn('mergeGuestOrdersIntoAccount failed:', e.message);
+  }
+}
+
 async function autofillClientByPhone(phoneId, nameId, clinicId) {
   const phoneEl = document.getElementById(phoneId);
   if (!phoneEl || normalizeClientPhone(phoneEl.value).length < 7) return null;
@@ -353,6 +397,11 @@ async function doRegister() {
       profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
       uid: fbUser.uid });
     logActivity('register');
+
+    // دمج طلباته السابقة كزائر (إن وجدت) مع حسابه الجديد — لا يوقف واجهة المستخدم
+    // وما بيأثر على تجربة التسجيل حتى لو تأخر أو فشل بصمت
+    mergeGuestOrdersIntoAccount({ uid: fbUser.uid, email, name: firstName, clinic, phone })
+      .catch(e => console.warn('guest orders merge skipped:', e.message));
 
   } catch(e) {
     console.error('Register error:', e.code);
