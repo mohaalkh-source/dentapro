@@ -3,6 +3,11 @@
 // =====================
 var _cachedClientsList = [];
 
+// يوحّد رقم الهاتف لآخر 9 أرقام (يتجاهل رمز الدولة والأصفار البادئة) لمطابقة دقيقة
+function normalizePhone(phone) {
+  return (phone || '').replace(/\D/g, '').slice(-9);
+}
+
 async function openClientsListModal() {
   document.getElementById('clientsListModal').classList.add('open');
   document.getElementById('clientsListSearch').value = '';
@@ -14,11 +19,54 @@ async function openClientsListModal() {
     const localUsers = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
     localUsers.forEach(lu => { if (!users.find(u => u.email === lu.email)) users.push(lu); });
 
-    // حساب مجموع مشتريات كل عميل مرة واحدة لاستخدامه بالترتيب
-    const ordersSnap = await window._fbGetDocs(window._fbOrdersRef());
+    const [ordersSnap, allQuotes] = await Promise.all([
+      window._fbGetDocs(window._fbOrdersRef()),
+      getAllQuotes()
+    ]);
     const allOrders = ordersSnap.docs.map(d => d.data());
+
+    // خريطة أرقام هواتف العملاء المسجّلين، لربط طلبات الزوار المطابقة بحسابهم تلقائياً بدل اعتبارها منفصلة
+    const phoneToUser = {};
+    users.forEach(u => { const p = normalizePhone(u.phone); if (p) phoneToUser[p] = u; });
+
+    // حساب مشتريات كل عميل مسجّل من طلباته المرتبطة بإيميله
     users.forEach(u => {
       u.totalSpent = allOrders.filter(o => o.clientEmail === u.email).reduce((s,o) => s + (o.total||0), 0);
+    });
+
+    // تجميع طلبات وعروض أسعار الزوار (clientEmail === 'guest') حسب رقم الهاتف
+    const guestGroups = {};
+    const guestItems = [
+      ...allOrders.filter(o => o.clientEmail === 'guest').map(o => ({...o, _kind:'order'})),
+      ...(allQuotes || []).filter(q => q.clientEmail === 'guest').map(q => ({...q, _kind:'quote'}))
+    ];
+    guestItems.forEach(item => {
+      const p = normalizePhone(item.phone);
+      if (!p) return;
+      if (!guestGroups[p]) guestGroups[p] = [];
+      guestGroups[p].push(item);
+    });
+
+    Object.keys(guestGroups).forEach(phone => {
+      const items = guestGroups[phone];
+      const spent = items.filter(i => i._kind === 'order').reduce((s,o) => s + (o.total||0), 0);
+      const matchedUser = phoneToUser[phone];
+      if (matchedUser) {
+        // رقم هاتف الزائر يطابق عميل مسجّل فعلياً — يُحسب ضمن مشترياته، مو كعميل منفصل
+        matchedUser.totalSpent = (matchedUser.totalSpent || 0) + spent;
+        return;
+      }
+      // زائر جديد بالكامل — يُعرض كـ"عميل" مؤقت بالقائمة
+      const latest = [...items].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt))[0];
+      users.push({
+        uid: '',
+        email: 'guest:' + phone,
+        firstName: latest.clientName || latest.doctor || 'زائر',
+        clinic: latest.clinic || '',
+        phone: latest.phone || phone,
+        isGuest: true,
+        totalSpent: spent,
+      });
     });
 
     users.sort((a,b) => (a.firstName||a.name||'').localeCompare(b.firstName||b.name||'', 'ar'));
@@ -33,12 +81,16 @@ function closeClientsListModal() {
 }
 
 function renderClientsList() {
-  const term = normalizeArabic(document.getElementById('clientsListSearch').value);
+  const rawSearch = document.getElementById('clientsListSearch').value;
+  const term = normalizeArabic(rawSearch);
+  const termDigits = rawSearch.replace(/\D/g,'');
   const sortMode = document.getElementById('clientsListSort').value;
 
   let list = _cachedClientsList.filter(u => {
-    if (!term) return true;
-    return normalizeArabic(u.firstName||u.name||'').includes(term) || normalizeArabic(u.clinic||'').includes(term);
+    if (!rawSearch.trim()) return true;
+    const nameMatch = normalizeArabic(u.firstName||u.name||'').includes(term) || normalizeArabic(u.clinic||'').includes(term);
+    const phoneMatch = termDigits.length >= 3 && (u.phone||'').replace(/\D/g,'').includes(termDigits);
+    return nameMatch || phoneMatch;
   });
 
   if (sortMode === 'spent') {
@@ -64,7 +116,7 @@ function renderClientsList() {
     list.map((u, idx) => `
     <div onclick="openClientDetailModal('${u.uid||''}','${u.email}')" style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:14px 18px;border-bottom:1px solid #f0f4f8;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
       <div style="font-weight:800;color:var(--text-muted)">${idx+1}</div>
-      <div style="font-weight:700;color:var(--primary-dark)">${escHtml(u.firstName||u.name||'—')}</div>
+      <div style="font-weight:700;color:var(--primary-dark)">${escHtml(u.firstName||u.name||'—')} ${u.isGuest ? '<span style="font-size:10px;background:#fff7ed;color:#c2410c;border-radius:50px;padding:2px 8px;font-weight:800;margin-right:4px">غير مسجّل</span>' : ''}</div>
       <div style="color:var(--text-muted)">${escHtml(u.clinic||'—')}</div>
       ${showSpentCol ? `<div style="font-weight:800;color:var(--primary)">${(u.totalSpent||0).toLocaleString()} د.أ</div>` : ''}
     </div>`).join('');
@@ -74,41 +126,61 @@ async function openClientDetailModal(uid, email) {
   document.getElementById('clientDetailModal').classList.add('open');
   document.getElementById('clientDetailBody').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>جاري التحميل...</div>`;
 
+  const isGuest = email.startsWith('guest:');
+  const guestPhone = isGuest ? email.slice(6) : null;
+
   try {
     let u = _cachedClientsList.find(x => x.email === email);
-    if (!u) {
+    if (!u && !isGuest) {
       const allUsers = await fetchAllUsersList();
       u = allUsers.find(x => x.email === email) || { email, firstName:'عميل', clinic:'' };
     }
-    if (!uid) uid = u.uid;
+    if (!uid) uid = u ? u.uid : '';
 
     const [ordersSnap, allQuotes, balance] = await Promise.all([
       window._fbGetDocs(window._fbOrdersRef()),
       getAllQuotes(),
-      getClientPoints(uid)
+      isGuest ? Promise.resolve(0) : getClientPoints(uid)
     ]);
-    const allOrders = ordersSnap.docs.map(d => d.data()).filter(o => o.clientEmail === email);
-    const clientQuotes = (allQuotes || []).filter(q => q.clientEmail === email);
+
+    let allOrders, clientQuotes;
+    if (isGuest) {
+      allOrders = ordersSnap.docs.map(d => d.data()).filter(o => o.clientEmail === 'guest' && normalizePhone(o.phone) === guestPhone);
+      clientQuotes = (allQuotes || []).filter(q => q.clientEmail === 'guest' && normalizePhone(q.phone) === guestPhone);
+    } else {
+      const uPhone = normalizePhone(u.phone);
+      allOrders = ordersSnap.docs.map(d => d.data()).filter(o =>
+        o.clientEmail === email || (uPhone && o.clientEmail === 'guest' && normalizePhone(o.phone) === uPhone)
+      );
+      clientQuotes = (allQuotes || []).filter(q =>
+        q.clientEmail === email || (uPhone && q.clientEmail === 'guest' && normalizePhone(q.phone) === uPhone)
+      );
+    }
     const totalSpent = allOrders.reduce((s,o) => s + (o.total||0), 0);
 
     let regDate = '—';
-    if (u.createdAt) {
+    if (u && u.createdAt) {
       const d = typeof u.createdAt === 'number' ? new Date(u.createdAt) : new Date(u.createdAt);
       if (!isNaN(d)) regDate = d.toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric' });
     }
 
-    const gpsLink = (u.profileLocationLat && u.profileLocationLng)
+    const gpsLink = (u && u.profileLocationLat && u.profileLocationLng)
       ? `<a href="https://www.google.com/maps?q=${u.profileLocationLat},${u.profileLocationLng}" target="_blank" style="color:var(--primary);text-decoration:underline"><i class="fas fa-map-marked-alt"></i> عرض على خرائط جوجل</a>`
       : `<span style="color:var(--text-muted)">غير محدد</span>`;
+
+    const nameDisplay = u ? (u.firstName||u.name||'عميل') : 'زائر';
+    const clinicDisplay = u ? (u.clinic||'') : '';
+    const phoneDisplay = u ? (u.phone||'') : ((allOrders[0]&&allOrders[0].phone) || (clientQuotes[0]&&clientQuotes[0].phone) || guestPhone);
+    const waLink = phoneDisplay ? `https://wa.me/${phoneDisplay.replace(/\D/g,'')}` : null;
 
     document.getElementById('clientDetailBody').innerHTML = `
       <div style="display:flex;align-items:center;gap:16px;padding:20px;background:linear-gradient(135deg,rgba(10,92,138,0.06),rgba(0,194,168,0.04));border-radius:16px;border:1px solid var(--border);margin-bottom:20px">
         <div style="width:60px;height:60px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;font-weight:900;flex-shrink:0">
-          ${escHtml((u.firstName||u.name||'؟').charAt(0))}
+          ${escHtml((nameDisplay||'؟').charAt(0))}
         </div>
         <div style="flex:1;min-width:0">
-          <div style="font-weight:900;font-size:18px;color:var(--primary-dark)">${escHtml(u.firstName||u.name||'عميل')}</div>
-          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${escHtml(email)}</div>
+          <div style="font-weight:900;font-size:18px;color:var(--primary-dark)">${escHtml(nameDisplay)} ${isGuest ? '<span style="font-size:11px;background:#fff7ed;color:#c2410c;border-radius:50px;padding:3px 10px;font-weight:800;margin-right:6px">غير مسجّل — عبر الهاتف</span>' : ''}</div>
+          <div style="font-size:13px;color:var(--text-muted);margin-top:2px">${isGuest ? escHtml(phoneDisplay||'') : escHtml(email)}</div>
         </div>
       </div>
 
@@ -116,12 +188,13 @@ async function openClientDetailModal(uid, email) {
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:16px">
           <div>
             <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:4px">اسم الطبيب</div>
-            <div style="font-weight:700;font-size:14px;color:var(--text)">${escHtml(u.firstName||u.name||'—')}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--text)">${escHtml(nameDisplay||'—')}</div>
           </div>
           <div>
             <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:4px">اسم العيادة</div>
-            <div style="font-weight:700;font-size:14px;color:var(--text)">${escHtml(u.clinic||'—')}</div>
+            <div style="font-weight:700;font-size:14px;color:var(--text)">${escHtml(clinicDisplay||'—')}</div>
           </div>
+          ${!isGuest ? `
           <div style="grid-column:1/-1">
             <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:4px"><i class="fas fa-map-marker-alt"></i> موقع العيادة (وصف يدوي)</div>
             <div style="font-size:13px">${u.profileLocationText ? escHtml(u.profileLocationText) : '<span style="color:var(--text-muted)">غير محدد</span>'}</div>
@@ -134,6 +207,12 @@ async function openClientDetailModal(uid, email) {
             <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:4px">تاريخ التسجيل</div>
             <div style="font-weight:700;font-size:13px;color:var(--text)">${regDate}</div>
           </div>
+          ` : `
+          <div style="grid-column:1/-1">
+            <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:4px"><i class="fas fa-phone-alt"></i> رقم الهاتف</div>
+            <div style="font-size:13px;font-weight:700">${escHtml(phoneDisplay||'—')}</div>
+          </div>
+          `}
           <div>
             <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:4px">إجمالي المشتريات</div>
             <div style="font-weight:900;font-size:16px;color:var(--primary)">${totalSpent.toLocaleString()} د.أ</div>
@@ -141,40 +220,49 @@ async function openClientDetailModal(uid, email) {
         </div>
       </div>
 
+      ${!isGuest ? `
       <div style="background:linear-gradient(135deg,#fffbeb,#fef3c7);border:2px solid #f59e0b;border-radius:16px;padding:18px;margin-bottom:16px;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
         <div>
           <div style="font-size:12px;color:#92400e;font-weight:700;margin-bottom:4px">🏆 رصيد النقاط</div>
           <div style="font-size:24px;font-weight:900;color:#d97706">${balance} نقطة</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="add-points-btn" onclick="openAddPointsModal('${uid}','${email}','${escHtml(u.firstName||u.name||'عميل')}','${escHtml(u.clinic||'')}',${balance},'add')">
+          <button class="add-points-btn" onclick="openAddPointsModal('${uid}','${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}',${balance},'add')">
             <i class="fas fa-plus"></i> إضافة
           </button>
-          <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030)" onclick="openAddPointsModal('${uid}','${email}','${escHtml(u.firstName||u.name||'عميل')}','${escHtml(u.clinic||'')}',${balance},'deduct')">
+          <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030)" onclick="openAddPointsModal('${uid}','${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}',${balance},'deduct')">
             <i class="fas fa-minus"></i> خصم
           </button>
         </div>
       </div>
+      ` : ''}
 
       <div style="display:flex;gap:10px;flex-wrap:wrap">
+        ${!isGuest ? `
         <button onclick="openAdminThreadModal('${email}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-comment-dots"></i> مراسلة العميل
         </button>
+        ` : (waLink ? `
+        <a href="${waLink}" target="_blank" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;text-decoration:none">
+          <i class="fab fa-whatsapp"></i> تواصل عبر واتساب
+        </a>
+        ` : '')}
         <button onclick="openClientAllOrdersModal('${email}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-receipt"></i> طلباته (${allOrders.length + clientQuotes.length})
         </button>
-        <button onclick="openAdminSendOrderModal('${email}','${uid||''}','${escHtml(u.firstName||u.name||'عميل')}','${escHtml(u.clinic||'')}','${escHtml(u.phone||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        ${!isGuest ? `
+        <button onclick="openAdminSendOrderModal('${email}','${uid||''}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}','${escHtml(phoneDisplay||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-paper-plane"></i> إرسال طلبية
         </button>
-        <button onclick="openClientOrdersReportModal('${email}','${escHtml(u.firstName||u.name||'عميل')}','${escHtml(u.clinic||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#7e22ce,#a855f7);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <button onclick="openClientOrdersReportModal('${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#7e22ce,#a855f7);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-file-invoice"></i> تفاصيل طلبات العميل
         </button>
+        ` : ''}
       </div>
     `;
 
     window._cachedClientDetailOrders = allOrders;
     window._cachedClientDetailQuotes = clientQuotes;
-    // دمج مع الكاش العام حتى تعمل شاشات التفاصيل الجاهزة (showAdminOrderDetail / showQuoteOrderDetail) بدون تكرار كود
     const existingCachedOrders = window._cachedOrders || [];
     allOrders.forEach(o => { if (!existingCachedOrders.find(x => x.id === o.id)) existingCachedOrders.push(o); });
     window._cachedOrders = existingCachedOrders;
