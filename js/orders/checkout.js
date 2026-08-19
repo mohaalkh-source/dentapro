@@ -24,7 +24,6 @@ function openQuoteRequestModal() {
     document.getElementById('quoteGuestPhone').value = '';
     document.getElementById('quoteGuestClinic').value = '';
     window._guestResolvedClient = null;
-    setGuestContactFieldsLocked(['quoteGuestPhone','quoteGuestName','quoteGuestClinic'], false);
   }
 
   renderQuoteItemsList();
@@ -189,29 +188,6 @@ function removeQuoteItemRowByIdx(idx) {
 // =====================
 // QUICK ORDER (طلب سريع)
 // =====================
-
-function setGuestContactFieldsLocked(ids, locked) {
-  ids.forEach(id => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    el.readOnly = locked;
-    el.style.background = locked ? '#f1f5f9' : '';
-    el.style.cursor = locked ? 'not-allowed' : '';
-  });
-}
-
-async function autofillQuoteGuestByPhone() {
-  const client = await autofillClientByPhone('quoteGuestPhone', 'quoteGuestName', 'quoteGuestClinic');
-  setGuestContactFieldsLocked(['quoteGuestPhone','quoteGuestName','quoteGuestClinic'], !!client);
-  return client;
-}
-
-async function autofillQuickOrderGuestByPhone() {
-  const client = await autofillClientByPhone('qoPhoneInput', 'qoDoctorInput', 'qoClinicInput');
-  setGuestContactFieldsLocked(['qoPhoneInput','qoDoctorInput','qoClinicInput'], !!client);
-  return client;
-}
-
 var currentQuickOrderItems = [];
 
 function showQOProductList() {
@@ -358,8 +334,6 @@ function updateQuickOrderTotal() {
 function openQuickOrderModal() {
   currentQuickOrderItems = [];
   window._guestResolvedClient = null;
-  setGuestContactFieldsLocked(['qoPhoneInput','qoDoctorInput','qoClinicInput'], false);
-  window._guestResolvedClient = null;
   document.getElementById('qoProductSearch').value = '';
   document.getElementById('qoAddProductSelect').value = '';
   document.getElementById('qoAddProductQty').value = '1';
@@ -442,7 +416,9 @@ async function submitQOInfo(event) {
   window._qoClinic = clinic;
   window._qoDoctor = doctor;
   window._qoPhone  = phone;
-  if (!getActiveClientSession()) await autofillQuickOrderGuestByPhone();
+  if (!getActiveClientSession() && typeof findRegisteredClientByPhone === 'function') {
+    window._guestResolvedClient = await findRegisteredClientByPhone(phone);
+  }
   closeQOInfoModal();
 
   const hasLocation = currentUser && ((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
@@ -640,7 +616,7 @@ async function submitQuoteRequest(event) {
     if (guestPhone.length < 7) {
       return showErr('رقم الهاتف غير صحيح');
     }
-    guestClient = await autofillQuoteGuestByPhone();
+    guestClient = await findRegisteredClientByPhone(guestPhone);
     window._guestResolvedClient = guestClient || null;
   }
 
