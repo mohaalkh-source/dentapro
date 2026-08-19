@@ -433,7 +433,8 @@ async function submitQOInfo(event) {
   }
   closeQOInfoModal();
 
-  const hasLocation = currentUser && ((currentUser.profileLocationText && currentUser.profileLocationText.trim()) || (currentUser.profileLocationLat && currentUser.profileLocationLng));
+  const sessionForLocation = getActiveClientSession() || window._guestResolvedClient || null;
+  const hasLocation = sessionForLocation && ((sessionForLocation.profileLocationText && sessionForLocation.profileLocationText.trim()) || (sessionForLocation.profileLocationLat && sessionForLocation.profileLocationLng));
   if (hasLocation) {
     finalizeQuickOrderSend();
   } else {
