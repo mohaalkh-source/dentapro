@@ -267,18 +267,19 @@ function loginSuccess(user) {
 function showClientWelcome(user) {
   const existing = document.getElementById('clientWelcomeBanner');
   if (existing) existing.remove();
-  const hero = document.querySelector('.hero-content');
-  if (!hero) return;
+  const host = document.getElementById('sessionWelcomeHost') || document.querySelector('.hero-content');
+  if (!host) return;
   const banner = document.createElement('div');
   banner.id = 'clientWelcomeBanner';
   banner.className = 'welcome-banner';
+  banner.style.marginBottom = '0';
   banner.innerHTML = `
     <i class="fas fa-hand-sparkles"></i>
     <div>
       <div style="font-weight:800;font-size:15px;color:var(--primary-dark)">أهلاً بك ${user.name}! ${user.clinic ? '— ' + user.clinic : ''}</div>
       <div style="font-size:13px;color:#fff;margin-top:2px">تمتع بأسعار العيادات الحصرية وتتبع طلباتك</div>
     </div>`;
-  hero.insertBefore(banner, hero.firstChild);
+  host.appendChild(banner);
 }
 
 function detectRegLocation() {
