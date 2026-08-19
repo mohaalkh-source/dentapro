@@ -134,6 +134,21 @@ function trackStepsHTML(currentStatus) {
   `</div>`;
 }
 
+
+
+function normalizeAdminPhone(phone) { return (phone || '').replace(/\D/g, '').slice(-9); }
+async function normalizeAdminIdentity(records) {
+  let users = [];
+  try { users = await fetchAllUsersList(); } catch(e) { return records; }
+  const byPhone = {};
+  users.filter(u => u.role === 'client').forEach(u => { const p = normalizeAdminPhone(u.phone); if (p) byPhone[p] = u; });
+  return records.map(r => {
+    const u = byPhone[normalizeAdminPhone(r.phone)];
+    if (!u) return r;
+    return { ...r, clientName: u.firstName || u.name || r.clientName, clinic: u.clinic || r.clinic, doctor: u.firstName || u.name || r.doctor, clientEmail: u.email || r.clientEmail, clientUid: u.uid || r.clientUid, phone: u.phone || r.phone };
+  });
+}
+
 // ── CLIENT ORDERS ──
 function openClientOrders() {
   if (!currentUser) { openAuthModal('login'); return; }
@@ -475,7 +490,8 @@ async function renderAdminOrders() {
   try {
     const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
     const snap = await window._fbGetDocs(q);
-    const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    let orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    orders = await normalizeAdminIdentity(orders);
     window._cachedOrders = orders;
 
     const pending = orders.filter(o => !['delivered','cancelled'].includes(o.status)).length;
