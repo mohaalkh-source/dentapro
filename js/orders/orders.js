@@ -954,8 +954,6 @@ function sendWhatsAppQuote(docId) {
   const quotes = window._cachedAdminQuotes || [];
   const q = quotes.find(x => x._docId === docId);
   if (!q) return;
-
-  const hasPricing = q.items.every(i => Number(i.qty) > 0 && Number(i.unitPrice) > 0);
   const itemsTxt = q.items.map(i => {
     const qty = Number(i.qty) || 0;
     const unitPrice = Number(i.unitPrice) || 0;
@@ -963,17 +961,12 @@ function sendWhatsAppQuote(docId) {
     return `• ${i.ar} — الكمية: ${qty} — سعر الوحدة: ${unitPrice.toLocaleString()} د.أ — الإجمالي: ${lineTotal.toLocaleString()} د.أ`;
   }).join('\n');
   const total = getQuoteTotal(q);
-  const offerText = hasPricing
-    ? `تفاصيل العرض المعتمد:\n${itemsTxt}\n\n*الإجمالي الكلي: ${total.toLocaleString()} د.أ*`
-    : `تفاصيل المواد المطلوبة:\n${itemsTxt}\n\nلم يتم اعتماد السعر النهائي بعد.`;
   const msg = encodeURIComponent(
-    `🦷 *DentaPro — بخصوص طلب عرض السعر #${q.id}*\n\nمرحباً ${q.clientName}،\n\n${offerText}\n\nنشكرك لاختيارك DentaPro.`
+    `🦷 *DentaPro — بخصوص طلب عرض السعر #${q.id}*\n\nمرحباً ${q.clientName}،\n\n` +
+    `تفاصيل العرض المعتمد:\n${itemsTxt}\n\n*الإجمالي الكلي: ${total.toLocaleString()} د.أ*\n\nنشكرك لاختيارك DentaPro.`
   );
   const phone = formatPhoneForWhatsApp(q.phone);
-  if (!phone) {
-    showToast('❌ لا يوجد رقم هاتف صالح لهذا العميل', 'error');
-    return;
-  }
+  if (!phone) { showToast('❌ لا يوجد رقم هاتف صالح لهذا العميل', 'error'); return; }
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
 }
 
