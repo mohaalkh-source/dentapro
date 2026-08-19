@@ -3,6 +3,70 @@
 // =====================
 var currentUser = null;
 
+
+// هوية العميل الآمنة: لا نعتبر جلسة الإدارة عميلًا عند إرسال طلبات المتجر.
+function getActiveClientSession() {
+  return currentUser && currentUser.role === 'client' ? currentUser : null;
+}
+
+// توحيد الهاتف للمطابقة مع أرقام العملاء المسجلة بصيغ مختلفة.
+function normalizeClientPhone(phone) {
+  return (phone || '').replace(/\D/g, '').slice(-9);
+}
+
+// البحث عن عميل مسجل برقم الهاتف، مع دعم Firestore والتخزين المحلي القديم.
+async function findRegisteredClientByPhone(phone) {
+  const normalized = normalizeClientPhone(phone);
+  if (!normalized) return null;
+
+  try {
+    if (window._fbGetDocs && window._fbCollection && window._db) {
+      const snap = await window._fbGetDocs(window._fbCollection(window._db, 'users'));
+      const doc = snap.docs
+        .map(d => ({ ...d.data(), uid: d.id }))
+        .find(u => u.role === 'client' && normalizeClientPhone(u.phone) === normalized);
+      if (doc) {
+        return {
+          role: 'client', uid: doc.uid, email: doc.email || '',
+          name: doc.firstName || doc.name || 'عميل', clinic: doc.clinic || '',
+          phone: doc.phone || phone,
+          profileLocationText: doc.profileLocationText || '',
+          profileLocationLat: doc.profileLocationLat || null,
+          profileLocationLng: doc.profileLocationLng || null
+        };
+      }
+    }
+  } catch (e) {
+    console.warn('Phone client lookup failed:', e.message);
+  }
+
+  const localUsers = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+  const local = localUsers.find(u => u.role === 'client' && normalizeClientPhone(u.phone) === normalized);
+  return local ? {
+    role: 'client', uid: local.uid || null, email: local.email || '',
+    name: local.firstName || local.name || 'عميل', clinic: local.clinic || '',
+    phone: local.phone || phone,
+    profileLocationText: local.profileLocationText || '',
+    profileLocationLat: local.profileLocationLat || null,
+    profileLocationLng: local.profileLocationLng || null
+  } : null;
+}
+
+// يستدعى عند مغادرة حقل الهاتف لتعبئة بيانات العضو تلقائيًا دون تسجيل دخول.
+async function autofillClientByPhone(phoneId, nameId, clinicId) {
+  const phoneEl = document.getElementById(phoneId);
+  if (!phoneEl || normalizeClientPhone(phoneEl.value).length < 7) return null;
+  const client = await findRegisteredClientByPhone(phoneEl.value.trim());
+  window._guestResolvedClient = client || null;
+  if (!client) return null;
+  const nameEl = document.getElementById(nameId);
+  const clinicEl = document.getElementById(clinicId);
+  if (nameEl && !nameEl.value.trim()) nameEl.value = client.name || '';
+  if (clinicEl && !clinicEl.value.trim()) clinicEl.value = client.clinic || '';
+  showToast('✅ تم التعرف على بياناتك من رقم الهاتف', 'success');
+  return client;
+}
+
 // مراقب حالة الجلسة - Firebase Auth
 window.addEventListener('load', () => {
   window._fbAuthState(window._auth, async (fbUser) => {
