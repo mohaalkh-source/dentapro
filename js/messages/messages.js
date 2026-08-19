@@ -570,5 +570,5 @@ window.addEventListener('load', () => {
       splash.style.visibility = 'hidden';
       setTimeout(() => splash.remove(), 500);
     }
-  }, 1200);
+  }, 450);
 });
