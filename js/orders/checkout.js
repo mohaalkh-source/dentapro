@@ -398,7 +398,6 @@ function openQOInfoModal() {
   document.getElementById('qoClinicInput').value = (clientSession && clientSession.clinic) || '';
   document.getElementById('qoDoctorInput').value = (clientSession && clientSession.name) || '';
   document.getElementById('qoPhoneInput').value  = (clientSession && clientSession.phone) || '';
-  if (!clientSession) window._guestResolvedClient = null;
   document.getElementById('qoInfoError').style.display = 'none';
   document.getElementById('qoInfoModal').classList.add('open');
 }
