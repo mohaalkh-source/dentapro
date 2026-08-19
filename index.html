@@ -425,6 +425,28 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
             </button>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> <span data-ar="رقم الهاتف (واتساب)" data-en="Phone Number (WhatsApp)">رقم الهاتف (واتساب)</span> <span class="required">*</span></label>
+          <div class="phone-input-wrap">
+            <select class="country-code" id="countryCode">
+              <option value="+962" selected>🇯🇴 +962</option>
+              <option value="+966">🇸🇦 +966</option>
+              <option value="+971">🇦🇪 +971</option>
+              <option value="+965">🇰🇼 +965</option>
+              <option value="+973">🇧🇭 +973</option>
+              <option value="+974">🇶🇦 +974</option>
+              <option value="+968">🇴🇲 +968</option>
+              <option value="+213">🇩🇿 +213</option>
+              <option value="+216">🇹🇳 +216</option>
+              <option value="+212">🇲🇦 +212</option>
+            </select>
+            <div class="input-with-icon" style="flex:1">
+              <input type="tel" class="form-input" id="phoneNumber" placeholder="5xxxxxxxx" onblur="autofillOrderClientByPhone()">
+              <i class="fas fa-phone input-icon"></i>
+            </div>
+          </div>
+          <div class="field-error" id="phoneError"><i class="fas fa-exclamation-circle"></i> <span data-ar="رقم الهاتف غير صحيح" data-en="Invalid phone number">رقم الهاتف غير صحيح</span></div>
+        </div>
         <div class="form-row">
           <div class="form-group">
             <label class="form-label"><i class="fas fa-hospital" style="color:var(--primary-light)"></i> <span data-ar="اسم العيادة / المنشأة" data-en="Clinic / Business Name">اسم العيادة / المنشأة</span> <span class="required">*</span></label>
@@ -442,28 +464,6 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
             </div>
             <div class="field-error" id="doctorNameError"><i class="fas fa-exclamation-circle"></i> <span data-ar="هذا الحقل مطلوب" data-en="This field is required">هذا الحقل مطلوب</span></div>
           </div>
-        </div>
-        <div class="form-group">
-          <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> <span data-ar="رقم الهاتف (واتساب)" data-en="Phone Number (WhatsApp)">رقم الهاتف (واتساب)</span> <span class="required">*</span></label>
-          <div class="phone-input-wrap">
-            <select class="country-code" id="countryCode">
-              <option value="+962" selected>🇯🇴 +962</option>
-              <option value="+966">🇸🇦 +966</option>
-              <option value="+971">🇦🇪 +971</option>
-              <option value="+965">🇰🇼 +965</option>
-              <option value="+973">🇧🇭 +973</option>
-              <option value="+974">🇶🇦 +974</option>
-              <option value="+968">🇴🇲 +968</option>
-              <option value="+213">🇩🇿 +213</option>
-              <option value="+216">🇹🇳 +216</option>
-              <option value="+212">🇲🇦 +212</option>
-            </select>
-            <div class="input-with-icon" style="flex:1">
-              <input type="tel" class="form-input" id="phoneNumber" placeholder="5xxxxxxxx">
-              <i class="fas fa-phone input-icon"></i>
-            </div>
-          </div>
-          <div class="field-error" id="phoneError"><i class="fas fa-exclamation-circle"></i> <span data-ar="رقم الهاتف غير صحيح" data-en="Invalid phone number">رقم الهاتف غير صحيح</span></div>
         </div>
         <div class="form-group">
           <label class="form-label"><i class="fas fa-phone-alt" style="color:var(--text-muted)"></i> <span data-ar="رقم بديل (اختياري)" data-en="Alternate Phone (optional)">رقم بديل (اختياري)</span></label>
@@ -1692,12 +1692,12 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <div id="quoteGuestFields" style="display:none;margin-bottom:20px">
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label"><i class="fas fa-user" style="color:var(--primary-light)"></i> الاسم <span class="required">*</span></label>
-            <input type="text" class="form-input" id="quoteGuestName" placeholder="اسمك الكامل">
+            <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> رقم الهاتف <span class="required">*</span></label>
+            <input type="tel" class="form-input" id="quoteGuestPhone" placeholder="05xxxxxxxx" onblur="autofillQuoteGuestByPhone()">
           </div>
           <div class="form-group">
-            <label class="form-label"><i class="fas fa-phone" style="color:var(--primary-light)"></i> رقم الهاتف <span class="required">*</span></label>
-            <input type="tel" class="form-input" id="quoteGuestPhone" placeholder="05xxxxxxxx" onblur="autofillClientByPhone('quoteGuestPhone','quoteGuestName','quoteGuestClinic')">
+            <label class="form-label"><i class="fas fa-user" style="color:var(--primary-light)"></i> الاسم <span class="required">*</span></label>
+            <input type="text" class="form-input" id="quoteGuestName" placeholder="اسمك الكامل">
           </div>
         </div>
         <div class="form-group">
@@ -1824,16 +1824,16 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <i class="fas fa-info-circle" style="color:var(--primary)"></i> يرجى إدخال بياناتك لإتمام إرسال الطلب السريع
       </div>
       <div class="form-group">
+        <label class="form-label">رقم الهاتف (واتساب) <span class="required">*</span></label>
+        <input type="tel" class="form-input" id="qoPhoneInput" placeholder="07xxxxxxxx" onblur="autofillQuickOrderGuestByPhone()">
+      </div>
+      <div class="form-group">
         <label class="form-label">اسم العيادة / المنشأة <span class="required">*</span></label>
         <input type="text" class="form-input" id="qoClinicInput" placeholder="عيادة الدكتور...">
       </div>
       <div class="form-group">
         <label class="form-label">اسم الطبيب / المسؤول <span class="required">*</span></label>
         <input type="text" class="form-input" id="qoDoctorInput" placeholder="د. محمد...">
-      </div>
-      <div class="form-group">
-        <label class="form-label">رقم الهاتف (واتساب) <span class="required">*</span></label>
-        <input type="tel" class="form-input" id="qoPhoneInput" placeholder="07xxxxxxxx" onblur="autofillClientByPhone('qoPhoneInput','qoDoctorInput','qoClinicInput')">
       </div>
       <div id="qoInfoError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px 14px;background:#fff5f5;border-radius:8px">
         <i class="fas fa-exclamation-circle"></i> يرجى ملء جميع الحقول المطلوبة
