@@ -437,6 +437,19 @@ async function createQuoteRequest(quote) {
   }
 }
 
+function getGuestQuoteRefs() {
+  try { return JSON.parse(localStorage.getItem('dentapro_guest_quote_refs') || '[]'); }
+  catch(e) { return []; }
+}
+
+async function getGuestQuotes() {
+  const refs = getGuestQuoteRefs();
+  if (!refs.length) return [];
+  const all = await getAllQuotes();
+  const ids = new Set(refs.map(r => String(r.id)));
+  return all.filter(q => ids.has(String(q.id)) || ids.has(String(q._docId)));
+}
+
 async function getClientQuotes(email) {
   try {
     for (let i = 0; i < 20; i++) {
@@ -2252,7 +2265,7 @@ function reorderedCardHTML(p) {
 }
 
 async function openMyQuotesPage() {
-  if (!currentUser) { openAuthModal('login'); return; }
+  if (!currentUser && !getGuestQuoteRefs().length) { openAuthModal('login'); return; }
   showPage('myQuotes');
   renderMyQuotesPage();
 }
@@ -2265,14 +2278,13 @@ async function renderMyQuotesPage() {
       جاري تحميل عروض الأسعار...
     </div>`;
 
-  const quotes = await getClientQuotes(currentUser.email);
+  const quotes = currentUser ? await getClientQuotes(currentUser.email) : await getGuestQuotes();
   window._cachedMyQuotes = quotes;
 
   let myOrdersForLink = [];
   try {
-    const oq = window._fbQuery(window._fbOrdersRef(), window._fbWhere('clientEmail', '==', currentUser.email));
-    const osnap = await window._fbGetDocs(oq);
-    myOrdersForLink = osnap.docs.map(d => d.data());
+    const oq = currentUser ? window._fbQuery(window._fbOrdersRef(), window._fbWhere('clientEmail', '==', currentUser.email)) : null;
+    if (oq) { const osnap = await window._fbGetDocs(oq); myOrdersForLink = osnap.docs.map(d => d.data()); }
   } catch(e) { myOrdersForLink = []; }
   function findMyLinkedOrder(q) {
     return myOrdersForLink.find(o =>
