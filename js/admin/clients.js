@@ -116,19 +116,63 @@ function renderClientsList() {
   }
 
   const showSpentCol = sortMode === 'spent';
-  const gridCols = showSpentCol ? '50px 1fr 1fr 130px' : '50px 1fr 1fr';
+  const gridCols = showSpentCol ? '50px 1fr 1fr 130px 40px' : '50px 1fr 1fr 40px';
 
   body.innerHTML = `
     <div style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:12px 18px;background:#f8fbfd;border-bottom:2px solid #e2eaf0;font-size:12px;font-weight:700;color:var(--text-muted)">
-      <div>#</div><div>اسم الطبيب</div><div>اسم العيادة</div>${showSpentCol ? '<div>مجموع المشتريات</div>' : ''}
+      <div>#</div><div>اسم الطبيب</div><div>اسم العيادة</div>${showSpentCol ? '<div>مجموع المشتريات</div>' : ''}<div></div>
     </div>` +
     list.map((u, idx) => `
-    <div onclick="openClientDetailModal('${u.uid||''}','${u.email}')" style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:14px 18px;border-bottom:1px solid #f0f4f8;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+    <div onclick="openClientDetailModal('${escAttrJs(u.uid||'')}','${escAttrJs(u.email)}')" style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:14px 18px;border-bottom:1px solid #f0f4f8;cursor:pointer;transition:background 0.15s;align-items:center" onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
       <div style="font-weight:800;color:var(--text-muted)">${idx+1}</div>
       <div style="font-weight:700;color:var(--primary-dark)">${escHtml(u.firstName||u.name||'—')} ${u.isGuest ? '<span style="font-size:10px;background:#fff7ed;color:#c2410c;border-radius:50px;padding:2px 8px;font-weight:800;margin-right:4px">غير مسجّل</span>' : ''}</div>
       <div style="color:var(--text-muted)">${escHtml(u.clinic||'—')}</div>
       ${showSpentCol ? `<div style="font-weight:800;color:var(--primary)">${(u.totalSpent||0).toLocaleString()} د.أ</div>` : ''}
+      <div onclick="event.stopPropagation(); confirmDeleteClient('${escAttrJs(u.uid||'')}','${escAttrJs(u.email)}','${escAttrJs(u.firstName||u.name||'')}',${u.isGuest ? 'true' : 'false'})" title="حذف" style="width:32px;height:32px;border-radius:50%;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
+        <i class="fas fa-trash-alt" style="font-size:13px"></i>
+      </div>
     </div>`).join('');
+}
+
+// تأكيد الحذف قبل التنفيذ، مع تفريق بين "غير مسجّل" (زائر) و"عميل حقيقي"
+function confirmDeleteClient(uid, email, name, isGuest) {
+  const isGuestBool = isGuest === true || isGuest === 'true';
+  const warningExtra = isGuestBool
+    ? 'سيتم حذف كل الطلبات وعروض الأسعار المرتبطة بهذا الرقم كزائر نهائياً.'
+    : 'سيتم حذف بيانات العميل من قاعدة البيانات (Firestore) فقط. حساب الدخول (Authentication) لازم يُحذف يدوياً من Firebase Console بعدها.';
+  if (!confirm(`متأكد إنك بدك تحذف "${name || 'هذا العميل'}"؟\n${warningExtra}\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
+  deleteClientRecord(uid, email, isGuestBool);
+}
+
+async function deleteClientRecord(uid, email, isGuestBool) {
+  try {
+    if (isGuestBool) {
+      const guestPhone = email.startsWith('guest:') ? email.slice(6) : normalizePhone(email);
+      const [ordersSnap, allQuotes] = await Promise.all([
+        window._fbGetDocs(window._fbOrdersRef()),
+        getAllQuotes()
+      ]);
+      const matchedOrders = ordersSnap.docs.filter(d => {
+        const o = d.data();
+        return o.clientEmail === 'guest' && normalizePhone(o.phone) === guestPhone;
+      });
+      const matchedQuotes = (allQuotes || []).filter(q => q.clientEmail === 'guest' && normalizePhone(q.phone) === guestPhone);
+
+      await Promise.all([
+        ...matchedOrders.map(d => window._fbDeleteDoc(window._fbDoc2('orders', d.id))),
+        ...matchedQuotes.map(q => window._fbDeleteDoc(window._fbDoc2('quotes', q._docId || q.id)))
+      ]);
+      showToast('✅ تم حذف بيانات الزائر وطلباته بنجاح', 'success');
+    } else {
+      if (!uid) { showToast('❌ لا يوجد معرّف حساب لهذا العميل', 'error'); return; }
+      await window._fbDeleteDoc(window._fbDoc2('users', uid));
+      showToast('✅ تم حذف بيانات العميل من قاعدة البيانات. احذف حساب الدخول يدوياً من Firebase Console → Authentication', 'success');
+    }
+    _cachedClientsList = _cachedClientsList.filter(u => u.email !== email);
+    renderClientsList();
+  } catch (e) {
+    showToast('❌ فشل الحذف: ' + e.message, 'error');
+  }
 }
 
 async function openClientDetailModal(uid, email) {
