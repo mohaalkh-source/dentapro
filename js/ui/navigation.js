@@ -153,20 +153,20 @@ function escHtml(str) {
   return d.innerHTML;
 }
 
-// تهريب آمن للنصوص اللي بتنحقن جوا onclick="func('${...}')" — يحمي من كسر
-// السمة نفسها (لو فيه ") ومن كسر السلسلة النصية بالجافاسكريبت (لو فيه ')،
-// ويمنع تنفيذ أي كود غير مقصود. يُستخدم دايمًا بدل escHtml وحدها بهاي الحالة.
-function escAttrJs(str) {
-  if (!str) return '';
+// Escape a value for a single-quoted JavaScript string inside an HTML attribute.
+function escJsAttr(str) {
+  if (str == null) return '';
   return String(str)
+    .replace(/\\/g, '\\\\')
+    .replace(/\r/g, '\\r')
+    .replace(/\n/g, '\\n')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029')
     .replace(/&/g, '&amp;')
     .replace(/</g, '&lt;')
     .replace(/>/g, '&gt;')
     .replace(/"/g, '&quot;')
-    .replace(/\\/g, '\\\\')
-    .replace(/'/g, "\\'")
-    .replace(/\n/g, '\\n')
-    .replace(/\r/g, '');
+    .replace(/'/g, "\\'");
 }
 
 // =====================
@@ -591,16 +591,6 @@ var _exitWarningTimer = null;
 // ============================================================
 var uiLayerStack = [];          // {id, el} لكل طبقة مفتوحة حالياً، بترتيب الفتح
 var _pendingHistoryCleanup = false; // يمنع أي popstate ناتج عن تنظيفنا التلقائي للسجل من التسبب بتنقل غير مقصود
-var _historyLayerCount = 0;     // عدد حالات History المضافة فعلياً لطبقات الواجهة حالياً
-var _uiHistoryReconcileScheduled = false; // يمنع جدولة أكثر من تسوية واحدة لنفس اللحظة (tick)
-var _historyLayerCount = 0;     // عدد حالات History المضافة فعلياً لطبقات الواجهة حالياً
-var _uiHistoryReconcileScheduled = false; // يمنع جدولة أكثر من تسوية واحدة لنفس اللحظة (tick)
-var _historyLayerCount = 0;     // عدد حالات History المضافة فعلياً لطبقات الواجهة حالياً
-var _uiHistoryReconcileScheduled = false; // يمنع جدولة أكثر من تسوية واحدة لنفس اللحظة (tick)
-var _historyLayerCount = 0;     // عدد حالات History المضافة فعلياً لطبقات الواجهة حالياً
-var _uiHistoryReconcileScheduled = false; // يمنع جدولة أكثر من تسوية واحدة لنفس اللحظة (tick)
-var _historyLayerCount = 0;     // عدد حالات History المضافة فعلياً لطبقات الواجهة حالياً
-var _uiHistoryReconcileScheduled = false; // يمنع جدولة أكثر من تسوية واحدة لنفس اللحظة (tick)
 
 // المودالات الثابتة الموجودة أصلاً بالـ HTML (تُغلق بإزالة كلاس open فقط، لا تُحذف من الـ DOM)
 var STATIC_MODAL_IDS = new Set([
@@ -622,43 +612,18 @@ function isTrackableUIElement(el) {
 function trackUILayerOpen(el) {
   if (uiLayerStack.some(l => l.id === el.id)) return; // مُسجّلة مسبقاً، تجاهل
   uiLayerStack.push({ id: el.id, el });
-  scheduleUIHistoryReconcile();
+  // نضيف حالة History "فارغة" فقط لحجز ضغطة الرجوع القادمة لصالح إغلاق هذه الطبقة
+  history.pushState({ uiLayer: el.id }, '', window.location.href);
 }
 
 function trackUILayerClose(el) {
   const idx = uiLayerStack.findIndex(l => l.id === el.id);
   if (idx === -1) return; // غير مُسجّلة (أو أُغلقت مسبقاً عبر زر الرجوع نفسه)
   uiLayerStack.splice(idx, 1);
-  scheduleUIHistoryReconcile();
-}
-
-// نؤجل أي تعديل فعلي على History لنهاية نفس اللحظة (microtask)، حتى لو صار
-// إغلاق مودال وفتح آخر متتاليين بنفس الاستدعاء المتزامن (زي مسار الطلب السريع
-// للزائر: quickOrderModal -> qoInfoModal -> qoLocationModal). هذا يمنع تصادم
-// history.back() غير المتزامنة مع history.pushState() الفورية، اللي كانت
-// تسبب اختلال سجل المتصفح وتخرج المستخدم من الموقع فعلياً.
-function scheduleUIHistoryReconcile() {
-  if (_uiHistoryReconcileScheduled) return;
-  _uiHistoryReconcileScheduled = true;
-  Promise.resolve().then(reconcileUIHistory);
-}
-
-function reconcileUIHistory() {
-  _uiHistoryReconcileScheduled = false;
-  const target = uiLayerStack.length;
-  const diff = target - _historyLayerCount;
-  if (diff === 0) return; // تعادل الفتح مع الإغلاق ضمن نفس اللحظة — لا حاجة للمس السجل فعلياً
-  if (diff > 0) {
-    // طبقات صافية جديدة فُتحت: نحجز حالة History واحدة لكل طبقة زيادة
-    for (let i = target - diff; i < target; i++) {
-      history.pushState({ uiLayer: uiLayerStack[i].id }, '', window.location.href);
-    }
-  } else {
-    // طبقات صافية أُغلقت بدون تعويضها بفتح جديد: نرجع خطوة واحدة فعلية تساوي الفرق
-    _pendingHistoryCleanup = true;
-    history.go(diff);
-  }
-  _historyLayerCount = target;
+  // الإغلاق هنا حصل من واجهة المستخدم (زر X، ضغط خارج المودال، دالة close تلقائية...)
+  // وليس من زر الرجوع الفيزيائي، لذا يجب تنظيف حالة History الزائدة حتى يبقى السجل متزامناً
+  _pendingHistoryCleanup = true;
+  history.back();
 }
 
 // ينفّذ الإغلاق الفعلي لعنصر عندما يكون زر الرجوع هو من طلب الإغلاق
@@ -743,11 +708,6 @@ window.addEventListener('popstate', (e) => {
   if (uiLayerStack.length > 0) {
     const layer = uiLayerStack.pop();
     closeUILayerElement(layer.el);
-    // زر الرجوع الفعلي استهلك حالة History فعلياً بنفسه (المتصفح رجع خطوة تلقائيًا)،
-    // فلازم نُنزّل عدّاد الحالات المحجوزة يدويًا هون كمان، وإلا يضل _historyLayerCount
-    // "عالق" على رقم أعلى من الواقع، وبيسبب حساب diff غلط لاحقًا عند فتح/إغلاق
-    // مودالات تانية بنفس الجلسة (زي الطلب السريع) — وممكن يودّي لخروج من الموقع فعليًا.
-    _historyLayerCount = Math.max(0, _historyLayerCount - 1);
     return;
   }
 
