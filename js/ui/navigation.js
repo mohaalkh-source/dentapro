@@ -727,6 +727,11 @@ window.addEventListener('popstate', (e) => {
   if (uiLayerStack.length > 0) {
     const layer = uiLayerStack.pop();
     closeUILayerElement(layer.el);
+    // زر الرجوع الفعلي استهلك حالة History فعلياً بنفسه (المتصفح رجع خطوة تلقائيًا)،
+    // فلازم نُنزّل عدّاد الحالات المحجوزة يدويًا هون كمان، وإلا يضل _historyLayerCount
+    // "عالق" على رقم أعلى من الواقع، وبيسبب حساب diff غلط لاحقًا عند فتح/إغلاق
+    // مودالات تانية بنفس الجلسة (زي الطلب السريع) — وممكن يودّي لخروج من الموقع فعليًا.
+    _historyLayerCount = Math.max(0, _historyLayerCount - 1);
     return;
   }
 
