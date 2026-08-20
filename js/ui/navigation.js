@@ -612,18 +612,43 @@ function isTrackableUIElement(el) {
 function trackUILayerOpen(el) {
   if (uiLayerStack.some(l => l.id === el.id)) return; // مُسجّلة مسبقاً، تجاهل
   uiLayerStack.push({ id: el.id, el });
-  // نضيف حالة History "فارغة" فقط لحجز ضغطة الرجوع القادمة لصالح إغلاق هذه الطبقة
-  history.pushState({ uiLayer: el.id }, '', window.location.href);
+  scheduleUIHistoryReconcile();
 }
 
 function trackUILayerClose(el) {
   const idx = uiLayerStack.findIndex(l => l.id === el.id);
   if (idx === -1) return; // غير مُسجّلة (أو أُغلقت مسبقاً عبر زر الرجوع نفسه)
   uiLayerStack.splice(idx, 1);
-  // الإغلاق هنا حصل من واجهة المستخدم (زر X، ضغط خارج المودال، دالة close تلقائية...)
-  // وليس من زر الرجوع الفيزيائي، لذا يجب تنظيف حالة History الزائدة حتى يبقى السجل متزامناً
-  _pendingHistoryCleanup = true;
-  history.back();
+  scheduleUIHistoryReconcile();
+}
+
+var _historyLayerCount = 0;
+var _uiHistoryReconcileScheduled = false;
+
+// نؤجل أي تعديل فعلي على History لنهاية نفس اللحظة (microtask)، حتى لو صار
+// إغلاق مودال وفتح آخر متتاليين بنفس الاستدعاء المتزامن (زي: quickOrderModal
+// يقفل ونافذة معلومات الزائر تنفتح بنفس الوقت). هذا يمنع تصادم history.back()
+// غير المتزامنة مع history.pushState() الفورية.
+function scheduleUIHistoryReconcile() {
+  if (_uiHistoryReconcileScheduled) return;
+  _uiHistoryReconcileScheduled = true;
+  Promise.resolve().then(reconcileUIHistory);
+}
+
+function reconcileUIHistory() {
+  _uiHistoryReconcileScheduled = false;
+  const target = uiLayerStack.length;
+  const diff = target - _historyLayerCount;
+  if (diff === 0) return;
+  if (diff > 0) {
+    for (let i = target - diff; i < target; i++) {
+      history.pushState({ uiLayer: uiLayerStack[i].id }, '', window.location.href);
+    }
+  } else {
+    _pendingHistoryCleanup = true;
+    history.go(diff);
+  }
+  _historyLayerCount = target;
 }
 
 // ينفّذ الإغلاق الفعلي لعنصر عندما يكون زر الرجوع هو من طلب الإغلاق
@@ -708,6 +733,8 @@ window.addEventListener('popstate', (e) => {
   if (uiLayerStack.length > 0) {
     const layer = uiLayerStack.pop();
     closeUILayerElement(layer.el);
+    // زر الرجوع الفعلي استهلك حالة History بنفسه — لازم ننزّل العداد يدويًا هون
+    _historyLayerCount = Math.max(0, _historyLayerCount - 1);
     return;
   }
 
