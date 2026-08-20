@@ -153,6 +153,22 @@ function escHtml(str) {
   return d.innerHTML;
 }
 
+// تهريب آمن للنصوص اللي بتنحقن جوا onclick="func('${...}')" — يحمي من كسر
+// السمة نفسها (لو فيه ") ومن كسر السلسلة النصية بالجافاسكريبت (لو فيه ')،
+// ويمنع تنفيذ أي كود غير مقصود. يُستخدم دايمًا بدل escHtml وحدها بهاي الحالة.
+function escAttrJs(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '');
+}
+
 // =====================
 // TOAST
 // =====================
