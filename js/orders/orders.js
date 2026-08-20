@@ -134,40 +134,6 @@ function trackStepsHTML(currentStatus) {
   `</div>`;
 }
 
-
-
-// توحيد هوية العميل في لوحة الإدارة بالاعتماد على رقم الهاتف،
-// مع الاحتفاظ بباقي بيانات الطلب الأصلية دون حذفها.
-function normalizeAdminPhone(phone) {
-  return (phone || '').replace(/\D/g, '').slice(-9);
-}
-
-async function resolveAdminClientIdentity(records) {
-  let users = [];
-  try { users = await fetchAllUsersList(); } catch(e) { return records; }
-  const byPhone = {};
-  users.filter(u => u.role === 'client').forEach(u => {
-    const phone = normalizeAdminPhone(u.phone);
-    if (phone) byPhone[phone] = u;
-  });
-  return records.map(record => {
-    const member = byPhone[normalizeAdminPhone(record.phone)];
-    if (!member) return record;
-    return {
-      ...record,
-      _matchedMember: true,
-      _guestSubmittedName: record.clientName,
-      _guestSubmittedClinic: record.clinic,
-      clientName: member.firstName || member.name || record.clientName,
-      doctor: member.firstName || member.name || record.doctor,
-      clinic: member.clinic || record.clinic,
-      clientEmail: member.email || record.clientEmail,
-      clientUid: member.uid || record.clientUid,
-      phone: member.phone || record.phone,
-    };
-  });
-}
-
 // ── CLIENT ORDERS ──
 function openClientOrders() {
   if (!currentUser) { openAuthModal('login'); return; }
@@ -509,8 +475,7 @@ async function renderAdminOrders() {
   try {
     const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
     const snap = await window._fbGetDocs(q);
-    let orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
-    orders = await resolveAdminClientIdentity(orders);
+    const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
     window._cachedOrders = orders;
 
     const pending = orders.filter(o => !['delivered','cancelled'].includes(o.status)).length;
@@ -821,8 +786,7 @@ async function renderAdminQuotes() {
       جاري تحميل طلبات عروض الأسعار...
     </div>`;
 
-  let quotes = await getAllQuotes();
-  quotes = await resolveAdminClientIdentity(quotes);
+  const quotes = await getAllQuotes();
   window._cachedAdminQuotes = quotes;
 
   const pendingCount = computeQuotesBadgeCount(quotes);
@@ -977,9 +941,6 @@ async function sendQuotePricing() {
         message: `تم تحديد سعر طلبك #${q.id}، يمكنك مراجعته الآن`,
         link: 'page:myQuotes',
       });
-    } else if (q.phone) {
-      // الزائر يستلم العرض عبر مرجع الهاتف المحفوظ في نفس المتصفح، ويمكن للأدمن التواصل معه واتساب.
-      console.info('Guest quote priced; quote remains available by phone reference:', q.phone);
     }
     closePriceQuoteModal();
     showToast('✅ تم إرسال عرض السعر للعميل', 'success');
@@ -993,19 +954,12 @@ function sendWhatsAppQuote(docId) {
   const quotes = window._cachedAdminQuotes || [];
   const q = quotes.find(x => x._docId === docId);
   if (!q) return;
-  const itemsTxt = q.items.map(i => {
-    const qty = Number(i.qty) || 0;
-    const unitPrice = Number(i.unitPrice) || 0;
-    const lineTotal = qty * unitPrice;
-    return `• ${i.ar} — الكمية: ${qty} — سعر الوحدة: ${unitPrice.toLocaleString()} د.أ — الإجمالي: ${lineTotal.toLocaleString()} د.أ`;
-  }).join('\n');
-  const total = getQuoteTotal(q);
+  const itemsTxt = q.items.map(i => `• ${i.ar}${i.qty?` × ${i.qty}`:''}`).join('\n');
   const msg = encodeURIComponent(
     `🦷 *DentaPro — بخصوص طلب عرض السعر #${q.id}*\n\nمرحباً ${q.clientName}،\n\n` +
-    `تفاصيل العرض المعتمد:\n${itemsTxt}\n\n*الإجمالي الكلي: ${total.toLocaleString()} د.أ*\n\nنشكرك لاختيارك DentaPro.`
+    `بخصوص طلبك لعرض سعر المواد:\n${itemsTxt}\n\nسنوافيك بالتفاصيل قريباً.`
   );
   const phone = formatPhoneForWhatsApp(q.phone);
-  if (!phone) { showToast('❌ لا يوجد رقم هاتف صالح لهذا العميل', 'error'); return; }
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
 }
 
@@ -1685,11 +1639,11 @@ async function submitAdminSendOrder() {
 // ============================
 // تقرير تفاصيل طلبات العميل (فلترة بالتاريخ + الحالة، مع طباعة)
 // ============================
-function openClientOrdersReportModal(email, name, clinic, phone) {
+function openClientOrdersReportModal(email, name, clinic, phone = '') {
   document.getElementById('reportClientEmail').value = email;
   document.getElementById('reportClientName').value = name;
   document.getElementById('reportClientClinic').value = clinic;
-  document.getElementById('reportClientPhone').value = phone || '';
+  window._clientOrdersReportPhone = phone || '';
   document.getElementById('reportFromDate').value = '';
   document.getElementById('reportToDate').value = '';
   document.getElementById('reportStatusFilter').value = 'all';
@@ -1706,8 +1660,9 @@ async function runClientOrdersReport() {
   const email  = document.getElementById('reportClientEmail').value;
   const name   = document.getElementById('reportClientName').value;
   const clinic = document.getElementById('reportClientClinic').value;
-  const phone  = document.getElementById('reportClientPhone').value;
-  const uPhone = normalizePhone(phone); // نفس دالة التطبيع المستخدمة أصلاً بملف clients.js
+  const reportPhone = window._clientOrdersReportPhone || '';
+  const normalizeReportPhone = value => String(value || '').replace(/\D/g, '').slice(-9);
+  const reportPhoneKey = normalizeReportPhone(reportPhone);
   const fromVal = document.getElementById('reportFromDate').value;
   const toVal   = document.getElementById('reportToDate').value;
   const statusFilter = document.getElementById('reportStatusFilter').value;
@@ -1720,13 +1675,16 @@ async function runClientOrdersReport() {
       window._fbGetDocs(window._fbOrdersRef()),
       getAllQuotes()
     ]);
-    // نفس منطق المطابقة بالهاتف المستخدم أصلاً بصفحة تفاصيل العميل (js/admin/clients.js)
-    // حتى تندرج هنا أيضاً الطلبات القديمة اللي تمت كزائر قبل التسجيل بنفس رقم الهاتف
     let orders = ordersSnap.docs.map(d => d.data()).filter(o =>
-      o.clientEmail === email || (uPhone && o.clientEmail === 'guest' && normalizePhone(o.phone) === uPhone)
+      o.clientEmail === email ||
+      (reportPhoneKey && o.clientEmail === 'guest' && normalizeReportPhone(o.phone) === reportPhoneKey)
     );
     let quoteOrders = (allQuotes || [])
-      .filter(q => (q.clientEmail === email || (uPhone && q.clientEmail === 'guest' && normalizePhone(q.phone) === uPhone)) && q.status === 'accepted')
+      .filter(q =>
+        (q.clientEmail === email ||
+          (reportPhoneKey && q.clientEmail === 'guest' && normalizeReportPhone(q.phone) === reportPhoneKey)) &&
+        q.status === 'accepted'
+      )
       .filter(q => !orders.some(o =>
         o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
       ))
