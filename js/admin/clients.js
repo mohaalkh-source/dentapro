@@ -263,7 +263,7 @@ async function openClientDetailModal(uid, email) {
         <button onclick="openAdminSendOrderModal('${email}','${uid||''}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}','${escHtml(phoneDisplay||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-paper-plane"></i> إرسال طلبية
         </button>
-        <button onclick="openClientOrdersReportModal('${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#7e22ce,#a855f7);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <button onclick="openClientOrdersReportModal('${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}','${escHtml(phoneDisplay||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#7e22ce,#a855f7);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-file-invoice"></i> تفاصيل طلبات العميل
         </button>
         ` : ''}
