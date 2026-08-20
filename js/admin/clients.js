@@ -12,7 +12,6 @@ async function openClientsListModal() {
   document.getElementById('clientsListModal').classList.add('open');
   document.getElementById('clientsListSearch').value = '';
   document.getElementById('clientsListSort').value = 'name';
-  document.getElementById('clientsListType').value = 'all';
   document.getElementById('clientsListBody').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>جاري تحميل العملاء...</div>`;
   try {
     const allUsers = await fetchAllUsersList();
@@ -86,18 +85,11 @@ function renderClientsList() {
   const term = normalizeArabic(rawSearch);
   const termDigits = rawSearch.replace(/\D/g,'');
   const sortMode = document.getElementById('clientsListSort').value;
-  const typeMode = document.getElementById('clientsListType').value;
 
   let list = _cachedClientsList.filter(u => {
-    const isMember = !u.isGuest;
-    if (typeMode === 'members' && !isMember) return false;
-    if (typeMode === 'guests' && isMember) return false;
     if (!rawSearch.trim()) return true;
-    const searchableName = normalizeArabic(u.firstName||u.name||'');
-    const searchableClinic = normalizeArabic(u.clinic||'');
-    const normalizedPhone = normalizePhone(u.phone || '');
-    const nameMatch = searchableName.includes(term) || searchableClinic.includes(term);
-    const phoneMatch = termDigits.length > 0 && (normalizedPhone.includes(termDigits) || (u.phone||'').replace(/\D/g,'').includes(termDigits));
+    const nameMatch = normalizeArabic(u.firstName||u.name||'').includes(term) || normalizeArabic(u.clinic||'').includes(term);
+    const phoneMatch = termDigits.length >= 3 && (u.phone||'').replace(/\D/g,'').includes(termDigits);
     return nameMatch || phoneMatch;
   });
 
@@ -107,8 +99,7 @@ function renderClientsList() {
     list = [...list].sort((a,b) => (a.firstName||a.name||'').localeCompare(b.firstName||b.name||'', 'ar'));
   }
 
-  const typeLabel = typeMode === 'members' ? 'الأعضاء' : (typeMode === 'guests' ? 'غير الأعضاء' : 'الكل');
-  document.getElementById('clientsListCount').textContent = `${typeLabel}: ${list.length}`;
+  document.getElementById('clientsListCount').textContent = `إجمالي العملاء: ${list.length}`;
   const body = document.getElementById('clientsListBody');
   if (!list.length) {
     body.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)"><i class="fas fa-user-slash" style="font-size:40px;opacity:0.2;display:block;margin-bottom:12px"></i>لا يوجد عملاء مطابقون</div>`;
@@ -116,85 +107,105 @@ function renderClientsList() {
   }
 
   const showSpentCol = sortMode === 'spent';
-  const gridCols = showSpentCol ? '50px 1fr 1fr 130px 40px' : '50px 1fr 1fr 40px';
+  const gridCols = showSpentCol ? '50px 1fr 1fr 130px 52px' : '50px 1fr 1fr 52px';
 
   body.innerHTML = `
     <div style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:12px 18px;background:#f8fbfd;border-bottom:2px solid #e2eaf0;font-size:12px;font-weight:700;color:var(--text-muted)">
       <div>#</div><div>اسم الطبيب</div><div>اسم العيادة</div>${showSpentCol ? '<div>مجموع المشتريات</div>' : ''}<div></div>
     </div>` +
     list.map((u, idx) => `
-    <div onclick="openClientDetailModal('${escAttrJs(u.uid||'')}','${escAttrJs(u.email)}')" style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:14px 18px;border-bottom:1px solid #f0f4f8;cursor:pointer;transition:background 0.15s;align-items:center" onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+    <div onclick="openClientDetailModal('${escJsAttr(u.uid||'')}','${escJsAttr(u.email)}')" style="display:grid;grid-template-columns:${gridCols};gap:12px;padding:14px 18px;border-bottom:1px solid #f0f4f8;cursor:pointer;transition:background 0.15s" onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
       <div style="font-weight:800;color:var(--text-muted)">${idx+1}</div>
       <div style="font-weight:700;color:var(--primary-dark)">${escHtml(u.firstName||u.name||'—')} ${u.isGuest ? '<span style="font-size:10px;background:#fff7ed;color:#c2410c;border-radius:50px;padding:2px 8px;font-weight:800;margin-right:4px">غير مسجّل</span>' : ''}</div>
       <div style="color:var(--text-muted)">${escHtml(u.clinic||'—')}</div>
       ${showSpentCol ? `<div style="font-weight:800;color:var(--primary)">${(u.totalSpent||0).toLocaleString()} د.أ</div>` : ''}
-      <div onclick="event.stopPropagation(); confirmDeleteClient('${escAttrJs(u.uid||'')}','${escAttrJs(u.email)}','${escAttrJs(u.firstName||u.name||'')}',${u.isGuest ? 'true' : 'false'})" title="حذف" style="width:32px;height:32px;border-radius:50%;background:#fef2f2;color:#dc2626;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0">
-        <i class="fas fa-trash-alt" style="font-size:13px"></i>
-      </div>
+      <button type="button" title="حذف العميل" onclick="event.stopPropagation();confirmDeleteClient('${escJsAttr(u.uid||'')}','${escJsAttr(u.email)}','${escJsAttr(u.firstName||u.name||'—')}')" style="width:36px;height:36px;border:0;border-radius:10px;background:#fff1f2;color:#be123c;cursor:pointer;font-size:14px" aria-label="حذف العميل">
+        <i class="fas fa-trash-alt"></i>
+      </button>
     </div>`).join('');
 }
 
-// تأكيد الحذف قبل التنفيذ، مع تفريق بين "غير مسجّل" (زائر) و"عميل حقيقي"
-function confirmDeleteClient(uid, email, name, isGuest) {
-  const isGuestBool = isGuest === true || isGuest === 'true';
-  const warningExtra = isGuestBool
-    ? 'سيتم حذف كل الطلبات وعروض الأسعار المرتبطة بهذا الرقم كزائر نهائياً.'
-    : 'سيتم حذف سجل العميل من Firestore فقط. حذف حساب تسجيل الدخول Authentication يحتاج Admin SDK من خادم آمن.';
+function confirmDeleteClient(uid, email, name) {
+  window._pendingClientDeletion = { uid: uid || '', email: email || '', name: name || 'هذا العميل' };
+  const existing = document.getElementById('confirmDeleteClientModal');
+  if (existing) existing.remove();
 
-  if (!confirm(`متأكد إنك بدك تحذف "${name || 'هذا العميل'}"؟\n${warningExtra}\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
+  const isGuest = String(email || '').startsWith('guest:');
+  const warning = isGuest
+    ? 'سيتم حذف جميع الطلبات وعروض الأسعار المرتبطة برقم هاتف هذا الزائر نهائيًا.'
+    : 'سيتم حذف مستند العميل من مجموعة المستخدمين نهائيًا. لن يتم حذف الطلبات أو عروض الأسعار القديمة.';
 
-  deleteClientRecord(uid, email, isGuestBool).catch((error) => {
-    console.error('confirmDeleteClient:', error);
-  });
+  const modal = document.createElement('div');
+  modal.id = 'confirmDeleteClientModal';
+  modal.className = 'modal-overlay open';
+  modal.style.zIndex = '5000';
+  modal.innerHTML = `
+    <div class="modal" style="max-width:520px">
+      <div class="modal-header" style="background:linear-gradient(135deg,#be123c,#e53e3e)">
+        <div class="modal-title"><i class="fas fa-user-times"></i> حذف العميل</div>
+        <button class="close-btn" type="button" onclick="document.getElementById('confirmDeleteClientModal').remove()"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="modal-body" style="text-align:center">
+        <div style="font-size:44px;color:#be123c;margin-bottom:12px"><i class="fas fa-exclamation-triangle"></i></div>
+        <div style="font-size:17px;font-weight:900;margin-bottom:10px">هل تريد حذف ${escHtml(name || 'هذا العميل')}؟</div>
+        <div style="color:var(--text-muted);line-height:1.8">${warning}</div>
+      </div>
+      <div class="modal-footer" style="justify-content:center;gap:10px">
+        <button type="button" class="btn-back" onclick="document.getElementById('confirmDeleteClientModal').remove()">إلغاء</button>
+        <button type="button" id="confirmDeleteClientBtn" class="btn-submit" onclick="deleteClientRecord()" style="background:linear-gradient(135deg,#be123c,#e53e3e)">
+          <i class="fas fa-trash-alt"></i> نعم، احذف
+        </button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
-async function deleteClientRecord(uid, email, isGuestBool) {
-  if (!navigator.onLine) {
-    showToast('📡 لا يوجد اتصال بالإنترنت، لا يمكن تنفيذ الحذف', 'error');
-    return;
-  }
-  if (!window._fbDeleteDoc || !window._fbDoc2) {
-    showToast('❌ Firebase غير جاهز، أعد تحميل الصفحة وحاول مجدداً', 'error');
-    return;
+async function deleteClientRecord() {
+  const pending = window._pendingClientDeletion;
+  if (!pending) return;
+
+  const btn = document.getElementById('confirmDeleteClientBtn');
+  if (btn) {
+    btn.disabled = true;
+    btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> جاري الحذف...';
   }
 
   try {
-    if (isGuestBool) {
-      const guestPhone = email.startsWith('guest:') ? email.slice(6) : normalizePhone(email);
+    const isGuest = String(pending.email || '').startsWith('guest:');
+    if (isGuest) {
+      const phoneKey = normalizePhone(String(pending.email).slice(6));
       const [ordersSnap, allQuotes] = await Promise.all([
         window._fbGetDocs(window._fbOrdersRef()),
         getAllQuotes()
       ]);
-      const matchedOrders = ordersSnap.docs.filter((d) => {
-        const order = d.data();
-        return order.clientEmail === 'guest' && normalizePhone(order.phone) === guestPhone;
-      });
-      const matchedQuotes = (allQuotes || []).filter((q) =>
-        q.clientEmail === 'guest' && normalizePhone(q.phone) === guestPhone
-      );
-
-      await Promise.all([
-        ...matchedOrders.map((d) => window._fbDeleteDoc(window._fbDoc2('orders', d.id))),
-        ...matchedQuotes.map((q) => window._fbDeleteDoc(window._fbDoc2('quotes', q._docId || q.id)))
-      ]);
-      showToast('✅ تم حذف بيانات الزائر وطلباته بنجاح', 'success');
+      const orderDeletes = ordersSnap.docs
+        .filter(docSnap => {
+          const order = docSnap.data() || {};
+          return order.clientEmail === 'guest' && phoneKey && normalizePhone(order.phone) === phoneKey;
+        })
+        .map(docSnap => window._fbDeleteDoc(window._fbDoc2('orders', docSnap.id)));
+      const quoteDeletes = (allQuotes || [])
+        .filter(quote => quote.clientEmail === 'guest' && phoneKey && normalizePhone(quote.phone) === phoneKey && quote._docId)
+        .map(quote => window._fbDeleteDoc(window._fbDoc2('quotes', quote._docId)));
+      await Promise.all([...orderDeletes, ...quoteDeletes]);
     } else {
-      if (!uid) { showToast('❌ لا يوجد UID صحيح لهذا العميل', 'error'); return; }
-      await window._fbDeleteDoc(window._fbDoc2('users', uid));
-      showToast('✅ تم حذف سجل العميل. حذف حساب Authentication يحتاج Admin SDK من خادم آمن.', 'success');
+      if (!pending.uid) throw new Error('معرّف العميل غير موجود');
+      await window._fbDeleteDoc(window._fbDoc2('users', pending.uid));
     }
 
-    _cachedClientsList = _cachedClientsList.filter((u) => u.email !== email);
+    _cachedClientsList = _cachedClientsList.filter(client => client.email !== pending.email && (!pending.uid || client.uid !== pending.uid));
+    const modal = document.getElementById('confirmDeleteClientModal');
+    if (modal) modal.remove();
+    window._pendingClientDeletion = null;
     renderClientsList();
-  } catch (error) {
-    console.error('deleteClientRecord:', error);
-    if (error?.code === 'permission-denied') {
-      showToast('❌ الحذف ممنوع من Firestore Rules. عدّل قواعد الصلاحيات للمدير.', 'error');
-    } else if (error?.code === 'not-found') {
-      showToast('❌ مستند العميل غير موجود أو تم حذفه مسبقاً', 'error');
-    } else {
-      showToast(`❌ فشل الحذف: ${error?.code || error?.name || 'خطأ غير معروف'} - ${error?.message || ''}`, 'error');
+    showToast(isGuest ? '✅ تم حذف بيانات الزائر وطلباته وعروض أسعاره' : '✅ تم حذف العميل بنجاح', 'success');
+  } catch (e) {
+    console.error('Delete client error:', e);
+    if (btn) {
+      btn.disabled = false;
+      btn.innerHTML = '<i class="fas fa-trash-alt"></i> نعم، احذف';
     }
+    showToast('❌ تعذر حذف العميل، حاول مرة أخرى', 'error');
   }
 }
 
@@ -303,10 +314,10 @@ async function openClientDetailModal(uid, email) {
           <div style="font-size:24px;font-weight:900;color:#d97706">${balance} نقطة</div>
         </div>
         <div style="display:flex;gap:8px">
-          <button class="add-points-btn" onclick="openAddPointsModal('${uid}','${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}',${balance},'add')">
+          <button class="add-points-btn" onclick="openAddPointsModal('${escJsAttr(uid)}','${escJsAttr(email)}','${escJsAttr(nameDisplay)}','${escJsAttr(clinicDisplay)}',${balance},'add')">
             <i class="fas fa-plus"></i> إضافة
           </button>
-          <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030)" onclick="openAddPointsModal('${uid}','${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}',${balance},'deduct')">
+          <button class="add-points-btn" style="background:linear-gradient(135deg,#e53e3e,#c53030)" onclick="openAddPointsModal('${escJsAttr(uid)}','${escJsAttr(email)}','${escJsAttr(nameDisplay)}','${escJsAttr(clinicDisplay)}',${balance},'deduct')">
             <i class="fas fa-minus"></i> خصم
           </button>
         </div>
@@ -315,7 +326,7 @@ async function openClientDetailModal(uid, email) {
 
       <div style="display:flex;gap:10px;flex-wrap:wrap">
         ${!isGuest ? `
-        <button onclick="openAdminThreadModal('${email}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <button onclick="openAdminThreadModal('${escJsAttr(email)}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-comment-dots"></i> مراسلة العميل
         </button>
         ` : (waLink ? `
@@ -323,14 +334,14 @@ async function openClientDetailModal(uid, email) {
           <i class="fab fa-whatsapp"></i> تواصل عبر واتساب
         </a>
         ` : '')}
-        <button onclick="openClientAllOrdersModal('${email}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <button onclick="openClientAllOrdersModal('${escJsAttr(email)}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-receipt"></i> طلباته (${allOrders.length + clientQuotes.length})
         </button>
         ${!isGuest ? `
-        <button onclick="openAdminSendOrderModal('${email}','${uid||''}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}','${escHtml(phoneDisplay||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <button onclick="openAdminSendOrderModal('${escJsAttr(email)}','${escJsAttr(uid||'')}','${escJsAttr(nameDisplay)}','${escJsAttr(clinicDisplay)}','${escJsAttr(phoneDisplay||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#16a34a,#22c55e);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-paper-plane"></i> إرسال طلبية
         </button>
-        <button onclick="openClientOrdersReportModal('${email}','${escHtml(nameDisplay)}','${escHtml(clinicDisplay)}','${escHtml(phoneDisplay||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#7e22ce,#a855f7);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+        <button onclick="openClientOrdersReportModal('${escJsAttr(email)}','${escJsAttr(nameDisplay)}','${escJsAttr(clinicDisplay)}','${escJsAttr(phoneDisplay||'')}')" style="flex:1;min-width:160px;padding:14px;border-radius:12px;background:linear-gradient(135deg,#7e22ce,#a855f7);color:#fff;border:none;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           <i class="fas fa-file-invoice"></i> تفاصيل طلبات العميل
         </button>
         ` : ''}
