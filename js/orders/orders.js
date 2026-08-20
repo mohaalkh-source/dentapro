@@ -1685,10 +1685,11 @@ async function submitAdminSendOrder() {
 // ============================
 // تقرير تفاصيل طلبات العميل (فلترة بالتاريخ + الحالة، مع طباعة)
 // ============================
-function openClientOrdersReportModal(email, name, clinic) {
+function openClientOrdersReportModal(email, name, clinic, phone) {
   document.getElementById('reportClientEmail').value = email;
   document.getElementById('reportClientName').value = name;
   document.getElementById('reportClientClinic').value = clinic;
+  document.getElementById('reportClientPhone').value = phone || '';
   document.getElementById('reportFromDate').value = '';
   document.getElementById('reportToDate').value = '';
   document.getElementById('reportStatusFilter').value = 'all';
@@ -1705,6 +1706,8 @@ async function runClientOrdersReport() {
   const email  = document.getElementById('reportClientEmail').value;
   const name   = document.getElementById('reportClientName').value;
   const clinic = document.getElementById('reportClientClinic').value;
+  const phone  = document.getElementById('reportClientPhone').value;
+  const uPhone = normalizePhone(phone); // نفس دالة التطبيع المستخدمة أصلاً بملف clients.js
   const fromVal = document.getElementById('reportFromDate').value;
   const toVal   = document.getElementById('reportToDate').value;
   const statusFilter = document.getElementById('reportStatusFilter').value;
@@ -1717,9 +1720,13 @@ async function runClientOrdersReport() {
       window._fbGetDocs(window._fbOrdersRef()),
       getAllQuotes()
     ]);
-    let orders = ordersSnap.docs.map(d => d.data()).filter(o => o.clientEmail === email);
+    // نفس منطق المطابقة بالهاتف المستخدم أصلاً بصفحة تفاصيل العميل (js/admin/clients.js)
+    // حتى تندرج هنا أيضاً الطلبات القديمة اللي تمت كزائر قبل التسجيل بنفس رقم الهاتف
+    let orders = ordersSnap.docs.map(d => d.data()).filter(o =>
+      o.clientEmail === email || (uPhone && o.clientEmail === 'guest' && normalizePhone(o.phone) === uPhone)
+    );
     let quoteOrders = (allQuotes || [])
-      .filter(q => q.clientEmail === email && q.status === 'accepted')
+      .filter(q => (q.clientEmail === email || (uPhone && q.clientEmail === 'guest' && normalizePhone(q.phone) === uPhone)) && q.status === 'accepted')
       .filter(q => !orders.some(o =>
         o.sourceQuoteId === q.id || o.id === ('DP-' + String(q.id || '').replace('QT-', ''))
       ))
