@@ -139,12 +139,25 @@ function confirmDeleteClient(uid, email, name, isGuest) {
   const isGuestBool = isGuest === true || isGuest === 'true';
   const warningExtra = isGuestBool
     ? 'سيتم حذف كل الطلبات وعروض الأسعار المرتبطة بهذا الرقم كزائر نهائياً.'
-    : 'سيتم حذف بيانات العميل من قاعدة البيانات (Firestore) فقط. حساب الدخول (Authentication) لازم يُحذف يدوياً من Firebase Console بعدها.';
+    : 'سيتم حذف سجل العميل من Firestore فقط. حذف حساب تسجيل الدخول Authentication يحتاج Admin SDK من خادم آمن.';
+
   if (!confirm(`متأكد إنك بدك تحذف "${name || 'هذا العميل'}"؟\n${warningExtra}\nهذا الإجراء لا يمكن التراجع عنه.`)) return;
-  deleteClientRecord(uid, email, isGuestBool);
+
+  deleteClientRecord(uid, email, isGuestBool).catch((error) => {
+    console.error('confirmDeleteClient:', error);
+  });
 }
 
 async function deleteClientRecord(uid, email, isGuestBool) {
+  if (!navigator.onLine) {
+    showToast('📡 لا يوجد اتصال بالإنترنت، لا يمكن تنفيذ الحذف', 'error');
+    return;
+  }
+  if (!window._fbDeleteDoc || !window._fbDoc2) {
+    showToast('❌ Firebase غير جاهز، أعد تحميل الصفحة وحاول مجدداً', 'error');
+    return;
+  }
+
   try {
     if (isGuestBool) {
       const guestPhone = email.startsWith('guest:') ? email.slice(6) : normalizePhone(email);
@@ -152,26 +165,36 @@ async function deleteClientRecord(uid, email, isGuestBool) {
         window._fbGetDocs(window._fbOrdersRef()),
         getAllQuotes()
       ]);
-      const matchedOrders = ordersSnap.docs.filter(d => {
-        const o = d.data();
-        return o.clientEmail === 'guest' && normalizePhone(o.phone) === guestPhone;
+      const matchedOrders = ordersSnap.docs.filter((d) => {
+        const order = d.data();
+        return order.clientEmail === 'guest' && normalizePhone(order.phone) === guestPhone;
       });
-      const matchedQuotes = (allQuotes || []).filter(q => q.clientEmail === 'guest' && normalizePhone(q.phone) === guestPhone);
+      const matchedQuotes = (allQuotes || []).filter((q) =>
+        q.clientEmail === 'guest' && normalizePhone(q.phone) === guestPhone
+      );
 
       await Promise.all([
-        ...matchedOrders.map(d => window._fbDeleteDoc(window._fbDoc2('orders', d.id))),
-        ...matchedQuotes.map(q => window._fbDeleteDoc(window._fbDoc2('quotes', q._docId || q.id)))
+        ...matchedOrders.map((d) => window._fbDeleteDoc(window._fbDoc2('orders', d.id))),
+        ...matchedQuotes.map((q) => window._fbDeleteDoc(window._fbDoc2('quotes', q._docId || q.id)))
       ]);
       showToast('✅ تم حذف بيانات الزائر وطلباته بنجاح', 'success');
     } else {
-      if (!uid) { showToast('❌ لا يوجد معرّف حساب لهذا العميل', 'error'); return; }
+      if (!uid) { showToast('❌ لا يوجد UID صحيح لهذا العميل', 'error'); return; }
       await window._fbDeleteDoc(window._fbDoc2('users', uid));
-      showToast('✅ تم حذف بيانات العميل من قاعدة البيانات. احذف حساب الدخول يدوياً من Firebase Console → Authentication', 'success');
+      showToast('✅ تم حذف سجل العميل. حذف حساب Authentication يحتاج Admin SDK من خادم آمن.', 'success');
     }
-    _cachedClientsList = _cachedClientsList.filter(u => u.email !== email);
+
+    _cachedClientsList = _cachedClientsList.filter((u) => u.email !== email);
     renderClientsList();
-  } catch (e) {
-    showToast('❌ فشل الحذف: ' + e.message, 'error');
+  } catch (error) {
+    console.error('deleteClientRecord:', error);
+    if (error?.code === 'permission-denied') {
+      showToast('❌ الحذف ممنوع من Firestore Rules. عدّل قواعد الصلاحيات للمدير.', 'error');
+    } else if (error?.code === 'not-found') {
+      showToast('❌ مستند العميل غير موجود أو تم حذفه مسبقاً', 'error');
+    } else {
+      showToast(`❌ فشل الحذف: ${error?.code || error?.name || 'خطأ غير معروف'} - ${error?.message || ''}`, 'error');
+    }
   }
 }
 
