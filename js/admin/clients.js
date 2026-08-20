@@ -13,8 +13,12 @@ async function openClientsListModal() {
   document.getElementById('clientsListSearch').value = '';
   document.getElementById('clientsListSort').value = 'name';
   document.getElementById('clientsListBody').innerHTML = `<div style="text-align:center;padding:40px;color:var(--text-muted)"><div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>جاري تحميل العملاء...</div>`;
+
+  const TIMEOUT_MS = 12000;
+  const timeoutPromise = new Promise((_, reject) => setTimeout(() => reject(new Error('timeout')), TIMEOUT_MS));
+
   try {
-    const allUsers = await fetchAllUsersList();
+    const allUsers = await Promise.race([fetchAllUsersList(), timeoutPromise]);
     let users = allUsers.filter(u => u.role === 'client');
     const localUsers = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
     localUsers.forEach(lu => { if (!users.find(u => u.email === lu.email)) users.push(lu); });
@@ -73,7 +77,16 @@ async function openClientsListModal() {
     _cachedClientsList = users;
     renderClientsList();
   } catch(e) {
-    document.getElementById('clientsListBody').innerHTML = `<div style="text-align:center;padding:32px;color:var(--danger)">تعذر تحميل العملاء: ${e.message}</div>`;
+    const isTimeout = e.message === 'timeout';
+    document.getElementById('clientsListBody').innerHTML = `
+      <div style="text-align:center;padding:32px;color:var(--danger)">
+        ${isTimeout ? 'استغرق التحميل وقتاً أطول من المعتاد' : 'تعذر تحميل العملاء: ' + escHtml(e.message)}
+        <div style="margin-top:14px">
+          <button onclick="openClientsListModal()" style="padding:10px 24px;border-radius:50px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+            <i class="fas fa-redo"></i> إعادة المحاولة
+          </button>
+        </div>
+      </div>`;
   }
 }
 function closeClientsListModal() {
@@ -85,8 +98,11 @@ function renderClientsList() {
   const term = normalizeArabic(rawSearch);
   const termDigits = rawSearch.replace(/\D/g,'');
   const sortMode = document.getElementById('clientsListSort').value;
+  const typeFilter = document.getElementById('clientsListType').value;
 
   let list = _cachedClientsList.filter(u => {
+    if (typeFilter === 'members' && u.isGuest) return false;
+    if (typeFilter === 'guests' && !u.isGuest) return false;
     if (!rawSearch.trim()) return true;
     const nameMatch = normalizeArabic(u.firstName||u.name||'').includes(term) || normalizeArabic(u.clinic||'').includes(term);
     const phoneMatch = termDigits.length >= 3 && (u.phone||'').replace(/\D/g,'').includes(termDigits);
