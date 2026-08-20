@@ -316,15 +316,15 @@ function roleBadgeChip(role) {
 
 function roleActionButtonsHTML(uid, email) {
   return `
-    <button onclick="assignUserRole('${uid}','admin','${escHtml(email)}')"
+    <button onclick="assignUserRole('${escJsAttr(uid)}','admin','${escJsAttr(email)}')"
       style="padding:7px 14px;border-radius:50px;background:#e53e3e;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
       مدير نظام
     </button>
-    <button onclick="assignUserRole('${uid}','manager','${escHtml(email)}')"
+    <button onclick="assignUserRole('${escJsAttr(uid)}','manager','${escJsAttr(email)}')"
       style="padding:7px 14px;border-radius:50px;background:#d97706;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
       مدير فرعي
     </button>
-    <button onclick="revokeUserRole('${uid}','${escHtml(email)}')"
+    <button onclick="revokeUserRole('${escJsAttr(uid)}','${escJsAttr(email)}')"
       style="padding:7px 14px;border-radius:50px;background:#fff5f5;color:var(--danger);border:1.5px solid #fecaca;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
       <i class="fas fa-trash-alt"></i> إزالة الصلاحية
     </button>`;
@@ -842,7 +842,7 @@ async function renderAdminQuotes() {
       <div style="background:#f8fbfd;border-radius:10px;padding:10px 14px">${itemsHtml}</div>
       ${q.attachedImage ? `
       <div>
-        <img src="${cldOptimize(q.attachedImage,200)}" loading="lazy" onclick="window.open('${q.attachedImage}','_blank')"
+        <img src="${cldOptimize(q.attachedImage,200)}" loading="lazy" onclick="window.open('${escJsAttr(q.attachedImage)}','_blank')"
           style="max-width:120px;max-height:120px;border-radius:10px;border:2px solid var(--border);cursor:pointer" title="اضغط لعرض الصورة بالحجم الكامل">
       </div>` : ''}
       ${q.notes ? `<div style="font-size:13px;color:var(--text-muted);background:#fffbeb;padding:8px 12px;border-radius:8px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>` : ''}
@@ -1016,7 +1016,7 @@ function showQuoteOrderDetail(docId) {
       ${q.attachedImage ? `
       <div style="margin-bottom:12px">
         <div style="font-size:12px;font-weight:700;color:var(--text-muted);margin-bottom:8px"><i class="fas fa-image" style="color:var(--primary-light)"></i> صورة مرفقة من العميل</div>
-        <img src="${cldOptimize(q.attachedImage,400)}" loading="lazy" onclick="window.open('${q.attachedImage}','_blank')"
+        <img src="${cldOptimize(q.attachedImage,400)}" loading="lazy" onclick="window.open('${escJsAttr(q.attachedImage)}','_blank')"
           style="max-width:220px;max-height:220px;border-radius:12px;border:2px solid var(--border);cursor:pointer" title="اضغط لعرض الصورة بالحجم الكامل">
       </div>` : ''}
       ${q.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px;margin-bottom:12px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>`:''}
