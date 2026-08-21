@@ -9,7 +9,11 @@ function getActiveClientSession() {
 }
 
 function normalizeClientPhone(phone) {
-  return (phone || '').replace(/\D/g, '').slice(-9);
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (digits.startsWith('009627')) return '9627' + digits.slice(6);
+  if (digits.startsWith('9627')) return digits;
+  if (digits.startsWith('07')) return '9627' + digits.slice(2);
+  return digits;
 }
 
 async function findRegisteredClientByPhone(phone) {
