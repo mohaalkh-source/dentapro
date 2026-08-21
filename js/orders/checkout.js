@@ -547,7 +547,7 @@ async function finalizeQuickOrderSend() {
       const total = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const order = {
         id: orderNum,
-        clientName: doctor,
+        clientName: guestClient ? (guestClient.name || doctor) : doctor,
         clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
         clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, doctor, phone,
@@ -582,7 +582,7 @@ async function finalizeQuickOrderSend() {
       const quoteNum = `QT-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const quote = {
         id: quoteNum,
-        clientName: doctor,
+        clientName: guestClient ? (guestClient.name || doctor) : doctor,
         clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
         clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, phone,
