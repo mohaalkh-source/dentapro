@@ -462,6 +462,41 @@ async function revokeUserRole(uid, email) {
   }
 }
 
+function normalizeAdminPhone(phone) {
+  const digits = String(phone || '').replace(/\D/g, '');
+  if (digits.startsWith('009627')) return '9627' + digits.slice(6);
+  if (digits.startsWith('9627')) return digits;
+  if (digits.startsWith('07')) return '9627' + digits.slice(2);
+  return digits;
+}
+
+// يربط سجلات الزوار القديمة بحساب العميل المسجل عند عرضها للإدمن.
+// لا يغيّر clientEmail حتى تبقى قواعد وتدفقات الطلبات القديمة متوافقة.
+async function reconcileGuestRecordNames(records) {
+  const guestRecords = (records || []).filter(r => r.clientEmail === 'guest' && r.phone);
+  if (!guestRecords.length || !window._fbGetDocs || !window._fbCollection || !window._db) return;
+  try {
+    const snap = await window._fbGetDocs(window._fbCollection(window._db, 'users'));
+    const usersByPhone = {};
+    snap.docs.forEach(d => {
+      const user = { ...d.data(), uid: d.id };
+      if (user.role !== 'client') return;
+      const key = normalizeAdminPhone(user.phone);
+      if (key && !usersByPhone[key]) usersByPhone[key] = user;
+    });
+    guestRecords.forEach(record => {
+      const matched = usersByPhone[normalizeAdminPhone(record.phone)];
+      if (!matched) return;
+      record.clientName = matched.firstName || matched.name || record.clientName;
+      record.doctor = record.clientName;
+      record.clinic = matched.clinic || record.clinic;
+      record.clientUid = matched.uid || record.clientUid || null;
+    });
+  } catch (e) {
+    console.warn('reconcileGuestRecordNames:', e.message);
+  }
+}
+
 async function renderAdminOrders() {
   const body = document.getElementById('adminOrdersBody');
   if (!body) return;
@@ -476,6 +511,7 @@ async function renderAdminOrders() {
     const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
     const snap = await window._fbGetDocs(q);
     const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
+    await reconcileGuestRecordNames(orders);
     window._cachedOrders = orders;
 
     const pending = orders.filter(o => !['delivered','cancelled'].includes(o.status)).length;
@@ -787,6 +823,7 @@ async function renderAdminQuotes() {
     </div>`;
 
   const quotes = await getAllQuotes();
+  await reconcileGuestRecordNames(quotes);
   window._cachedAdminQuotes = quotes;
 
   const pendingCount = computeQuotesBadgeCount(quotes);
