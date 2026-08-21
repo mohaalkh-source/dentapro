@@ -1,0 +1,255 @@
+/* DentaPro CSS module: forms responsibilities. */
+
+.btn-primary{
+  padding:14px 32px; border-radius:50px;
+  background: var(--gradient-accent);
+  color:#fff; border:none; font-family:inherit; font-size:15px; font-weight:700;
+  cursor:pointer; transition:all 0.25s;
+  box-shadow:0 8px 22px rgba(6,182,163,0.38), inset 0 1px 0 rgba(255,255,255,0.25);
+  text-decoration:none; display:inline-block;
+}
+
+.btn-primary:hover{transform:translateY(-2px); box-shadow:0 12px 30px rgba(6,182,163,0.48)}
+
+.btn-primary:active{transform:translateY(0) scale(0.97); transition:transform 0.1s}
+
+.btn-outline{
+  padding:14px 32px; border-radius:50px;
+  background: rgba(255,255,255,0.1);
+  color:#fff; border:1.5px solid rgba(255,255,255,0.5);
+  font-family:inherit; font-size:15px; font-weight:700;
+  cursor:pointer; transition:all 0.25s; text-decoration:none; display:inline-block;
+  backdrop-filter:blur(6px);
+}
+
+.btn-outline:hover{transform:translateY(-2px); background:rgba(255,255,255,0.18); border-color:#fff}
+
+.btn-outline:active{transform:translateY(0) scale(0.97); transition:transform 0.1s}
+
+.section-tag{
+  display:inline-block; padding:5px 16px; border-radius:50px;
+  background:rgba(10,92,138,0.08); color:var(--primary);
+  font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase;
+  margin-bottom:12px;
+}
+
+.add-to-cart:hover{background:var(--gradient-accent); transform:scale(1.1); box-shadow:0 6px 16px rgba(6,182,163,0.35)}
+
+.checkout-btn{
+  width:100%; padding:16px; border-radius:50px;
+  background:var(--gradient-primary);
+  color:#fff; border:none; font-family:inherit; font-size:16px; font-weight:800;
+  cursor:pointer; transition:all 0.25s;
+  box-shadow:0 8px 22px rgba(11,79,117,0.32);
+  display:flex; align-items:center; justify-content:center; gap:10px;
+}
+
+.checkout-btn:hover{transform:translateY(-2px); box-shadow:0 12px 30px rgba(11,79,117,0.42)}
+
+/* Form Styles */
+.form-group{margin-bottom:20px}
+
+.form-label{
+  display:flex; align-items:center; gap:6px;
+  font-size:14px; font-weight:700; color:var(--primary-dark); margin-bottom:8px;
+}
+
+.form-label .required{color:var(--danger); font-size:16px}
+
+.form-input,.form-textarea,.form-select{
+  width:100%; padding:13px 16px; border-radius:var(--radius-sm);
+  border:2px solid var(--border); background:#fafcfe;
+  font-family:inherit; font-size:14px; color:var(--text);
+  outline:none; transition:all 0.2s;
+}
+
+.form-input:focus,.form-textarea:focus,.form-select:focus{
+  border-color:var(--primary-light); background:#fff;
+  box-shadow:0 0 0 4px rgba(33,150,201,0.12);
+}
+
+.form-input.error,.form-textarea.error{border-color:var(--danger); background:#fff8f8}
+
+.form-textarea{resize:vertical; min-height:100px; line-height:1.6}
+
+.form-row{display:grid; grid-template-columns:1fr 1fr; gap:16px}
+
+.input-with-icon{position:relative}
+
+.input-icon{
+  position:absolute; top:50%; right:14px; transform:translateY(-50%);
+  color:var(--primary-light); font-size:16px; pointer-events:none;
+}
+
+body.en .input-icon{right:auto; left:14px}
+
+.input-with-icon .form-input{padding-right:44px}
+
+body.en .input-with-icon .form-input{padding-right:16px; padding-left:44px}
+
+.phone-input-wrap{display:flex; gap:8px}
+
+/* Validation */
+.field-error{font-size:12px; color:var(--danger); margin-top:5px; display:none; align-items:center; gap:4px}
+
+.field-error.show{display:flex}
+
+.btn-back{
+  padding:12px 24px; border-radius:50px; border:2px solid var(--border);
+  background:transparent; font-family:inherit; font-size:14px; font-weight:700;
+  color:var(--text-muted); cursor:pointer; transition:all 0.2s;
+  display:flex; align-items:center; gap:8px;
+}
+
+.btn-back:hover{border-color:var(--primary); color:var(--primary)}
+
+.btn-back:active{transform:scale(0.96); transition:transform 0.1s}
+
+.btn-next{
+  padding:13px 32px; border-radius:50px;
+  background:linear-gradient(135deg,var(--primary),var(--primary-light));
+  color:#fff; border:none; font-family:inherit; font-size:15px; font-weight:800;
+  cursor:pointer; transition:all 0.25s; box-shadow:0 6px 20px rgba(10,92,138,0.3);
+  display:flex; align-items:center; gap:8px;
+}
+
+.btn-next:hover{transform:translateY(-1px); box-shadow:0 10px 28px rgba(10,92,138,0.4)}
+
+.btn-next:active{transform:translateY(0) scale(0.97); transition:transform 0.1s}
+
+.btn-submit{
+  padding:13px 32px; border-radius:50px;
+  background:linear-gradient(135deg,var(--accent),#00a896);
+  color:#fff; border:none; font-family:inherit; font-size:15px; font-weight:800;
+  cursor:pointer; transition:all 0.25s; box-shadow:0 6px 20px rgba(0,194,168,0.4);
+  display:flex; align-items:center; gap:8px;
+}
+
+.btn-submit:hover{transform:translateY(-1px)}
+
+.btn-submit:active{transform:translateY(0) scale(0.97); transition:transform 0.1s}
+
+.whatsapp-btn:hover{transform:translateY(-1px)}
+
+.feature-card:hover{background:rgba(255,255,255,0.14); transform:translateY(-3px)}
+
+.social-link:hover{background:var(--accent); transform:scale(1.1)}
+
+/* ===== AUTH ===== */
+.auth-btn {
+  padding: 8px 18px; border-radius: 50px;
+  border: 2px solid var(--primary); background: transparent;
+  font-family: inherit; font-size: 13px; font-weight: 700;
+  color: var(--primary); cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; gap: 6px;
+}
+
+.auth-btn:hover { background: var(--primary); color: #fff; }
+
+.auth-btn.filled { background: var(--primary); color: #fff; }
+
+/* Auth Modal Tabs */
+.auth-tabs { display: flex; border-bottom: 2px solid var(--border); margin-bottom: 24px; }
+
+.auth-tab {
+  flex: 1; padding: 12px; text-align: center; font-family: inherit;
+  font-size: 14px; font-weight: 700; color: var(--text-muted);
+  background: none; border: none; cursor: pointer; transition: all 0.2s;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+}
+
+.auth-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+.auth-divider {
+  display: flex; align-items: center; gap: 12px;
+  color: var(--text-muted); font-size: 13px; margin: 16px 0;
+}
+
+.auth-divider::before, .auth-divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.img-upload-area input[type="file"] {
+  position:absolute; inset:0; opacity:0; cursor:pointer; width:100%; height:100%;
+}
+
+.add-points-btn:hover { transform: translateY(-1px); }
+
+/* ===== PAGE SECTIONS HIDE/SHOW ===== */
+.page-section{display:none; opacity:0; transform:translateY(12px); transition:opacity 0.25s ease, transform 0.25s ease}
+
+.page-section.active{display:block; opacity:1; transform:translateY(0)}
+
+.quick-access-card:hover{transform:translateY(-3px); box-shadow:var(--shadow)}
+
+.status-select{
+  padding:7px 12px; border-radius:50px;
+  border:2px solid var(--border); background:#fff;
+  font-family:inherit; font-size:12px; font-weight:700;
+  cursor:pointer; outline:none; color:var(--text);
+  transition:border-color 0.2s; width:100%;
+}
+
+.status-select:focus{border-color:var(--primary-light)}
+
+/* ===== Enhancement block ===== */
+
+.voice-search-btn{
+  position:absolute; top:50%; left:10px; transform:translateY(-50%);
+  width:32px; height:32px; border-radius:50%; border:none;
+  background:none; color:var(--primary); cursor:pointer; font-size:15px; z-index:2;
+}
+
+#bottomNavBar { transition: transform .28s ease, opacity .28s ease; }
+
+#bottomNavBar.hidden { transform: translateY(110%); opacity: 0; }
+
+/* ─── Floating WhatsApp button (above bottom nav) ─── */
+.fab-whatsapp {
+  position:fixed; bottom:90px; right:24px; z-index:1800;
+  width:46px; height:46px; border-radius:50%;
+  background:linear-gradient(135deg,#25d366,#128c7e);
+  color:#fff; border:none; cursor:pointer;
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px; box-shadow:0 4px 16px rgba(37,211,102,0.45);
+  transition:all 0.3s; opacity:0.9;
+}
+
+.fab-whatsapp:hover { transform:translateY(-3px); opacity:1; box-shadow:0 6px 20px rgba(37,211,102,0.6); }
+
+.fab-tooltip {
+  position:absolute; right:56px; top:50%; transform:translateY(-50%);
+  background:#1a1a1a; color:#fff; font-size:12px; font-weight:700;
+  padding:5px 10px; border-radius:8px; white-space:nowrap;
+  opacity:0; pointer-events:none; transition:opacity 0.2s;
+}
+
+/* ─── Scroll-to-top button (stacked above WhatsApp) ─── */
+.scroll-top-btn {
+  position:fixed; bottom:150px; right:24px; z-index:1800;
+  width:46px; height:46px; border-radius:50%;
+  background:var(--gradient-primary);
+  color:#fff; border:none; cursor:pointer; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 16px rgba(10,92,138,0.35);
+  transition:all 0.3s; opacity:0; pointer-events:none; transform:translateY(16px);
+}
+
+.scroll-top-btn.visible { opacity:1; pointer-events:all; transform:translateY(0); }
+
+.scroll-top-btn:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(10,92,138,0.45); }
+
+/* ─── Floating search button (above scroll-to-top) ─── */
+.fab-search {
+  position:fixed; bottom:210px; right:24px; z-index:1800;
+  width:46px; height:46px; border-radius:50%;
+  background:var(--gradient-accent);
+  color:#fff; border:none; cursor:pointer; font-size:18px;
+  display:flex; align-items:center; justify-content:center;
+  box-shadow:0 4px 16px rgba(10,92,138,0.35);
+  transition:all 0.3s; opacity:0; pointer-events:none; transform:translateY(16px);
+}
+
+.fab-search.visible { opacity:1; pointer-events:all; transform:translateY(0); }
+
+.fab-search:hover { transform:translateY(-3px); box-shadow:0 8px 22px rgba(10,92,138,0.45); }
