@@ -1516,7 +1516,9 @@ async function renderProducts() {
   }
   const visibleProducts = filtered.slice(0, productsDisplayLimit);
   grid.dataset.totalFiltered = filtered.length;
-  if (loadMoreBtn) loadMoreBtn.style.display = 'none';
+  if (loadMoreBtn) {
+    loadMoreBtn.style.display = productsDisplayLimit < filtered.length ? 'inline-flex' : 'none';
+  }
   grid.innerHTML = visibleProducts.map(p => productCardHTML(p)).join('');
   renderBestSellers();
   renderLatestProducts();
