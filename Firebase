@@ -1,0 +1,169 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+             (request.auth.token.email == 'moh.a.alkh@gmail.com' ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin');
+    }
+
+    function isStaff() {
+      return request.auth != null &&
+             (request.auth.token.email == 'moh.a.alkh@gmail.com' ||
+              get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','manager']);
+    }
+
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /orders/{orderId} {
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'id','clientName','clientEmail','clientUid','clinic','doctor','phone',
+          'address','locationLat','locationLng','notes','items','total','totalPoints',
+          'payMethod','pointsDeducted','status','createdAt','createdByAdmin','sourceQuoteId'
+        ]) &&
+        request.resource.data.keys().hasAll(['id','clinic','doctor','phone','items','total','status','createdAt']) &&
+        request.resource.data.pointsDeducted == false &&
+        request.resource.data.items is list &&
+        request.resource.data.items.size() > 0 &&
+        request.resource.data.items.size() <= 100 &&
+        request.resource.data.total is number &&
+        request.resource.data.total >= 0 &&
+        request.resource.data.phone is string &&
+        (
+          (
+            isStaff() &&
+            request.resource.data.status in ['pending','confirmed'] &&
+            request.resource.data.payMethod in ['money','points','free']
+          )
+          ||
+          (
+            request.resource.data.status == 'pending' &&
+            request.resource.data.total > 0 &&
+            request.resource.data.phone.size() > 5 &&
+            (request.resource.data.payMethod == null ||
+             request.resource.data.payMethod in ['money','points']) &&
+            (isLoggedIn()
+              ? request.resource.data.clientEmail == request.auth.token.email
+              : request.resource.data.clientEmail == 'guest') &&
+            request.resource.data.clientUid == (isLoggedIn() ? request.auth.uid : null)
+          )
+        );
+
+      allow read: if isStaff() ||
+                       (isLoggedIn() && resource.data.clientEmail == request.auth.token.email);
+
+      allow update: if isStaff() &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status','stockDeducted','pointsDeducted']);
+
+      allow delete: if isAdmin();
+    }
+
+    match /points/{userId} {
+      allow read: if isAdmin() ||
+                      (isLoggedIn() && request.auth.uid == userId);
+      allow write: if isStaff();
+    }
+
+    match /store_data/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /users/{userId} {
+      allow read: if isStaff() ||
+                      (isLoggedIn() && request.auth.uid == userId);
+
+      allow create: if isLoggedIn() &&
+                       request.auth.uid == userId &&
+                       request.resource.data.role == 'client';
+
+      allow update: if isAdmin() ||
+                       (isLoggedIn() && request.auth.uid == userId &&
+                        request.resource.data.role == resource.data.role);
+
+      allow delete: if isAdmin() ||
+                       (isLoggedIn() && request.auth.uid == userId);
+    }
+
+    match /contact_messages/{msgId} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['name','email','message','createdAt']) &&
+        request.resource.data.name is string && request.resource.data.name.size() < 100 &&
+        request.resource.data.email is string && request.resource.data.email.size() < 150 &&
+        request.resource.data.message is string && request.resource.data.message.size() < 2000;
+      allow read: if isStaff();
+      allow update, delete: if false;
+    }
+
+    match /quotes/{quoteId} {
+      allow read: if isStaff() ||
+                  (isLoggedIn() && resource.data.clientEmail == request.auth.token.email);
+
+      allow create: if
+        request.resource.data.status == 'pending' &&
+        request.resource.data.items is list &&
+        request.resource.data.items.size() > 0 &&
+        request.resource.data.items.size() <= 50 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() > 5 &&
+        request.resource.data.clientName is string &&
+        request.resource.data.clientName.size() > 0 &&
+        (isLoggedIn()
+          ? request.resource.data.clientEmail == request.auth.token.email
+          : request.resource.data.clientEmail == 'guest') &&
+        request.resource.data.clientUid == (isLoggedIn() ? request.auth.uid : null);
+
+      allow update: if isStaff() ||
+                    (isLoggedIn() &&
+                     resource.data.clientEmail == request.auth.token.email &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'orderStatus']) &&
+                     request.resource.data.status in ['accepted', 'rejected', 'saved']);
+
+      allow delete: if isAdmin();
+    }
+
+    match /activity_log/{logId} {
+      allow create: if isLoggedIn() &&
+                       request.resource.data.email == request.auth.token.email;
+      allow read: if isStaff();
+      allow update, delete: if false;
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isStaff() ||
+                  (isLoggedIn() &&
+                   (resource.data.scope == 'broadcast' ||
+                    resource.data.targetEmail == request.auth.token.email));
+
+      allow create: if isStaff() ||
+                    (request.resource.data.scope == 'admin' &&
+                     request.resource.data.targetEmail == null);
+
+      allow update, delete: if isStaff();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isStaff() ||
+                  (isLoggedIn() &&
+                   (resource.data.clientEmail == request.auth.token.email ||
+                    resource.data.clientEmail == 'broadcast'));
+
+      allow create: if (isStaff() && request.resource.data.fromRole == 'admin') ||
+                    (isLoggedIn() &&
+                     request.resource.data.fromRole == 'client' &&
+                     request.resource.data.clientEmail == request.auth.token.email);
+
+      allow update, delete: if false;
+    }
+  }
+}
