@@ -445,14 +445,29 @@ function openClientAllOrdersModal(email) {
 // ============================
 // الخصم العام على الفواتير — يُدار من الأدمن (محفوظ بـ Firestore: store_data/discount_settings)
 // ============================
+var _discountConfigCache = null;
+var _discountConfigCacheTime = 0;
+
 async function loadDiscountConfig() {
+  // تخزين مؤقت 15 ثانية — يمنع قراءة متكررة من Firestore كل ما تتحدث السلة (كل ضغطة كمية مثلاً)
+  if (_discountConfigCache !== null && (Date.now() - _discountConfigCacheTime) < 15000) {
+    return _discountConfigCache;
+  }
   try {
     const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'discount_settings'));
-    return snap.exists() ? snap.data() : null;
+    _discountConfigCache = snap.exists() ? snap.data() : null;
+    _discountConfigCacheTime = Date.now();
+    return _discountConfigCache;
   } catch(e) {
     console.warn('loadDiscountConfig:', e.message);
     return null;
   }
+}
+
+// تفريغ التخزين المؤقت فوراً بعد ما الإدمن يحفظ إعدادات جديدة، حتى ينعكس التغيير فورياً بدل انتظار 15 ثانية
+function invalidateDiscountConfigCache() {
+  _discountConfigCache = null;
+  _discountConfigCacheTime = 0;
 }
 
 async function openDiscountSettingsModal() {
@@ -508,6 +523,7 @@ async function saveDiscountConfig() {
     await window._fbSetDoc(window._fbDoc2('store_data', 'discount_settings'), {
       enabled, scope, targetId, minAmount, percent, updatedAt: new Date().toISOString()
     });
+    invalidateDiscountConfigCache();
     showToast('✅ تم حفظ إعدادات الخصم', 'success');
     closeDiscountSettingsModal();
   } catch(e) {
