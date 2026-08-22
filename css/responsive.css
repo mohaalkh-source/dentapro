@@ -360,7 +360,6 @@
   font-size: 12px !important; font-weight: 700 !important; color: #3e3e3e !important;
 }
 /* تم حذف هذا السطر بالكامل — النص الآن حقيقي بالـHTML (span.notif-btn-label) ومترجم تلقائيًا، مو CSS ثابت */
-#msgBtn::after { content: 'الرسائل'; }
 
 .offers-pill-btn  { left: 12px !important; }
 #reorderMobileBtn { left: calc((100% - 36px) / 3 + 18px) !important; }
