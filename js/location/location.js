@@ -153,14 +153,19 @@ async function submitOrder() {
     ? await findRegisteredClientByPhone(submittedPhone) : null;
   const linkedClient = currentUser || matchedClient || null;
 
+  const orderClientEmail = linkedClient ? (linkedClient.email || 'guest') : 'guest';
+  const orderPhone = linkedClient ? (linkedClient.phone || submittedPhone) : submittedPhone;
+  const rawTotal = getTotal();
+  const discountResult = await computeGeneralDiscount(rawTotal, orderClientEmail, orderPhone);
+
   const order = {
     id:          orderNum,
     clientName:  linkedClient ? (linkedClient.name || document.getElementById('doctorName').value) : document.getElementById('doctorName').value,
-    clientEmail: linkedClient ? (linkedClient.email || 'guest') : 'guest',
+    clientEmail: orderClientEmail,
     clientUid:   linkedClient ? (linkedClient.uid || null) : null,
     clinic:      linkedClient ? (linkedClient.clinic || document.getElementById('clinicName').value) : document.getElementById('clinicName').value,
     doctor:      linkedClient ? (linkedClient.name || document.getElementById('doctorName').value) : document.getElementById('doctorName').value,
-    phone:       linkedClient ? (linkedClient.phone || submittedPhone) : submittedPhone,
+    phone:       orderPhone,
     address:     locationData.address || document.getElementById('addressInput').value,
     locationLat: locationData.lat || null,
     locationLng: locationData.lng || null,
@@ -170,12 +175,13 @@ async function submitOrder() {
       isBundle: i.isBundle || false,
       bundleItems: i.isBundle ? i.bundleItems : undefined
     })),
-    total:       getTotal(),
+    total:       discountResult ? discountResult.total : rawTotal,
     totalPoints: totalPoints,
     payMethod:   payWithPoints ? 'points' : 'money',
     pointsDeducted: false,
     status:      'pending',
     createdAt:   new Date().toISOString(),
+    ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {})
   };
 
   // محاولة الحفظ في Firebase — إن فشلت نعيد المحاولة مرة واحدة بعد تأخير بسيط
