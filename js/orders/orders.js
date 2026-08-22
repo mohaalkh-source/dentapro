@@ -774,9 +774,15 @@ function showAdminOrderDetail(orderId) {
                 : `${(item.price*item.qty).toLocaleString()} د.أ`}
             </span>
           </div>`).join('')}
-        <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
           <span>الإجمالي</span>
-          <span>${order.payMethod==='points' ? `🏆 ${order.totalPoints||0} نقطة` : `${order.total.toLocaleString()} د.أ`}</span>
+          <span>
+            ${order.payMethod==='points'
+              ? `🏆 ${order.totalPoints||0} نقطة`
+              : (order.originalTotal && order.originalTotal > order.total
+                  ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${order.originalTotal.toLocaleString()} د.أ</span><span style="font-weight:800">${order.total.toLocaleString()} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${order.discountPercent}%)</span>`
+                  : `${order.total.toLocaleString()} د.أ`)}
+          </span>
         </div>
       </div>
       ${order.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(order.notes)}</div>`:''}
