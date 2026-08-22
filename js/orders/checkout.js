@@ -598,7 +598,12 @@ async function finalizeQuickOrderSend() {
           link: 'adminorders:open',
         });
       }
-      showToast('🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً', 'success');
+      showToast(
+        discountResult
+          ? `🎉 تم إرسال طلبك بنجاح — الإجمالي بعد الخصم: ${discountResult.total.toLocaleString()} د.أ (بدل ${discountResult.originalTotal.toLocaleString()} د.أ)`
+          : '🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً',
+        'success'
+      );
       if (fromQuoteDocId) renderMyQuotesPage();
     } else {
       const ts = Date.now().toString(36).toUpperCase();
