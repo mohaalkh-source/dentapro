@@ -101,12 +101,19 @@ function getTotal() {
   return cart.reduce((s, i) => s + i.price * i.qty, 0);
 }
 
-function updateCartUI() {
+async function updateCartUI() {
   saveCart();
   const count = cart.reduce((s, i) => s + i.qty, 0);
   document.getElementById('cartCount').textContent = count;
   document.getElementById('cartItemsCount').textContent = `(${count})`;
-  document.getElementById('cartTotal').innerHTML = `${getTotal().toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small>`;
+
+  const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
+  const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
+  const discountPreview = cart.length ? await computeGeneralDiscount(getTotal(), previewClientEmail, previewClientPhone) : null;
+
+  document.getElementById('cartTotal').innerHTML = discountPreview
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()}</span>${discountPreview.total.toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small> <small style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</small>`
+    : `${getTotal().toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small>`;
   updateFreeShippingBar();
 
   const itemsDiv = document.getElementById('cartItems');
