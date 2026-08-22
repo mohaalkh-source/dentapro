@@ -442,3 +442,75 @@ function openClientAllOrdersModal(email) {
 }
 
 // =====================
+// ============================
+// الخصم العام على الفواتير — يُدار من الأدمن (محفوظ بـ Firestore: store_data/discount_settings)
+// ============================
+async function loadDiscountConfig() {
+  try {
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'discount_settings'));
+    return snap.exists() ? snap.data() : null;
+  } catch(e) {
+    console.warn('loadDiscountConfig:', e.message);
+    return null;
+  }
+}
+
+async function openDiscountSettingsModal() {
+  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+  document.getElementById('discountSettingsModal').classList.add('open');
+  document.getElementById('discountSettingsBody').innerHTML = `<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto;width:26px;height:26px;border-width:4px"></div></div>`;
+
+  const cfg = await loadDiscountConfig();
+  const allUsers = await fetchAllUsersList();
+  const clients = allUsers.filter(u => u.role === 'client');
+
+  const optionsHtml = clients.map(c =>
+    `<option value="${escJsAttr(c.email)}" ${cfg && cfg.targetId === c.email ? 'selected' : ''}>${escHtml(c.firstName||c.name||'')} — ${escHtml(c.clinic||'')}</option>`
+  ).join('');
+
+  document.getElementById('discountSettingsBody').innerHTML = `
+    <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:16px;cursor:pointer">
+      <input type="checkbox" id="discEnabled" ${cfg && cfg.enabled ? 'checked' : ''} style="width:20px;height:20px">
+      تفعيل الخصم العام
+    </label>
+    <label style="display:block;font-weight:700;margin-bottom:6px">نطاق الخصم</label>
+    <select id="discScope" class="form-input" style="margin-bottom:16px" onchange="document.getElementById('discClientRow').style.display=this.value==='client'?'block':'none'">
+      <option value="all" ${!cfg || cfg.scope==='all' ? 'selected':''}>كل العملاء</option>
+      <option value="client" ${cfg && cfg.scope==='client' ? 'selected':''}>عميل محدد</option>
+    </select>
+    <div id="discClientRow" style="${cfg && cfg.scope==='client' ? '' : 'display:none'};margin-bottom:16px">
+      <label style="display:block;font-weight:700;margin-bottom:6px">اختر العميل</label>
+      <select id="discClientSelect" class="form-input">${optionsHtml}</select>
+    </div>
+    <label style="display:block;font-weight:700;margin-bottom:6px">الحد الأدنى لقيمة الفاتورة (د.أ) — ضع 0 لتطبيق الخصم دائماً</label>
+    <input type="number" id="discMinAmount" class="form-input" min="0" step="0.1" value="${cfg ? cfg.minAmount : 0}" style="margin-bottom:16px">
+    <label style="display:block;font-weight:700;margin-bottom:6px">نسبة الخصم %</label>
+    <input type="number" id="discPercent" class="form-input" min="0" max="100" step="1" value="${cfg ? cfg.percent : 0}" style="margin-bottom:20px">
+    <button onclick="saveDiscountConfig()" class="btn-submit" style="width:100%">
+      <i class="fas fa-save"></i> حفظ الإعدادات
+    </button>`;
+}
+
+function closeDiscountSettingsModal() {
+  document.getElementById('discountSettingsModal').classList.remove('open');
+}
+
+async function saveDiscountConfig() {
+  const enabled = document.getElementById('discEnabled').checked;
+  const scope = document.getElementById('discScope').value;
+  const targetId = scope === 'client' ? document.getElementById('discClientSelect').value : null;
+  const minAmount = parseFloat(document.getElementById('discMinAmount').value) || 0;
+  const percent = Math.max(0, Math.min(100, parseFloat(document.getElementById('discPercent').value) || 0));
+
+  if (scope === 'client' && !targetId) { showToast('⚠️ اختر عميل أولاً', 'error'); return; }
+
+  try {
+    await window._fbSetDoc(window._fbDoc2('store_data', 'discount_settings'), {
+      enabled, scope, targetId, minAmount, percent, updatedAt: new Date().toISOString()
+    });
+    showToast('✅ تم حفظ إعدادات الخصم', 'success');
+    closeDiscountSettingsModal();
+  } catch(e) {
+    showToast('❌ فشل الحفظ: ' + e.message, 'error');
+  }
+}
