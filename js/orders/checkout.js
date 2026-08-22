@@ -1,3 +1,22 @@
+// يحسب الخصم العام (لو مفعّل ومطابق للشروط) على فاتورة واحدة (سلة أو طلب سريع فقط)
+// يرجع null لو ما فيه خصم ينطبق، أو {originalTotal, total, discountPercent} لو انطبق
+async function computeGeneralDiscount(rawTotal, clientEmail, clientPhone) {
+  try {
+    const cfg = await loadDiscountConfig();
+    if (!cfg || !cfg.enabled) return null;
+    if (rawTotal < (cfg.minAmount || 0)) return null;
+    if (cfg.scope === 'client') {
+      if (cfg.targetId !== clientEmail) return null;
+    }
+    const percent = Math.max(0, Math.min(100, cfg.percent || 0));
+    if (percent <= 0) return null;
+    const discounted = Math.max(0, rawTotal - (rawTotal * percent / 100));
+    return { originalTotal: rawTotal, total: Math.round(discounted * 100) / 100, discountPercent: percent };
+  } catch(e) {
+    console.warn('computeGeneralDiscount:', e.message);
+    return null;
+  }
+}
 // DentaPro domain module: extracted from the original implementation.
 // QUOTE REQUEST (طلب عرض سعر) — CLIENT SIDE
 // =====================
@@ -544,11 +563,14 @@ async function finalizeQuickOrderSend() {
     if (!hasCustomItem) {
       const ts = Date.now().toString(36).toUpperCase();
       const orderNum = fromQuoteIdStr ? `DP-${fromQuoteIdStr.replace('QT-','')}` : `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
-      const total = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
+      const rawTotal = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
+      const clientEmailForOrder = guestClient ? (guestClient.email || 'guest') : 'guest';
+      const discountResult = await computeGeneralDiscount(rawTotal, clientEmailForOrder, phone);
+      const total = discountResult ? discountResult.total : rawTotal;
       const order = {
         id: orderNum,
         clientName: guestClient ? (guestClient.name || doctor) : doctor,
-        clientEmail: guestClient ? (guestClient.email || 'guest') : 'guest',
+        clientEmail: clientEmailForOrder,
         clientUid: guestClient ? (guestClient.uid || null) : null,
         clinic, doctor, phone,
         address, locationLat: locLat || null, locationLng: locLng || null,
@@ -557,6 +579,7 @@ async function finalizeQuickOrderSend() {
         items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, qty: i.qty, points: 0 })),
         total, totalPoints: 0, payMethod: 'money', pointsDeducted: false,
         status: 'pending', createdAt: new Date().toISOString(),
+        ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {})
       };
       await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
 
