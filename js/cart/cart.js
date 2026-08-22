@@ -328,6 +328,15 @@ async function renderConfirmDetails() {
   const totalPoints = cart.reduce((s, i) => s + ((i.points || 0) * i.qty), 0);
   const hasAnyPoints = cart.some(i => i.points > 0);
 
+  // معاينة الخصم العام (لو مفعّل ومطابق للعميل/الحد الأدنى) قبل الإرسال الفعلي
+  const previewPhone = formatPhoneForWhatsApp(document.getElementById('countryCode').value + document.getElementById('phoneNumber').value);
+  const previewMatchedClient = (!currentUser && typeof findRegisteredClientByPhone === 'function')
+    ? await findRegisteredClientByPhone(previewPhone) : null;
+  const previewLinkedClient = currentUser || previewMatchedClient || null;
+  const previewClientEmail = previewLinkedClient ? (previewLinkedClient.email || 'guest') : 'guest';
+  const previewClientPhone = previewLinkedClient ? (previewLinkedClient.phone || previewPhone) : previewPhone;
+  const discountPreview = await computeGeneralDiscount(getTotal(), previewClientEmail, previewClientPhone);
+
   let clientPoints = 0;
   if (currentUser && currentUser.role === 'client') {
     clientPoints = await getClientPoints(currentUser.uid);
@@ -364,7 +373,11 @@ async function renderConfirmDetails() {
       <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:15px;color:var(--primary)">
         <span>${t('الإجمالي','Total')}</span>
         <div style="text-align:left">
-          <div>${getTotal().toLocaleString()} ${t('د.أ','SAR')}</div>
+          <div>
+            ${discountPreview
+              ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()} ${t('د.أ','SAR')}</span><span>${discountPreview.total.toLocaleString()} ${t('د.أ','SAR')}</span> <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
+              : `${getTotal().toLocaleString()} ${t('د.أ','SAR')}`}
+          </div>
           ${totalPoints > 0 ? `<div style="font-size:12px;color:#d97706;font-weight:700">🏆 ${totalPoints} نقطة مطلوبة</div>` : ''}
         </div>
       </div>
