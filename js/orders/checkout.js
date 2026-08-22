@@ -342,7 +342,7 @@ function removeQOItemRowByIdx(idx) {
   renderQOItemsList();
 }
 
-function updateQuickOrderTotal() {
+async function updateQuickOrderTotal() {
   const label = document.getElementById('quickOrderTotalLabel');
   if (!label) return;
   if (!currentQuickOrderItems.length) {
@@ -358,7 +358,12 @@ function updateQuickOrderTotal() {
     label.innerHTML = `الإجمالي التقديري: <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
       <span style="color:#d97706;font-weight:600"> + مواد بانتظار تسعير الإدارة</span>`;
   } else {
-    label.innerHTML = `الإجمالي: <strong style="color:var(--primary);font-size:15px">${total.toLocaleString()} د.أ</strong>`;
+    const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
+    const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
+    const discountPreview = await computeGeneralDiscount(total, previewClientEmail, previewClientPhone);
+    label.innerHTML = discountPreview
+      ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()} د.أ</span><strong style="color:var(--primary);font-size:15px">${discountPreview.total.toLocaleString()} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
+      : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${total.toLocaleString()} د.أ</strong>`;
   }
 }
 
