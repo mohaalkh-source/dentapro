@@ -228,10 +228,10 @@
     z-index:7;
   }
   #reorderMobileBtn i{font-size:15px;color:#13283e}
-  #reorderMobileBtn::after{content:'طلباتي السابقة';font-size:12px;font-weight:700;color:#3e3e3e}
+#reorderMobileBtn .notif-btn-label{font-size:12px;font-weight:700;color:#3e3e3e}
 }
 
-@media (max-width:370px){#reorderMobileBtn::after{font-size:11px}}
+@media (max-width:370px){#reorderMobileBtn .notif-btn-label{font-size:11px}}
 
 @media (max-width:370px){
   .logo{left:48px;max-width:calc(100% - 196px)}
@@ -356,10 +356,10 @@
   gap: 6px !important; z-index: 7 !important;
 }
 .offers-pill-btn i, #reorderMobileBtn i, #msgBtn i { font-size: 15px !important; color: #13283e !important; }
-.offers-pill-btn span, #reorderMobileBtn::after, #msgBtn::after {
+.offers-pill-btn span, #reorderMobileBtn .notif-btn-label, #msgBtn .notif-btn-label {
   font-size: 12px !important; font-weight: 700 !important; color: #3e3e3e !important;
 }
-#reorderMobileBtn::after { content: 'طلباتي السابقة'; }
+/* تم حذف هذا السطر بالكامل — النص الآن حقيقي بالـHTML (span.notif-btn-label) ومترجم تلقائيًا، مو CSS ثابت */
 #msgBtn::after { content: 'الرسائل'; }
 
 .offers-pill-btn  { left: 12px !important; }
