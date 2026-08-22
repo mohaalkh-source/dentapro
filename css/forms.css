@@ -95,9 +95,9 @@ body.en .input-with-icon .form-input{padding-right:16px; padding-left:44px}
 .field-error.show{display:flex}
 
 .btn-back{
-  padding:12px 24px; border-radius:50px; border:2px solid var(--border);
-  background:transparent; font-family:inherit; font-size:14px; font-weight:700;
-  color:var(--text-muted); cursor:pointer; transition:all 0.2s;
+  padding:12px 24px; border-radius:50px; border:2px solid var(--primary-dark);
+  background:var(--primary-dark); font-family:inherit; font-size:14px; font-weight:700;
+  color:#fff; cursor:pointer; transition:all 0.2s;
   display:flex; align-items:center; gap:8px;
 }
 
