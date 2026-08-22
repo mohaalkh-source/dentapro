@@ -307,8 +307,13 @@ function renderModalStep() {
   if (currentStep === 4) renderConfirmDetails();
 }
 
-function renderModalSummary() {
+async function renderModalSummary() {
   const div = document.getElementById('modalSummaryItems');
+
+  const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
+  const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
+  const discountPreview = await computeGeneralDiscount(getTotal(), previewClientEmail, previewClientPhone);
+
   div.innerHTML = cart.map(item => `
     <div class="summary-item">
       <span>${escHtml(item.icon || '')} ${escHtml(currentLang==='en'?item.en:item.ar)} × ${item.qty}</span>
@@ -317,7 +322,11 @@ function renderModalSummary() {
   `).join('') + `
     <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
       <span>${t('الإجمالي','Total')}</span>
-      <span>${getTotal().toLocaleString()} ${t('د.أ','SAR')}</span>
+      <span>
+        ${discountPreview
+          ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()} ${t('د.أ','SAR')}</span>${discountPreview.total.toLocaleString()} ${t('د.أ','SAR')} <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
+          : `${getTotal().toLocaleString()} ${t('د.أ','SAR')}`}
+      </span>
     </div>`;
 }
 
