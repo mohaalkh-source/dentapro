@@ -625,8 +625,7 @@ body.dark-mode .dark-toggle-inline { background:rgba(26,37,51,0.6); border-color
     color:#3e3e3e;
     font-size:14px;
     gap:6px;
-  }
-  #reorderMobileBtn::after{content:'طلباتي السابقة';font-size:14px;font-weight:700}
+#reorderMobileBtn .notif-btn-label{font-size:14px;font-weight:700}
   #reorderMobileBtn i{font-size:16px;color:#13283e}
   #favBtn,#msgBtn,#notifBtn,.cart-btn{
     display:flex !important;
