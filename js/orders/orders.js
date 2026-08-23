@@ -997,10 +997,19 @@ function sendWhatsAppQuote(docId) {
   const quotes = window._cachedAdminQuotes || [];
   const q = quotes.find(x => x._docId === docId);
   if (!q) return;
-  const itemsTxt = q.items.map(i => `• ${i.ar}${i.qty?` × ${i.qty}`:''}`).join('\n');
+  const statusInfo = QUOTE_STATUSES[q.status] || QUOTE_STATUSES.pending;
+  const hasPrices = q.items.every(i => i.unitPrice && i.unitPrice > 0);
+  const itemsTxt = q.items.map(i =>
+    `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''}${hasPrices && i.unitPrice ? ` — ${(i.unitPrice * (i.qty || 1)).toLocaleString()} د.أ` : ''}`
+  ).join('\n');
+  const totalLine = hasPrices
+    ? `\n\n💰 *الإجمالي: ${q.items.reduce((s, i) => s + (i.unitPrice * (i.qty || 1)), 0).toLocaleString()} د.أ*`
+    : '';
   const msg = encodeURIComponent(
     `🦷 *DentaPro — بخصوص طلب عرض السعر #${q.id}*\n\nمرحباً ${q.clientName}،\n\n` +
-    `بخصوص طلبك لعرض سعر المواد:\n${itemsTxt}\n\nسنوافيك بالتفاصيل قريباً.`
+    `الحالة الحالية: *${statusInfo.label}*\n\n` +
+    `بخصوص طلبك لعرض سعر المواد:\n${itemsTxt}${totalLine}\n\n` +
+    (q.status === 'priced' ? 'يرجى مراجعة العرض والرد علينا.' : 'سنوافيك بالتفاصيل قريباً.')
   );
   const phone = formatPhoneForWhatsApp(q.phone);
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
@@ -1137,9 +1146,16 @@ function sendWhatsAppAdmin(orderId) {
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
   const s = getStatusObj(order.status);
+  const itemsTxt = (order.items || []).map(i => `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''}`).join('\n');
+  const totalLine = order.payMethod === 'points'
+    ? `🏆 *الإجمالي: ${order.totalPoints || 0} نقطة*`
+    : (order.originalTotal && order.originalTotal > order.total
+        ? `💰 *الإجمالي بعد الخصم: ${order.total.toLocaleString()} د.أ* (بدل ${order.originalTotal.toLocaleString()} د.أ)`
+        : `💰 *الإجمالي: ${(order.total || 0).toLocaleString()} د.أ*`);
   const msg = encodeURIComponent(
     `🦷 *DentaPro — تحديث طلبك*\n\nمرحباً ${order.clientName}،\n` +
     `طلبك رقم *#${order.id}* الآن في مرحلة: *${s.label}*\n\n` +
+    `المواد:\n${itemsTxt}\n\n${totalLine}\n\n` +
     `شكراً لثقتك بـ DentaPro 💙`
   );
   const clean = formatPhoneForWhatsApp(order.phone);
@@ -1763,10 +1779,12 @@ async function runClientOrdersReport() {
       return;
     }
 
-    let grandTotal = 0;
+    let grandTotalCash = 0;
+    let grandTotalPoints = 0;
     let invoicesHTML = '';
     all.forEach(order => {
       const isCancelled = (order.status || 'pending') === 'cancelled';
+      const isPointsPay = order.payMethod === 'points';
       const items = order.items || [];
       let invoiceTotal = 0;
       const rowsHTML = items.map((it, idx) => {
@@ -1781,10 +1799,25 @@ async function runClientOrdersReport() {
             <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6;font-weight:700">${lineTotal.toFixed(2)}</td>
           </tr>`;
       }).join('');
-      if (!isCancelled) grandTotal += invoiceTotal;
+
+      // المجموع الفعلي: نستخدم order.total (يعكس الخصم تلقائياً لو موجود) لو متوفر،
+      // وإلا مجموع بنود العناصر (لعروض أسعار مقبولة لسا ما تحولت لطلب حقيقي)
+      const actualTotal = (typeof order.total === 'number') ? order.total : invoiceTotal;
+      const hasDiscount = order.originalTotal && order.originalTotal > order.total;
+
+      if (!isCancelled) {
+        if (isPointsPay) grandTotalPoints += (order.totalPoints || 0);
+        else grandTotalCash += actualTotal;
+      }
 
       const dateStr = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year: 'numeric', month: 'long', day: 'numeric' });
       const s = getStatusObj(order.status || 'pending');
+
+      const footerTotalHTML = isPointsPay
+        ? `🏆 إجمالي الفاتورة: ${(order.totalPoints || 0).toLocaleString()} نقطة`
+        : (hasDiscount
+            ? `إجمالي الفاتورة: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${order.originalTotal.toLocaleString()} د.أ</span>${actualTotal.toFixed(2)} د.أ <span style="font-size:11px;color:#e53e3e">(خصم ${order.discountPercent}%)</span>`
+            : `إجمالي الفاتورة: ${actualTotal.toFixed(2)} د.أ`);
 
       invoicesHTML += `
         <div style="margin-bottom:24px;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;${isCancelled ? 'opacity:0.6' : ''}">
@@ -1807,7 +1840,7 @@ async function runClientOrdersReport() {
             <tbody>${rowsHTML}</tbody>
           </table>
           <div style="display:flex;justify-content:flex-end;padding:10px 16px;background:#f8fbfd;font-weight:900;color:var(--primary)">
-            إجمالي الفاتورة: ${invoiceTotal.toFixed(2)} د.أ
+            ${footerTotalHTML}
           </div>
         </div>`;
     });
@@ -1819,9 +1852,16 @@ async function runClientOrdersReport() {
           <div style="font-size:13px;color:var(--text-muted)">${escHtml(clinic || '—')}</div>
         </div>
         ${invoicesHTML}
-        <div style="display:flex;justify-content:space-between;align-items:center;padding:16px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:14px;color:#fff;margin-top:8px">
-          <span style="font-weight:800">الإجمالي العام لكل الفواتير</span>
-          <strong style="font-size:20px">${grandTotal.toFixed(2)} د.أ</strong>
+        <div style="display:flex;flex-direction:column;gap:8px;padding:16px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:14px;color:#fff;margin-top:8px">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <span style="font-weight:800">الإجمالي العام (نقد)</span>
+            <strong style="font-size:20px">${grandTotalCash.toFixed(2)} د.أ</strong>
+          </div>
+          ${grandTotalPoints > 0 ? `
+          <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid rgba(255,255,255,0.25)">
+            <span style="font-weight:800">🏆 الإجمالي العام (نقاط)</span>
+            <strong style="font-size:20px">${grandTotalPoints.toLocaleString()} نقطة</strong>
+          </div>` : ''}
         </div>
       </div>`;
   } catch (e) {
