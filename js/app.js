@@ -29,9 +29,18 @@ function loadDomainScript(src) {
   });
 }
 
-for (const src of DOMAIN_SCRIPTS) {
-  await loadDomainScript(src);
+function loadDomainScriptOrdered(src) {
+  return new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = src;
+    script.async = false; // يحافظ على ترتيب التنفيذ الأصلي، بس التحميل نفسه يصير بالتوازي
+    script.onload = resolve;
+    script.onerror = () => reject(new Error(`Failed to load ${src}`));
+    document.head.appendChild(script);
+  });
 }
+
+await Promise.all(DOMAIN_SCRIPTS.map(loadDomainScriptOrdered));
 
 // لا ننتظر Firebase أو تهيئة المنتجات قبل إخفاء شاشة البداية.
 // أي تأخير أو خطأ في الشبكة يجب ألا يمنع المستخدم من دخول الصفحة الرئيسية.
