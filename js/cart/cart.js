@@ -163,7 +163,7 @@ async function refreshCartDiscountedTotal() {
   const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
   const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
   const total = getTotal();
-  const discountPreview = await computeGeneralDiscount(total, previewClientEmail, previewClientPhone);
+  const discountPreview = await computeGeneralDiscountForCart(cart, previewClientEmail, previewClientPhone);
   if (!discountPreview) return;
   if (getTotal() !== total) return;
   const el = document.getElementById('cartTotal');
@@ -330,7 +330,7 @@ async function renderModalSummary() {
 
   const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
   const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
-  const discountPreview = await computeGeneralDiscount(getTotal(), previewClientEmail, previewClientPhone);
+  const discountPreview = await computeGeneralDiscountForCart(cart, previewClientEmail, previewClientPhone);
 
   div.innerHTML = cart.map(item => `
     <div class="summary-item">
@@ -362,7 +362,7 @@ async function renderConfirmDetails() {
   const previewLinkedClient = currentUser || previewMatchedClient || null;
   const previewClientEmail = previewLinkedClient ? (previewLinkedClient.email || 'guest') : 'guest';
   const previewClientPhone = previewLinkedClient ? (previewLinkedClient.phone || previewPhone) : previewPhone;
-  const discountPreview = await computeGeneralDiscount(getTotal(), previewClientEmail, previewClientPhone);
+  const discountPreview = await computeGeneralDiscountForCart(cart, previewClientEmail, previewClientPhone);
 
   let clientPoints = 0;
   if (currentUser && currentUser.role === 'client') {
