@@ -500,7 +500,11 @@ async function openDiscountSettingsModal() {
     <label style="display:block;font-weight:700;margin-bottom:6px">الحد الأدنى لقيمة الفاتورة (د.أ) — ضع 0 لتطبيق الخصم دائماً</label>
     <input type="number" id="discMinAmount" class="form-input" min="0" step="0.1" value="${cfg ? cfg.minAmount : 0}" style="margin-bottom:16px">
     <label style="display:block;font-weight:700;margin-bottom:6px">نسبة الخصم %</label>
-    <input type="number" id="discPercent" class="form-input" min="0" max="100" step="1" value="${cfg ? cfg.percent : 0}" style="margin-bottom:20px">
+    <input type="number" id="discPercent" class="form-input" min="0" max="100" step="1" value="${cfg ? cfg.percent : 0}" style="margin-bottom:16px">
+    <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:20px;cursor:pointer">
+      <input type="checkbox" id="discApplyToOffers" ${!cfg || cfg.applyToOffers !== false ? 'checked' : ''} style="width:20px;height:20px">
+      تطبيق الخصم على عروض الكمية والباقات أيضاً
+    </label>
     <button onclick="saveDiscountConfig()" class="btn-submit" style="width:100%">
       <i class="fas fa-save"></i> حفظ الإعدادات
     </button>`;
@@ -516,12 +520,13 @@ async function saveDiscountConfig() {
   const targetId = scope === 'client' ? document.getElementById('discClientSelect').value : null;
   const minAmount = parseFloat(document.getElementById('discMinAmount').value) || 0;
   const percent = Math.max(0, Math.min(100, parseFloat(document.getElementById('discPercent').value) || 0));
+  const applyToOffers = document.getElementById('discApplyToOffers').checked;
 
   if (scope === 'client' && !targetId) { showToast('⚠️ اختر عميل أولاً', 'error'); return; }
 
   try {
     await window._fbSetDoc(window._fbDoc2('store_data', 'discount_settings'), {
-      enabled, scope, targetId, minAmount, percent, updatedAt: new Date().toISOString()
+      enabled, scope, targetId, minAmount, percent, applyToOffers, updatedAt: new Date().toISOString()
     });
     invalidateDiscountConfigCache();
     showToast('✅ تم حفظ إعدادات الخصم', 'success');
@@ -529,4 +534,32 @@ async function saveDiscountConfig() {
   } catch(e) {
     showToast('❌ فشل الحفظ: ' + e.message, 'error');
   }
+}
+// نسخة خاصة بالسلة: بتفصل عروض الكمية والباقات عن باقي المنتجات حسب إعداد الأدمن
+// (applyToOffers) قبل حساب الخصم. لو الإعداد "تطبيق على العروض" مفعّل (الافتراضي)،
+// نفس سلوك computeGeneralDiscount العادي. لو معطّل، الخصم يُحسب فقط على المنتجات
+// العادية، والعروض تُضاف بسعرها الكامل بدون خصم إضافي فوقها.
+async function computeGeneralDiscountForCart(cartItems, clientEmail, clientPhone) {
+  const cfg = await loadDiscountConfig();
+  if (!cfg || !cfg.enabled) return null;
+
+  const isOfferItem = (item) => item.isBundle || (item.basePrice && item.price < item.basePrice);
+
+  if (cfg.applyToOffers !== false) {
+    const rawTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+    return computeGeneralDiscount(rawTotal, clientEmail, clientPhone);
+  }
+
+  const offerTotal = cartItems.filter(isOfferItem).reduce((s, i) => s + i.price * i.qty, 0);
+  const normalTotal = cartItems.filter(i => !isOfferItem(i)).reduce((s, i) => s + i.price * i.qty, 0);
+  if (normalTotal <= 0) return null;
+
+  const discountOnNormal = await computeGeneralDiscount(normalTotal, clientEmail, clientPhone);
+  if (!discountOnNormal) return null;
+
+  return {
+    originalTotal: offerTotal + normalTotal,
+    total: Math.round((discountOnNormal.total + offerTotal) * 100) / 100,
+    discountPercent: discountOnNormal.discountPercent
+  };
 }
