@@ -156,7 +156,7 @@ async function submitOrder() {
   const orderClientEmail = linkedClient ? (linkedClient.email || 'guest') : 'guest';
   const orderPhone = linkedClient ? (linkedClient.phone || submittedPhone) : submittedPhone;
   const rawTotal = getTotal();
-  const discountResult = await computeGeneralDiscount(rawTotal, orderClientEmail, orderPhone);
+  const discountResult = await computeGeneralDiscountForCart(cart, orderClientEmail, orderPhone);
 
   const order = {
     id:          orderNum,
@@ -224,6 +224,15 @@ async function submitOrder() {
   });
 logActivity('order_placed', { orderId: orderNum, total: getTotal() });
   document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
+  document.getElementById('orderTotalDisplay').innerHTML = discountResult
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${discountResult.originalTotal.toLocaleString()} ${t('د.أ','SAR')}</span>${discountResult.total.toLocaleString()} ${t('د.أ','SAR')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
+    : `${t('الإجمالي','Total')}: ${rawTotal.toLocaleString()} ${t('د.أ','SAR')}`;
+  document.getElementById('orderTotalDisplay').innerHTML = discountResult
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${discountResult.originalTotal.toLocaleString()} ${t('د.أ','SAR')}</span>${discountResult.total.toLocaleString()} ${t('د.أ','SAR')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
+    : `${t('الإجمالي','Total')}: ${rawTotal.toLocaleString()} ${t('د.أ','SAR')}`;
+  document.getElementById('orderTotalDisplay').innerHTML = discountResult
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${discountResult.originalTotal.toLocaleString()} ${t('د.أ','SAR')}</span>${discountResult.total.toLocaleString()} ${t('د.أ','SAR')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
+    : `${t('الإجمالي','Total')}: ${rawTotal.toLocaleString()} ${t('د.أ','SAR')}`;
   document.querySelector('.modal-steps').style.display = 'none';
   ['modalStep1','modalStep2','modalStep3','modalStep4'].forEach(id =>
     document.getElementById(id).style.display = 'none'
