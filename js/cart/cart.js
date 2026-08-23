@@ -101,19 +101,16 @@ function getTotal() {
   return cart.reduce((s, i) => s + i.price * i.qty, 0);
 }
 
-async function updateCartUI() {
+function updateCartUI() {
   saveCart();
   const count = cart.reduce((s, i) => s + i.qty, 0);
   document.getElementById('cartCount').textContent = count;
   document.getElementById('cartItemsCount').textContent = `(${count})`;
 
-  const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
-  const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
-  const discountPreview = cart.length ? await computeGeneralDiscount(getTotal(), previewClientEmail, previewClientPhone) : null;
-
-  document.getElementById('cartTotal').innerHTML = discountPreview
-    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()}</span>${discountPreview.total.toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small> <small style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</small>`
-    : `${getTotal().toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small>`;
+  // نعرض المجموع الخام فورًا (بدون انتظار)، وبعدين نحدّثه بالخصم لو انطبق —
+  // حتى ما تنتظر رسمة السلة كاملة (المنتجات + حالة الفراغ) أي طلب شبكة
+  document.getElementById('cartTotal').innerHTML = `${getTotal().toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small>`;
+  refreshCartDiscountedTotal();
   updateFreeShippingBar();
 
   const itemsDiv = document.getElementById('cartItems');
@@ -159,6 +156,20 @@ async function updateCartUI() {
       </div>`;
     itemsDiv.insertBefore(el, empty);
   });
+}
+
+async function refreshCartDiscountedTotal() {
+  if (!cart.length) return;
+  const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
+  const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
+  const total = getTotal();
+  const discountPreview = await computeGeneralDiscount(total, previewClientEmail, previewClientPhone);
+  if (!discountPreview) return;
+  if (getTotal() !== total) return;
+  const el = document.getElementById('cartTotal');
+  if (el) {
+    el.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()}</span>${discountPreview.total.toLocaleString()} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small> <small style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</small>`;
+  }
 }
 
 function updateFreeShippingBar() {
