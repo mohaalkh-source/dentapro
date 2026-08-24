@@ -339,7 +339,7 @@ async function initOffersTicker() {
   qtyProducts.forEach(p => {
     const offer = getActiveQtyOffer(p.id);
     if (offer && offer.tiers && offer.tiers.length) {
-      const tiersText = offer.tiers.map(tr => `${t('اشترِ','Buy')} ${tr.qty} ${t('بسعر','for')} ${tr.price.toLocaleString()} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
+      const tiersText = offer.tiers.map(tr => `${t('اشترِ','Buy')} ${tr.qty} ${t('بسعر','for')} ${tr.price.toLocaleString()} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${(p.price * tr.qty).toLocaleString()} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
       items.push(`<div class="offers-ticker-item" onclick="openProductDetail(${p.id})">
         <i class="fas fa-tags"></i>
         <span>${t('عرض كمية','Qty offer')}: ${escHtml(p.en)} — ${tiersText}</span>
