@@ -211,7 +211,12 @@ async function renderAdminMessages() {
     <div class="spinner" style="margin:0 auto 12px;width:28px;height:28px;border-width:4px"></div>جاري التحميل...</div>`;
   const grouped = await getAllMessageThreadsForAdmin();
   window._cachedAdminThreads = grouped;
-  const emails = Object.keys(grouped);
+  // ترتيب المحادثات حسب وقت آخر رسالة فيها (الأحدث أولاً)
+  const emails = Object.keys(grouped).sort((a, b) => {
+    const lastA = grouped[a][grouped[a].length - 1];
+    const lastB = grouped[b][grouped[b].length - 1];
+    return new Date(lastB.createdAt) - new Date(lastA.createdAt);
+  });
 
   const unreadClients = emails.filter(e => {
     const last = grouped[e][grouped[e].length-1];
