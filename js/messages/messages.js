@@ -233,6 +233,7 @@ async function renderAdminMessages() {
 
 function openAdminThreadModal(email) {
   email = email.trim(); // تنظيف إضافي
+  window._openAdminThreadEmail = email; // لتحديث نفس المحادثة تلقائياً لما توصل رسالة جديدة
   const existing = document.getElementById('adminThreadModal');
   if (existing) existing.remove();
   const thread = (window._cachedAdminThreads || {})[email] || [];
@@ -245,7 +246,7 @@ function openAdminThreadModal(email) {
     <div class="modal" style="max-width:560px">
       <div class="modal-header" style="background:linear-gradient(135deg,var(--primary-dark),var(--primary))">
         <div class="modal-title"><i class="fas fa-comments"></i> محادثة مع ${escHtml(clientName)}</div>
-        <button class="close-btn" onclick="document.getElementById('adminThreadModal').remove()"><i class="fas fa-times"></i></button>
+        <button class="close-btn" onclick="window._openAdminThreadEmail=null;document.getElementById('adminThreadModal').remove()"><i class="fas fa-times"></i></button>
       </div>
       <div class="modal-body">
         <div id="adminThreadBody" style="display:flex;flex-direction:column;gap:10px;max-height:360px;overflow-y:auto;margin-bottom:14px;padding:6px"></div>
@@ -337,11 +338,8 @@ async function sendAdminThreadReply(email) {
   input.value = '';
   clearAdminChatImage();
   await sendAdminMessage(email, text, imageUrl);
-  const grouped = window._cachedAdminThreads || {};
-  if (!grouped[email]) grouped[email] = [];
-  grouped[email].push({ clientEmail: email, fromRole:'admin', fromName:'فريق DentaPro', text, imageUrl, createdAt:new Date().toISOString() });
-  renderAdminThreadBody(grouped[email]);
-  renderAdminMessages();
+  // ما نحدّث المحادثة يدوياً هون — المستمع اللحظي (onSnapshot) رح يحدّثها
+  // تلقائياً بمجرد ما الرسالة توصل فعلياً لقاعدة البيانات، لتفادي ظهورها مرتين
   showToast('✅ تم إرسال الرد', 'success');
 }
 
@@ -520,7 +518,12 @@ window._onMessagesUpdate = function() {
     const msgsTabOpen = document.getElementById('adminMessagesWrap')?.style.display !== 'none';
     if (panelOpen && msgsTabOpen) renderAdminMessages();
     if (document.getElementById('adminThreadModal')) {
-      getAllMessageThreadsForAdmin().then(g => window._cachedAdminThreads = g);
+      getAllMessageThreadsForAdmin().then(g => {
+        window._cachedAdminThreads = g;
+        if (window._openAdminThreadEmail) {
+          renderAdminThreadBody(g[window._openAdminThreadEmail] || []);
+        }
+      });
     }
   } else {
     if (document.getElementById('messagesPage')?.classList.contains('active')) {
