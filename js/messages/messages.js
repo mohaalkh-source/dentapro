@@ -85,11 +85,33 @@ async function getAllMessageThreadsForAdmin() {
     const snap = await window._fbGetDocs(messagesRef());
     const all = snap.docs.map(d => ({_docId:d.id, ...d.data()}));
     const grouped = {};
+    const broadcastMsgs = [];
     all.forEach(m => {
-      if (m.clientEmail === 'broadcast') return;
+      if (m.clientEmail === 'broadcast') { broadcastMsgs.push(m); return; }
       if (!grouped[m.clientEmail]) grouped[m.clientEmail] = [];
       grouped[m.clientEmail].push(m);
     });
+
+    if (broadcastMsgs.length) {
+      // ندمج رسائل البث بمحادثة كل عميل له تاريخ رسائل موجود أصلاً
+      Object.keys(grouped).forEach(email => {
+        broadcastMsgs.forEach(bm => grouped[email].push({ ...bm, clientEmail: email }));
+      });
+
+      // وننشئ محادثة لأي عميل مسجّل ما تواصل معه الإدمن أبداً بشكل فردي،
+      // بس استقبل رسائل بث بس — حتى يظهر بقائمة المحادثات أصلاً
+      try {
+        const allUsers = await fetchAllUsersList();
+        allUsers.filter(u => u.role === 'client' && u.email).forEach(u => {
+          if (!grouped[u.email]) {
+            grouped[u.email] = broadcastMsgs.map(bm => ({ ...bm, clientEmail: u.email }));
+          }
+        });
+      } catch (e) {
+        console.warn('getAllMessageThreadsForAdmin: fetchAllUsersList failed:', e.message);
+      }
+    }
+
     Object.values(grouped).forEach(arr => arr.sort((a,b)=> new Date(a.createdAt)-new Date(b.createdAt)));
     return grouped;
   } catch(e) {
