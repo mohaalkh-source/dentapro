@@ -2221,26 +2221,34 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 
 <!-- Creative enhancements are loaded by js/ui/appendix.js. -->
 
-<!-- ─── Floating WhatsApp Button ─── -->
-<button class="fab-whatsapp" onclick="window.open('https://wa.me/962790408680?text=مرحباً، أود الاستفسار عن منتجاتكم في DentaPro','_blank')" title="تواصل عبر واتساب">
-  <i class="fab fa-whatsapp"></i>
-  <span class="fab-tooltip">تواصل معنا</span>
-</button>
+<!-- ─── لسان جانبي موحّد يجمع الأزرار العائمة الأربعة ─── -->
+<div class="fab-fan-wrap" id="fabFanWrap">
+  <button class="fab-fan-tab" id="fabFanTab" onclick="toggleFabFan()" title="أدوات سريعة">
+    <div class="fab-fan-mini-icons">
+      <span class="fab-mini fab-mini-1"><i class="fas fa-search"></i></span>
+      <span class="fab-mini fab-mini-2"><i class="fab fa-whatsapp"></i></span>
+      <span class="fab-mini fab-mini-3"><i class="fas fa-chevron-up"></i></span>
+      <span class="fab-mini fab-mini-4"><i class="fas fa-th-large"></i></span>
+    </div>
+    <i class="fas fa-chevron-left fab-fan-arrow" id="fabFanArrow"></i>
+  </button>
 
-<!-- ─── Scroll-to-top button ─── -->
-<button class="scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'})" title="العودة للأعلى">
-  <i class="fas fa-chevron-up"></i>
-</button>
+  <button class="fab-fan-item fab-whatsapp" onclick="window.open('https://wa.me/962790408680?text=مرحباً، أود الاستفسار عن منتجاتكم في DentaPro','_blank');closeFabFan()" title="تواصل عبر واتساب">
+    <i class="fab fa-whatsapp"></i>
+  </button>
 
-<!-- ─── Floating search button ─── -->
-<button class="fab-search" id="fabSearchBtn" onclick="focusSearchInput()" title="البحث">
-  <i class="fas fa-search"></i>
-</button>
+  <button class="fab-fan-item scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'});closeFabFan()" title="العودة للأعلى">
+    <i class="fas fa-chevron-up"></i>
+  </button>
 
-<!-- ─── Floating view-toggle button ─── -->
-<button class="fab-view-toggle" id="fabViewToggle" onclick="toggleCompactView()" title="تبديل طريقة العرض">
-  <i class="fas fa-th-large" id="fabViewToggleIcon"></i>
-</button>
+  <button class="fab-fan-item fab-search" id="fabSearchBtn" onclick="focusSearchInput();closeFabFan()" title="البحث">
+    <i class="fas fa-search"></i>
+  </button>
+
+  <button class="fab-fan-item fab-view-toggle" id="fabViewToggle" onclick="toggleCompactView();closeFabFan()" title="تبديل طريقة العرض">
+    <i class="fas fa-th-large" id="fabViewToggleIcon"></i>
+  </button>
+</div>
 
 <!-- ─── Stats & Brands inserted by JS ─── -->
 
