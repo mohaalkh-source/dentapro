@@ -1603,6 +1603,15 @@ function renderSearchSuggestions() {
   const raw = inputEl.value.trim();
   if (!raw) { box.style.display = 'none'; return; }
 
+  // نحسب المساحة الظاهرة فعلياً فوق الكيبورد (لو مفتوح) ونحدد ارتفاع القائمة عشانها،
+  // بدل رقم ثابت (340px) ممكن يمتد تحت الكيبورد وما ينبان منه غير جزء صغير
+  if (window.visualViewport) {
+    const inputRect = inputEl.getBoundingClientRect();
+    const visibleBottom = window.visualViewport.height;
+    const availableSpace = visibleBottom - inputRect.bottom - 16;
+    box.style.maxHeight = Math.max(120, Math.min(340, availableSpace)) + 'px';
+  }
+
   const scored = [];
   for (const p of products) {
     const score = productMatchesQuery(p, raw);
