@@ -1041,6 +1041,8 @@ function closeFabFan() {
 document.addEventListener('click', (e) => {
   const wrap = document.getElementById('fabFanWrap');
   if (wrap && wrap.classList.contains('open') && !wrap.contains(e.target)) {
+    e.stopPropagation();
+    e.preventDefault();
     wrap.classList.remove('open');
   }
-});
+}, true);
