@@ -787,9 +787,11 @@ document.addEventListener('click', (e) => {
   const dd = document.getElementById('notifDropdown');
   const btn = document.getElementById('notifBtn');
   if (dd && dd.classList.contains('open') && !dd.contains(e.target) && !btn.contains(e.target)) {
+    e.stopPropagation();
+    e.preventDefault();
     closeNotifDropdown();
   }
-});
+}, true);
 
 // =====================
 // OFFERS HELPERS
@@ -1591,10 +1593,32 @@ runWhenDomReady(() => {
   document.addEventListener('click', (e) => {
     const box = document.getElementById('searchSuggestions');
     if (box && box.style.display === 'block' && !box.contains(e.target) && e.target !== searchEl) {
+      e.stopPropagation();
+      e.preventDefault();
       hideSearchSuggestions();
     }
-  });
+  }, true);
 });
+
+function positionSearchSuggestionsBox() {
+  const box = document.getElementById('searchSuggestions');
+  const inputEl = document.getElementById('searchInput');
+  if (!box || !inputEl || box.style.display !== 'block') return;
+
+  const inputRect = inputEl.getBoundingClientRect();
+  box.style.top = inputRect.bottom + 'px';
+  box.style.left = (inputRect.left + 10) + 'px';
+  box.style.width = (inputRect.width - 20) + 'px';
+
+  if (window.visualViewport) {
+    const visibleBottom = window.visualViewport.height;
+    const availableSpace = visibleBottom - inputRect.bottom - 16;
+    box.style.maxHeight = Math.max(120, Math.min(340, availableSpace)) + 'px';
+  }
+}
+if (window.visualViewport) {
+  window.visualViewport.addEventListener('resize', positionSearchSuggestionsBox);
+}
 
 function renderSearchSuggestions() {
   const box = document.getElementById('searchSuggestions');
@@ -1603,20 +1627,7 @@ function renderSearchSuggestions() {
   const raw = inputEl.value.trim();
   if (!raw) { box.style.display = 'none'; return; }
 
-  // بما إن القائمة صارت برّا الـheader (لتفادي القص بسبب overflow:hidden)،
-  // لازم نحسب موقعها وعرضها يدوياً بالجافاسكريبت بدل الاعتماد على position:relative
-  // لعنصر جوا الهيدر
-  const inputRect = inputEl.getBoundingClientRect();
-  box.style.top = inputRect.bottom + 'px';
-  box.style.left = (inputRect.left + 10) + 'px';
-  box.style.width = (inputRect.width - 20) + 'px';
-
-  // نحسب المساحة الظاهرة فعلياً فوق الكيبورد (لو مفتوح) ونحدد ارتفاع القائمة عشانها
-  if (window.visualViewport) {
-    const visibleBottom = window.visualViewport.height;
-    const availableSpace = visibleBottom - inputRect.bottom - 16;
-    box.style.maxHeight = Math.max(120, Math.min(340, availableSpace)) + 'px';
-  }
+  positionSearchSuggestionsBox();
 
   const scored = [];
   for (const p of products) {
