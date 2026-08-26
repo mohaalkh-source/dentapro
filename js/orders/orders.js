@@ -1300,6 +1300,7 @@ async function saveProfile() {
           profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
           updatedAt: new Date().toISOString() }
       );
+      await propagateProfileUpdateToRecords(currentUser.email, { name, clinic, phone });
     }
     // حفظ محلي
     const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
@@ -2011,3 +2012,27 @@ async function showClientRecord(uid, email) {
 }
 
 // =====================
+// بعد تعديل العميل لملفه الشخصي، ننشر التحديث على كل طلباته وعروض أسعاره
+// السابقة، حتى تظهر باسمه/هاتفه/عيادته الجديدة بلوحة الإدمن بكل مكان
+async function propagateProfileUpdateToRecords(email, { name, clinic, phone }) {
+  try {
+    const [ordersSnap, quotesSnap] = await Promise.all([
+      window._fbGetDocs(window._fbOrdersRef()),
+      window._fbGetDocs(window._fbCollection(window._db, 'quotes'))
+    ]);
+    const myOrders = ordersSnap.docs.filter(d => d.data().clientEmail === email);
+    const myQuotes = quotesSnap.docs.filter(d => d.data().clientEmail === email);
+    if (!myOrders.length && !myQuotes.length) return;
+
+    const batch = window._fbWriteBatch();
+    myOrders.forEach(d => {
+      batch.update(window._fbDoc2('orders', d.id), { clientName: name, doctor: name, clinic, phone });
+    });
+    myQuotes.forEach(d => {
+      batch.update(window._fbDoc2('quotes', d.id), { clientName: name, phone });
+    });
+    await batch.commit();
+  } catch (e) {
+    console.warn('propagateProfileUpdateToRecords:', e.message);
+  }
+}
