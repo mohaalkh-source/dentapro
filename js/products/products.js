@@ -1607,9 +1607,9 @@ function renderSearchSuggestions() {
   // لازم نحسب موقعها وعرضها يدوياً بالجافاسكريبت بدل الاعتماد على position:relative
   // لعنصر جوا الهيدر
   const inputRect = inputEl.getBoundingClientRect();
-  box.style.top = (inputRect.bottom + 6) + 'px';
-  box.style.left = inputRect.left + 'px';
-  box.style.width = inputRect.width + 'px';
+  box.style.top = inputRect.bottom + 'px';
+  box.style.left = (inputRect.left + 10) + 'px';
+  box.style.width = (inputRect.width - 20) + 'px';
 
   // نحسب المساحة الظاهرة فعلياً فوق الكيبورد (لو مفتوح) ونحدد ارتفاع القائمة عشانها
   if (window.visualViewport) {
