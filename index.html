@@ -153,9 +153,6 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   <button type="button" class="header-search-submit" onclick="document.getElementById('searchInput').focus()" title="بحث" aria-label="بحث">
     <i class="fas fa-search"></i>
   </button>
-  <div id="searchSuggestions" style="display:none;position:absolute;top:calc(100% + 6px);right:0;left:0;
-       background:#fff;border:1.5px solid var(--border);border-radius:14px;max-height:340px;overflow-y:auto;
-       z-index:1500;box-shadow:var(--shadow-lg)"></div>
 </div>
 <button class="notif-btn" id="favBtn" onclick="openFavoritesPage()" title="المفضلة">
       <i class="fas fa-heart"></i>
@@ -179,6 +176,9 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </button>
   </div>
   </header>
+  <div id="searchSuggestions" style="display:none;position:fixed;
+       background:#fff;border:1.5px solid var(--border);border-radius:14px;max-height:340px;overflow-y:auto;
+       z-index:1500;box-shadow:var(--shadow-lg)"></div>
   <div class="notif-dropdown" id="notifDropdown">
     <div class="notif-dropdown-header">
       <span class="notif-dropdown-title"><i class="fas fa-bell"></i> الإشعارات</span>
