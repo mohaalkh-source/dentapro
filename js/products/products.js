@@ -1603,10 +1603,16 @@ function renderSearchSuggestions() {
   const raw = inputEl.value.trim();
   if (!raw) { box.style.display = 'none'; return; }
 
-  // نحسب المساحة الظاهرة فعلياً فوق الكيبورد (لو مفتوح) ونحدد ارتفاع القائمة عشانها،
-  // بدل رقم ثابت (340px) ممكن يمتد تحت الكيبورد وما ينبان منه غير جزء صغير
+  // بما إن القائمة صارت برّا الـheader (لتفادي القص بسبب overflow:hidden)،
+  // لازم نحسب موقعها وعرضها يدوياً بالجافاسكريبت بدل الاعتماد على position:relative
+  // لعنصر جوا الهيدر
+  const inputRect = inputEl.getBoundingClientRect();
+  box.style.top = (inputRect.bottom + 6) + 'px';
+  box.style.left = inputRect.left + 'px';
+  box.style.width = inputRect.width + 'px';
+
+  // نحسب المساحة الظاهرة فعلياً فوق الكيبورد (لو مفتوح) ونحدد ارتفاع القائمة عشانها
   if (window.visualViewport) {
-    const inputRect = inputEl.getBoundingClientRect();
     const visibleBottom = window.visualViewport.height;
     const availableSpace = visibleBottom - inputRect.bottom - 16;
     box.style.maxHeight = Math.max(120, Math.min(340, availableSpace)) + 'px';
