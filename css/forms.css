@@ -214,26 +214,25 @@ body.en .fab-fan-wrap { right: auto; left: 0; }
 /* اللسان نفسه — نص دائرة ملتصق بالحافة */
 .fab-fan-tab {
   position: relative;
-  width: 52px; height: 64px; border-radius: 32px 0 0 32px;
+  width: 34px; height: 88px; border-radius: 20px 0 0 20px;
   background: linear-gradient(135deg, var(--primary-dark), var(--primary));
   border: none; cursor: pointer; color: #fff;
   display: flex; align-items: center; justify-content: center;
-  box-shadow: -3px 4px 16px rgba(10,92,138,0.4);
+  box-shadow: -2px 4px 14px rgba(10,92,138,0.4);
   transition: width 0.35s ease, border-radius 0.35s ease, transform 0.2s;
 }
-body.en .fab-fan-tab { border-radius: 0 32px 32px 0; }
+body.en .fab-fan-tab { border-radius: 0 20px 20px 0; }
 .fab-fan-tab:active { transform: scale(0.96); }
 
 .fab-fan-mini-icons {
-  position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
-  width: 22px; height: 22px;
-  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-  gap: 2px;
+  position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
+  width: 11px; height: 58px;
+  display: flex; flex-direction: column; justify-content: space-between;
 }
-body.en .fab-fan-mini-icons { right: auto; left: 9px; }
+body.en .fab-fan-mini-icons { right: auto; left: 8px; }
 
 .fab-mini {
-  width: 10px; height: 10px; border-radius: 50%;
+  width: 11px; height: 11px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
   font-size: 6px; color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,0.5);
   transition: opacity 0.25s;
