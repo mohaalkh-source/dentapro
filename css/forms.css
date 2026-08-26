@@ -225,21 +225,23 @@ body.en .fab-fan-tab { border-radius: 0 32px 32px 0; }
 .fab-fan-tab:active { transform: scale(0.96); }
 
 .fab-fan-mini-icons {
-  position: absolute; right: 10px; top: 50%; transform: translateY(-50%);
+  position: absolute; right: 9px; top: 50%; transform: translateY(-50%);
   width: 22px; height: 22px;
+  display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
+  gap: 2px;
 }
-body.en .fab-fan-mini-icons { right: auto; left: 10px; }
+body.en .fab-fan-mini-icons { right: auto; left: 9px; }
 
 .fab-mini {
-  position: absolute; width: 13px; height: 13px; border-radius: 50%;
+  width: 10px; height: 10px; border-radius: 50%;
   display: flex; align-items: center; justify-content: center;
-  font-size: 7px; color: #fff; box-shadow: 0 0 0 1.5px rgba(255,255,255,0.5);
+  font-size: 6px; color: #fff; box-shadow: 0 0 0 1px rgba(255,255,255,0.5);
   transition: opacity 0.25s;
 }
-.fab-mini-1 { background: var(--gradient-accent); top: 0; left: 4px; z-index: 4; }
-.fab-mini-2 { background: linear-gradient(135deg,#25d366,#128c7e); top: 5px; left: 0; z-index: 3; }
-.fab-mini-3 { background: var(--gradient-primary); top: 10px; left: 8px; z-index: 2; }
-.fab-mini-4 { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); top: 14px; left: 3px; z-index: 1; }
+.fab-mini-1 { background: var(--gradient-accent); }
+.fab-mini-2 { background: linear-gradient(135deg,#25d366,#128c7e); }
+.fab-mini-3 { background: var(--gradient-primary); }
+.fab-mini-4 { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
 
 .fab-fan-arrow {
   position: absolute; left: 6px; top: 50%; transform: translateY(-50%);
