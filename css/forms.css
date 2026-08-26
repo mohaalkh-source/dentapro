@@ -275,19 +275,19 @@ body.en .fab-fan-item { right: auto; left: 26px; }
 .fab-fan-wrap.open .fab-fan-item {
   opacity: 1; pointer-events: all; width: 46px; height: 46px; font-size: 18px;
 }
-.fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-70px, -80px); }
-.fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-100px, -25px); }
-.fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-100px, 25px); }
-.fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-70px, 80px); }
+.fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-60px, -110px); }
+.fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-105px, -38px); }
+.fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-105px, 38px); }
+.fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-60px, 110px); }
 
-body.en .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(70px, -80px); }
-body.en .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(100px, -25px); }
-body.en .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(100px, 25px); }
-body.en .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(70px, 80px); }
+body.en .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(60px, -110px); }
+body.en .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(105px, -38px); }
+body.en .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(105px, 38px); }
+body.en .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(60px, 110px); }
 
 @media (max-width:480px){
-  .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-58px, -68px); }
-  .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-84px, -22px); }
-  .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-84px, 22px); }
-  .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-58px, 68px); }
+  .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-50px, -95px); }
+  .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-90px, -34px); }
+  .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-90px, 34px); }
+  .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-50px, 95px); }
 }
