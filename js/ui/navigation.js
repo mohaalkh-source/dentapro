@@ -1026,3 +1026,21 @@ if ('serviceWorker' in navigator) {
 }
 
 // =====================
+function toggleFabFan() {
+  const wrap = document.getElementById('fabFanWrap');
+  if (!wrap) return;
+  wrap.classList.toggle('open');
+}
+
+function closeFabFan() {
+  const wrap = document.getElementById('fabFanWrap');
+  if (wrap) wrap.classList.remove('open');
+}
+
+// إغلاق تلقائي لو ضغط المستخدم بأي مكان تاني برّا اللسان والقائمة
+document.addEventListener('click', (e) => {
+  const wrap = document.getElementById('fabFanWrap');
+  if (wrap && wrap.classList.contains('open') && !wrap.contains(e.target)) {
+    wrap.classList.remove('open');
+  }
+});
