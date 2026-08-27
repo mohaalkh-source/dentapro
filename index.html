@@ -2234,20 +2234,29 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     <i class="fas fa-chevron-left fab-fan-arrow" id="fabFanArrow"></i>
   </button>
 
-  <button class="fab-fan-item fab-whatsapp" onclick="window.open('https://wa.me/962790408680?text=مرحباً، أود الاستفسار عن منتجاتكم في DentaPro','_blank');closeFabFan()" title="تواصل عبر واتساب">
-    <i class="fab fa-whatsapp"></i>
+  <button class="fab-fan-item fab-points" id="fabPointsBtn" onclick="closeFabFan()" style="display:none">
+    <i class="fas fa-trophy"></i>
+    <span class="fab-fan-label" id="fabPointsLabel">النقاط</span>
   </button>
 
-  <button class="fab-fan-item scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'});closeFabFan()" title="العودة للأعلى">
-    <i class="fas fa-chevron-up"></i>
-  </button>
-
-  <button class="fab-fan-item fab-search" id="fabSearchBtn" onclick="focusSearchInput();closeFabFan()" title="البحث">
+  <button class="fab-fan-item fab-search" id="fabSearchBtn" onclick="focusSearchInput();closeFabFan()">
     <i class="fas fa-search"></i>
+    <span class="fab-fan-label">البحث</span>
   </button>
 
-  <button class="fab-fan-item fab-view-toggle" id="fabViewToggle" onclick="toggleCompactView();closeFabFan()" title="تبديل طريقة العرض">
+  <button class="fab-fan-item fab-whatsapp" onclick="window.open('https://wa.me/962790408680?text=مرحباً، أود الاستفسار عن منتجاتكم في DentaPro','_blank');closeFabFan()">
+    <i class="fab fa-whatsapp"></i>
+    <span class="fab-fan-label">واتساب</span>
+  </button>
+
+  <button class="fab-fan-item scroll-top-btn" id="scrollTopBtn" onclick="window.scrollTo({top:0,behavior:'smooth'});closeFabFan()">
+    <i class="fas fa-chevron-up"></i>
+    <span class="fab-fan-label">الصعود للأعلى</span>
+  </button>
+
+  <button class="fab-fan-item fab-view-toggle" id="fabViewToggle" onclick="toggleCompactView();closeFabFan()">
     <i class="fas fa-th-large" id="fabViewToggleIcon"></i>
+    <span class="fab-fan-label">طريقة العرض</span>
   </button>
 </div>
 
