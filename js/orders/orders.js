@@ -2053,3 +2053,4 @@ async function propagateProfileUpdateToRecords(email, { name, clinic, phone }) {
     console.warn('propagateProfileUpdateToRecords:', e.message);
   }
 }
+// عرض نقاط العميل الحالي بجانب زر اللغة بالهيدر (بس للعملاء المسجّلين)
