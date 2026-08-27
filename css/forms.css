@@ -300,12 +300,16 @@ body.en .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) t
 
 /* النص التوضيحي جنب كل زر — بدون أي خلفية، بلون موحّد واضح */
 .fab-fan-label {
-  position: absolute; top: 50%; right: 100%; transform: translateY(-50%);
-  margin-right: 8px; white-space: nowrap;
+  position: absolute; top: 50%; right: 52px; transform: translateY(-50%);
+  white-space: nowrap;
   font-size: 12px; font-weight: 800; color: #0a3d5c;
-  text-shadow: 0 1px 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.92);
+  padding: 3px 9px; border-radius: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
   opacity: 0; pointer-events: none; transition: opacity 0.3s 0.15s;
+  z-index: 5;
 }
-body.en .fab-fan-label { right: auto; left: 100%; margin-right: 0; margin-left: 8px; }
+body.en .fab-fan-label { right: auto; left: 52px; }
 
 .fab-fan-wrap.open .fab-fan-item .fab-fan-label { opacity: 1; }
+.fab-fan-item { z-index: 1; }
