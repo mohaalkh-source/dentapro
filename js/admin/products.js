@@ -626,6 +626,11 @@ async function renderPointsInHeader() {
   if (chip) {
     chip.innerHTML = `عميل &nbsp;|&nbsp; <span style="color:#d97706;font-weight:800">🏆 ${balance} نقطة</span>`;
   }
+  const headerBadge = document.getElementById('headerPointsBadge');
+  if (headerBadge) {
+    headerBadge.textContent = balance.toLocaleString();
+    headerBadge.style.display = 'inline';
+  }
 
   // إظهار بطاقة النقاط في صفحة طلباتي
   const existing = document.getElementById('clientPointsCard');
