@@ -2020,16 +2020,33 @@ async function propagateProfileUpdateToRecords(email, { name, clinic, phone }) {
       window._fbGetDocs(window._fbOrdersRef()),
       window._fbGetDocs(window._fbCollection(window._db, 'quotes'))
     ]);
-    const myOrders = ordersSnap.docs.filter(d => d.data().clientEmail === email);
-    const myQuotes = quotesSnap.docs.filter(d => d.data().clientEmail === email);
+    const uPhone = normalizePhone(phone);
+    // نشمل كمان الطلبات/العروض القديمة اللي تمت وهو زائر (clientEmail:'guest')
+    // بنفس رقم الهاتف — نفس منطق دمج طلبات الزائر اللي بنيناه سابقاً
+    const myOrders = ordersSnap.docs.filter(d => {
+      const o = d.data();
+      return o.clientEmail === email || (uPhone && o.clientEmail === 'guest' && normalizePhone(o.phone) === uPhone);
+    });
+    const myQuotes = quotesSnap.docs.filter(d => {
+      const q = d.data();
+      return q.clientEmail === email || (uPhone && q.clientEmail === 'guest' && normalizePhone(q.phone) === uPhone);
+    });
     if (!myOrders.length && !myQuotes.length) return;
 
     const batch = window._fbWriteBatch();
     myOrders.forEach(d => {
-      batch.update(window._fbDoc2('orders', d.id), { clientName: name, doctor: name, clinic, phone });
+      const wasGuest = d.data().clientEmail === 'guest';
+      batch.update(window._fbDoc2('orders', d.id), {
+        clientName: name, doctor: name, clinic, phone,
+        ...(wasGuest ? { clientEmail: email, clientUid: currentUser.uid } : {})
+      });
     });
     myQuotes.forEach(d => {
-      batch.update(window._fbDoc2('quotes', d.id), { clientName: name, phone });
+      const wasGuest = d.data().clientEmail === 'guest';
+      batch.update(window._fbDoc2('quotes', d.id), {
+        clientName: name, phone,
+        ...(wasGuest ? { clientEmail: email, clientUid: currentUser.uid } : {})
+      });
     });
     await batch.commit();
   } catch (e) {
