@@ -120,12 +120,14 @@ function renderHeroTitle() {
   const el = document.getElementById('heroTitleEl');
   const wrap = document.getElementById('heroContentWrap');
   const imgEl = document.getElementById('heroImageEl');
+  const section = document.getElementById('heroSection');
   if (!el || !wrap) return;
 
   if (isHeroExpired()) {
-    wrap.style.display = 'none';
+    if (section) section.style.display = 'none'; // يخفي القسم بالكامل — الحيز يختفي تماماً
     return;
   }
+  if (section) section.style.display = '';
   wrap.style.display = 'flex';
 
   const lines = currentLang === 'en' ? heroLinesEn : heroLinesAr;
@@ -978,6 +980,13 @@ function tickOfferCountdowns() {
       el.textContent = label;
     }
   });
+  // فحص انتهاء بانر الصفحة الرئيسية بنفس العدّاد الثانوي الموجود أصلاً
+  if (heroExpiresAt && !isHeroExpired.__wasHidden) {
+    if (isHeroExpired()) {
+      renderHeroTitle();
+      isHeroExpired.__wasHidden = true;
+    }
+  }
 }
 setInterval(tickOfferCountdowns, 1000);
 setInterval(cleanupExpiredOffers, 30000);
