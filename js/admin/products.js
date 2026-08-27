@@ -631,6 +631,12 @@ async function renderPointsInHeader() {
     headerBadge.textContent = balance.toLocaleString();
     headerBadge.style.display = 'inline';
   }
+  const fabPointsBtn = document.getElementById('fabPointsBtn');
+  const fabPointsLabel = document.getElementById('fabPointsLabel');
+  if (fabPointsBtn && fabPointsLabel) {
+    fabPointsLabel.textContent = balance.toLocaleString() + ' نقطة';
+    fabPointsBtn.style.display = 'flex';
+  }
 
   // إظهار بطاقة النقاط في صفحة طلباتي
   const existing = document.getElementById('clientPointsCard');
