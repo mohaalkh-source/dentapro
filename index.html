@@ -217,11 +217,9 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
 <div class="page-section active" id="homePage">
 <section class="hero">
   <div class="hero-inner">
-    <div class="hero-content">
-      <h1 id="heroTitleEl">
-        كل ما تحتاجه<br>لعيادتك في مكان<br><span>واحد</span>
-      </h1>
-      
+    <div class="hero-content" id="heroContentWrap" style="display:flex;align-items:center;gap:20px;justify-content:space-between">
+      <h1 id="heroTitleEl" style="margin:0;flex:1"></h1>
+      <img id="heroImageEl" style="display:none;max-width:120px;max-height:120px;border-radius:16px;object-fit:cover;flex-shrink:0" alt="">
   </div>
 </section>
 
@@ -2006,16 +2004,40 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   </div>
 </div>
 <div class="modal-overlay" id="heroTitleEditModal">
-  <div class="modal" style="max-width:480px">
+  <div class="modal" style="max-width:520px">
     <div class="modal-header">
-      <div class="modal-title"><i class="fas fa-heading"></i> تعديل عنوان الصفحة الرئيسية</div>
+      <div class="modal-title"><i class="fas fa-heading"></i> تعديل بانر الصفحة الرئيسية</div>
       <button class="close-btn" onclick="closeHeroTitleEditModal()"><i class="fas fa-times"></i></button>
     </div>
-    <div style="padding:20px">
-      <label style="display:block;font-weight:700;font-size:13px;margin-bottom:6px">العنوان بالعربي (سطر جديد = Enter، آخر سطر يظهر بلون مميز)</label>
-      <textarea id="heroTitleArInput" rows="3" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--border);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:16px"></textarea>
-      <label style="display:block;font-weight:700;font-size:13px;margin-bottom:6px">العنوان بالإنجليزي</label>
-      <textarea id="heroTitleEnInput" rows="3" style="width:100%;padding:12px;border-radius:12px;border:1.5px solid var(--border);font-family:inherit;font-size:14px;resize:vertical;margin-bottom:20px"></textarea>
+    <div style="padding:20px;max-height:70vh;overflow-y:auto">
+
+      <label style="display:block;font-weight:800;font-size:14px;margin-bottom:10px;color:var(--primary-dark)">الأسطر بالعربي (كل سطر اختياري)</label>
+      <div id="heroLinesArContainer"></div>
+
+      <label style="display:block;font-weight:800;font-size:14px;margin:18px 0 10px;color:var(--primary-dark)">الأسطر بالإنجليزي (كل سطر اختياري)</label>
+      <div id="heroLinesEnContainer"></div>
+
+      <label style="display:block;font-weight:800;font-size:14px;margin:18px 0 10px;color:var(--primary-dark)">صورة البانر (اختياري)</label>
+      <img id="heroImagePreview" style="display:none;max-width:120px;max-height:120px;border-radius:12px;margin-bottom:10px;object-fit:cover">
+      <div style="display:flex;gap:10px;margin-bottom:20px">
+        <label style="flex:1;padding:10px;border-radius:10px;border:1.5px dashed var(--border);text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--text-muted)">
+          <i class="fas fa-image"></i> اختر صورة
+          <input type="file" accept="image/*" style="display:none" onchange="handleHeroImageSelect(this)">
+        </label>
+        <button type="button" onclick="removeHeroImage()" style="padding:10px 16px;border-radius:10px;border:1.5px solid var(--danger);background:#fff5f5;color:var(--danger);font-weight:700;font-size:13px;cursor:pointer">
+          <i class="fas fa-trash-alt"></i> إزالة
+        </button>
+      </div>
+
+      <label style="display:block;font-weight:800;font-size:14px;margin-bottom:10px;color:var(--primary-dark)">مدة عرض البانر (اختياري — يختفي تلقائياً بعد هذا الموعد)</label>
+      <input type="datetime-local" id="heroExpiryInput" style="width:100%;padding:10px;border-radius:10px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;margin-bottom:10px">
+      <div style="display:flex;gap:8px;margin-bottom:20px">
+        <button type="button" onclick="setHeroExpiryPreset(1)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;cursor:pointer">يوم</button>
+        <button type="button" onclick="setHeroExpiryPreset(7)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;cursor:pointer">أسبوع</button>
+        <button type="button" onclick="setHeroExpiryPreset(30)" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;cursor:pointer">شهر</button>
+        <button type="button" onclick="document.getElementById('heroExpiryInput').value=''" style="flex:1;padding:8px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:12px;font-weight:700;cursor:pointer">بدون انتهاء</button>
+      </div>
+
       <button class="btn-primary" style="width:100%" onclick="saveHeroTitle()">
         <i class="fas fa-save"></i> حفظ التعديل
       </button>
