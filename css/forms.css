@@ -275,19 +275,37 @@ body.en .fab-fan-item { right: auto; left: 26px; }
 .fab-fan-wrap.open .fab-fan-item {
   opacity: 1; pointer-events: all; width: 46px; height: 46px; font-size: 18px;
 }
-.fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-60px, -110px); }
-.fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-105px, -38px); }
-.fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-105px, 38px); }
-.fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-60px, 110px); }
+.fab-fan-wrap.open .fab-fan-item.fab-points      { transform: scale(1) translate(-40px, -145px); }
+.fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-85px, -75px); }
+.fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-105px, 0px); }
+.fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-85px, 75px); }
+.fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-40px, 145px); }
 
-body.en .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(60px, -110px); }
-body.en .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(105px, -38px); }
-body.en .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(105px, 38px); }
-body.en .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(60px, 110px); }
+body.en .fab-fan-wrap.open .fab-fan-item.fab-points      { transform: scale(1) translate(40px, -145px); }
+body.en .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(85px, -75px); }
+body.en .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(105px, 0px); }
+body.en .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(85px, 75px); }
+body.en .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(40px, 145px); }
 
 @media (max-width:480px){
-  .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-50px, -95px); }
-  .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-90px, -34px); }
-  .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-90px, 34px); }
-  .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-50px, 95px); }
+  .fab-fan-wrap.open .fab-fan-item.fab-points      { transform: scale(1) translate(-35px, -125px); }
+  .fab-fan-wrap.open .fab-fan-item.fab-search      { transform: scale(1) translate(-72px, -65px); }
+  .fab-fan-wrap.open .fab-fan-item.fab-whatsapp    { transform: scale(1) translate(-92px, 0px); }
+  .fab-fan-wrap.open .fab-fan-item.scroll-top-btn  { transform: scale(1) translate(-72px, 65px); }
+  .fab-fan-wrap.open .fab-fan-item.fab-view-toggle { transform: scale(1) translate(-35px, 125px); }
 }
+
+/* لون زر النقاط الذهبي */
+.fab-fan-item.fab-points { background: linear-gradient(135deg,#d4af37,#b8860b); }
+
+/* النص التوضيحي جنب كل زر — بدون أي خلفية، بلون موحّد واضح */
+.fab-fan-label {
+  position: absolute; top: 50%; right: 100%; transform: translateY(-50%);
+  margin-right: 8px; white-space: nowrap;
+  font-size: 12px; font-weight: 800; color: #0a3d5c;
+  text-shadow: 0 1px 3px rgba(255,255,255,0.9), 0 0 6px rgba(255,255,255,0.7);
+  opacity: 0; pointer-events: none; transition: opacity 0.3s 0.15s;
+}
+body.en .fab-fan-label { right: auto; left: 100%; margin-right: 0; margin-left: 8px; }
+
+.fab-fan-wrap.open .fab-fan-item .fab-fan-label { opacity: 1; }
