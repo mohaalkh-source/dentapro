@@ -2169,7 +2169,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   </div>
 </div>
 <!-- ACCOUNT MENU MODAL (تُستخدم من زر "حسابي" بالشريط السفلي، بنفس محتوى قائمة الحساب العلوية) -->
-<div class="modal-overlay" id="accountMenuModal" style="align-items:flex-end;padding:0">
+<div class="modal-overlay" id="accountMenuModal" style="align-items:flex-end;padding:0" onclick="if(event.target===this) closeAccountMenu()">
   <div class="modal" style="max-width:100%;width:100%;border-radius:20px 20px 0 0;margin:0">
     <div style="width:40px;height:4px;background:var(--border);border-radius:50px;margin:12px auto 4px"></div>
     <div id="accountMenuItems" style="padding:8px 0 calc(8px + env(safe-area-inset-bottom,0))"></div>
