@@ -438,7 +438,10 @@ async function renderConfirmDetails() {
           onclick="${canPayPoints ? "selectPayMethod('points')" : 'void(0)'}">
           <span class="pay-method-icon">🏆</span>
           <div class="pay-method-label">${t('الدفع بالنقاط','Pay with Points')}</div>
-          <div class="pay-method-sub">${totalPoints} ${t('نقطة مطلوبة','pts needed')}</div>
+          <div class="pay-method-sub">
+            ${totalPoints} ${t('نقطة مطلوبة','pts needed')}
+            ${someNoPoints ? ` + ${cart.filter(i => !i.points || i.points===0).reduce((s,i)=>s+i.price*i.qty,0).toLocaleString()} ${t('د.أ','SAR')}` : ''}
+          </div>
         </button>` : ''}
       </div>
 
@@ -453,7 +456,7 @@ async function renderConfirmDetails() {
                   border-radius:var(--radius-sm);font-size:13px;color:#92400e;font-weight:600;
                   display:flex;align-items:center;gap:8px">
         <i class="fas fa-info-circle"></i>
-        ${t('بعض المنتجات في سلتك لا تدعم الشراء بالنقاط','Some cart items do not support points payment')}
+        ${t('بعض المنتجات في سلتك لا تدعم الشراء بالنقاط، وسيُضاف سعرها نقداً للفاتورة','Some cart items do not support points payment and will be charged in cash')}
       </div>` : ''}
 
       ${!isClient ? `
