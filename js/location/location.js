@@ -155,8 +155,15 @@ async function submitOrder() {
 
   const orderClientEmail = linkedClient ? (linkedClient.email || 'guest') : 'guest';
   const orderPhone = linkedClient ? (linkedClient.phone || submittedPhone) : submittedPhone;
-  const rawTotal = getTotal();
-  const discountResult = await computeGeneralDiscountForCart(cart, orderClientEmail, orderPhone);
+
+  // لو الدفع بالنقاط: المبلغ النقدي المطلوب فعلياً هو بس قيمة المواد
+  // اللي ما بتدعم الدفع بالنقاط (مو مجموع السلة الكامل) — لتفادي "تهريب"
+  // مواد بالمجان تحت غطاء الدفع بالنقاط
+  const cashOnlyItems = payWithPoints ? cart.filter(i => !i.points || i.points === 0) : cart;
+  const rawTotal = payWithPoints
+    ? cashOnlyItems.reduce((s, i) => s + i.price * i.qty, 0)
+    : getTotal();
+  const discountResult = await computeGeneralDiscountForCart(cashOnlyItems, orderClientEmail, orderPhone);
 
   const order = {
     id:          orderNum,
