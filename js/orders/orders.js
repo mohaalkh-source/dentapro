@@ -775,29 +775,34 @@ function showAdminOrderDetail(orderId) {
       ${order.payMethod === 'points' ? `
       <div style="background:#fffbeb;border:1.5px solid #f59e0b;border-radius:10px;padding:10px 14px;margin-bottom:12px;
                   font-weight:800;color:#92400e;text-align:center">
-        🏆 الدفع بالنقاط — ${order.totalPoints || 0} نقطة
+        ${formatOrderTotal(order)}
         ${order.pointsDeducted ? ' (تم الخصم)' : ' (سيتم الخصم عند التسليم)'}
       </div>` : ''}
       <div style="margin-bottom:12px">
-        ${order.items.map(item=>`
+        ${order.items.map(item=>{
+          const itemPaidByPoints = order.payMethod === 'points' && (item.points || 0) > 0;
+          return `
           <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px dashed var(--border);font-size:13px">
             <span style="font-size:22px">${escHtml(item.icon || '')}</span>
             <span style="flex:1;font-weight:600">${escHtml(item.ar || '')}</span>
             <span style="color:var(--text-muted)">× ${item.qty}</span>
-            <span style="font-weight:800;color:${order.payMethod==='points'?'#d97706':'var(--primary)'}">
-              ${order.payMethod==='points'
+            <span style="font-weight:800;color:${itemPaidByPoints?'#d97706':'var(--primary)'}">
+              ${itemPaidByPoints
                 ? `🏆 ${(item.points||0)*item.qty} نقطة`
                 : `${(item.price*item.qty).toLocaleString()} د.أ`}
             </span>
-          </div>`).join('')}
+          </div>`;
+        }).join('')}
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
           <span>الإجمالي</span>
           <span>
-            ${order.payMethod==='points'
+            ${order.payMethod==='points' && !(order.total > 0)
               ? `🏆 ${order.totalPoints||0} نقطة`
-              : (order.originalTotal && order.originalTotal > order.total
-                  ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${order.originalTotal.toLocaleString()} د.أ</span><span style="font-weight:800">${order.total.toLocaleString()} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${order.discountPercent}%)</span>`
-                  : `${order.total.toLocaleString()} د.أ`)}
+              : order.payMethod==='points'
+                ? formatOrderTotal(order)
+                : (order.originalTotal && order.originalTotal > order.total
+                    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${order.originalTotal.toLocaleString()} د.أ</span><span style="font-weight:800">${order.total.toLocaleString()} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${order.discountPercent}%)</span>`
+                    : `${order.total.toLocaleString()} د.أ`)}
           </span>
         </div>
       </div>
