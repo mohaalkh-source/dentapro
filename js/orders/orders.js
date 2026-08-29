@@ -92,12 +92,13 @@ function formatOrderTotal(order, opts = {}) {
   const hasCash = (order.total || 0) > 0;
   const hasPoints = order.payMethod === 'points' && (order.totalPoints || 0) > 0;
   const currency = opts.currency || 'د.أ';
+  const prefix = opts.prefix || '';
   if (hasPoints && hasCash) {
-    return `🏆 ${(order.totalPoints||0).toLocaleString()} نقطة + ${order.total.toLocaleString()} ${currency}`;
+    return `${prefix}🏆 ${(order.totalPoints||0).toLocaleString()} نقطة + ${order.total.toLocaleString()} ${currency}`;
   } else if (hasPoints) {
-    return `🏆 ${(order.totalPoints||0).toLocaleString()} نقطة`;
+    return `${prefix}🏆 ${(order.totalPoints||0).toLocaleString()} نقطة`;
   } else {
-    return `${(order.total||0).toLocaleString()} ${currency}`;
+    return `${prefix}${(order.total||0).toLocaleString()} ${currency}`;
   }
 }
 
@@ -1828,15 +1829,19 @@ async function runClientOrdersReport() {
       const hasDiscount = order.originalTotal && order.originalTotal > order.total;
 
       if (!isCancelled) {
-        if (isPointsPay) grandTotalPoints += (order.totalPoints || 0);
-        else grandTotalCash += actualTotal;
+        if (isPointsPay) {
+          grandTotalPoints += (order.totalPoints || 0);
+          if (actualTotal > 0) grandTotalCash += actualTotal; // جزء النقد بالطلبات المختلطة
+        } else {
+          grandTotalCash += actualTotal;
+        }
       }
 
       const dateStr = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year: 'numeric', month: 'long', day: 'numeric' });
       const s = getStatusObj(order.status || 'pending');
 
       const footerTotalHTML = isPointsPay
-        ? `🏆 إجمالي الفاتورة: ${(order.totalPoints || 0).toLocaleString()} نقطة`
+        ? formatOrderTotal(order, { prefix: '🏆 إجمالي الفاتورة: ' })
         : (hasDiscount
             ? `إجمالي الفاتورة: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${order.originalTotal.toLocaleString()} د.أ</span>${actualTotal.toFixed(2)} د.أ <span style="font-size:11px;color:#e53e3e">(خصم ${order.discountPercent}%)</span>`
             : `إجمالي الفاتورة: ${actualTotal.toFixed(2)} د.أ`);
