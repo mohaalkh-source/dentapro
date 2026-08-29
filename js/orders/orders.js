@@ -87,6 +87,20 @@ var ORDER_STATUSES = [
   { key:'cancelled', label:'ملغي',          icon:'fa-times-circle',   class:'status-cancelled' },
 ];
 
+// تنسيق موحّد لعرض إجمالي الطلب — يراعي حالة الدفع المختلط (نقاط + نقد سوا)
+function formatOrderTotal(order, opts = {}) {
+  const hasCash = (order.total || 0) > 0;
+  const hasPoints = order.payMethod === 'points' && (order.totalPoints || 0) > 0;
+  const currency = opts.currency || 'د.أ';
+  if (hasPoints && hasCash) {
+    return `🏆 ${(order.totalPoints||0).toLocaleString()} نقطة + ${order.total.toLocaleString()} ${currency}`;
+  } else if (hasPoints) {
+    return `🏆 ${(order.totalPoints||0).toLocaleString()} نقطة`;
+  } else {
+    return `${(order.total||0).toLocaleString()} ${currency}`;
+  }
+}
+
 var TRACK_FLOW = ['pending','confirmed','preparing','shipped','delivered'];
 // تحديد رابط خريطة من بيانات الطلب
 function getOrderMapLink(order) {
@@ -198,7 +212,7 @@ async function renderClientOrders() {
           <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap">
             ${statusBadgeHTML(order.status)}
             ${order.payMethod === 'points'
-              ? `<div class="order-track-total" style="background:#fffbeb;color:#92400e;border:1.5px solid #f59e0b">🏆 ${t('دُفع بالنقاط','Paid with Points')} (${order.totalPoints || 0})</div>`
+              ? `<div class="order-track-total" style="background:#fffbeb;color:#92400e;border:1.5px solid #f59e0b">${formatOrderTotal(order)}</div>`
               : `<div class="order-track-total">${order.total.toLocaleString()} د.أ</div>`}
             <button onclick="printOrderInvoice('${order.id}')"
               style="padding:6px 16px;border-radius:50px;background:#f0f8ff;color:#0a5c8a;
@@ -552,9 +566,7 @@ async function renderAdminOrders() {
           <span style="color:var(--primary-light);font-weight:700">${order.items.length} منتج</span>
         </div>
         <div class="admin-order-field" data-label="الإجمالي:" style="font-weight:900;color:${order.payMethod==='points'?'#d97706':'var(--primary)'}">
-          ${order.payMethod==='points'
-            ? `🏆 ${order.totalPoints||0} نقطة`
-            : `${order.total.toLocaleString()} د.أ`}
+          ${formatOrderTotal(order)}
         </div>
         <div class="admin-order-field" data-label="التاريخ:" style="font-size:12px;color:var(--text-muted)">${date}</div>
         <div class="admin-order-field" data-label="الحالة:">
