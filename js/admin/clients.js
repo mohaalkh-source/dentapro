@@ -414,7 +414,7 @@ function openClientAllOrdersModal(email) {
                   ${statusBadgeHTML(item.status)}
                 </div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:6px">📅 ${date} · ${item.items.length} مادة</div>
-                <div style="font-weight:900;color:var(--primary);margin-top:6px">${item.payMethod==='points' ? `🏆 ${item.totalPoints||0} نقطة` : `${item.total.toLocaleString()} د.أ`}</div>
+                <div style="font-weight:900;color:var(--primary);margin-top:6px">${item.payMethod==='points' ? formatOrderTotal(item) : `${item.total.toLocaleString()} د.أ`}</div>
                 <div style="font-size:11px;color:var(--primary-light);margin-top:6px;font-weight:700"><i class="fas fa-eye"></i> اضغط لعرض التفاصيل الكاملة</div>
               </div>`;
             } else {
