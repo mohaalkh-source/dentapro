@@ -89,10 +89,13 @@ var ORDER_STATUSES = [
 
 // تنسيق موحّد لعرض إجمالي الطلب — يراعي حالة الدفع المختلط (نقاط + نقد سوا)
 function formatOrderTotal(order, opts = {}) {
-  const hasCash = (order.total || 0) > 0;
-  const hasPoints = order.payMethod === 'points' && (order.totalPoints || 0) > 0;
   const currency = opts.currency || 'د.أ';
   const prefix = opts.prefix || '';
+  if (order.payMethod === 'free') {
+    return `${prefix}مجاناً`;
+  }
+  const hasCash = (order.total || 0) > 0;
+  const hasPoints = order.payMethod === 'points' && (order.totalPoints || 0) > 0;
   if (hasPoints && hasCash) {
     return `${prefix}🏆 ${(order.totalPoints||0).toLocaleString()} نقطة + ${order.total.toLocaleString()} ${currency}`;
   } else if (hasPoints) {
@@ -779,6 +782,11 @@ function showAdminOrderDetail(orderId) {
         ${formatOrderTotal(order)}
         ${order.pointsDeducted ? ' (تم الخصم)' : ' (سيتم الخصم عند التسليم)'}
       </div>` : ''}
+      ${order.payMethod === 'free' ? `
+      <div style="background:#f0fdf4;border:1.5px solid #22c55e;border-radius:10px;padding:10px 14px;margin-bottom:12px;
+                  font-weight:800;color:#15803d;text-align:center">
+        🎁 طلب مجاني
+      </div>` : ''}
       <div style="margin-bottom:12px">
         ${order.items.map(item=>{
           const itemPaidByPoints = order.payMethod === 'points' && (item.points || 0) > 0;
@@ -797,7 +805,9 @@ function showAdminOrderDetail(orderId) {
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
           <span>الإجمالي</span>
           <span>
-            ${order.payMethod==='points' && !(order.total > 0)
+            ${order.payMethod==='free'
+              ? formatOrderTotal(order)
+              : order.payMethod==='points' && !(order.total > 0)
               ? `🏆 ${order.totalPoints||0} نقطة`
               : order.payMethod==='points'
                 ? formatOrderTotal(order)
@@ -1644,8 +1654,28 @@ async function submitAdminSendOrder() {
   const clinic = document.getElementById('sendOrderClientClinic').value;
   const name   = document.getElementById('sendOrderClientName').textContent;
 
-  const total       = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
   const totalPoints = _sendOrderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
+  const cashOnlyItems = _sendOrderItems.filter(i => !i.points || i.points === 0);
+
+  let total;
+  if (_sendOrderPayMethod === 'points') {
+    total = cashOnlyItems.reduce((s, i) => s + i.price * i.qty, 0); // بس المواد الغير مؤهلة للنقاط
+  } else if (_sendOrderPayMethod === 'free') {
+    total = 0;
+  } else {
+    total = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
+  }
+
+  // تحقق من كفاية رصيد نقاط العميل قبل الإرسال (لو الدفع بالنقاط)
+  if (_sendOrderPayMethod === 'points') {
+    const currentBalance = await getClientPoints(uid);
+    if (currentBalance < totalPoints) {
+      showToast(`⚠️ رصيد العميل (${currentBalance} نقطة) لا يكفي — المطلوب ${totalPoints} نقطة`, 'error');
+      btn.disabled = false;
+      btn.innerHTML = originalHTML;
+      return;
+    }
+  }
 
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
