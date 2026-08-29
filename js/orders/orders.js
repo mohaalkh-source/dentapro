@@ -679,17 +679,21 @@ function printOrderInvoice(orderId) {
   const date = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
     { year:'numeric', month:'long', day:'numeric', hour:'2-digit', minute:'2-digit' });
 
-  const rows = order.items.map(item => `
+  const rows = order.items.map(item => {
+    // كل مادة تعرض بوحدتها الفعلية: نقاط لو مؤهلة وطُلب الدفع بالنقاط، وإلا نقد
+    const itemPaidByPoints = order.payMethod === 'points' && (item.points || 0) > 0;
+    return `
     <tr>
       <td>${escHtml(item.ar)}</td>
       <td style="text-align:center">${item.qty}</td>
-      <td style="text-align:center">${order.payMethod==='points'
+      <td style="text-align:center">${itemPaidByPoints
         ? `${(item.points||0)} نقطة`
         : `${item.price.toLocaleString()} د.أ`}</td>
-      <td style="text-align:center;font-weight:700">${order.payMethod==='points'
+      <td style="text-align:center;font-weight:700">${itemPaidByPoints
         ? `${(item.points||0)*item.qty} نقطة`
         : `${(item.price*item.qty).toLocaleString()} د.أ`}</td>
-    </tr>`).join('');
+    </tr>`;
+  }).join('');
 
   const win = window.open('', '_blank');
   win.document.write(`
@@ -722,7 +726,7 @@ function printOrderInvoice(orderId) {
         <tbody>${rows}</tbody>
       </table>
       <div class="total">
-        الإجمالي الكلي: ${order.payMethod==='points' ? `${order.totalPoints||0} نقطة` : `${order.total.toLocaleString()} د.أ`}
+        الإجمالي الكلي: ${formatOrderTotal(order)}
         ${order.payMethod==='points' ? ' (دفع بالنقاط)' : ''}
       </div>
       <script>window.print();<\/script>
@@ -1160,7 +1164,7 @@ function sendWhatsAppAdmin(orderId) {
   const s = getStatusObj(order.status);
   const itemsTxt = (order.items || []).map(i => `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''}`).join('\n');
   const totalLine = order.payMethod === 'points'
-    ? `🏆 *الإجمالي: ${order.totalPoints || 0} نقطة*`
+    ? `💰🏆 *الإجمالي: ${formatOrderTotal(order)}*`
     : (order.originalTotal && order.originalTotal > order.total
         ? `💰 *الإجمالي بعد الخصم: ${order.total.toLocaleString()} د.أ* (بدل ${order.originalTotal.toLocaleString()} د.أ)`
         : `💰 *الإجمالي: ${(order.total || 0).toLocaleString()} د.أ*`);
