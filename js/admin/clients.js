@@ -510,13 +510,15 @@ function invalidateCustomDiscountConfigCache() {
   _customDiscountConfigCacheTime = 0;
 }
 
-async function openCustomDiscountSettingsModal() {
-  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
 function setCustomDiscExpiryPreset(idx, days) {
   const d = new Date();
   d.setDate(d.getDate() + days);
   document.getElementById(`custDiscExpiry${idx}`).value = toDatetimeLocalValue(d.toISOString());
-}  document.getElementById('customDiscountSettingsModal').classList.add('open');
+}
+
+async function openCustomDiscountSettingsModal() {
+  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+  document.getElementById('customDiscountSettingsModal').classList.add('open');
   document.getElementById('customDiscountSettingsBody').innerHTML = `<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto;width:26px;height:26px;border-width:4px"></div></div>`;
 
   const cfg = await loadCustomDiscountConfig();
