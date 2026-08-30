@@ -2136,39 +2136,6 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <div style="flex:1;min-width:130px">
           <label class="form-label" style="font-size:12px">إلى تاريخ</label>
           <input type="date" class="form-input" id="reportToDate">
-        </div>
-        <div style="flex:1;min-width:150px">
-          <label class="form-label" style="font-size:12px">حالة الطلب</label>
-          <select class="form-input" id="reportStatusFilter" onchange="runClientOrdersReport()">
-            <option value="all">كل الحالات</option>
-            <option value="pending">في الانتظار</option>
-            <option value="confirmed">تم التأكيد</option>
-            <option value="preparing">جاري التجهيز</option>
-            <option value="shipped">في الشحن</option>
-            <option value="delivered">تم التسليم</option>
-            <option value="cancelled">ملغي</option>
-          </select>
-        </div>
-        <div style="flex:1;min-width:150px">
-          <label class="form-label" style="font-size:12px">طريقة الدفع</label>
-          <select class="form-input" id="reportPayMethodFilter" onchange="runClientOrdersReport()">
-            <option value="all">كل الطرق</option>
-            <option value="money">نقدًا</option>
-            <option value="points">نقاط</option>
-            <option value="free">مجانًا</option>
-          </select>
-        </div>
-        <button onclick="runClientOrdersReport()" style="padding:10px 20px;border-radius:10px;background:var(--primary);color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;height:42px">
-          <i class="fas fa-search"></i> بحث
-        </button>
-      </div>
-
-      <div id="clientOrdersReportBody"></div>
-    </div>
-  </div>
-</div>
-  <div class="modal-overlay" id="customDiscountSettingsModal">
-  <div class="modal" style="max-width:460px">
     <div class="modal-header">
       <div class="modal-title"><i class="fas fa-user-tag"></i> إعدادات الخصم المخصص</div>
       <button class="close-btn" onclick="closeCustomDiscountSettingsModal()"><i class="fas fa-times"></i></button>
