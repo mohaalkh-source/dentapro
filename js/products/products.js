@@ -163,14 +163,19 @@ async function loadHeroSettings() {
 
 var _heroEditImagePending = null;
 
-document.getElementById(`heroLineArText${i}`).value = lAr.text || '';
-    document.getElementById(`heroLineArSize${i}`).value = lAr.size || 26;
-    document.getElementById(`heroLineArColor${i}`).value = lAr.color || '#123b62';
-    document.getElementById(`heroLineArAlign${i}`).value = lAr.align || 'right';
-    document.getElementById(`heroLineEnText${i}`).value = lEn.text || '';
-    document.getElementById(`heroLineEnSize${i}`).value = lEn.size || 26;
-    document.getElementById(`heroLineEnColor${i}`).value = lEn.color || '#123b62';
-    document.getElementById(`heroLineEnAlign${i}`).value = lEn.align || 'left';
+function buildHeroLineRowHTML(prefix, i, placeholder) {
+  return `
+    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
+      <input type="text" id="hero${prefix}Text${i}" placeholder="${placeholder}" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);font-family:inherit;font-size:13px">
+      <input type="number" id="hero${prefix}Size${i}" value="26" min="10" max="60" title="حجم الخط" style="width:60px;padding:10px;border-radius:10px;border:1.5px solid var(--border);font-size:13px;text-align:center">
+      <input type="color" id="hero${prefix}Color${i}" value="#123b62" title="لون النص" style="width:40px;height:40px;border-radius:8px;border:1.5px solid var(--border);padding:2px;cursor:pointer">
+      <select id="hero${prefix}Align${i}" title="محاذاة السطر" style="padding:9px 6px;border-radius:10px;border:1.5px solid var(--border);font-family:inherit;font-size:12px;background:#fff;cursor:pointer">
+        <option value="right">يمين</option>
+        <option value="left">يسار</option>
+        <option value="center">توسيط</option>
+      </select>
+    </div>`;
+}
 
 function openHeroTitleEditModal() {
   if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
@@ -187,9 +192,11 @@ function openHeroTitleEditModal() {
     document.getElementById(`heroLineArText${i}`).value = lAr.text || '';
     document.getElementById(`heroLineArSize${i}`).value = lAr.size || 26;
     document.getElementById(`heroLineArColor${i}`).value = lAr.color || '#123b62';
+    document.getElementById(`heroLineArAlign${i}`).value = lAr.align || 'right';
     document.getElementById(`heroLineEnText${i}`).value = lEn.text || '';
     document.getElementById(`heroLineEnSize${i}`).value = lEn.size || 26;
     document.getElementById(`heroLineEnColor${i}`).value = lEn.color || '#123b62';
+    document.getElementById(`heroLineEnAlign${i}`).value = lEn.align || 'left';
   }
   document.getElementById('heroExpiryInput').value = heroExpiresAt ? toDatetimeLocalValue(heroExpiresAt) : '';
   const preview = document.getElementById('heroImagePreview');
