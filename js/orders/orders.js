@@ -1480,10 +1480,12 @@ async function confirmDeleteAccount() {
 // ============================
 var _sendOrderItems = [];
 var _sendOrderPayMethod = 'money';
+var _sendOrderDiscountType = 'fixed'; // 'fixed' (د.أ) أو 'percent' (%)
 
 function openAdminSendOrderModal(email, uid, name, clinic, phone) {
   _sendOrderItems = [];
   _sendOrderPayMethod = 'money';
+  _sendOrderDiscountType = 'fixed';
   document.getElementById('sendOrderClientEmail').value = email;
   document.getElementById('sendOrderClientUid').value = uid || '';
   document.getElementById('sendOrderClientPhone').value = phone || '';
@@ -1495,6 +1497,8 @@ function openAdminSendOrderModal(email, uid, name, clinic, phone) {
   document.getElementById('sendOrderCustomName').value = '';
   document.getElementById('sendOrderCustomPrice').value = '';
   document.getElementById('sendOrderError').style.display = 'none';
+  document.getElementById('sendOrderDiscountValue').value = '';
+  setSendOrderDiscountType('fixed');
   setSendOrderPayMethod('money');
   renderSendOrderItems();
   document.getElementById('adminSendOrderModal').classList.add('open');
@@ -1620,19 +1624,63 @@ function setSendOrderPayMethod(method) {
     btn.style.background = active ? 'var(--primary)' : '#f8fbfd';
     btn.style.color = active ? '#fff' : 'var(--text-muted)';
   });
+  const discountBox = document.getElementById('sendOrderDiscountBox');
+  if (discountBox) discountBox.style.display = method === 'money' ? 'block' : 'none';
   updateSendOrderTotalDisplay();
 }
 
+function setSendOrderDiscountType(type) {
+  _sendOrderDiscountType = type;
+  const fixedBtn = document.getElementById('sendOrderDiscTypeFixed');
+  const percentBtn = document.getElementById('sendOrderDiscTypePercent');
+  if (fixedBtn && percentBtn) {
+    fixedBtn.style.background = type === 'fixed' ? 'var(--primary)' : '#f8fbfd';
+    fixedBtn.style.color = type === 'fixed' ? '#fff' : 'var(--text-muted)';
+    percentBtn.style.background = type === 'percent' ? 'var(--primary)' : '#f8fbfd';
+    percentBtn.style.color = type === 'percent' ? '#fff' : 'var(--text-muted)';
+  }
+  const valueInput = document.getElementById('sendOrderDiscountValue');
+  if (valueInput) valueInput.placeholder = type === 'percent' ? 'مثال: 10' : 'مثال: 5.00';
+  updateSendOrderTotalDisplay();
+}
+
+// يحسب مبلغ الخصم اليدوي (نقداً فقط) بناءً على نوعه وقيمته، بحد أقصى = المجموع نفسه
+function getSendOrderDiscountAmount(rawTotal) {
+  if (_sendOrderPayMethod !== 'money') return 0;
+  const input = document.getElementById('sendOrderDiscountValue');
+  const raw = input ? parseFloat(input.value) : 0;
+  const val = isNaN(raw) || raw < 0 ? 0 : raw;
+  if (!val) return 0;
+  if (_sendOrderDiscountType === 'percent') {
+    const pct = Math.min(100, val);
+    return Math.round((rawTotal * pct / 100) * 100) / 100;
+  }
+  return Math.min(val, rawTotal);
+}
+
 function updateSendOrderTotalDisplay() {
-  const total = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
+  const rawTotal = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
   const totalPoints = _sendOrderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
   const disp = document.getElementById('sendOrderTotalDisplay');
+  const beforeRow = document.getElementById('sendOrderTotalBeforeRow');
+  const beforeDisp = document.getElementById('sendOrderTotalBeforeDisplay');
+
   if (_sendOrderPayMethod === 'points') {
+    if (beforeRow) beforeRow.style.display = 'none';
     disp.textContent = `${totalPoints} نقطة`;
   } else if (_sendOrderPayMethod === 'free') {
-    disp.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px">${total.toLocaleString()} د.أ</span> مجانًا`;
+    if (beforeRow) beforeRow.style.display = 'none';
+    disp.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px">${rawTotal.toLocaleString()} د.أ</span> مجانًا`;
   } else {
-    disp.textContent = `${total.toLocaleString()} د.أ`;
+    const discountAmount = getSendOrderDiscountAmount(rawTotal);
+    const finalTotal = Math.max(0, Math.round((rawTotal - discountAmount) * 100) / 100);
+    if (discountAmount > 0) {
+      if (beforeRow) beforeRow.style.display = 'flex';
+      if (beforeDisp) beforeDisp.textContent = `${rawTotal.toLocaleString()} د.أ`;
+    } else if (beforeRow) {
+      beforeRow.style.display = 'none';
+    }
+    disp.textContent = `${finalTotal.toLocaleString()} د.أ`;
   }
 }
 
@@ -1657,13 +1705,20 @@ async function submitAdminSendOrder() {
   const totalPoints = _sendOrderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
   const cashOnlyItems = _sendOrderItems.filter(i => !i.points || i.points === 0);
 
-  let total;
+  let total, originalTotal = null, discountAmount = 0;
   if (_sendOrderPayMethod === 'points') {
     total = cashOnlyItems.reduce((s, i) => s + i.price * i.qty, 0); // بس المواد الغير مؤهلة للنقاط
   } else if (_sendOrderPayMethod === 'free') {
     total = 0;
   } else {
-    total = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
+    const rawTotal = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
+    discountAmount = getSendOrderDiscountAmount(rawTotal);
+    if (discountAmount > 0) {
+      originalTotal = rawTotal;
+      total = Math.max(0, Math.round((rawTotal - discountAmount) * 100) / 100);
+    } else {
+      total = rawTotal;
+    }
   }
 
   // تحقق من كفاية رصيد نقاط العميل قبل الإرسال (لو الدفع بالنقاط)
@@ -1695,6 +1750,9 @@ async function submitAdminSendOrder() {
       id: i.id, ar: i.ar, en: i.en, icon: i.icon, price: i.price, qty: i.qty, points: i.points || 0
     })),
     total,
+    originalTotal: originalTotal,
+    manualDiscountAmount: discountAmount > 0 ? discountAmount : 0,
+    manualDiscountType: discountAmount > 0 ? _sendOrderDiscountType : null,
     totalPoints,
     payMethod: _sendOrderPayMethod,
     pointsDeducted: false,
