@@ -17,15 +17,43 @@ async function computeGeneralDiscount(rawTotal, clientEmail, clientPhone) {
     return null;
   }
 }
-<div class="modal-overlay" id="customDiscountSettingsModal">
-  <div class="modal" style="max-width:460px">
-    <div class="modal-header">
-      <div class="modal-title"><i class="fas fa-user-tag"></i> إعدادات الخصم المخصص</div>
-      <button class="close-btn" onclick="closeCustomDiscountSettingsModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div id="customDiscountSettingsBody" style="padding:20px;max-height:75vh;overflow-y:auto"></div>
-  </div>
-</div>
+// يحسب الخصم المخصص (لو مفعّل ومطابق للعميل بأحد المستويات الثلاثة) — نظام شرائح تصاعدية
+async function computeCustomDiscount(rawTotal, clientEmail, clientPhone) {
+  try {
+    const cfg = await loadCustomDiscountConfig();
+    if (!cfg || !cfg.enabled || !Array.isArray(cfg.tiers)) return null;
+
+    const isEligible = (tier) => {
+      if (tier.scope === 'all') return true;
+      if (!tier.targetIds || !tier.targetIds.length) return false;
+      return tier.targetIds.some(id => {
+        if (id.startsWith('guest:')) return normalizePhone(clientPhone) === normalizePhone(id.slice(6));
+        return id === clientEmail;
+      });
+    };
+
+    const eligibleTiers = cfg.tiers.filter(isEligible).sort((a,b) => a.amount - b.amount);
+    if (!eligibleTiers.length) return null;
+
+    // أول مستوى مؤهل تكون قيمته >= المجموع، وإلا آخر مستوى (الأعلى) يغطي كل شي فوقه بدون سقف
+    const matchedTier = eligibleTiers.find(t => rawTotal <= t.amount) || eligibleTiers[eligibleTiers.length - 1];
+    if (!matchedTier || matchedTier.percent <= 0) return null;
+
+    const discounted = Math.max(0, rawTotal - (rawTotal * matchedTier.percent / 100));
+    return { originalTotal: rawTotal, total: Math.round(discounted * 100) / 100, discountPercent: matchedTier.percent };
+  } catch(e) {
+    console.warn('computeCustomDiscount:', e.message);
+    return null;
+  }
+}
+
+// الدالة الموحّدة اللي تُستخدم بكل مكان بدل computeGeneralDiscount مباشرة —
+// الخصم المخصص له الأولوية دايماً لو العميل مشمول بأي مستوى، وإلا يرجع للخصم العام
+async function computeApplicableDiscount(rawTotal, clientEmail, clientPhone) {
+  const custom = await computeCustomDiscount(rawTotal, clientEmail, clientPhone);
+  if (custom) return custom;
+  return await computeGeneralDiscount(rawTotal, clientEmail, clientPhone);
+}
 // DentaPro domain module: extracted from the original implementation.
 // QUOTE REQUEST (طلب عرض سعر) — CLIENT SIDE
 // =====================
