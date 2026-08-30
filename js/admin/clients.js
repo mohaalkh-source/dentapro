@@ -486,17 +486,8 @@ async function openDiscountSettingsModal() {
   document.getElementById('discountSettingsBody').innerHTML = `
     <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:16px;cursor:pointer">
       <input type="checkbox" id="discEnabled" ${cfg && cfg.enabled ? 'checked' : ''} style="width:20px;height:20px">
-      تفعيل الخصم العام
+      تفعيل الخصم العام (لكل العملاء)
     </label>
-    <label style="display:block;font-weight:700;margin-bottom:6px">نطاق الخصم</label>
-    <select id="discScope" class="form-input" style="margin-bottom:16px" onchange="document.getElementById('discClientRow').style.display=this.value==='client'?'block':'none'">
-      <option value="all" ${!cfg || cfg.scope==='all' ? 'selected':''}>كل العملاء</option>
-      <option value="client" ${cfg && cfg.scope==='client' ? 'selected':''}>عميل محدد</option>
-    </select>
-    <div id="discClientRow" style="${cfg && cfg.scope==='client' ? '' : 'display:none'};margin-bottom:16px">
-      <label style="display:block;font-weight:700;margin-bottom:6px">اختر العميل</label>
-      <select id="discClientSelect" class="form-input">${optionsHtml}</select>
-    </div>
     <label style="display:block;font-weight:700;margin-bottom:6px">الحد الأدنى لقيمة الفاتورة (د.أ) — ضع 0 لتطبيق الخصم دائماً</label>
     <input type="number" id="discMinAmount" class="form-input" min="0" step="0.1" value="${cfg ? cfg.minAmount : 0}" style="margin-bottom:16px">
     <label style="display:block;font-weight:700;margin-bottom:6px">نسبة الخصم %</label>
@@ -516,17 +507,13 @@ function closeDiscountSettingsModal() {
 
 async function saveDiscountConfig() {
   const enabled = document.getElementById('discEnabled').checked;
-  const scope = document.getElementById('discScope').value;
-  const targetId = scope === 'client' ? document.getElementById('discClientSelect').value : null;
   const minAmount = parseFloat(document.getElementById('discMinAmount').value) || 0;
   const percent = Math.max(0, Math.min(100, parseFloat(document.getElementById('discPercent').value) || 0));
   const applyToOffers = document.getElementById('discApplyToOffers').checked;
 
-  if (scope === 'client' && !targetId) { showToast('⚠️ اختر عميل أولاً', 'error'); return; }
-
   try {
     await window._fbSetDoc(window._fbDoc2('store_data', 'discount_settings'), {
-      enabled, scope, targetId, minAmount, percent, applyToOffers, updatedAt: new Date().toISOString()
+      enabled, scope: 'all', targetId: null, minAmount, percent, applyToOffers, updatedAt: new Date().toISOString()
     });
     invalidateDiscountConfigCache();
     showToast('✅ تم حفظ إعدادات الخصم', 'success');
@@ -562,4 +549,109 @@ async function computeGeneralDiscountForCart(cartItems, clientEmail, clientPhone
     total: Math.round((discountOnNormal.total + offerTotal) * 100) / 100,
     discountPercent: discountOnNormal.discountPercent
   };
+}
+// ============================
+// الخصم المخصص — 3 مستويات شرائحية، كل مستوى له نسبة + قيمة تصنيف + عملاء معنيين
+// ============================
+var _customDiscountConfigCache = null;
+var _customDiscountConfigCacheTime = 0;
+
+async function loadCustomDiscountConfig() {
+  if (_customDiscountConfigCache !== null && (Date.now() - _customDiscountConfigCacheTime) < 15000) {
+    return _customDiscountConfigCache;
+  }
+  try {
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'custom_discount_settings'));
+    _customDiscountConfigCache = snap.exists() ? snap.data() : null;
+    _customDiscountConfigCacheTime = Date.now();
+    return _customDiscountConfigCache;
+  } catch(e) {
+    console.warn('loadCustomDiscountConfig:', e.message);
+    return null;
+  }
+}
+function invalidateCustomDiscountConfigCache() {
+  _customDiscountConfigCache = null;
+  _customDiscountConfigCacheTime = 0;
+}
+
+async function openCustomDiscountSettingsModal() {
+  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+  document.getElementById('customDiscountSettingsModal').classList.add('open');
+  document.getElementById('customDiscountSettingsBody').innerHTML = `<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto;width:26px;height:26px;border-width:4px"></div></div>`;
+
+  const cfg = await loadCustomDiscountConfig();
+  const allUsers = await fetchAllUsersList();
+  const clients = allUsers.filter(u => u.role === 'client');
+  const tiers = (cfg && cfg.tiers && cfg.tiers.length === 3) ? cfg.tiers : [0,1,2].map(() => ({ amount:0, percent:0, scope:'all', targetIds:[] }));
+
+  const tierHtml = tiers.map((tier, idx) => {
+    const clientCheckboxes = clients.map(c =>
+      `<label style="display:flex;align-items:center;gap:6px;padding:5px 0;font-size:12px">
+         <input type="checkbox" class="custDiscClient${idx}" value="${escJsAttr(c.email)}" ${tier.targetIds && tier.targetIds.includes(c.email) ? 'checked' : ''}>
+         ${escHtml(c.firstName||c.name||'')} — ${escHtml(c.clinic||'')}
+       </label>`
+    ).join('');
+    return `
+    <div style="border:1.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:14px">
+      <div style="font-weight:800;color:var(--primary-dark);margin-bottom:10px">المستوى ${idx+1}</div>
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">قيمة تصنيف الشريحة (د.أ)</label>
+      <input type="number" id="custDiscAmount${idx}" class="form-input" min="0" step="1" value="${tier.amount||0}" style="margin-bottom:10px">
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">نسبة الخصم %</label>
+      <input type="number" id="custDiscPercent${idx}" class="form-input" min="0" max="100" step="1" value="${tier.percent||0}" style="margin-bottom:10px">
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">نطاق هذا المستوى</label>
+      <select id="custDiscScope${idx}" class="form-input" style="margin-bottom:8px" onchange="document.getElementById('custDiscClientsBox${idx}').style.display=this.value==='client'?'block':'none'">
+        <option value="all" ${!tier.scope || tier.scope==='all' ? 'selected':''}>تحديد الكل</option>
+        <option value="client" ${tier.scope==='client' ? 'selected':''}>عملاء معنيين</option>
+      </select>
+      <div id="custDiscClientsBox${idx}" style="${tier.scope==='client' ? '' : 'display:none'};max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">
+        ${clientCheckboxes || '<div style="font-size:12px;color:var(--text-muted)">لا يوجد عملاء مسجلين</div>'}
+      </div>
+    </div>`;
+  }).join('');
+
+  document.getElementById('customDiscountSettingsBody').innerHTML = `
+    <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:16px;cursor:pointer">
+      <input type="checkbox" id="custDiscEnabled" ${cfg && cfg.enabled ? 'checked' : ''} style="width:20px;height:20px">
+      تفعيل الخصم المخصص
+    </label>
+    <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:16px;cursor:pointer">
+      <input type="checkbox" id="custDiscApplyToOffers" ${!cfg || cfg.applyToOffers !== false ? 'checked' : ''} style="width:20px;height:20px">
+      تطبيق الخصم على عروض الكمية والباقات أيضاً
+    </label>
+    ${tierHtml}
+    <button onclick="saveCustomDiscountConfig()" class="btn-submit" style="width:100%">
+      <i class="fas fa-save"></i> حفظ إعدادات الخصم المخصص
+    </button>`;
+}
+
+function closeCustomDiscountSettingsModal() {
+  document.getElementById('customDiscountSettingsModal').classList.remove('open');
+}
+
+async function saveCustomDiscountConfig() {
+  const enabled = document.getElementById('custDiscEnabled').checked;
+  const applyToOffers = document.getElementById('custDiscApplyToOffers').checked;
+  const tiers = [0,1,2].map(idx => {
+    const scope = document.getElementById(`custDiscScope${idx}`).value;
+    const targetIds = scope === 'client'
+      ? Array.from(document.querySelectorAll(`.custDiscClient${idx}:checked`)).map(el => el.value)
+      : [];
+    return {
+      amount: parseFloat(document.getElementById(`custDiscAmount${idx}`).value) || 0,
+      percent: Math.max(0, Math.min(100, parseFloat(document.getElementById(`custDiscPercent${idx}`).value) || 0)),
+      scope, targetIds
+    };
+  });
+
+  try {
+    await window._fbSetDoc(window._fbDoc2('store_data', 'custom_discount_settings'), {
+      enabled, applyToOffers, tiers, updatedAt: new Date().toISOString()
+    });
+    invalidateCustomDiscountConfigCache();
+    showToast('✅ تم حفظ إعدادات الخصم المخصص', 'success');
+    closeCustomDiscountSettingsModal();
+  } catch(e) {
+    showToast('❌ فشل الحفظ: ' + e.message, 'error');
+  }
 }
