@@ -40,9 +40,6 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
     ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openHeroTitleEditModal()">
       <i class="fas fa-heading" style="color:#0a5c8a"></i> ${t('تعديل عنوان الرئيسية','Edit Homepage Title')}
     </button>` : ''}
-    ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openDiscountSettingsModal()">
-      <i class="fas fa-percent" style="color:#e53e3e"></i> ${t('الخصم العام','General Discount')}
-    </button>` : ''}
     ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openCustomDiscountSettingsModal()">
       <i class="fas fa-user-tag" style="color:#7e22ce"></i> ${t('الخصم المخصص','Custom Discount')}
     </button>` : ''}`;
