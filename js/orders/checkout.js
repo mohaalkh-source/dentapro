@@ -1,29 +1,13 @@
-// يحسب الخصم العام (لو مفعّل ومطابق للشروط) على فاتورة واحدة (سلة أو طلب سريع فقط)
-// يرجع null لو ما فيه خصم ينطبق، أو {originalTotal, total, discountPercent} لو انطبق
-async function computeGeneralDiscount(rawTotal, clientEmail, clientPhone) {
-  try {
-    const cfg = await loadDiscountConfig();
-    if (!cfg || !cfg.enabled) return null;
-    if (rawTotal < (cfg.minAmount || 0)) return null;
-    if (cfg.scope === 'client') {
-      if (cfg.targetId !== clientEmail) return null;
-    }
-    const percent = Math.max(0, Math.min(100, cfg.percent || 0));
-    if (percent <= 0) return null;
-    const discounted = Math.max(0, rawTotal - (rawTotal * percent / 100));
-    return { originalTotal: rawTotal, total: Math.round(discounted * 100) / 100, discountPercent: percent };
-  } catch(e) {
-    console.warn('computeGeneralDiscount:', e.message);
-    return null;
-  }
-}
 // يحسب الخصم المخصص (لو مفعّل ومطابق للعميل بأحد المستويات الثلاثة) — نظام شرائح تصاعدية
+// يرجع null لو ما فيه خصم ينطبق، أو {originalTotal, total, discountPercent} لو انطبق
 async function computeCustomDiscount(rawTotal, clientEmail, clientPhone) {
   try {
     const cfg = await loadCustomDiscountConfig();
     if (!cfg || !cfg.enabled || !Array.isArray(cfg.tiers)) return null;
 
     const isEligible = (tier) => {
+      // فحص انتهاء صلاحية المستوى (لو محدد وقت انتهاء وانقضى)
+      if (tier.expiresAt && new Date(tier.expiresAt) <= new Date()) return false;
       if (tier.scope === 'all') return true;
       if (!tier.targetIds || !tier.targetIds.length) return false;
       return tier.targetIds.some(id => {
@@ -45,14 +29,6 @@ async function computeCustomDiscount(rawTotal, clientEmail, clientPhone) {
     console.warn('computeCustomDiscount:', e.message);
     return null;
   }
-}
-
-// الدالة الموحّدة اللي تُستخدم بكل مكان بدل computeGeneralDiscount مباشرة —
-// الخصم المخصص له الأولوية دايماً لو العميل مشمول بأي مستوى، وإلا يرجع للخصم العام
-async function computeApplicableDiscount(rawTotal, clientEmail, clientPhone) {
-  const custom = await computeCustomDiscount(rawTotal, clientEmail, clientPhone);
-  if (custom) return custom;
-  return await computeGeneralDiscount(rawTotal, clientEmail, clientPhone);
 }
 // DentaPro domain module: extracted from the original implementation.
 // QUOTE REQUEST (طلب عرض سعر) — CLIENT SIDE
@@ -397,7 +373,7 @@ async function updateQuickOrderTotal() {
   } else {
     const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
     const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
-    const discountPreview = await computeGeneralDiscount(total, previewClientEmail, previewClientPhone);
+    const discountPreview = await computeCustomDiscount(total, previewClientEmail, previewClientPhone);
     label.innerHTML = discountPreview
       ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()} د.أ</span><strong style="color:var(--primary);font-size:15px">${discountPreview.total.toLocaleString()} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
       : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${total.toLocaleString()} د.أ</strong>`;
@@ -607,7 +583,7 @@ async function finalizeQuickOrderSend() {
       const orderNum = fromQuoteIdStr ? `DP-${fromQuoteIdStr.replace('QT-','')}` : `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const rawTotal = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const clientEmailForOrder = guestClient ? (guestClient.email || 'guest') : 'guest';
-      const discountResult = await computeGeneralDiscount(rawTotal, clientEmailForOrder, phone);
+      const discountResult = await computeCustomDiscount(rawTotal, clientEmailForOrder, phone);
       const total = discountResult ? discountResult.total : rawTotal;
       const order = {
         id: orderNum,
