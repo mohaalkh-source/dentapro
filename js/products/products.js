@@ -128,18 +128,29 @@ function renderHeroTitle() {
     return;
   }
   if (section) section.style.display = '';
-  wrap.style.display = 'flex';
+  wrap.style.display = 'block';
 
   const lines = currentLang === 'en' ? heroLinesEn : heroLinesAr;
   el.innerHTML = lines
     .filter(l => l.text && l.text.trim())
-    .map(l => `<div style="font-size:${l.size}px;color:${l.color};line-height:1.3;text-align:${l.align || 'right'}">${escHtml(l.text)}</div>`)
+    .map(l => `<div style="font-size:${l.size}px;color:${l.color};line-height:1.15;text-align:${l.align || 'right'}">${escHtml(l.text)}</div>`)
     .join('');
 
-  // الصورة تطفو بجانب النص (float) بحيث النص يلتف حواليها من فوق وتحت وجانب
-  // بدل ما تاخذ حيز ثابت فارغ فوقها وتحتها
+  // الصورة تطفو بجانب النص، وجهة الطفو تتبع اتجاه اللغة:
+  // عربي → الصورة يمين والنص يلتف حواليها من الشمال وفوق وتحت
+  // إنجليزي → الصورة شمال والنص يلتف حواليها من اليمين وفوق وتحت
   if (imgEl) {
-    if (heroImage) { imgEl.src = heroImage; imgEl.style.display = 'block'; }
+    if (heroImage) {
+      imgEl.src = heroImage;
+      imgEl.style.display = 'block';
+      if (currentLang === 'en') {
+        imgEl.style.float = 'left';
+        imgEl.style.margin = '0 20px 12px 0';
+      } else {
+        imgEl.style.float = 'right';
+        imgEl.style.margin = '0 0 12px 20px';
+      }
+    }
     else { imgEl.style.display = 'none'; }
   }
 }
