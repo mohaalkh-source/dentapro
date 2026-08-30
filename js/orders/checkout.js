@@ -397,11 +397,7 @@ async function updateQuickOrderTotal() {
   } else {
     const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
     const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
-    const discountPreview = await computeApplicableDiscount(
-      total,
-      previewClientEmail,
-      previewClientPhone
-    );
+    const discountPreview = await computeGeneralDiscount(total, previewClientEmail, previewClientPhone);
     label.innerHTML = discountPreview
       ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()} د.أ</span><strong style="color:var(--primary);font-size:15px">${discountPreview.total.toLocaleString()} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
       : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${total.toLocaleString()} د.أ</strong>`;
@@ -611,11 +607,7 @@ async function finalizeQuickOrderSend() {
       const orderNum = fromQuoteIdStr ? `DP-${fromQuoteIdStr.replace('QT-','')}` : `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const rawTotal = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const clientEmailForOrder = guestClient ? (guestClient.email || 'guest') : 'guest';
-      const discountResult = await computeApplicableDiscount(
-        rawTotal,
-        clientEmailForOrder,
-        phone
-      );
+      const discountResult = await computeGeneralDiscount(rawTotal, clientEmailForOrder, phone);
       const total = discountResult ? discountResult.total : rawTotal;
       const order = {
         id: orderNum,
