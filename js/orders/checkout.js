@@ -17,6 +17,15 @@ async function computeGeneralDiscount(rawTotal, clientEmail, clientPhone) {
     return null;
   }
 }
+<div class="modal-overlay" id="customDiscountSettingsModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-user-tag"></i> إعدادات الخصم المخصص</div>
+      <button class="close-btn" onclick="closeCustomDiscountSettingsModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="customDiscountSettingsBody" style="padding:20px;max-height:75vh;overflow-y:auto"></div>
+  </div>
+</div>
 // DentaPro domain module: extracted from the original implementation.
 // QUOTE REQUEST (طلب عرض سعر) — CLIENT SIDE
 // =====================
