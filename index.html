@@ -2070,15 +2070,6 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <input type="text" class="form-input" id="sendOrderProductSearch" placeholder="اكتب اسم المادة..." oninput="searchSendOrderProducts()" autocomplete="off">
         <div id="sendOrderSearchResults" style="display:none;position:absolute;top:100%;right:0;left:0;background:#fff;border:1.5px solid var(--border);border-radius:14px;max-height:260px;overflow-y:auto;z-index:20;box-shadow:var(--shadow-lg)"></div>
       </div>
-<div class="modal-overlay" id="customDiscountSettingsModal">
-  <div class="modal" style="max-width:460px">
-    <div class="modal-header">
-      <div class="modal-title"><i class="fas fa-user-tag"></i> إعدادات الخصم المخصص</div>
-      <button class="close-btn" onclick="closeCustomDiscountSettingsModal()"><i class="fas fa-times"></i></button>
-    </div>
-    <div id="customDiscountSettingsBody" style="padding:20px;max-height:75vh;overflow-y:auto"></div>
-  </div>
-</div>
       <button type="button" onclick="toggleSendOrderCustomForm()" style="width:100%;padding:10px;border-radius:12px;border:2px dashed var(--border);background:#f8fbfd;color:var(--primary);font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px">
         <i class="fas fa-plus-circle"></i> إضافة مادة غير موجودة في المتجر
       </button>
@@ -2123,6 +2114,15 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   </div>
 </div>
 <div class="modal-overlay" id="clientOrdersReportModal">
+  <div class="modal-overlay" id="customDiscountSettingsModal">
+  <div class="modal" style="max-width:460px">
+    <div class="modal-header">
+      <div class="modal-title"><i class="fas fa-user-tag"></i> إعدادات الخصم المخصص</div>
+      <button class="close-btn" onclick="closeCustomDiscountSettingsModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div id="customDiscountSettingsBody" style="padding:20px;max-height:75vh;overflow-y:auto"></div>
+  </div>
+</div>
   <div class="modal" style="max-width:720px;max-height:88vh">
     <div class="modal-header" style="background:linear-gradient(135deg,#7e22ce,#a855f7)">
       <div class="modal-title"><i class="fas fa-file-invoice"></i> تفاصيل طلبات العميل</div>
