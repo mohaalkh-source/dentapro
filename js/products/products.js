@@ -95,18 +95,18 @@ var categories = loadCategories();
 // ============================
 // HERO TITLE — قابل للتعديل من الأدمن (محفوظ في Firestore: store_data/hero_settings)
 // ============================
-// كل سطر: { text, size (px), color (hex) } — أي سطر نصه فاضي ما بيترسم إطلاقاً
-function emptyHeroLine() { return { text: '', size: 26, color: '#123b62' }; }
+// كل سطر: { text, size (px), color (hex), align ('right'|'left'|'center') } — أي سطر نصه فاضي ما بيترسم إطلاقاً
+function emptyHeroLine() { return { text: '', size: 26, color: '#123b62', align: 'right' }; }
 var heroLinesAr = [
-  { text: 'كل ما تحتاجه', size: 26, color: '#123b62' },
-  { text: 'لعيادتك في مكان', size: 26, color: '#123b62' },
-  { text: 'واحد', size: 26, color: '#078f91' },
+  { text: 'كل ما تحتاجه', size: 26, color: '#123b62', align: 'right' },
+  { text: 'لعيادتك في مكان', size: 26, color: '#123b62', align: 'right' },
+  { text: 'واحد', size: 26, color: '#078f91', align: 'right' },
   emptyHeroLine()
 ];
 var heroLinesEn = [
-  { text: 'Everything Your Clinic', size: 26, color: '#123b62' },
-  { text: 'Needs In One', size: 26, color: '#123b62' },
-  { text: 'Place', size: 26, color: '#078f91' },
+  { text: 'Everything Your Clinic', size: 26, color: '#123b62', align: 'left' },
+  { text: 'Needs In One', size: 26, color: '#123b62', align: 'left' },
+  { text: 'Place', size: 26, color: '#078f91', align: 'left' },
   emptyHeroLine()
 ];
 var heroExpiresAt = null;
@@ -133,9 +133,11 @@ function renderHeroTitle() {
   const lines = currentLang === 'en' ? heroLinesEn : heroLinesAr;
   el.innerHTML = lines
     .filter(l => l.text && l.text.trim())
-    .map(l => `<div style="font-size:${l.size}px;color:${l.color};line-height:1.3">${escHtml(l.text)}</div>`)
+    .map(l => `<div style="font-size:${l.size}px;color:${l.color};line-height:1.3;text-align:${l.align || 'right'}">${escHtml(l.text)}</div>`)
     .join('');
 
+  // الصورة تطفو بجانب النص (float) بحيث النص يلتف حواليها من فوق وتحت وجانب
+  // بدل ما تاخذ حيز ثابت فارغ فوقها وتحتها
   if (imgEl) {
     if (heroImage) { imgEl.src = heroImage; imgEl.style.display = 'block'; }
     else { imgEl.style.display = 'none'; }
@@ -161,14 +163,14 @@ async function loadHeroSettings() {
 
 var _heroEditImagePending = null;
 
-function buildHeroLineRowHTML(prefix, i, placeholder) {
-  return `
-    <div style="display:flex;gap:8px;margin-bottom:10px;align-items:center">
-      <input type="text" id="hero${prefix}Text${i}" placeholder="${placeholder}" style="flex:1;padding:10px;border-radius:10px;border:1.5px solid var(--border);font-family:inherit;font-size:13px">
-      <input type="number" id="hero${prefix}Size${i}" value="26" min="10" max="60" title="حجم الخط" style="width:60px;padding:10px;border-radius:10px;border:1.5px solid var(--border);font-size:13px;text-align:center">
-      <input type="color" id="hero${prefix}Color${i}" value="#123b62" title="لون النص" style="width:40px;height:40px;border-radius:8px;border:1.5px solid var(--border);padding:2px;cursor:pointer">
-    </div>`;
-}
+document.getElementById(`heroLineArText${i}`).value = lAr.text || '';
+    document.getElementById(`heroLineArSize${i}`).value = lAr.size || 26;
+    document.getElementById(`heroLineArColor${i}`).value = lAr.color || '#123b62';
+    document.getElementById(`heroLineArAlign${i}`).value = lAr.align || 'right';
+    document.getElementById(`heroLineEnText${i}`).value = lEn.text || '';
+    document.getElementById(`heroLineEnSize${i}`).value = lEn.size || 26;
+    document.getElementById(`heroLineEnColor${i}`).value = lEn.color || '#123b62';
+    document.getElementById(`heroLineEnAlign${i}`).value = lEn.align || 'left';
 
 function openHeroTitleEditModal() {
   if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
@@ -231,12 +233,14 @@ async function saveHeroTitle() {
     linesAr.push({
       text: document.getElementById(`heroLineArText${i}`).value.trim(),
       size: parseInt(document.getElementById(`heroLineArSize${i}`).value) || 26,
-      color: document.getElementById(`heroLineArColor${i}`).value || '#123b62'
+      color: document.getElementById(`heroLineArColor${i}`).value || '#123b62',
+      align: document.getElementById(`heroLineArAlign${i}`).value || 'right'
     });
     linesEn.push({
       text: document.getElementById(`heroLineEnText${i}`).value.trim(),
       size: parseInt(document.getElementById(`heroLineEnSize${i}`).value) || 26,
-      color: document.getElementById(`heroLineEnColor${i}`).value || '#123b62'
+      color: document.getElementById(`heroLineEnColor${i}`).value || '#123b62',
+      align: document.getElementById(`heroLineEnAlign${i}`).value || 'left'
     });
   }
   if (!linesAr.some(l => l.text) && !linesEn.some(l => l.text)) {
