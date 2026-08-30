@@ -448,21 +448,6 @@ function openClientAllOrdersModal(email) {
 var _discountConfigCache = null;
 var _discountConfigCacheTime = 0;
 
-async function loadDiscountConfig() {
-  // تخزين مؤقت 15 ثانية — يمنع قراءة متكررة من Firestore كل ما تتحدث السلة (كل ضغطة كمية مثلاً)
-  if (_discountConfigCache !== null && (Date.now() - _discountConfigCacheTime) < 15000) {
-    return _discountConfigCache;
-  }
-  try {
-    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'discount_settings'));
-    _discountConfigCache = snap.exists() ? snap.data() : null;
-    _discountConfigCacheTime = Date.now();
-    return _discountConfigCache;
-  } catch(e) {
-    console.warn('loadDiscountConfig:', e.message);
-    return null;
-  }
-}
 
 // تفريغ التخزين المؤقت فوراً بعد ما الإدمن يحفظ إعدادات جديدة، حتى ينعكس التغيير فورياً بدل انتظار 15 ثانية
 function invalidateDiscountConfigCache() {
@@ -470,78 +455,28 @@ function invalidateDiscountConfigCache() {
   _discountConfigCacheTime = 0;
 }
 
-async function openDiscountSettingsModal() {
-  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
-  document.getElementById('discountSettingsModal').classList.add('open');
-  document.getElementById('discountSettingsBody').innerHTML = `<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto;width:26px;height:26px;border-width:4px"></div></div>`;
 
-  const cfg = await loadDiscountConfig();
-  const allUsers = await fetchAllUsersList();
-  const clients = allUsers.filter(u => u.role === 'client');
 
-  const optionsHtml = clients.map(c =>
-    `<option value="${escJsAttr(c.email)}" ${cfg && cfg.targetId === c.email ? 'selected' : ''}>${escHtml(c.firstName||c.name||'')} — ${escHtml(c.clinic||'')}</option>`
-  ).join('');
-
-  document.getElementById('discountSettingsBody').innerHTML = `
-    <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:16px;cursor:pointer">
-      <input type="checkbox" id="discEnabled" ${cfg && cfg.enabled ? 'checked' : ''} style="width:20px;height:20px">
-      تفعيل الخصم العام (لكل العملاء)
-    </label>
-    <label style="display:block;font-weight:700;margin-bottom:6px">الحد الأدنى لقيمة الفاتورة (د.أ) — ضع 0 لتطبيق الخصم دائماً</label>
-    <input type="number" id="discMinAmount" class="form-input" min="0" step="0.1" value="${cfg ? cfg.minAmount : 0}" style="margin-bottom:16px">
-    <label style="display:block;font-weight:700;margin-bottom:6px">نسبة الخصم %</label>
-    <input type="number" id="discPercent" class="form-input" min="0" max="100" step="1" value="${cfg ? cfg.percent : 0}" style="margin-bottom:16px">
-    <label style="display:flex;align-items:center;gap:10px;font-weight:700;margin-bottom:20px;cursor:pointer">
-      <input type="checkbox" id="discApplyToOffers" ${!cfg || cfg.applyToOffers !== false ? 'checked' : ''} style="width:20px;height:20px">
-      تطبيق الخصم على عروض الكمية والباقات أيضاً
-    </label>
-    <button onclick="saveDiscountConfig()" class="btn-submit" style="width:100%">
-      <i class="fas fa-save"></i> حفظ الإعدادات
-    </button>`;
-}
-
-function closeDiscountSettingsModal() {
-  document.getElementById('discountSettingsModal').classList.remove('open');
-}
-
-async function saveDiscountConfig() {
-  const enabled = document.getElementById('discEnabled').checked;
-  const minAmount = parseFloat(document.getElementById('discMinAmount').value) || 0;
-  const percent = Math.max(0, Math.min(100, parseFloat(document.getElementById('discPercent').value) || 0));
-  const applyToOffers = document.getElementById('discApplyToOffers').checked;
-
-  try {
-    await window._fbSetDoc(window._fbDoc2('store_data', 'discount_settings'), {
-      enabled, scope: 'all', targetId: null, minAmount, percent, applyToOffers, updatedAt: new Date().toISOString()
-    });
-    invalidateDiscountConfigCache();
-    showToast('✅ تم حفظ إعدادات الخصم', 'success');
-    closeDiscountSettingsModal();
-  } catch(e) {
-    showToast('❌ فشل الحفظ: ' + e.message, 'error');
-  }
-}
 // نسخة خاصة بالسلة: بتفصل عروض الكمية والباقات عن باقي المنتجات حسب إعداد الأدمن
 // (applyToOffers) قبل حساب الخصم. لو الإعداد "تطبيق على العروض" مفعّل (الافتراضي)،
 // نفس سلوك computeGeneralDiscount العادي. لو معطّل، الخصم يُحسب فقط على المنتجات
 // العادية، والعروض تُضاف بسعرها الكامل بدون خصم إضافي فوقها.
 async function computeGeneralDiscountForCart(cartItems, clientEmail, clientPhone) {
-  const cfg = await loadDiscountConfig();
+  const cfg = await loadCustomDiscountConfig();
   if (!cfg || !cfg.enabled) return null;
 
   const isOfferItem = (item) => item.isBundle || (item.basePrice && item.price < item.basePrice);
 
   if (cfg.applyToOffers !== false) {
     const rawTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
-    return computeGeneralDiscount(rawTotal, clientEmail, clientPhone);
+    return computeCustomDiscount(rawTotal, clientEmail, clientPhone);
   }
 
   const offerTotal = cartItems.filter(isOfferItem).reduce((s, i) => s + i.price * i.qty, 0);
   const normalTotal = cartItems.filter(i => !isOfferItem(i)).reduce((s, i) => s + i.price * i.qty, 0);
   if (normalTotal <= 0) return null;
 
-  const discountOnNormal = await computeGeneralDiscount(normalTotal, clientEmail, clientPhone);
+  const discountOnNormal = await computeCustomDiscount(normalTotal, clientEmail, clientPhone);
   if (!discountOnNormal) return null;
 
   return {
@@ -577,7 +512,11 @@ function invalidateCustomDiscountConfigCache() {
 
 async function openCustomDiscountSettingsModal() {
   if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
-  document.getElementById('customDiscountSettingsModal').classList.add('open');
+function setCustomDiscExpiryPreset(idx, days) {
+  const d = new Date();
+  d.setDate(d.getDate() + days);
+  document.getElementById(`custDiscExpiry${idx}`).value = toDatetimeLocalValue(d.toISOString());
+}  document.getElementById('customDiscountSettingsModal').classList.add('open');
   document.getElementById('customDiscountSettingsBody').innerHTML = `<div style="text-align:center;padding:32px"><div class="spinner" style="margin:0 auto;width:26px;height:26px;border-width:4px"></div></div>`;
 
   const cfg = await loadCustomDiscountConfig();
@@ -604,8 +543,18 @@ async function openCustomDiscountSettingsModal() {
         <option value="all" ${!tier.scope || tier.scope==='all' ? 'selected':''}>تحديد الكل</option>
         <option value="client" ${tier.scope==='client' ? 'selected':''}>عملاء معنيين</option>
       </select>
-      <div id="custDiscClientsBox${idx}" style="${tier.scope==='client' ? '' : 'display:none'};max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px">
+      <div id="custDiscClientsBox${idx}" style="${tier.scope==='client' ? '' : 'display:none'};max-height:140px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:8px;margin-bottom:12px">
         ${clientCheckboxes || '<div style="font-size:12px;color:var(--text-muted)">لا يوجد عملاء مسجلين</div>'}
+      </div>
+      <label style="display:block;font-size:12px;font-weight:700;margin-bottom:4px">وقت انتهاء هذا المستوى (اختياري)</label>
+      <input type="datetime-local" id="custDiscExpiry${idx}" class="form-input" style="margin-bottom:8px" value="${tier.expiresAt ? toDatetimeLocalValue(tier.expiresAt) : ''}">
+      <div style="display:flex;gap:6px;flex-wrap:wrap">
+        <button type="button" onclick="setCustomDiscExpiryPreset(${idx},1)" style="flex:1;min-width:56px;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:11px;font-weight:700;cursor:pointer">يوم</button>
+        <button type="button" onclick="setCustomDiscExpiryPreset(${idx},2)" style="flex:1;min-width:56px;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:11px;font-weight:700;cursor:pointer">يومين</button>
+        <button type="button" onclick="setCustomDiscExpiryPreset(${idx},3)" style="flex:1;min-width:56px;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:11px;font-weight:700;cursor:pointer">3 أيام</button>
+        <button type="button" onclick="setCustomDiscExpiryPreset(${idx},7)" style="flex:1;min-width:56px;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:11px;font-weight:700;cursor:pointer">أسبوع</button>
+        <button type="button" onclick="setCustomDiscExpiryPreset(${idx},30)" style="flex:1;min-width:56px;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:11px;font-weight:700;cursor:pointer">شهر</button>
+        <button type="button" onclick="document.getElementById('custDiscExpiry${idx}').value=''" style="flex:1;min-width:56px;padding:6px;border-radius:8px;border:1.5px solid var(--border);background:#fff;font-size:11px;font-weight:700;cursor:pointer">بدون</button>
       </div>
     </div>`;
   }).join('');
@@ -637,10 +586,12 @@ async function saveCustomDiscountConfig() {
     const targetIds = scope === 'client'
       ? Array.from(document.querySelectorAll(`.custDiscClient${idx}:checked`)).map(el => el.value)
       : [];
+    const expiryVal = document.getElementById(`custDiscExpiry${idx}`).value;
     return {
       amount: parseFloat(document.getElementById(`custDiscAmount${idx}`).value) || 0,
       percent: Math.max(0, Math.min(100, parseFloat(document.getElementById(`custDiscPercent${idx}`).value) || 0)),
-      scope, targetIds
+      scope, targetIds,
+      expiresAt: expiryVal ? new Date(expiryVal).toISOString() : null
     };
   });
 
