@@ -42,6 +42,9 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
     </button>` : ''}
     ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openDiscountSettingsModal()">
       <i class="fas fa-percent" style="color:#e53e3e"></i> ${t('الخصم العام','General Discount')}
+    </button>` : ''}
+    ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openCustomDiscountSettingsModal()">
+      <i class="fas fa-user-tag" style="color:#7e22ce"></i> ${t('الخصم المخصص','Custom Discount')}
     </button>` : ''}`;
 }
 
