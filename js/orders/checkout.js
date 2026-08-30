@@ -19,11 +19,11 @@ async function computeCustomDiscount(rawTotal, clientEmail, clientPhone) {
     const eligibleTiers = cfg.tiers.filter(isEligible).sort((a,b) => a.amount - b.amount);
     if (!eligibleTiers.length) return null;
 
-    // نختار أعلى مستوى تم تجاوز حده فعلاً (المجموع > amount الخاص فيه)
-    // لو المجموع ما تعدى حتى أدنى مستوى، ما في خصم إطلاقاً
+    // نختار أعلى مستوى وصل المجموع لحده فعلاً (المجموع >= amount الخاص فيه)
+    // لو المجموع ما وصل حتى أدنى مستوى، ما في خصم إطلاقاً
     let matchedTier = null;
     for (const t of eligibleTiers) {
-      if (rawTotal > t.amount) matchedTier = t;
+      if (rawTotal >= t.amount) matchedTier = t;
     }
     if (!matchedTier || matchedTier.percent <= 0) return null;
 
