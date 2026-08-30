@@ -2167,15 +2167,18 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </div>
   </div>
 </div>
-  <div class="modal-overlay" id="customDiscountSettingsModal">
+
+<!-- CUSTOM DISCOUNT SETTINGS MODAL -->
+<div class="modal-overlay" id="customDiscountSettingsModal">
   <div class="modal" style="max-width:460px">
     <div class="modal-header">
       <div class="modal-title"><i class="fas fa-user-tag"></i> إعدادات الخصم المخصص</div>
-      <button class="close-btn" onclick="closeCustomDiscountSettingsModal()"><i class="fas fa-times"></i></button>
+      <button class="close-btn" aria-label="إغلاق" onclick="closeCustomDiscountSettingsModal()"><i class="fas fa-times"></i></button>
     </div>
     <div id="customDiscountSettingsBody" style="padding:20px;max-height:75vh;overflow-y:auto"></div>
   </div>
 </div>
+
 <!-- ACCOUNT MENU MODAL (تُستخدم من زر "حسابي" بالشريط السفلي، بنفس محتوى قائمة الحساب العلوية) -->
 <div class="modal-overlay" id="accountMenuModal" style="align-items:flex-end;padding:0" onclick="if(event.target===this) closeAccountMenu()">
   <div class="modal" style="max-width:100%;width:100%;border-radius:20px 20px 0 0;margin:0">
