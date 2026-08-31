@@ -44,7 +44,7 @@
   .footer-grid{grid-template-columns:1fr}
   .categories-grid{grid-template-columns:repeat(3,1fr); gap:10px}
   .products-grid{grid-template-columns:1fr 1fr; gap:10px}
-  .product-card{height:400px}
+  .product-card{height:auto}
   body.compact-view #productsGrid .compact-hide,
   body.compact-view #offersGrid .compact-hide,
   body.compact-view #latestProductsGrid .compact-hide{display:none !important}
