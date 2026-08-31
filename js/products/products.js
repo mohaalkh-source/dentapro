@@ -1534,7 +1534,7 @@ function productCardHTML(p) {
       </div>
       <div class="product-info">
         <div class="product-brand compact-hide"><i class="fas fa-check-circle"></i> ${escHtml(p.brand)}</div>
-        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
+        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
         <div class="product-desc compact-hide">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
         ${hasQtyOffer ? `
         <button class="product-offer-btn compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})">
@@ -1917,7 +1917,7 @@ async function renderOffers() {
         <div class="compact-price-bar">${unitPrice.toFixed(2)} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
-        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
+        <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
         <button class="compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
           <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
         </button>
@@ -2294,7 +2294,7 @@ function renderFavoritesPage() {
       </div>
       <div class="product-info">
         <div class="product-brand">${escHtml(p.brand)}</div>
-        <div class="product-name" onclick="openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
+        <div class="product-name" onclick="openProductDetail(${p.id})" style="cursor:pointer">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
         <button onclick="openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
           <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
         </button>
@@ -2419,7 +2419,7 @@ function reorderedCardHTML(p) {
         </button>
       </div>
       <div class="product-info" style="padding:8px 10px">
-        <div class="product-name" style="font-size:13px;margin:0;line-height:1.25">${escHtml(p.en)}</div>
+        <div class="product-name" style="font-size:13px;margin:0;line-height:1.25">${escHtml(currentLang==='en'?p.en:p.ar)}</div>
       </div>
     </div>`;
 }
