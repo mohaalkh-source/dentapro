@@ -1547,7 +1547,7 @@ function productCardHTML(p) {
             <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-cart-plus')}"></i> ${t('السلة','Cart')}
           </button>
           <button class="split-details-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
-            <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
+            ${t('التفاصيل','Details')}
           </button>
         </div>
         <div class="product-price-row">
