@@ -475,194 +475,68 @@ body.en .offers-ticker { direction:ltr; }
 
 body.en .offers-ticker-track { animation-name:tickerScrollEn; }
 
-
-/* ─── Reference product-card layout ───
-   The content follows the selected document direction: start = right in RTL and left in LTR. */
-.product-card {
-  min-height: 640px;
-  border-radius: 28px;
-  border: 1px solid rgba(15, 55, 83, 0.12);
-  background: #fff;
-  box-shadow: 0 16px 34px rgba(15, 55, 83, 0.10);
-  transform-style: flat;
-}
-
-.product-card:hover {
-  transform: translateY(-4px);
-  border-color: rgba(15, 55, 83, 0.08);
-  box-shadow: 0 22px 42px rgba(15, 55, 83, 0.16);
-}
-
-.product-card::before {
-  height: 4px;
-  opacity: 1;
-  background: linear-gradient(90deg, var(--accent), var(--primary));
-}
-
-.product-img-wrap {
-  height: 320px;
-  min-height: 320px;
-  padding: 24px;
-  background: linear-gradient(180deg, #ffffff 0%, #f8fbfd 100%);
-}
-
-.product-img-wrap img {
-  object-fit: contain;
-  padding: 8px;
-}
-
-.product-info {
-  padding: 22px 22px 0;
-  text-align: start;
-}
-
-.product-brand,
-body.en .product-brand {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  justify-content: flex-start;
-  gap: 7px;
-  width: 100%;
-  margin-bottom: 10px;
-  text-align: start;
-  direction: inherit;
-  color: var(--accent);
-}
-
-.product-name,
-body.en .product-name,
-.product-desc,
-body.en .product-desc {
-  width: 100%;
-  text-align: start;
-  direction: inherit;
-}
-
-.product-name,
-body.en .product-name {
-  font-size: 20px;
-  line-height: 1.45;
-  margin-bottom: 10px;
-}
-
-.product-desc,
-body.en .product-desc {
-  font-size: 14px;
-  line-height: 1.75;
-  margin-bottom: 0;
-}
-
-.product-offer-btn {
-  align-self: flex-start;
-  margin-inline: 0 auto;
-  margin-top: 14px;
-}
-
+/* ─── Reference card footer: diagonal split and one-line price summary ─── */
 .cart-details-split {
   direction: ltr;
-  margin: 22px -22px 0;
-  border-radius: 0;
 }
 
-.cart-details-split button {
-  min-height: 52px;
-  padding: 12px 10px;
-  font-size: 15px;
+.cart-details-split::after {
+  top: -16%;
+  left: 50%;
+  width: 3px;
+  height: 132%;
+  background: #fff;
+  transform: translateX(-50%) rotate(14deg);
+  transform-origin: center;
+}
+
+/* Mirror the diagonal for the LTR layout while keeping Cart before Details. */
+body.en .cart-details-split::after {
+  transform: translateX(-50%) rotate(-14deg);
 }
 
 .product-price-row {
   direction: ltr;
-  min-height: 88px;
-  margin: 22px -22px 0;
-  padding: 16px 22px 18px;
-  border-top: 1px solid rgba(15, 55, 83, 0.12);
-  background: #fff;
+  align-items: center;
+  gap: 10px;
 }
 
 .product-price-block {
-  text-align: start;
+  flex: 1 1 auto;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+  align-items: baseline;
+  gap: 10px;
+  white-space: nowrap;
+}
+
+.product-price-block .product-price {
+  white-space: nowrap;
+  padding-inline-start: 10px;
+  border-inline-start: 1px solid var(--border-soft);
+}
+
+.product-price-block .product-old-price {
+  white-space: nowrap;
+  flex: 0 0 auto;
 }
 
 .product-points-chip {
-  margin-inline-start: auto;
-}
-
-/* Keep the floating compact controls on their intended edge. */
-body:not(.compact-view) .product-quick-add {
-  display: none;
-}
-
-@media (max-width: 768px) {
-  .product-card {
-    min-height: 570px;
-    border-radius: 22px;
-  }
-
-  .product-img-wrap {
-    height: 260px;
-    min-height: 260px;
-    padding: 18px;
-  }
-
-  .product-info {
-    padding: 18px 18px 0;
-  }
-
-  .product-name,
-  body.en .product-name {
-    font-size: 18px;
-  }
-
-  .cart-details-split,
-  .product-price-row {
-    margin-inline: -18px;
-  }
-
-  .product-price-row {
-    padding-inline: 18px;
-  }
+  flex: 0 0 auto;
+  white-space: nowrap;
 }
 
 @media (max-width: 480px) {
-  .product-card {
-    min-height: 540px;
-  }
-
-  .product-img-wrap {
-    height: 235px;
-    min-height: 235px;
-  }
-
-  .product-info {
-    padding: 16px 16px 0;
-  }
-
-  .product-name,
-  body.en .product-name {
-    font-size: 17px;
-  }
-
-  .product-desc,
-  body.en .product-desc {
-    font-size: 13px;
-  }
-
-  .cart-details-split,
   .product-price-row {
-    margin-inline: -16px;
+    gap: 5px;
   }
 
-  .product-price-row {
-    padding-inline: 16px;
+  .product-price-block {
+    gap: 5px;
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .product-card,
-  .product-card:hover,
-  .product-card:hover .product-img-wrap img {
-    transition: none;
-    transform: none;
+  .product-price-block .product-price {
+    padding-inline-start: 5px;
   }
 }
