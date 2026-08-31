@@ -475,30 +475,81 @@ body.en .offers-ticker { direction:ltr; }
 
 body.en .offers-ticker-track { animation-name:tickerScrollEn; }
 
-/* ─── Reference card footer: diagonal split and one-line price summary ─── */
+/* ─── Final card refinement: compact sections, clean diagonal split, one-line footer ─── */
+.product-card {
+  height: auto;
+  min-height: 0;
+}
+
+.product-info {
+  flex: 0 0 auto;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  row-gap: 0 !important;
+}
+
+.product-brand,
+.product-name,
+.product-desc,
+.product-offer-btn {
+  margin-bottom: 0 !important;
+}
+
+.product-desc {
+  flex: 0 0 auto !important;
+  max-height: 4.5em;
+  overflow: hidden;
+  -webkit-line-clamp: 3 !important;
+  line-clamp: 3 !important;
+}
+
+/* Use clipped button shapes so each corner keeps its own color. */
 .cart-details-split {
   direction: ltr;
-}
-
-.cart-details-split::after {
-  top: -16%;
-  left: 50%;
-  width: 3px;
-  height: 132%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0;
+  height: 48px;
+  margin: 0 -14px;
+  padding: 0;
+  overflow: hidden;
+  isolation: isolate;
   background: #fff;
-  transform: translateX(-50%) rotate(14deg);
-  transform-origin: center;
 }
 
-/* Mirror the diagonal for the LTR layout while keeping Cart before Details. */
-body.en .cart-details-split::after {
-  transform: translateX(-50%) rotate(-14deg);
+.cart-details-split button {
+  min-width: 0;
+  height: 100%;
+  padding: 8px 6px;
+  position: relative;
+  z-index: 1;
+}
+
+.split-cart-btn {
+  background: linear-gradient(135deg, var(--accent), #0a8f81);
+  clip-path: polygon(0 0, 100% 0, 87% 100%, 0 100%);
+}
+
+.split-details-btn {
+  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
+  clip-path: polygon(13% 0, 100% 0, 100% 100%, 0 100%);
+}
+
+/* The white diagonal is the parent background revealed between the two clips. */
+.cart-details-split::after {
+  display: none !important;
 }
 
 .product-price-row {
   direction: ltr;
+  display: flex;
   align-items: center;
-  gap: 10px;
+  justify-content: space-between;
+  gap: 0;
+  min-height: 58px;
+  margin-top: 0 !important;
+  padding-top: 0 !important;
+  border-top: 1px solid var(--border-soft);
 }
 
 .product-price-block {
@@ -507,36 +558,79 @@ body.en .cart-details-split::after {
   display: flex;
   flex-direction: row;
   align-items: baseline;
-  gap: 10px;
+  gap: 0;
+  white-space: nowrap;
+}
+
+.product-price-block .product-old-price {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 10px;
+  border-inline-end: 1px solid var(--border-soft);
+  text-align: center;
   white-space: nowrap;
 }
 
 .product-price-block .product-price {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 10px;
+  border-inline-start: 0;
+  text-align: center;
   white-space: nowrap;
-  padding-inline-start: 10px;
-  border-inline-start: 1px solid var(--border-soft);
 }
 
-.product-price-block .product-old-price {
-  white-space: nowrap;
-  flex: 0 0 auto;
-}
-
+/* Keep the points text flat; separate it with a light divider instead of a circle. */
 .product-points-chip {
   flex: 0 0 auto;
+  min-height: 30px;
+  margin-inline-start: 8px;
+  padding: 4px 10px;
+  border: 0;
+  border-inline-start: 1px solid var(--border-soft);
+  border-radius: 0;
+  background: transparent;
+  color: #a16207;
   white-space: nowrap;
 }
 
 @media (max-width: 480px) {
+  .product-card {
+    height: auto !important;
+    min-height: 0 !important;
+  }
+
+  .product-img-wrap {
+    height: 150px !important;
+    min-height: 150px !important;
+  }
+
+  .product-info {
+    padding: 0 !important;
+  }
+
+  .cart-details-split {
+    height: 44px;
+    margin-inline: 0;
+  }
+
+  .cart-details-split button {
+    padding: 6px 4px;
+    font-size: 11px;
+  }
+
   .product-price-row {
-    gap: 5px;
+    min-height: 48px;
   }
 
-  .product-price-block {
-    gap: 5px;
-  }
-
+  .product-price-block .product-old-price,
   .product-price-block .product-price {
-    padding-inline-start: 5px;
+    padding-inline: 5px;
+  }
+
+  .product-points-chip {
+    margin-inline-start: 4px;
+    padding-inline: 5px;
+    font-size: 10px;
   }
 }
