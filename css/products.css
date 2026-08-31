@@ -181,7 +181,7 @@ body.en .product-desc{text-align:left}
 
 .product-offer-btn{width:fit-content;padding:5px 12px;border-radius:50px;background:linear-gradient(135deg,rgba(229,62,62,0.1),rgba(229,62,62,0.06));border:1.5px solid #e53e3e;color:#e53e3e;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:8px}
 
-.cart-details-split{position:relative; display:flex; border-radius:50px; overflow:hidden; margin-bottom:8px; box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+.cart-details-split{position:relative; display:flex; overflow:hidden; margin:0 -14px}
 
 .cart-details-split button{flex:1; border:none; cursor:pointer; font-family:inherit; font-size:13px; font-weight:800; padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px; color:#fff}
 
@@ -189,7 +189,7 @@ body.en .product-desc{text-align:left}
 
 .split-details-btn{background:linear-gradient(135deg,var(--primary-dark),var(--primary))}
 
-.cart-details-split::after{content:''; position:absolute; top:-25%; left:50%; width:5px; height:150%; background:#fff; transform:translateX(-50%) rotate(18deg); z-index:2; pointer-events:none}
+.cart-details-split::after{content:''; position:absolute; top:0; left:50%; width:2px; height:100%; background:#fff; transform:translateX(-50%); z-index:2; pointer-events:none}
 
 .product-points-chip{display:flex; align-items:center; padding:4px 10px; border-radius:50px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border:1.5px solid #f59e0b; font-size:11px; font-weight:800; color:#92400e; white-space:nowrap}
 
