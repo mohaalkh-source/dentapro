@@ -382,3 +382,130 @@
 header {
   z-index: 900 !important;
 }
+
+
+/* ─── Reference product cards: two-column layout on small screens ─── */
+@media (max-width: 480px) {
+  #productsGrid,
+  #offersGrid,
+  #latestProductsGrid,
+  .offers-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+  }
+
+  #productsGrid .product-card,
+  #offersGrid .product-card,
+  #latestProductsGrid .product-card,
+  .offers-grid .product-card {
+    width: 100%;
+    min-height: 430px;
+    border-radius: 18px;
+  }
+
+  #productsGrid .product-img-wrap,
+  #offersGrid .product-img-wrap,
+  #latestProductsGrid .product-img-wrap,
+  .offers-grid .product-img-wrap {
+    height: 170px;
+    min-height: 170px;
+    padding: 8px;
+  }
+
+  body:not(.compact-view) #productsGrid .product-info,
+  body:not(.compact-view) #offersGrid .product-info,
+  body:not(.compact-view) #latestProductsGrid .product-info,
+  body:not(.compact-view) .offers-grid .product-info {
+    padding: 12px 10px 0;
+  }
+
+  body:not(.compact-view) #productsGrid .product-brand,
+  body:not(.compact-view) #offersGrid .product-brand,
+  body:not(.compact-view) #latestProductsGrid .product-brand,
+  body:not(.compact-view) .offers-grid .product-brand {
+    max-width: 100%;
+    margin-bottom: 6px;
+    gap: 4px;
+    font-size: 9px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  body:not(.compact-view) #productsGrid .product-name,
+  body:not(.compact-view) #offersGrid .product-name,
+  body:not(.compact-view) #latestProductsGrid .product-name,
+  body:not(.compact-view) .offers-grid .product-name {
+    font-size: 14px;
+    line-height: 1.35;
+    margin-bottom: 6px;
+  }
+
+  body:not(.compact-view) #productsGrid .product-desc,
+  body:not(.compact-view) #offersGrid .product-desc,
+  body:not(.compact-view) #latestProductsGrid .product-desc,
+  body:not(.compact-view) .offers-grid .product-desc {
+    font-size: 10.5px;
+    line-height: 1.45;
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+  }
+
+  body:not(.compact-view) #productsGrid .cart-details-split,
+  body:not(.compact-view) #offersGrid .cart-details-split,
+  body:not(.compact-view) #latestProductsGrid .cart-details-split,
+  body:not(.compact-view) .offers-grid .cart-details-split {
+    margin-inline: -10px;
+  }
+
+  body:not(.compact-view) #productsGrid .cart-details-split button,
+  body:not(.compact-view) #offersGrid .cart-details-split button,
+  body:not(.compact-view) #latestProductsGrid .cart-details-split button,
+  body:not(.compact-view) .offers-grid .cart-details-split button {
+    min-height: 42px;
+    padding: 8px 4px;
+    font-size: 11px;
+    gap: 4px;
+  }
+
+  body:not(.compact-view) #productsGrid .product-price-row,
+  body:not(.compact-view) #offersGrid .product-price-row,
+  body:not(.compact-view) #latestProductsGrid .product-price-row,
+  body:not(.compact-view) .offers-grid .product-price-row {
+    min-height: 70px;
+    margin-inline: -10px;
+    padding: 10px;
+    gap: 4px;
+  }
+
+  body:not(.compact-view) #productsGrid .product-price,
+  body:not(.compact-view) #offersGrid .product-price,
+  body:not(.compact-view) #latestProductsGrid .product-price,
+  body:not(.compact-view) .offers-grid .product-price {
+    font-size: 16px;
+  }
+
+  body:not(.compact-view) #productsGrid .product-old-price,
+  body:not(.compact-view) #offersGrid .product-old-price,
+  body:not(.compact-view) #latestProductsGrid .product-old-price,
+  body:not(.compact-view) .offers-grid .product-old-price {
+    font-size: 10px;
+  }
+
+  /* Preserve the compact-view proportions when that optional mode is enabled. */
+  body.compact-view #productsGrid .product-card,
+  body.compact-view #offersGrid .product-card,
+  body.compact-view #latestProductsGrid .product-card,
+  body.compact-view .offers-grid .product-card {
+    height: 190px;
+    min-height: 190px;
+  }
+
+  body.compact-view #productsGrid .product-img-wrap,
+  body.compact-view #offersGrid .product-img-wrap,
+  body.compact-view #latestProductsGrid .product-img-wrap,
+  body.compact-view .offers-grid .product-img-wrap {
+    height: 150px;
+    min-height: 150px;
+  }
+}
