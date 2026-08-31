@@ -1536,14 +1536,19 @@ function productCardHTML(p) {
         <div class="product-brand compact-hide"><i class="fas fa-check-circle"></i> ${escHtml(p.brand)}</div>
         <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
         <div class="product-desc compact-hide">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
-        <div class="product-actions-row compact-hide">
-          <button class="product-details-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
+        ${hasQtyOffer ? `
+        <button class="product-offer-btn compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})">
+          🏷️ ${t('شاهد العرض','View Offer')}
+        </button>` : ''}
+        <div class="cart-details-split compact-hide">
+          <button class="split-cart-btn ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
+            ${outOfStock?'disabled style="opacity:0.5;cursor:not-allowed"':''}
+            title="${outOfStock?t('نفذت الكمية','Out of stock'):t('أضف للسلة','Add to Cart')}">
+            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-cart-plus')}"></i> ${t('السلة','Cart')}
+          </button>
+          <button class="split-details-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
             <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
           </button>
-          ${hasQtyOffer ? `
-          <button class="product-offer-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
-            🏷️ ${t('شاهد العرض','View Offer')}
-          </button>` : ''}
         </div>
         <div class="product-price-row">
           <div class="product-price-block">
@@ -1551,8 +1556,8 @@ function productCardHTML(p) {
             <div class="product-price">${compactOfferPrice.toFixed(2)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
           </div>
           ${p.points ? `
-          <div class="product-points-chip compact-hide">🏆 ${p.points} ${t('نقطة','pts')}</div>` : ''}
-          <button class="add-to-cart ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
+          <div class="product-points-chip compact-hide">${p.points} ${t('نقطة','pts')}</div>` : ''}
+          <button class="add-to-cart product-quick-add ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}
             title="${outOfStock?t('نفذت الكمية','Out of stock'):t('أضف للسلة','Add to Cart')}">
             <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-cart-plus')}"></i>
