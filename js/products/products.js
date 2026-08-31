@@ -1533,36 +1533,25 @@ function productCardHTML(p) {
         <div class="compact-price-bar">${compactOfferPrice.toFixed(2)} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
-        <div class="product-brand compact-hide">${escHtml(p.brand)}</div>
+        <div class="product-brand compact-hide"><i class="fas fa-check-circle"></i> ${escHtml(p.brand)}</div>
         <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
-        <button class="compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
-          <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
-        </button>
         <div class="product-desc compact-hide">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
-        ${hasQtyOffer ? `
-        <button class="compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})" style="margin-bottom:10px;padding:5px 12px;border-radius:50px;
-          background:linear-gradient(135deg,rgba(229,62,62,0.1),rgba(229,62,62,0.06));border:1.5px solid #e53e3e;
-          color:#e53e3e;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
-          🏷️ ${t('شاهد العرض','View Offer')}
-        </button>` : ''}
-        ${p.points ? `
-        <div class="compact-hide" style="display:flex;align-items:center;gap:5px;margin-bottom:6px;
-                    padding:2px 10px 2px 3px;border-radius:50px;
-                    background:linear-gradient(135deg,#fffbeb,#fef3c7);
-                    border:1.5px solid #f59e0b;width:fit-content">
-          <span style="width:17px;height:17px;border-radius:50%;
-                       background:linear-gradient(135deg,#f59e0b,#d97706);
-                       display:flex;align-items:center;justify-content:center;
-                       font-size:9px;box-shadow:0 1px 3px rgba(0,0,0,0.15)">🏆</span>
-          <span style="font-size:11px;font-weight:800;color:#92400e;white-space:nowrap">
-            ${p.points} ${t('نقطة','pts')}
-          </span>
-        </div>` : ''}
+        <div class="product-actions-row compact-hide">
+          <button class="product-details-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
+            <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
+          </button>
+          ${hasQtyOffer ? `
+          <button class="product-offer-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
+            🏷️ ${t('شاهد العرض','View Offer')}
+          </button>` : ''}
+        </div>
         <div class="product-price-row">
-          <div>
-            <div class="product-price">${compactOfferPrice.toFixed(2)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+          <div class="product-price-block">
             ${hasQtyOffer ? `<div class="product-old-price">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>` : (p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : '')}
+            <div class="product-price">${compactOfferPrice.toFixed(2)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
           </div>
+          ${p.points ? `
+          <div class="product-points-chip compact-hide">🏆 ${p.points} ${t('نقطة','pts')}</div>` : ''}
           <button class="add-to-cart ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}
             title="${outOfStock?t('نفذت الكمية','Out of stock'):t('أضف للسلة','Add to Cart')}">
