@@ -1148,6 +1148,37 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           <div style="font-size:13px;color:var(--text-muted);margin-top:4px">أضف نقاط لأي عميل مسجل</div>
         </div>
       </div>
+
+      <!-- إعدادات احتساب نقاط الشراء تلقائيًا -->
+      <div style="background:#fff;border-radius:14px;padding:18px;border:1px solid #e2eaf0;margin-bottom:20px">
+        <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:12px">
+          <div>
+            <div style="font-weight:800;color:var(--primary-dark);font-size:15px">
+              <i class="fas fa-magic" style="color:var(--accent2)"></i> احتساب نقاط الشراء تلقائيًا
+            </div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:4px">
+              نسبة عامة تحوّل سعر أي منتج (غير محدد يدويًا) لنقاط شراء تلقائيًا
+            </div>
+          </div>
+          <label style="display:flex;align-items:center;gap:8px;cursor:pointer">
+            <input type="checkbox" id="autoPointsEnabled" style="width:20px;height:20px;cursor:pointer">
+            <span style="font-size:13px;font-weight:700;color:var(--text-muted)">تفعيل</span>
+          </label>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px;margin-top:14px">
+          <input type="number" id="autoPointsPercent" min="0" step="0.1" placeholder="مثال: 20"
+            style="width:120px;padding:9px 12px;border-radius:10px;border:1.5px solid var(--border);font-family:inherit;font-size:14px">
+          <span style="font-size:13px;color:var(--text-muted);font-weight:700">%</span>
+          <button onclick="saveAutoPointsConfig()"
+            style="padding:9px 20px;border-radius:10px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:13px;font-weight:800;cursor:pointer">
+            حفظ
+          </button>
+        </div>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:8px">
+          مثال: منتج سعره 10 د.أ ونسبة 20% ← 2 نقطة (السعر × النسبة ÷ 100، بدون فواصل)
+        </div>
+      </div>
+
       <div id="adminPointsList">
         <!-- filled by JS -->
       </div>
@@ -1462,7 +1493,16 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
           نقاط الشراء
           <small style="color:var(--text-muted);font-weight:500">(كم نقطة يحتاج العميل لشراء هذا المنتج)</small>
         </label>
-        <input type="number" class="form-input" id="pPoints" placeholder="مثال: 100" min="0">
+        <div style="display:flex;align-items:center;gap:10px">
+          <input type="number" class="form-input" id="pPoints" placeholder="مثال: 100" min="0" style="flex:1">
+          <label style="display:flex;align-items:center;gap:6px;white-space:nowrap;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer">
+            <input type="checkbox" id="pPointsManual" checked onchange="document.getElementById('pPoints').disabled=!this.checked" style="width:17px;height:17px;cursor:pointer">
+            يدوية
+          </label>
+        </div>
+        <small style="color:var(--text-muted);display:block;margin-top:4px">
+          لو ألغيت التحديد، بتُحسب النقاط تلقائيًا من سعر المنتج حسب النسبة العامة (إعدادات النقاط)
+        </small>
       </div>
       <div class="form-group">
         <label class="form-label">
