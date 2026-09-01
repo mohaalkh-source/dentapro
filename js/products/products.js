@@ -171,7 +171,57 @@ async function loadHeroSettings() {
     console.warn('Firebase loadHeroSettings:', e.message);
   }
 }
+// ============================
+// نقاط الشراء الآلية — نسبة عامة تحوّل سعر المنتج لنقاط تلقائيًا
+// (محفوظة بـ Firestore: store_data/auto_points_settings)
+// كل منتج فيه خيار "نقاط يدوية" (manualPoints): true = يستخدم p.points كما هو،
+// false = يتجاهل القيمة اليدوية ويحسب النقاط تلقائيًا من السعر × النسبة.
+// ============================
+var _autoPointsConfig = { enabled: false, percent: 0 };
 
+async function loadAutoPointsConfig() {
+  try {
+    if (!await waitForFirebase(15)) return;
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'auto_points_settings'));
+    if (snap.exists()) {
+      const d = snap.data();
+      _autoPointsConfig = { enabled: !!d.enabled, percent: Number(d.percent) || 0 };
+    }
+  } catch(e) {
+    console.warn('Firebase loadAutoPointsConfig:', e.message);
+  }
+}
+
+function getEffectivePoints(p) {
+  if (!p) return 0;
+  const useManual = p.manualPoints !== false;
+  if (useManual) return p.points || 0;
+  if (_autoPointsConfig.enabled && _autoPointsConfig.percent) {
+    return Math.round((p.price || 0) * _autoPointsConfig.percent / 100);
+  }
+  return 0;
+}
+
+function loadAutoPointsConfigIntoForm() {
+  const enabledEl = document.getElementById('autoPointsEnabled');
+  const percentEl = document.getElementById('autoPointsPercent');
+  if (enabledEl) enabledEl.checked = _autoPointsConfig.enabled;
+  if (percentEl) percentEl.value = _autoPointsConfig.percent || '';
+}
+
+async function saveAutoPointsConfig() {
+  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+  const enabled = document.getElementById('autoPointsEnabled').checked;
+  const percent = parseFloat(document.getElementById('autoPointsPercent').value) || 0;
+  try {
+    await window._fbSetDoc(window._fbDoc2('store_data', 'auto_points_settings'), { enabled, percent });
+    _autoPointsConfig = { enabled, percent };
+    showToast('✅ تم حفظ إعدادات النقاط الآلية', 'success');
+    renderProducts();
+  } catch(e) {
+    showToast('❌ فشل الحفظ: ' + e.message, 'error');
+  }
+}
 var _heroEditImagePending = null;
 
 function buildHeroLineRowHTML(prefix, i, placeholder) {
@@ -1143,7 +1193,8 @@ async function initializeProductsModule() {
   await Promise.all([
     loadProductsFromFirebase(),
     loadCategoriesFromFirebase(),
-    loadHeroSettings()
+    loadHeroSettings(),
+    loadAutoPointsConfig()
   ]);
   await loadOffersFromFirebase();
 
@@ -1224,7 +1275,7 @@ function syncCartWithProducts() {
     if (!p) { changed = true; return false; }
     const newUnitPrice = getEffectiveUnitPrice(p, item.qty);
     if (p.price !== item.basePrice || newUnitPrice !== item.price || p.icon !== item.icon || p.image !== item.image) {
-      item.basePrice = p.price; item.price = newUnitPrice; item.icon = p.icon; item.image = p.image; item.points = p.points;
+      item.basePrice = p.price; item.price = newUnitPrice; item.icon = p.icon; item.image = p.image; item.points = getEffectivePoints(p);
       changed = true;
     }
     return true;
@@ -1492,6 +1543,7 @@ function productCardHTML(p) {
   const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
   const hasQtyOffer = !!getActiveQtyOffer(p.id);
   const _qOffer = getActiveQtyOffer(p.id);
+  const effPoints = getEffectivePoints(p);
   const compactOfferPrice = (_qOffer && _qOffer.tiers && _qOffer.tiers.length)
     ? (_qOffer.tiers[_qOffer.tiers.length-1].price / _qOffer.tiers[_qOffer.tiers.length-1].qty)
     : p.price;
@@ -1555,8 +1607,8 @@ function productCardHTML(p) {
             ${hasQtyOffer ? `<div class="product-old-price">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>` : (p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : '')}
             <div class="product-price">${compactOfferPrice.toFixed(2)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
           </div>
-          ${p.points ? `
-          <div class="product-points-chip compact-hide">${p.points} ${t('نقطة','pts')}</div>` : ''}
+          ${effPoints ? `
+          <div class="product-points-chip compact-hide">${effPoints} ${t('نقطة','pts')}</div>` : ''}
           <button class="add-to-cart product-quick-add ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}
             title="${outOfStock?t('نفذت الكمية','Out of stock'):t('أضف للسلة','Add to Cart')}">
@@ -2158,7 +2210,7 @@ function renderCompareTable() {
     { label: 'السعر القديم', render: p => p.old ? `${p.old.toLocaleString()} د.أ` : '—' },
     { label: 'الحجم', render: p => p.unitQty ? escHtml(p.unitQty) : '—' },
     { label: 'بلد المنشأ', render: p => escHtml(p.country) || '—' },
-    { label: 'نقاط الشراء', render: p => p.points ? `🏆 ${p.points}` : '—' },
+    { label: 'نقاط الشراء', render: p => getEffectivePoints(p) ? `🏆 ${getEffectivePoints(p)}` : '—' },
     { label: 'المخزون', render: p => (p.stock !== undefined && p.stock !== null) ? p.stock : 'غير محدد' },
     { label: '', render: p => `<button class="btn-primary" style="padding:8px 18px;font-size:12px" onclick="addToCart(${p.id})">
         <i class="fas fa-cart-plus"></i> أضف للسلة</button>` },
@@ -2664,14 +2716,14 @@ function openProductDetail(id, _isRefresh) {
           <i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star"></i><i class="fas fa-star-half-alt"></i>
           <span>(${20 + (p.id * 17 % 80)})</span>
         </div>
-        ${p.points ? `
+        ${getEffectivePoints(p) ? `
         <div style="display:flex;align-items:center;gap:6px;margin-bottom:14px;
                     padding:6px 12px;border-radius:50px;
                     background:linear-gradient(135deg,rgba(245,158,11,0.12),rgba(245,158,11,0.05));
                     border:1.5px solid rgba(245,158,11,0.35);width:fit-content">
           <span style="font-size:14px">🏆</span>
           <span style="font-size:12px;font-weight:800;color:#d97706">
-            ${p.points} ${t('نقطة','pts')}
+            ${getEffectivePoints(p)} ${t('نقطة','pts')}
           </span>
         </div>` : ''}
         ${renderQtyOfferTableHTML(p)}
@@ -2715,7 +2767,7 @@ function openProductDetail(id, _isRefresh) {
             ${p.country ? `<tr><td>${t('بلد المنشأ','Origin')}</td><td>${escHtml(p.country)}</td></tr>` : ''}
             <tr><td>${t('القسم','Category')}</td><td>${escHtml((categories.find(c=>c.id===p.cat)||{}).ar || p.cat)}</td></tr>
             ${p.unitQty ? `<tr><td>${t('الحجم','Size')}</td><td>${escHtml(p.unitQty)}</td></tr>` : ''}
-            ${p.points ? `<tr><td>${t('نقاط الشراء','Purchase Points')}</td><td>🏆 ${p.points}</td></tr>` : ''}
+            ${getEffectivePoints(p) ? `<tr><td>${t('نقاط الشراء','Purchase Points')}</td><td>🏆 ${getEffectivePoints(p)}</td></tr>` : ''}
             ${(p.stock !== undefined && p.stock !== null) ? `<tr><td>${t('المخزون','Stock')}</td><td>${p.stock}</td></tr>` : ''}
           </table>
         </div>
