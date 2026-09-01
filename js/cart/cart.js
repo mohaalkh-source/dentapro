@@ -21,7 +21,7 @@ function addToCart(id) {
     showToast(`🗑️ ${p.en} ${t('أُزيل من السلة','removed from cart')}`, 'success');
     return;
   }
-  cart.push({...p, qty:1, basePrice: p.price, price: getEffectiveUnitPrice(p, 1)});
+  cart.push({...p, qty:1, basePrice: p.price, price: getEffectiveUnitPrice(p, 1), points: getEffectivePoints(p)});
   showToast(`✅ ${p.en} ${t('أُضيف للسلة','added to cart')}`, 'success');
   updateCartUI();
   renderProducts();
