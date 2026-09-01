@@ -422,6 +422,8 @@ function openAddProduct() {
   document.getElementById('pBadge').value = '';
   document.getElementById('pCountry').value = '';
   document.getElementById('pPoints').value = 0;
+  document.getElementById('pPointsManual').checked = true;
+  document.getElementById('pPoints').disabled = false;
   document.getElementById('pStock').value = '';
   document.getElementById('productFormError').style.display = 'none';
   resetImageUpload();
@@ -447,6 +449,8 @@ function openEditProduct(id) {
   document.getElementById('pBadge').value = p.badge || '';
   document.getElementById('pCountry').value = p.country || '';
   document.getElementById('pPoints').value = p.points || 0;
+  document.getElementById('pPointsManual').checked = p.manualPoints !== false;
+  document.getElementById('pPoints').disabled = p.manualPoints === false;
   document.getElementById('pStock').value = (p.stock !== undefined && p.stock !== null) ? p.stock : '';
   document.getElementById('productFormError').style.display = 'none';
   loadImagePreview(p.image || null);
