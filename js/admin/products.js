@@ -488,6 +488,7 @@ async function saveProduct() {
     image:   currentProductImage || null,
     images:  currentProductExtraImages.slice(),
     points:  parseInt(document.getElementById('pPoints').value) || 0,
+    manualPoints: document.getElementById('pPointsManual').checked,
     stock:   document.getElementById('pStock').value === '' ? null : parseInt(document.getElementById('pStock').value),
   };
   if (!editingProductId) {
