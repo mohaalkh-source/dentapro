@@ -181,15 +181,15 @@ body.en .product-desc{text-align:left}
 
 .product-offer-btn{width:fit-content;padding:5px 12px;border-radius:50px;background:linear-gradient(135deg,rgba(229,62,62,0.1),rgba(229,62,62,0.06));border:1.5px solid #e53e3e;color:#e53e3e;font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;margin-bottom:8px}
 
-.cart-details-split{position:relative; display:flex; overflow:hidden; margin:0 -14px}
+.cart-details-split{position:relative; height:38px; margin:0 -14px}
 
-.cart-details-split button{flex:1; border:none; cursor:pointer; font-family:inherit; font-size:13px; font-weight:800; padding:10px 6px; display:flex; align-items:center; justify-content:center; gap:6px; color:#fff}
+.cart-details-split button{position:absolute; inset:0; width:100%; height:100%; border:none; cursor:pointer; font-family:inherit; font-size:13px; font-weight:800; display:flex; align-items:center; color:#fff}
 
-.split-cart-btn{background:linear-gradient(135deg,var(--accent),#0a8f81)}
+.split-cart-btn{background:linear-gradient(135deg,var(--accent),#0a8f81); clip-path:polygon(45% 0, 100% 0, 100% 100%, 55% 100%); justify-content:flex-end; padding-right:16px}
 
-.split-details-btn{background:linear-gradient(135deg,var(--primary-dark),var(--primary))}
+.split-details-btn{background:linear-gradient(135deg,var(--primary-dark),var(--primary)); clip-path:polygon(0 0, 45% 0, 55% 100%, 0 100%); justify-content:flex-start; padding-left:16px}
 
-.cart-details-split::after{content:''; position:absolute; top:0; left:50%; width:2px; height:100%; background:#fff; transform:translateX(-50%); z-index:2; pointer-events:none}
+.cart-details-split::after{content:''; position:absolute; inset:0; background:#fff; clip-path:polygon(45% 0, 47% 0, 57% 100%, 55% 100%); z-index:2; pointer-events:none}
 
 .product-points-chip{display:flex; align-items:center; padding:4px 10px; border-radius:50px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border:1.5px solid #f59e0b; font-size:11px; font-weight:800; color:#92400e; white-space:nowrap}
 
@@ -197,11 +197,11 @@ body.en .product-desc{text-align:left}
 
 .product-price-row{display:flex; align-items:center; justify-content:space-between; gap:8px; margin-top:auto; padding-top:8px; border-top:1px solid var(--border-soft)}
 
-.product-price-block{display:flex; flex-direction:column; gap:1px}
+.product-price-block{display:flex; flex-direction:column; gap:0}
 
-.product-price{font-size:20px; font-weight:900; color:var(--primary)}
+.product-price{font-size:20px; font-weight:900; color:var(--primary); line-height:1.1}
 
-.product-old-price{font-size:13px; color:var(--text-muted); text-decoration:line-through}
+.product-old-price{font-size:13px; color:var(--text-muted); text-decoration:line-through; line-height:1.1}
 
 .product-stars{display:flex; gap:2px; color:var(--accent2); font-size:13px; margin-bottom:10px}
 
@@ -474,163 +474,3 @@ body.dark-mode .trust-badge { background:var(--card); border-color:var(--border)
 body.en .offers-ticker { direction:ltr; }
 
 body.en .offers-ticker-track { animation-name:tickerScrollEn; }
-
-/* ─── Final card refinement: compact sections, clean diagonal split, one-line footer ─── */
-.product-card {
-  height: auto;
-  min-height: 0;
-}
-
-.product-info {
-  flex: 0 0 auto;
-  padding-top: 0 !important;
-  padding-bottom: 0 !important;
-  row-gap: 0 !important;
-}
-
-.product-brand,
-.product-name,
-.product-desc,
-.product-offer-btn {
-  margin-bottom: 0 !important;
-}
-
-.product-desc {
-  flex: 0 0 auto !important;
-  max-height: 4.5em;
-  overflow: hidden;
-  -webkit-line-clamp: 3 !important;
-  line-clamp: 3 !important;
-}
-
-/* Use clipped button shapes so each corner keeps its own color. */
-.cart-details-split {
-  direction: ltr;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 0;
-  height: 48px;
-  margin: 0 -14px;
-  padding: 0;
-  overflow: hidden;
-  isolation: isolate;
-  background: #fff;
-}
-
-.cart-details-split button {
-  min-width: 0;
-  height: 100%;
-  padding: 8px 6px;
-  position: relative;
-  z-index: 1;
-}
-
-.split-cart-btn {
-  background: linear-gradient(135deg, var(--accent), #0a8f81);
-  clip-path: polygon(0 0, 100% 0, 87% 100%, 0 100%);
-}
-
-.split-details-btn {
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-  clip-path: polygon(13% 0, 100% 0, 100% 100%, 0 100%);
-}
-
-/* The white diagonal is the parent background revealed between the two clips. */
-.cart-details-split::after {
-  display: none !important;
-}
-
-.product-price-row {
-  direction: ltr;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0;
-  min-height: 58px;
-  margin-top: 0 !important;
-  padding-top: 0 !important;
-  border-top: 1px solid var(--border-soft);
-}
-
-.product-price-block {
-  flex: 1 1 auto;
-  min-width: 0;
-  display: flex;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 0;
-  white-space: nowrap;
-}
-
-.product-price-block .product-old-price {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 0 10px;
-  border-inline-end: 1px solid var(--border-soft);
-  text-align: center;
-  white-space: nowrap;
-}
-
-.product-price-block .product-price {
-  flex: 1 1 0;
-  min-width: 0;
-  padding: 0 10px;
-  border-inline-start: 0;
-  text-align: center;
-  white-space: nowrap;
-}
-
-/* Keep the points text flat; separate it with a light divider instead of a circle. */
-.product-points-chip {
-  flex: 0 0 auto;
-  min-height: 30px;
-  margin-inline-start: 8px;
-  padding: 4px 10px;
-  border: 0;
-  border-inline-start: 1px solid var(--border-soft);
-  border-radius: 0;
-  background: transparent;
-  color: #a16207;
-  white-space: nowrap;
-}
-
-@media (max-width: 480px) {
-  .product-card {
-    height: auto !important;
-    min-height: 0 !important;
-  }
-
-  .product-img-wrap {
-    height: 150px !important;
-    min-height: 150px !important;
-  }
-
-  .product-info {
-    padding: 0 !important;
-  }
-
-  .cart-details-split {
-    height: 44px;
-    margin-inline: 0;
-  }
-
-  .cart-details-split button {
-    padding: 6px 4px;
-    font-size: 11px;
-  }
-
-  .product-price-row {
-    min-height: 48px;
-  }
-
-  .product-price-block .product-old-price,
-  .product-price-block .product-price {
-    padding-inline: 5px;
-  }
-
-  .product-points-chip {
-    margin-inline-start: 4px;
-    padding-inline: 5px;
-    font-size: 10px;
-  }
-}
