@@ -311,7 +311,7 @@ function switchAdminTab(tab) {
   if (rolesWrap) rolesWrap.style.display = isRoles ? 'block' : 'none';
 
   if (isOrders)   { renderAdminOrders(); markNotifsByLinkPrefixRead(['adminorders:']); }
-  if (isPoints)   renderAdminPoints();
+  if (isPoints)   { renderAdminPoints(); loadAutoPointsConfigIntoForm(); }
   if (isOffers)   renderAdminOffers();
   if (isQuotes)   { renderAdminQuotes(); markNotifsByLinkPrefixRead(['adminquotes:']); }
   if (isMessages) { renderAdminMessages(); markNotifsByLinkPrefixRead(['clientmsg:']); }
@@ -1545,7 +1545,7 @@ function addSendOrderProduct(productId) {
   else {
     _sendOrderItems.push({
       kind: 'catalog', id: p.id, ar: p.ar, en: p.en, icon: p.icon || '📦',
-      price: p.price, points: p.points || 0, qty: 1
+      price: p.price, points: getEffectivePoints(p), qty: 1
     });
   }
   document.getElementById('sendOrderProductSearch').value = '';
