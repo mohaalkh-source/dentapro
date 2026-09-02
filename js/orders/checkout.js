@@ -266,7 +266,7 @@ function filterQOProductList() {
         <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.ar)}</div>
         <div style="font-size:11px;color:var(--text-muted)">${escHtml(p.brand)}</div>
       </div>
-      <div style="font-weight:800;font-size:12px;color:var(--primary);flex-shrink:0">${p.price.toLocaleString()} ${t('د.أ','JD')}</div>
+      <div style="font-weight:800;font-size:12px;color:var(--primary);flex-shrink:0">${fmtPrice(p.price)} ${t('د.أ','JD')}</div>
     </div>`).join('');
   dd.style.display = 'block';
 }
@@ -299,9 +299,10 @@ function addQOItemRow() {
     const existing = currentQuickOrderItems.find(it => it.productId === productId);
     if (existing) {
       existing.qty = qty;
+      existing.unitPrice = getEffectiveUnitPrice(p, qty);
       showToast(`✏️ تم تحديث "${p ? p.ar : 'المادة'}"`, 'success');
     } else {
-      currentQuickOrderItems.push({ productId, ar: p.ar, en: p.en, icon: p.icon, image: p.image || null, isCustom: false, qty, unitPrice: p.price });
+      currentQuickOrderItems.push({ productId, ar: p.ar, en: p.en, icon: p.icon, image: p.image || null, isCustom: false, qty, unitPrice: getEffectiveUnitPrice(p, qty) });
       showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}"`, 'success');
     }
   } else if (typedText) {
@@ -330,7 +331,7 @@ function renderQOItemsList() {
     const customBadge = it.isCustom ? `<span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:50px;padding:1px 8px;flex-shrink:0">سيُسعَّر لاحقاً</span>` : '';
     const priceInfo = it.isCustom
       ? ''
-      : `<span style="font-size:12px;font-weight:800;color:var(--primary);flex-shrink:0">${it.unitPrice.toLocaleString()} × ${it.qty} = ${(it.unitPrice*it.qty).toLocaleString()} ${t('د.أ','JD')}</span>`;
+      : `<span style="font-size:12px;font-weight:800;color:var(--primary);flex-shrink:0">${fmtPrice(it.unitPrice)} × ${it.qty} = ${fmtPrice((it.unitPrice*it.qty))} ${t('د.أ','JD')}</span>`;
     return `
     <div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;padding:8px 12px;background:#f8fbfd;border-radius:10px;border:1px solid var(--border)">
       <div style="display:flex;align-items:center;gap:8px;flex:1 1 140px;min-width:100px">
@@ -351,7 +352,14 @@ function renderQOItemsList() {
 }
 
 function updateQOItemQtyByIdx(idx, newQty) {
-  if (currentQuickOrderItems[idx]) currentQuickOrderItems[idx].qty = parseInt(newQty) || 1;
+  const item = currentQuickOrderItems[idx];
+  if (item) {
+    item.qty = parseInt(newQty) || 1;
+    if (!item.isCustom && item.productId) {
+      const p = products.find(x => x.id === item.productId);
+      if (p) item.unitPrice = getEffectiveUnitPrice(p, item.qty);
+    }
+  }
   renderQOItemsList();
 }
 function removeQOItemRowByIdx(idx) {
@@ -372,15 +380,15 @@ async function updateQuickOrderTotal() {
     else hasUnknown = true;
   });
   if (hasUnknown) {
-    label.innerHTML = `الإجمالي التقديري: <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
+    label.innerHTML = `الإجمالي التقديري: <strong style="color:var(--primary)">${fmtPrice(total)} د.أ</strong>
       <span style="color:#d97706;font-weight:600"> + مواد بانتظار تسعير الإدارة</span>`;
   } else {
     const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
     const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
     const discountPreview = await computeCustomDiscount(total, previewClientEmail, previewClientPhone);
     label.innerHTML = discountPreview
-      ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalTotal.toLocaleString()} د.أ</span><strong style="color:var(--primary);font-size:15px">${discountPreview.total.toLocaleString()} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
-      : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${total.toLocaleString()} د.أ</strong>`;
+      ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalfmtPrice(total)} د.أ</span><strong style="color:var(--primary);font-size:15px">${discountPreview.fmtPrice(total)} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
+      : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${fmtPrice(total)} د.أ</strong>`;
   }
 }
 
@@ -616,13 +624,13 @@ async function finalizeQuickOrderSend() {
       } else {
         createNotification({
           scope: 'admin', icon: '⚡', title: 'طلب سريع جديد',
-          message: `طلب سريع من ${clinic || doctor} بقيمة ${total.toLocaleString()} د.أ`,
+          message: `طلب سريع من ${clinic || doctor} بقيمة ${fmtPrice(total)} د.أ`,
           link: 'adminorders:open',
         });
       }
       showToast(
         discountResult
-          ? `🎉 تم إرسال طلبك بنجاح — الإجمالي بعد الخصم: ${discountResult.total.toLocaleString()} د.أ (بدل ${discountResult.originalTotal.toLocaleString()} د.أ)`
+          ? `🎉 تم إرسال طلبك بنجاح — الإجمالي بعد الخصم: ${discountResult.fmtPrice(total)} د.أ (بدل ${discountResult.originalfmtPrice(total)} د.أ)`
           : '🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً',
         'success'
       );
