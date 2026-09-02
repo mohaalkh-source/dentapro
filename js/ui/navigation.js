@@ -191,7 +191,7 @@ function openQuickView(id) {
     <div>
       <div style="font-size:18px;font-weight:900;margin-bottom:6px">${escHtml(p.en)}</div>
       <div style="color:var(--text-muted);line-height:1.8">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
-      <div style="margin-top:14px;font-size:20px;font-weight:900;color:var(--primary)">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>
+      <div style="margin-top:14px;font-size:20px;font-weight:900;color:var(--primary)">${fmtPrice(p.price)} ${t('د.أ','SAR')}</div>
       <button class="btn-primary" style="margin-top:14px;width:100%" onclick="addToCart(${p.id});closeQuickView()">${t('أضف للسلة','Add to cart')}</button>
     </div>`;
   document.getElementById('quickViewModal').classList.add('open');
@@ -339,7 +339,7 @@ async function initOffersTicker() {
   qtyProducts.forEach(p => {
     const offer = getActiveQtyOffer(p.id);
     if (offer && offer.tiers && offer.tiers.length) {
-      const tiersText = offer.tiers.map(tr => `${t('اشترِ','Buy')} ${tr.qty} ${t('بسعر','for')} ${tr.price.toLocaleString()} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${(p.price * tr.qty).toLocaleString()} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
+      const tiersText = offer.tiers.map(tr => `${t('اشترِ','Buy')} ${tr.qty} ${t('بسعر','for')} ${fmtPrice(tr.price)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice((p.price * tr.qty))} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
       items.push(`<div class="offers-ticker-item" onclick="openProductDetail(${p.id})">
         <i class="fas fa-tags"></i>
         <span>${t('عرض كمية','Qty offer')}: ${escHtml(p.en)} — ${tiersText}</span>
@@ -358,7 +358,7 @@ async function initOffersTicker() {
     const save = original - price;
     items.push(`<div class="offers-ticker-item" onclick="openBundleDetail(${b.id})">
       <i class="fas fa-box-open"></i>
-      <span>${t('باقة','Bundle')}: ${escHtml(currentLang==='en'?b.name_en:b.name_ar)} — ${t('بسعر','for')} ${price.toLocaleString()} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${original.toLocaleString()} ${t('د.أ','SAR')}</span>
+      <span>${t('باقة','Bundle')}: ${escHtml(currentLang==='en'?b.name_en:b.name_ar)} — ${t('بسعر','for')} ${fmtPrice(price)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice(original)} ${t('د.أ','SAR')}</span>
     </div>`);
   });
 
@@ -904,7 +904,7 @@ async function trackGuestOrder() {
                   <div style="color:var(--text-muted)">${i.qty?`× ${i.qty}`:''}</div>
                 </div>`).join('')}
             </div>
-            ${(data.status==='priced'||data.status==='accepted') ? `<div style="text-align:left;font-weight:900;color:var(--primary);margin-top:10px">الإجمالي: ${total.toLocaleString()} د.أ</div>` : ''}
+            ${(data.status==='priced'||data.status==='accepted') ? `<div style="text-align:left;font-weight:900;color:var(--primary);margin-top:10px">الإجمالي: ${fmtPrice(total)} د.أ</div>` : ''}
           </div>
         </div>`;
     } else {
@@ -928,7 +928,7 @@ async function trackGuestOrder() {
                 </div>`).join('')}
             </div>
             <div style="text-align:left;font-weight:900;color:var(--primary);margin-top:10px">
-              الإجمالي: ${data.payMethod==='points' ? `${data.totalPoints||0} نقطة` : `${data.total.toLocaleString()} د.أ`}
+              الإجمالي: ${data.payMethod==='points' ? `${data.totalPoints||0} نقطة` : `${data.fmtPrice(total)} د.أ`}
             </div>
           </div>
         </div>`;
