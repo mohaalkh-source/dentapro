@@ -109,7 +109,7 @@ function updateCartUI() {
 
   // نعرض المجموع الخام فورًا (بدون انتظار)، وبعدين نحدّثه بالخصم لو انطبق —
   // حتى ما تنتظر رسمة السلة كاملة (المنتجات + حالة الفراغ) أي طلب شبكة
-  document.getElementById('cartTotal').innerHTML = `${fmtPrice(getTotal())} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small>`;
+  document.getElementById('cartTotal').innerHTML = `${fmtPrice(getTotal())} <small style="font-size:14px;font-weight:600">${t('د.أ','JD')}</small>`;
   refreshCartDiscountedTotal();
   updateFreeShippingBar();
 
@@ -146,7 +146,7 @@ function updateCartUI() {
         <div class="cart-item-name">${escHtml(currentLang==='en'?item.en:item.ar)}</div>
         ${bundleSubHtml}
         ${savingsHtml}
-        <div class="cart-item-price">${fmtPrice((item.price*item.qty))} ${t('د.أ','SAR')}</div>
+        <div class="cart-item-price">${fmtPrice((item.price*item.qty))} ${t('د.أ','JD')}</div>
         <div class="cart-item-controls">
           <button class="qty-btn" onclick="changeQty('${item.id}',-1)"><i class="fas fa-minus"></i></button>
           <span class="qty-num">${item.qty}</span>
@@ -168,7 +168,7 @@ async function refreshCartDiscountedTotal() {
   if (getTotal() !== total) return;
   const el = document.getElementById('cartTotal');
   if (el) {
-    el.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)}</span>${fmtPrice(discountPreview.total)} <small style="font-size:14px;font-weight:600">${t('د.أ','SAR')}</small> <small style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</small>`;
+    el.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)}</span>${fmtPrice(discountPreview.total)} <small style="font-size:14px;font-weight:600">${t('د.أ','JD')}</small> <small style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</small>`;
   }
 }
 
@@ -335,15 +335,15 @@ async function renderModalSummary() {
   div.innerHTML = cart.map(item => `
     <div class="summary-item">
       <span>${escHtml(item.icon || '')} ${escHtml(currentLang==='en'?item.en:item.ar)} × ${item.qty}</span>
-      <span>${fmtPrice((item.price*item.qty))} ${t('د.أ','SAR')}</span>
+      <span>${fmtPrice((item.price*item.qty))} ${t('د.أ','JD')}</span>
     </div>
   `).join('') + `
     <div class="summary-item" style="font-weight:800;font-size:15px;color:var(--primary)">
       <span>${t('الإجمالي','Total')}</span>
       <span>
         ${discountPreview
-          ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','SAR')}</span>${fmtPrice(discountPreview.total)} ${t('د.أ','SAR')} <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
-          : `${fmtPrice(getTotal())} ${t('د.أ','SAR')}`}
+          ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountPreview.total)} ${t('د.أ','JD')} <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
+          : `${fmtPrice(getTotal())} ${t('د.أ','JD')}`}
       </span>
     </div>`;
 }
@@ -393,7 +393,7 @@ async function renderConfirmDetails() {
                     padding:6px 0;border-bottom:1px dashed var(--border);font-size:13px">
           <span>${escHtml(i.icon || '')} ${escHtml(currentLang==='en'?i.en:i.ar)} × ${i.qty}</span>
           <div style="text-align:left">
-            <div style="font-weight:800;color:var(--primary)">${fmtPrice((i.price*i.qty))} ${t('د.أ','SAR')}</div>
+            <div style="font-weight:800;color:var(--primary)">${fmtPrice((i.price*i.qty))} ${t('د.أ','JD')}</div>
             ${i.points ? `<div style="font-size:11px;color:#d97706;font-weight:700">🏆 ${i.points * i.qty} نقطة</div>` : ''}
           </div>
         </div>`).join('')}
@@ -402,8 +402,8 @@ async function renderConfirmDetails() {
         <div style="text-align:left">
           <div>
             ${discountPreview
-              ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','SAR')}</span><span>${fmtPrice(discountPreview.total)} ${t('د.أ','SAR')}</span> <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
-              : `${fmtPrice(getTotal())} ${t('د.أ','SAR')}`}
+              ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','JD')}</span><span>${fmtPrice(discountPreview.total)} ${t('د.أ','JD')}</span> <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
+              : `${fmtPrice(getTotal())} ${t('د.أ','JD')}`}
           </div>
           ${totalPoints > 0 ? `<div style="font-size:12px;color:#d97706;font-weight:700">🏆 ${totalPoints} نقطة مطلوبة</div>` : ''}
         </div>
@@ -428,7 +428,7 @@ async function renderConfirmDetails() {
           onclick="selectPayMethod('money')">
           <span class="pay-method-icon">💵</span>
           <div class="pay-method-label">${t('الدفع بالمال','Pay with Money')}</div>
-          <div class="pay-method-sub">${fmtPrice(getTotal())} ${t('د.أ','SAR')}</div>
+          <div class="pay-method-sub">${fmtPrice(getTotal())} ${t('د.أ','JD')}</div>
         </button>
 
         ${isClient && hasPoints ? `
@@ -440,7 +440,7 @@ async function renderConfirmDetails() {
           <div class="pay-method-label">${t('الدفع بالنقاط','Pay with Points')}</div>
           <div class="pay-method-sub">
             ${totalPoints} ${t('نقطة مطلوبة','pts needed')}
-            ${someNoPoints ? ` + ${fmtPrice(cart.filter(i => !i.points || i.points===0).reduce((s,i)=>s+i.price*i.qty,0))} ${t('د.أ','SAR')}` : ''}
+            ${someNoPoints ? ` + ${fmtPrice(cart.filter(i => !i.points || i.points===0).reduce((s,i)=>s+i.price*i.qty,0))} ${t('د.أ','JD')}` : ''}
           </div>
         </button>` : ''}
       </div>
