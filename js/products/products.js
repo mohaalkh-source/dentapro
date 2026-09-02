@@ -1116,8 +1116,8 @@ function renderQtyOfferTableHTML(p) {
     return `
       <tr>
         <td style="padding:8px 10px;text-align:center;font-weight:700">${tr.qty}</td>
-        <td style="padding:8px 10px;text-align:center;font-weight:800;color:var(--primary)">${fmtPrice(tr.price)} ${t('د.أ','SAR')}</td>
-        <td style="padding:8px 10px;text-align:center;color:var(--text-muted)">${fmtPrice(unit)} ${t('د.أ','SAR')}</td>
+        <td style="padding:8px 10px;text-align:center;font-weight:800;color:var(--primary)">${fmtPrice(tr.price)} ${t('د.أ','JD')}</td>
+        <td style="padding:8px 10px;text-align:center;color:var(--text-muted)">${fmtPrice(unit)} ${t('د.أ','JD')}</td>
       </tr>`;
   }).join('');
   return `
@@ -1545,7 +1545,7 @@ if (localStorage.getItem('dentapro_compact_view') === '1') {
 
 function buildQtyOfferTiersText(p, offer) {
   return offer.tiers.map(tr =>
-    `${t('اشتري','Buy')} ${tr.qty} ${t('بسعر','for')} ${fmtPrice(tr.price)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice(p.price * tr.qty)} ${t('د.أ','SAR')}`
+    `${t('اشتري','Buy')} ${tr.qty} ${t('بسعر','for')} ${fmtPrice(tr.price)} ${t('د.أ','JD')} ${t('بدلاً من','instead of')} ${fmtPrice(p.price * tr.qty)} ${t('د.أ','JD')}`
   ).join(` ${t('أو','or')} `);
 }
 
@@ -1594,7 +1594,7 @@ function productCardHTML(p) {
           : `<span class="emoji-fallback">${escHtml(p.icon || '')}</span>`
         }
         ${hasQtyOffer ? `<div class="qty-offer-ribbon-static">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>` : ''}
-        <div class="compact-price-bar">${fmtPrice(compactOfferPrice)} ${t('د.أ','SAR')}</div>
+        <div class="compact-price-bar">${fmtPrice(compactOfferPrice)} ${t('د.أ','JD')}</div>
       </div>
       <div class="product-info">
         <div class="product-brand compact-hide"><i class="fas fa-check-circle"></i> ${escHtml(p.brand)}</div>
@@ -1614,8 +1614,8 @@ function productCardHTML(p) {
         </div>
         <div class="product-price-row">
           <div class="product-price-block">
-            ${hasQtyOffer ? `<div class="product-old-price">${fmtPrice(p.price)} ${t('د.أ','SAR')}</div>` : (p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','SAR')}</div>` : '')}
-            <div class="product-price">${fmtPrice(compactOfferPrice)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+            ${hasQtyOffer ? `<div class="product-old-price">${fmtPrice(p.price)} ${t('د.أ','JD')}</div>` : (p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','JD')}</div>` : '')}
+            <div class="product-price">${fmtPrice(compactOfferPrice)} <small style="font-size:13px">${t('د.أ','JD')}</small></div>
           </div>
           ${effPoints ? `
           <div class="product-points-chip compact-hide">${effPoints} ${t('نقطة','pts')}</div>` : ''}
@@ -1855,7 +1855,7 @@ function renderSearchSuggestions() {
         <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
       </div>
       <div style="font-weight:800;font-size:13px;color:var(--primary);flex-shrink:0">
-        ${fmtPrice(p.price)} ${t('د.أ','SAR')}
+        ${fmtPrice(p.price)} ${t('د.أ','JD')}
       </div>
     </div>`).join('');
   box.style.display = 'block';
@@ -1905,18 +1905,18 @@ function bundleCardHTML(b) {
       <div class="product-img-wrap qty-offer-icon-pulse" onclick="openBundleDetail(${b.id})" style="cursor:pointer">
         ${b.image ? `<img src="${escHtml(cldOptimize(b.image,400))}" alt="${escHtml(b.name_ar)}" loading="lazy">` : `<span class="emoji-fallback">${escHtml(b.icon||'🎁')}</span>`}
         <div class="qty-offer-ribbon compact-hide">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>
-        <div class="compact-price-bar">${fmtPrice(b.bundlePrice)} ${t('د.أ','SAR')}</div>
+        <div class="compact-price-bar">${fmtPrice(b.bundlePrice)} ${t('د.أ','JD')}</div>
       </div>
       <div class="product-info">
         <div class="product-name" onclick="event.stopPropagation();openBundleDetail(${b.id})" style="cursor:pointer">${escHtml(currentLang==='en'?b.name_en:b.name_ar)}</div>
         <div class="compact-hide" style="display:flex;gap:6px;margin:4px 0">${miniIcons}</div>
         <div class="product-desc compact-hide">${escHtml(currentLang==='en'?(b.desc_en||''):(b.desc_ar||''))}</div>
-        ${savings>0?`<div class="qty-offer-highlight compact-hide">${t('بسعر','Price')} ${fmtPrice(b.bundlePrice)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice(original)} ${t('د.أ','SAR')}</div>`:''}
+        ${savings>0?`<div class="qty-offer-highlight compact-hide">${t('بسعر','Price')} ${fmtPrice(b.bundlePrice)} ${t('د.أ','JD')} ${t('بدلاً من','instead of')} ${fmtPrice(original)} ${t('د.أ','JD')}</div>`:''}
         ${b.expiresAt ? `<div class="offer-countdown-badge mini compact-hide"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${b.expiresAt}">${formatCountdown(b.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
           <div>
-            <div class="product-price">${fmtPrice(b.bundlePrice)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            <div class="product-old-price">${fmtPrice(original)} ${t('د.أ','SAR')}</div>
+            <div class="product-price">${fmtPrice(b.bundlePrice)} <small style="font-size:13px">${t('د.أ','JD')}</small></div>
+            <div class="product-old-price">${fmtPrice(original)} ${t('د.أ','JD')}</div>
           </div>
           <button class="add-to-cart" onclick="event.stopPropagation();addBundleToCart(${b.id})" title="${t('أضف الباقة للسلة','Add bundle to cart')}">
             <i class="fas fa-cart-plus"></i>
@@ -1974,7 +1974,7 @@ async function renderOffers() {
       <div class="product-img-wrap qty-offer-icon-pulse" onclick="openProductDetail(${p.id})" style="cursor:pointer" title="${t('التفاصيل','Details')}">
         ${p.image ? `<img src="${cldOptimize(p.image,400)}" alt="${escHtml(p.ar)}" loading="lazy">` : `<span class="emoji-fallback">${escHtml(p.icon || '')}</span>`}
         <div class="qty-offer-ribbon compact-hide">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>
-        <div class="compact-price-bar">${fmtPrice(unitPrice)} ${t('د.أ','SAR')}</div>
+        <div class="compact-price-bar">${fmtPrice(unitPrice)} ${t('د.أ','JD')}</div>
       </div>
       <div class="product-info">
         <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
@@ -1982,8 +1982,8 @@ async function renderOffers() {
         ${offer.expiresAt ? `<div class="offer-countdown-badge mini compact-hide"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${offer.expiresAt}">${formatCountdown(offer.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
           <div>
-            <div class="product-price">${fmtPrice(unitPrice)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            <div class="product-old-price">${fmtPrice(p.price)} ${t('د.أ','SAR')}</div>
+            <div class="product-price">${fmtPrice(unitPrice)} <small style="font-size:13px">${t('د.أ','JD')}</small></div>
+            <div class="product-old-price">${fmtPrice(p.price)} ${t('د.أ','JD')}</div>
           </div>
           <button class="add-to-cart" onclick="event.stopPropagation();addToCart(${p.id})" title="${t('أضف للسلة','Add to cart')}">
             <i class="fas fa-cart-plus"></i>
@@ -2031,9 +2031,9 @@ function openBundleDetail(id) {
         <div class="product-desc" style="margin-bottom:16px">${escHtml(currentLang==='en'?(b.desc_en||''):(b.desc_ar||''))}</div>
         <div class="product-price-row" style="margin-bottom:18px">
           <div>
-            <div class="product-price" style="font-size:26px">${fmtPrice(b.bundlePrice)} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
-            <div class="product-old-price">${fmtPrice(original)} ${t('د.أ','SAR')}</div>
-            ${savings>0?`<div style="font-size:13px;font-weight:800;color:var(--success);margin-top:4px">${t('توفير','You save')} ${fmtPrice(savings)} ${t('د.أ','SAR')}</div>`:''}
+            <div class="product-price" style="font-size:26px">${fmtPrice(b.bundlePrice)} <small style="font-size:14px">${t('د.أ','JD')}</small></div>
+            <div class="product-old-price">${fmtPrice(original)} ${t('د.أ','JD')}</div>
+            ${savings>0?`<div style="font-size:13px;font-weight:800;color:var(--success);margin-top:4px">${t('توفير','You save')} ${fmtPrice(savings)} ${t('د.أ','JD')}</div>`:''}
           </div>
         </div>
         ${b.expiresAt ? `<div class="offer-countdown-badge"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${b.expiresAt}">${formatCountdown(b.expiresAt)||''}</span></div>` : ''}
@@ -2358,8 +2358,8 @@ function renderFavoritesPage() {
         <div class="product-desc">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
         <div class="product-price-row">
           <div>
-            <div class="product-price">${fmtPrice(p.price)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            ${p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','SAR')}</div>` : ''}
+            <div class="product-price">${fmtPrice(p.price)} <small style="font-size:13px">${t('د.أ','JD')}</small></div>
+            ${p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','JD')}</div>` : ''}
           </div>
           <button class="add-to-cart ${inCart?'added':''}" onclick="${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
@@ -2468,7 +2468,7 @@ function reorderedCardHTML(p) {
         ${p.image ? `<img src="${escHtml(cldOptimize(p.image,300))}" alt="${escHtml(p.en)}" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span class="emoji-fallback">${escHtml(p.icon || '')}</span>`}
         <div style="position:absolute;bottom:0;left:0;right:0;height:55px;background:linear-gradient(to top, rgba(0,0,0,0.28), transparent);pointer-events:none"></div>
         <div style="position:absolute;bottom:8px;left:8px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;font-weight:800;font-size:12px;padding:5px 12px;border-radius:50px;width:fit-content">
-          ${fmtPrice(p.price)} ${t('د.أ','SAR')}
+          ${fmtPrice(p.price)} ${t('د.أ','JD')}
         </div>
         <button onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}" ${outOfStock?'disabled style="opacity:0.4"':''}
           style="position:absolute;bottom:8px;right:12px;width:36px;height:36px;border-radius:50%;border:none;background:#fff;color:var(--primary);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
@@ -2734,9 +2734,9 @@ function openProductDetail(id, _isRefresh) {
         ${renderQtyOfferTableHTML(p)}
         <div class="product-price-row" style="margin-bottom:18px">
           <div>
-            <div class="product-price" style="font-size:26px">${fmtPrice(p.price)} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
+            <div class="product-price" style="font-size:26px">${fmtPrice(p.price)} <small style="font-size:14px">${t('د.أ','JD')}</small></div>
             ${p.unitQty ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px">${escHtml(p.unitQty)}</div>` : ''}
-            ${p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','SAR')}</div>` : ''}
+            ${p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','JD')}</div>` : ''}
           </div>
         </div>
         ${outOfStock ? `<div style="background:#fff5f5;border:1.5px solid #fecaca;color:#e53e3e;border-radius:10px;
@@ -2841,7 +2841,7 @@ function shareProductWhatsApp(id) {
   if (!p) return;
   const url = getProductShareUrl(id);
   const text = encodeURIComponent(
-    `🦷 ${p.en}\n${fmtPrice(p.price)} ${t('د.أ','SAR')}\n${url}`
+    `🦷 ${p.en}\n${fmtPrice(p.price)} ${t('د.أ','JD')}\n${url}`
   );
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
