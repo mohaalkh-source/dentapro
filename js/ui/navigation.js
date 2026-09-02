@@ -928,7 +928,7 @@ async function trackGuestOrder() {
                 </div>`).join('')}
             </div>
             <div style="text-align:left;font-weight:900;color:var(--primary);margin-top:10px">
-              الإجمالي: ${data.payMethod==='points' ? `${data.totalPoints||0} نقطة` : `${data.fmtPrice(total)} د.أ`}
+              الإجمالي: ${data.payMethod==='points' ? `${data.totalPoints||0} نقطة` : `${fmtPrice(data.total)} د.أ`}
             </div>
           </div>
         </div>`;
