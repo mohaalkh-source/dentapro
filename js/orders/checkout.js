@@ -302,7 +302,7 @@ function addQOItemRow() {
       existing.unitPrice = getEffectiveUnitPrice(p, qty);
       showToast(`✏️ تم تحديث "${p ? p.ar : 'المادة'}"`, 'success');
     } else {
-      currentQuickOrderItems.push({ productId, ar: p.ar, en: p.en, icon: p.icon, image: p.image || null, isCustom: false, qty, unitPrice: getEffectiveUnitPrice(p, qty) });
+      currentQuickOrderItems.push({ productId, ar: p.ar, en: p.en, icon: p.icon, image: p.image || null, isCustom: false, qty, unitPrice: getEffectiveUnitPrice(p, qty), basePrice: p.price });
       showToast(`✅ تمت إضافة "${p ? p.ar : 'مادة'}"`, 'success');
     }
   } else if (typedText) {
@@ -385,7 +385,8 @@ async function updateQuickOrderTotal() {
   } else {
     const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
     const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
-    const discountPreview = await computeCustomDiscount(total, previewClientEmail, previewClientPhone);
+    const discountItems = currentQuickOrderItems.filter(it => !it.isCustom).map(it => ({ price: it.unitPrice, qty: it.qty, basePrice: it.basePrice }));
+    const discountPreview = await computeGeneralDiscountForCart(discountItems, previewClientEmail, previewClientPhone);
     label.innerHTML = discountPreview
       ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} د.أ</span><strong style="color:var(--primary);font-size:15px">${fmtPrice(discountPreview.total)} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
       : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${fmtPrice(total)} د.أ</strong>`;
@@ -423,7 +424,7 @@ async function submitQuickOrder(event) {
     return;
   }
   const items = currentQuickOrderItems.map(it => ({
-    productId: it.productId, ar: it.ar, en: it.en, icon: it.icon, image: it.image, isCustom: it.isCustom, qty: it.qty, unitPrice: it.unitPrice
+    productId: it.productId, ar: it.ar, en: it.en, icon: it.icon, image: it.image, isCustom: it.isCustom, qty: it.qty, unitPrice: it.unitPrice, basePrice: it.basePrice
   }));
   const hasCustomItem = items.some(it => it.isCustom);
 
@@ -595,7 +596,8 @@ async function finalizeQuickOrderSend() {
       const orderNum = fromQuoteIdStr ? `DP-${fromQuoteIdStr.replace('QT-','')}` : `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const rawTotal = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const clientEmailForOrder = guestClient ? (guestClient.email || 'guest') : 'guest';
-      const discountResult = await computeCustomDiscount(rawTotal, clientEmailForOrder, phone);
+      const discountItems = items.map(i => ({ price: i.unitPrice, qty: i.qty, basePrice: i.basePrice }));
+      const discountResult = await computeGeneralDiscountForCart(discountItems, clientEmailForOrder, phone);
       const total = discountResult ? discountResult.total : rawTotal;
       const order = {
         id: orderNum,
