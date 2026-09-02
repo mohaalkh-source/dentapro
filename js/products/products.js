@@ -1116,8 +1116,8 @@ function renderQtyOfferTableHTML(p) {
     return `
       <tr>
         <td style="padding:8px 10px;text-align:center;font-weight:700">${tr.qty}</td>
-        <td style="padding:8px 10px;text-align:center;font-weight:800;color:var(--primary)">${tr.price.toLocaleString()} ${t('د.أ','SAR')}</td>
-        <td style="padding:8px 10px;text-align:center;color:var(--text-muted)">${unit.toFixed(2)} ${t('د.أ','SAR')}</td>
+        <td style="padding:8px 10px;text-align:center;font-weight:800;color:var(--primary)">${fmtPrice(tr.price)} ${t('د.أ','SAR')}</td>
+        <td style="padding:8px 10px;text-align:center;color:var(--text-muted)">${fmtPrice(unit)} ${t('د.أ','SAR')}</td>
       </tr>`;
   }).join('');
   return `
@@ -1322,6 +1322,11 @@ function toggleLang() {
   initOffersTicker();
   renderHeroTitle();
 }
+function fmtPrice(n) {
+  n = Number(n) || 0;
+  return n.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+}
+
 function t(ar, en) {
   return currentLang === 'en' ? en : ar;
 }
@@ -1538,12 +1543,19 @@ if (localStorage.getItem('dentapro_compact_view') === '1') {
   document.body.classList.add('compact-view');
 }
 
+function buildQtyOfferTiersText(p, offer) {
+  return offer.tiers.map(tr =>
+    `${t('اشتري','Buy')} ${tr.qty} ${t('بسعر','for')} ${fmtPrice(tr.price)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice(p.price * tr.qty)} ${t('د.أ','SAR')}`
+  ).join(` ${t('أو','or')} `);
+}
+
 function productCardHTML(p) {
   const inCart = cart.find(c => c.id === p.id);
   const outOfStock = p.stock !== undefined && p.stock !== null && p.stock <= 0;
   const hasQtyOffer = !!getActiveQtyOffer(p.id);
   const _qOffer = getActiveQtyOffer(p.id);
   const effPoints = getEffectivePoints(p);
+  const qtyOfferTiersText = hasQtyOffer ? buildQtyOfferTiersText(p, _qOffer) : '';
   const compactOfferPrice = (_qOffer && _qOffer.tiers && _qOffer.tiers.length)
     ? (_qOffer.tiers[_qOffer.tiers.length-1].price / _qOffer.tiers[_qOffer.tiers.length-1].qty)
     : p.price;
@@ -1561,7 +1573,7 @@ function productCardHTML(p) {
         </button>
       </div>` : '';
   return `
-    <div class="product-card${hasQtyOffer ? ' qty-offer-frame' : ''}" onclick="openProductDetail(${p.id})" style="cursor:pointer">
+    <div class="product-card${hasQtyOffer ? ' qty-offer-frame-static' : ''}" onclick="openProductDetail(${p.id})" style="cursor:pointer">
       ${adminQuickBtns}
       <button class="compare-toggle-btn ${isInCompare(p.id)?'active':''}"
         onclick="event.stopPropagation();toggleCompare(${p.id})" title="${t('أضف للمقارنة','Add to compare')}">
@@ -1576,36 +1588,34 @@ function productCardHTML(p) {
         : (outOfStock
             ? `<div class="product-badge" style="background:#94a3b8">${t('نفذت الكمية','Out of stock')}</div>`
             : (p.badge ? `<div class="product-badge" style="${p.badge==='الأكثر مبيعاً'?'background:linear-gradient(135deg, var(--gold-light), var(--gold));box-shadow:0 3px 8px rgba(184,134,11,0.35)':''}">${t(escHtml(p.badge), p.badge==='جديد'?'New':p.badge==='الأكثر مبيعاً'?'Best Seller':escHtml(p.badge))}</div>` : ''))}
-      <div class="product-img-wrap${hasQtyOffer ? ' qty-offer-icon-pulse' : ''}" onclick="event.stopPropagation();openProductDetail(${p.id})" title="${t('التفاصيل','Details')}" style="position:relative;cursor:pointer;${outOfStock?'opacity:0.5':''}">
+      <div class="product-img-wrap" onclick="event.stopPropagation();openProductDetail(${p.id})" title="${t('التفاصيل','Details')}" style="position:relative;cursor:pointer;${outOfStock?'opacity:0.5':''}">
         ${p.image
           ? `<img src="${escHtml(cldOptimize(p.image, 400))}" alt="${escHtml(p.ar)}" loading="lazy" decoding="async" />`
           : `<span class="emoji-fallback">${escHtml(p.icon || '')}</span>`
         }
-        ${hasQtyOffer ? `<div class="qty-offer-ribbon">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>` : ''}
-        <div class="compact-price-bar">${compactOfferPrice.toFixed(2)} ${t('د.أ','SAR')}</div>
+        ${hasQtyOffer ? `<div class="qty-offer-ribbon-static">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>` : ''}
+        <div class="compact-price-bar">${fmtPrice(compactOfferPrice)} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
         <div class="product-brand compact-hide"><i class="fas fa-check-circle"></i> ${escHtml(p.brand)}</div>
         <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
         <div class="product-desc compact-hide">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
         ${hasQtyOffer ? `
-        <button class="product-offer-btn compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})">
-          🏷️ ${t('شاهد العرض','View Offer')}
-        </button>` : ''}
+        <div class="qty-offer-highlight compact-hide">${qtyOfferTiersText}</div>` : ''}
         <div class="cart-details-split compact-hide">
           <button class="split-cart-btn ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.5;cursor:not-allowed"':''}
             title="${outOfStock?t('نفذت الكمية','Out of stock'):t('أضف للسلة','Add to Cart')}">
-            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-cart-plus')}"></i> ${t('السلة','Cart')}
+            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-plus')}"></i> <span class="cart-btn-label">${t('السلة','Cart')}</span>
           </button>
           <button class="split-details-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
-            ${t('التفاصيل','Details')}
+            <span class="details-btn-label">${t('التفاصيل','Details')}</span>
           </button>
         </div>
         <div class="product-price-row">
           <div class="product-price-block">
-            ${hasQtyOffer ? `<div class="product-old-price">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>` : (p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : '')}
-            <div class="product-price">${compactOfferPrice.toFixed(2)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+            ${hasQtyOffer ? `<div class="product-old-price">${fmtPrice(p.price)} ${t('د.أ','SAR')}</div>` : (p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','SAR')}</div>` : '')}
+            <div class="product-price">${fmtPrice(compactOfferPrice)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
           </div>
           ${effPoints ? `
           <div class="product-points-chip compact-hide">${effPoints} ${t('نقطة','pts')}</div>` : ''}
@@ -1845,7 +1855,7 @@ function renderSearchSuggestions() {
         <div style="font-size:11px;color:var(--text-muted)">${p.brand}</div>
       </div>
       <div style="font-weight:800;font-size:13px;color:var(--primary);flex-shrink:0">
-        ${p.price.toLocaleString()} ${t('د.أ','SAR')}
+        ${fmtPrice(p.price)} ${t('د.أ','SAR')}
       </div>
     </div>`).join('');
   box.style.display = 'block';
@@ -1894,7 +1904,7 @@ function bundleCardHTML(b) {
       <div class="product-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🎁 ${t('باقة','Bundle')}</div>
       <div class="product-img-wrap" onclick="openBundleDetail(${b.id})" style="cursor:pointer">
         ${b.image ? `<img src="${escHtml(cldOptimize(b.image,400))}" alt="${escHtml(b.name_ar)}" loading="lazy">` : `<span class="emoji-fallback">${escHtml(b.icon||'🎁')}</span>`}
-        <div class="compact-price-bar">${b.bundlePrice.toLocaleString()} ${t('د.أ','SAR')}</div>
+        <div class="compact-price-bar">${fmtPrice(b.bundlePrice)} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
         <div class="product-name" onclick="event.stopPropagation();openBundleDetail(${b.id})" style="cursor:pointer">${escHtml(currentLang==='en'?b.name_en:b.name_ar)}</div>
@@ -1906,9 +1916,9 @@ function bundleCardHTML(b) {
         ${b.expiresAt ? `<div class="offer-countdown-badge mini compact-hide"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${b.expiresAt}">${formatCountdown(b.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
           <div>
-            <div class="product-price">${b.bundlePrice.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            <div class="product-old-price">${original.toLocaleString()} ${t('د.أ','SAR')}</div>
-            ${savings>0?`<div style="font-size:11px;font-weight:800;color:var(--success)">${t('بسعر','Price')} ${b.bundlePrice.toLocaleString()} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${original.toLocaleString()} ${t('د.أ','SAR')}</div>`:''}
+            <div class="product-price">${fmtPrice(b.bundlePrice)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+            <div class="product-old-price">${fmtPrice(original)} ${t('د.أ','SAR')}</div>
+            ${savings>0?`<div style="font-size:11px;font-weight:800;color:var(--success)">${t('بسعر','Price')} ${fmtPrice(b.bundlePrice)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice(original)} ${t('د.أ','SAR')}</div>`:''}
           </div>
           <button class="add-to-cart" onclick="event.stopPropagation();addBundleToCart(${b.id})" title="${t('أضف الباقة للسلة','Add bundle to cart')}">
             <i class="fas fa-cart-plus"></i>
@@ -1959,14 +1969,14 @@ async function renderOffers() {
     const offer = getActiveQtyOffer(p.id);
     const bestTier = offer.tiers[offer.tiers.length-1];
     const unitPrice = bestTier.price / bestTier.qty;
-    const allTiersText = offer.tiers.map(tr => `${t('اشتري','Buy')} ${tr.qty} ${t('بسعر','for')} ${tr.price.toLocaleString()} ${t('د.أ','SAR')}`).join(` ${t('أو','or')} `);
+    const allTiersText = buildQtyOfferTiersText(p, offer);
     return `
     <div class="product-card qty-offer-frame">
       <div class="product-badge" style="background:linear-gradient(135deg,var(--primary),var(--accent))">🏷️ ${t('عرض كمية','Qty Offer')}</div>
       <div class="product-img-wrap qty-offer-icon-pulse" onclick="openProductDetail(${p.id})" style="cursor:pointer" title="${t('التفاصيل','Details')}">
         ${p.image ? `<img src="${cldOptimize(p.image,400)}" alt="${escHtml(p.ar)}" loading="lazy">` : `<span class="emoji-fallback">${escHtml(p.icon || '')}</span>`}
         <div class="qty-offer-ribbon compact-hide">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>
-        <div class="compact-price-bar">${unitPrice.toFixed(2)} ${t('د.أ','SAR')}</div>
+        <div class="compact-price-bar">${fmtPrice(unitPrice)} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
         <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
@@ -1977,8 +1987,8 @@ async function renderOffers() {
         ${offer.expiresAt ? `<div class="offer-countdown-badge mini compact-hide"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${offer.expiresAt}">${formatCountdown(offer.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
           <div>
-            <div class="product-price">${unitPrice.toFixed(2)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            <div class="product-old-price">${p.price.toLocaleString()} ${t('د.أ','SAR')}</div>
+            <div class="product-price">${fmtPrice(unitPrice)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+            <div class="product-old-price">${fmtPrice(p.price)} ${t('د.أ','SAR')}</div>
           </div>
           <button class="add-to-cart" onclick="event.stopPropagation();addToCart(${p.id})" title="${t('أضف للسلة','Add to cart')}">
             <i class="fas fa-cart-plus"></i>
@@ -2026,9 +2036,9 @@ function openBundleDetail(id) {
         <div class="product-desc" style="margin-bottom:16px">${escHtml(currentLang==='en'?(b.desc_en||''):(b.desc_ar||''))}</div>
         <div class="product-price-row" style="margin-bottom:18px">
           <div>
-            <div class="product-price" style="font-size:26px">${b.bundlePrice.toLocaleString()} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
-            <div class="product-old-price">${original.toLocaleString()} ${t('د.أ','SAR')}</div>
-            ${savings>0?`<div style="font-size:13px;font-weight:800;color:var(--success);margin-top:4px">${t('توفير','You save')} ${savings.toLocaleString()} ${t('د.أ','SAR')}</div>`:''}
+            <div class="product-price" style="font-size:26px">${fmtPrice(b.bundlePrice)} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
+            <div class="product-old-price">${fmtPrice(original)} ${t('د.أ','SAR')}</div>
+            ${savings>0?`<div style="font-size:13px;font-weight:800;color:var(--success);margin-top:4px">${t('توفير','You save')} ${fmtPrice(savings)} ${t('د.أ','SAR')}</div>`:''}
           </div>
         </div>
         ${b.expiresAt ? `<div class="offer-countdown-badge"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${b.expiresAt}">${formatCountdown(b.expiresAt)||''}</span></div>` : ''}
@@ -2206,8 +2216,8 @@ function renderCompareTable() {
     { label: 'الصورة', render: p => p.image ? `<img src="${escHtml(cldOptimize(p.image,160))}" style="width:80px;height:80px;border-radius:10px;object-fit:cover" loading="lazy">` : `<span style="font-size:40px">${escHtml(p.icon || '')}</span>` },
     { label: 'الاسم', render: p => escHtml(p.en) },
     { label: 'الماركة', render: p => escHtml(p.brand) },
-    { label: 'السعر', render: p => `<strong style="color:var(--primary)">${p.price.toLocaleString()} د.أ</strong>` },
-    { label: 'السعر القديم', render: p => p.old ? `${p.old.toLocaleString()} د.أ` : '—' },
+    { label: 'السعر', render: p => `<strong style="color:var(--primary)">${fmtPrice(p.price)} د.أ</strong>` },
+    { label: 'السعر القديم', render: p => p.old ? `${fmtPrice(p.old)} د.أ` : '—' },
     { label: 'الحجم', render: p => p.unitQty ? escHtml(p.unitQty) : '—' },
     { label: 'بلد المنشأ', render: p => escHtml(p.country) || '—' },
     { label: 'نقاط الشراء', render: p => getEffectivePoints(p) ? `🏆 ${getEffectivePoints(p)}` : '—' },
@@ -2299,7 +2309,7 @@ async function renderFavoriteQuotes() {
       <div style="display:flex;justify-content:space-between;gap:12px;align-items:center;flex-wrap:wrap">
         <div><strong style="color:#7e22ce">عرض السعر #${escHtml(q.id || q._docId)}</strong>
           <div style="font-size:12px;color:var(--text-muted);margin-top:5px">${names}${(q.items || []).length > 3 ? ' وآخرون' : ''}</div></div>
-        <strong style="color:var(--primary)">${total.toLocaleString()} د.أ</strong>
+        <strong style="color:var(--primary)">${fmtPrice(total)} د.أ</strong>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px">
         <button class="btn-primary" style="padding:8px 18px;font-size:12px" onclick="acceptQuote('${q._docId}')">
@@ -2353,8 +2363,8 @@ function renderFavoritesPage() {
         <div class="product-desc">${escHtml(currentLang==='en'?p.desc_en:p.desc_ar)}</div>
         <div class="product-price-row">
           <div>
-            <div class="product-price">${p.price.toLocaleString()} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
-            ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
+            <div class="product-price">${fmtPrice(p.price)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
+            ${p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','SAR')}</div>` : ''}
           </div>
           <button class="add-to-cart ${inCart?'added':''}" onclick="${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.4;cursor:not-allowed"':''}>
@@ -2463,7 +2473,7 @@ function reorderedCardHTML(p) {
         ${p.image ? `<img src="${escHtml(cldOptimize(p.image,300))}" alt="${escHtml(p.en)}" loading="lazy" style="width:100%;height:100%;object-fit:contain">` : `<span class="emoji-fallback">${escHtml(p.icon || '')}</span>`}
         <div style="position:absolute;bottom:0;left:0;right:0;height:55px;background:linear-gradient(to top, rgba(0,0,0,0.28), transparent);pointer-events:none"></div>
         <div style="position:absolute;bottom:8px;left:8px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;font-weight:800;font-size:12px;padding:5px 12px;border-radius:50px;width:fit-content">
-          ${p.price.toLocaleString()} ${t('د.أ','SAR')}
+          ${fmtPrice(p.price)} ${t('د.أ','SAR')}
         </div>
         <button onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}" ${outOfStock?'disabled style="opacity:0.4"':''}
           style="position:absolute;bottom:8px;right:12px;width:36px;height:36px;border-radius:50%;border:none;background:#fff;color:var(--primary);cursor:pointer;box-shadow:0 2px 8px rgba(0,0,0,0.15)">
@@ -2525,7 +2535,7 @@ async function renderMyQuotesPage() {
         <div class="order-item-icon">${i.image ? `<img src="${escHtml(cldOptimize(i.image,60))}" style="width:100%;height:100%;object-fit:contain" loading="lazy">` : escHtml(i.icon || '')}</div>
         <div style="flex:1;font-weight:600;color:var(--primary-dark)">${escHtml(i.ar)}</div>
         <div style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : t('الكمية غير محددة','Qty not specified')}</div>
-        ${isPriced ? `<div style="font-weight:800;color:var(--primary)">${(i.unitPrice||0).toLocaleString()} د.أ${i.qty?` × ${i.qty} = ${((i.unitPrice||0)*i.qty).toLocaleString()} د.أ`:''}</div>` : ''}
+        ${isPriced ? `<div style="font-weight:800;color:var(--primary)">${fmtPrice((i.unitPrice||0))} د.أ${i.qty?` × ${i.qty} = ${fmtPrice(((i.unitPrice||0)*i.qty))} د.أ`:''}</div>` : ''}
       </div>`).join('');
 
     let actionsHtml = '';
@@ -2578,7 +2588,7 @@ async function renderMyQuotesPage() {
         </div>
         <div style="display:flex;align-items:center;gap:12px">
           ${quoteStatusBadge(q.status)}
-          ${isPriced || q.status==='saved' ? `<div class="order-track-total">${totalPriced.toLocaleString()} د.أ</div>` : ''}
+          ${isPriced || q.status==='saved' ? `<div class="order-track-total">${fmtPrice(totalPriced)} د.أ</div>` : ''}
         </div>
       </div>
       <div class="order-track-body">
@@ -2729,9 +2739,9 @@ function openProductDetail(id, _isRefresh) {
         ${renderQtyOfferTableHTML(p)}
         <div class="product-price-row" style="margin-bottom:18px">
           <div>
-            <div class="product-price" style="font-size:26px">${p.price.toLocaleString()} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
+            <div class="product-price" style="font-size:26px">${fmtPrice(p.price)} <small style="font-size:14px">${t('د.أ','SAR')}</small></div>
             ${p.unitQty ? `<div style="font-size:12px;color:var(--text-muted);font-weight:600;margin-top:2px">${escHtml(p.unitQty)}</div>` : ''}
-            ${p.old ? `<div class="product-old-price">${p.old.toLocaleString()} ${t('د.أ','SAR')}</div>` : ''}
+            ${p.old ? `<div class="product-old-price">${fmtPrice(p.old)} ${t('د.أ','SAR')}</div>` : ''}
           </div>
         </div>
         ${outOfStock ? `<div style="background:#fff5f5;border:1.5px solid #fecaca;color:#e53e3e;border-radius:10px;
@@ -2836,7 +2846,7 @@ function shareProductWhatsApp(id) {
   if (!p) return;
   const url = getProductShareUrl(id);
   const text = encodeURIComponent(
-    `🦷 ${p.en}\n${p.price.toLocaleString()} ${t('د.أ','SAR')}\n${url}`
+    `🦷 ${p.en}\n${fmtPrice(p.price)} ${t('د.أ','SAR')}\n${url}`
   );
   window.open(`https://wa.me/?text=${text}`, '_blank');
 }
