@@ -387,7 +387,7 @@ async function updateQuickOrderTotal() {
     const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
     const discountPreview = await computeCustomDiscount(total, previewClientEmail, previewClientPhone);
     label.innerHTML = discountPreview
-      ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${discountPreview.originalfmtPrice(total)} د.أ</span><strong style="color:var(--primary);font-size:15px">${discountPreview.fmtPrice(total)} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
+      ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} د.أ</span><strong style="color:var(--primary);font-size:15px">${fmtPrice(discountPreview.total)} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
       : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${fmtPrice(total)} د.أ</strong>`;
   }
 }
@@ -630,7 +630,7 @@ async function finalizeQuickOrderSend() {
       }
       showToast(
         discountResult
-          ? `🎉 تم إرسال طلبك بنجاح — الإجمالي بعد الخصم: ${discountResult.fmtPrice(total)} د.أ (بدل ${discountResult.originalfmtPrice(total)} د.أ)`
+          ? `🎉 تم إرسال طلبك بنجاح — الإجمالي بعد الخصم: ${fmtPrice(discountResult.total)} د.أ (بدل ${fmtPrice(discountResult.originalTotal)} د.أ)`
           : '🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً',
         'success'
       );
