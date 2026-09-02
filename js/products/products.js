@@ -1900,25 +1900,23 @@ function bundleCardHTML(b) {
       : `<span style="font-size:20px">${escHtml(p.icon || '')}</span>`;
   }).join('');
   return `
-    <div class="product-card offer-bundle-card">
+    <div class="product-card offer-bundle-card qty-offer-frame">
       <div class="product-badge" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🎁 ${t('باقة','Bundle')}</div>
-      <div class="product-img-wrap" onclick="openBundleDetail(${b.id})" style="cursor:pointer">
+      <div class="product-img-wrap qty-offer-icon-pulse" onclick="openBundleDetail(${b.id})" style="cursor:pointer">
         ${b.image ? `<img src="${escHtml(cldOptimize(b.image,400))}" alt="${escHtml(b.name_ar)}" loading="lazy">` : `<span class="emoji-fallback">${escHtml(b.icon||'🎁')}</span>`}
+        <div class="qty-offer-ribbon compact-hide">⏰ ${t('عرض لفترة محدودة','Limited time offer')}</div>
         <div class="compact-price-bar">${fmtPrice(b.bundlePrice)} ${t('د.أ','SAR')}</div>
       </div>
       <div class="product-info">
         <div class="product-name" onclick="event.stopPropagation();openBundleDetail(${b.id})" style="cursor:pointer">${escHtml(currentLang==='en'?b.name_en:b.name_ar)}</div>
-        <div class="compact-hide" style="display:flex;gap:6px;margin:6px 0">${miniIcons}</div>
+        <div class="compact-hide" style="display:flex;gap:6px;margin:4px 0">${miniIcons}</div>
         <div class="product-desc compact-hide">${escHtml(currentLang==='en'?(b.desc_en||''):(b.desc_ar||''))}</div>
-        <button class="compact-hide" onclick="event.stopPropagation();openBundleDetail(${b.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
-          <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
-        </button>
+        ${savings>0?`<div class="qty-offer-highlight compact-hide">${t('بسعر','Price')} ${fmtPrice(b.bundlePrice)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice(original)} ${t('د.أ','SAR')}</div>`:''}
         ${b.expiresAt ? `<div class="offer-countdown-badge mini compact-hide"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${b.expiresAt}">${formatCountdown(b.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
           <div>
             <div class="product-price">${fmtPrice(b.bundlePrice)} <small style="font-size:13px">${t('د.أ','SAR')}</small></div>
             <div class="product-old-price">${fmtPrice(original)} ${t('د.أ','SAR')}</div>
-            ${savings>0?`<div style="font-size:11px;font-weight:800;color:var(--success)">${t('بسعر','Price')} ${fmtPrice(b.bundlePrice)} ${t('د.أ','SAR')} ${t('بدلاً من','instead of')} ${fmtPrice(original)} ${t('د.أ','SAR')}</div>`:''}
           </div>
           <button class="add-to-cart" onclick="event.stopPropagation();addBundleToCart(${b.id})" title="${t('أضف الباقة للسلة','Add bundle to cart')}">
             <i class="fas fa-cart-plus"></i>
@@ -1980,9 +1978,6 @@ async function renderOffers() {
       </div>
       <div class="product-info">
         <div class="product-name" onclick="event.stopPropagation();openProductDetail(${p.id})" style="cursor:pointer">${escHtml(p.en)}</div>
-        <button class="compact-hide" onclick="event.stopPropagation();openProductDetail(${p.id})" style="margin:8px 0 6px;padding:5px 12px;border-radius:50px;background:transparent;border:1.5px solid var(--primary-light);color:var(--primary);font-family:inherit;font-size:12px;font-weight:800;cursor:pointer;display:flex;align-items:center;gap:6px;width:fit-content">
-          <i class="fas fa-info-circle"></i> ${t('التفاصيل','Details')}
-        </button>
         <div class="qty-offer-highlight compact-hide">${allTiersText}</div>
         ${offer.expiresAt ? `<div class="offer-countdown-badge mini compact-hide"><i class="fas fa-hourglass-half"></i> <span class="offer-countdown" data-expires="${offer.expiresAt}">${formatCountdown(offer.expiresAt)||''}</span></div>` : ''}
         <div class="product-price-row">
