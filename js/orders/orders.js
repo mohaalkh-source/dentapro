@@ -97,7 +97,7 @@ function formatOrderTotal(order, opts = {}) {
   const hasCash = (order.total || 0) > 0;
   const hasPoints = order.payMethod === 'points' && (order.totalPoints || 0) > 0;
   if (hasPoints && hasCash) {
-    return `${prefix}🏆 ${(order.totalPoints||0).toLocaleString()} نقطة + ${order.total.toLocaleString()} ${currency}`;
+    return `${prefix}🏆 ${(order.totalPoints||0).toLocaleString()} نقطة + ${fmtPrice(order.total)} ${currency}`;
   } else if (hasPoints) {
     return `${prefix}🏆 ${(order.totalPoints||0).toLocaleString()} نقطة`;
   } else {
@@ -217,7 +217,7 @@ async function renderClientOrders() {
             ${statusBadgeHTML(order.status)}
             ${order.payMethod === 'points'
               ? `<div class="order-track-total" style="background:#fffbeb;color:#92400e;border:1.5px solid #f59e0b">${formatOrderTotal(order)}</div>`
-              : `<div class="order-track-total">${order.total.toLocaleString()} د.أ</div>`}
+              : `<div class="order-track-total">${fmtPrice(order.total)} د.أ</div>`}
             <button onclick="printOrderInvoice('${order.id}')"
               style="padding:6px 16px;border-radius:50px;background:#f0f8ff;color:#0a5c8a;
                      border:1.5px solid #d0e4ef;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
@@ -236,7 +236,7 @@ async function renderClientOrders() {
                 <div style="font-weight:800;color:${order.payMethod === 'points' ? '#d97706' : 'var(--primary)'}">
                   ${order.payMethod === 'points'
                     ? `🏆 ${(item.points||0)*item.qty} نقطة`
-                    : `${(item.price*item.qty).toLocaleString()} د.أ`}
+                    : `${fmtPrice((item.price*item.qty))} د.أ`}
                 </div>
               </div>`).join('')}
           </div>
@@ -692,10 +692,10 @@ function printOrderInvoice(orderId) {
       <td style="text-align:center">${item.qty}</td>
       <td style="text-align:center">${itemPaidByPoints
         ? `${(item.points||0)} نقطة`
-        : `${item.price.toLocaleString()} د.أ`}</td>
+        : `${fmtPrice(item.price)} د.أ`}</td>
       <td style="text-align:center;font-weight:700">${itemPaidByPoints
         ? `${(item.points||0)*item.qty} نقطة`
-        : `${(item.price*item.qty).toLocaleString()} د.أ`}</td>
+        : `${fmtPrice((item.price*item.qty))} د.أ`}</td>
     </tr>`;
   }).join('');
 
@@ -798,7 +798,7 @@ function showAdminOrderDetail(orderId) {
             <span style="font-weight:800;color:${itemPaidByPoints?'#d97706':'var(--primary)'}">
               ${itemPaidByPoints
                 ? `🏆 ${(item.points||0)*item.qty} نقطة`
-                : `${(item.price*item.qty).toLocaleString()} د.أ`}
+                : `${fmtPrice((item.price*item.qty))} د.أ`}
             </span>
           </div>`;
         }).join('')}
@@ -812,8 +812,8 @@ function showAdminOrderDetail(orderId) {
               : order.payMethod==='points'
                 ? formatOrderTotal(order)
                 : (order.originalTotal && order.originalTotal > order.total
-                    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${order.originalTotal.toLocaleString()} د.أ</span><span style="font-weight:800">${order.total.toLocaleString()} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${order.discountPercent}%)</span>`
-                    : `${order.total.toLocaleString()} د.أ`)}
+                    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${fmtPrice(order.originalTotal)} د.أ</span><span style="font-weight:800">${fmtPrice(order.total)} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${order.discountPercent}%)</span>`
+                    : `${fmtPrice(order.total)} د.أ`)}
           </span>
         </div>
       </div>
@@ -901,7 +901,7 @@ async function renderAdminQuotes() {
         <span style="flex:1;font-weight:600">${escHtml(i.ar)}</span>
         ${i.isCustom ? `<span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:50px;padding:2px 8px;font-weight:700;flex-shrink:0">⚠️ غير مدرجة بالمتجر</span>` : ''}
         <span style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : 'كمية غير محددة'}</span>
-        ${i.unitPrice ? `<span style="font-weight:800;color:var(--primary)">${i.unitPrice.toLocaleString()} د.أ</span>` : ''}
+        ${i.unitPrice ? `<span style="font-weight:800;color:var(--primary)">${fmtPrice(i.unitPrice)} د.أ</span>` : ''}
       </div>`).join('');
 
     return `
@@ -1032,10 +1032,10 @@ function sendWhatsAppQuote(docId) {
   const statusInfo = QUOTE_STATUSES[q.status] || QUOTE_STATUSES.pending;
   const hasPrices = q.items.every(i => i.unitPrice && i.unitPrice > 0);
   const itemsTxt = q.items.map(i =>
-    `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''}${hasPrices && i.unitPrice ? ` — ${(i.unitPrice * (i.qty || 1)).toLocaleString()} د.أ` : ''}`
+    `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''}${hasPrices && i.unitPrice ? ` — ${fmtPrice((i.unitPrice * (i.qty || 1)))} د.أ` : ''}`
   ).join('\n');
   const totalLine = hasPrices
-    ? `\n\n💰 *الإجمالي: ${q.items.reduce((s, i) => s + (i.unitPrice * (i.qty || 1)), 0).toLocaleString()} د.أ*`
+    ? `\n\n💰 *الإجمالي: ${fmtPrice(q.items.reduce((s, i) => s + (i.unitPrice * (i.qty || 1)), 0))} د.أ*`
     : '';
   const msg = encodeURIComponent(
     `🦷 *DentaPro — بخصوص طلب عرض السعر #${q.id}*\n\nمرحباً ${q.clientName}،\n\n` +
@@ -1090,7 +1090,7 @@ function showQuoteOrderDetail(docId) {
             <span style="font-size:22px">${escHtml(i.icon || '')}</span>
             <span style="flex:1;font-weight:600">${escHtml(i.ar)}</span>
             <span style="color:var(--text-muted)">× ${i.qty||1}</span>
-            <span style="font-weight:800;color:var(--primary)">${((i.unitPrice||0)*(i.qty||1)).toLocaleString()} د.أ</span>
+            <span style="font-weight:800;color:var(--primary)">${fmtPrice(((i.unitPrice||0)*(i.qty||1)))} د.أ</span>
           </div>`).join('')}
         <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
           <span>الإجمالي</span>
@@ -1133,8 +1133,8 @@ function printQuoteInvoice(docId) {
     <tr>
       <td>${escHtml(item.ar)}</td>
       <td style="text-align:center">${item.qty||1}</td>
-      <td style="text-align:center">${(item.unitPrice||0).toLocaleString()} د.أ</td>
-      <td style="text-align:center;font-weight:700">${((item.unitPrice||0)*(item.qty||1)).toLocaleString()} د.أ</td>
+      <td style="text-align:center">${fmtPrice((item.unitPrice||0))} د.أ</td>
+      <td style="text-align:center;font-weight:700">${fmtPrice(((item.unitPrice||0)*(item.qty||1)))} د.أ</td>
     </tr>`).join('');
 
   const win = window.open('', '_blank');
@@ -1182,8 +1182,8 @@ function sendWhatsAppAdmin(orderId) {
   const totalLine = order.payMethod === 'points'
     ? `💰🏆 *الإجمالي: ${formatOrderTotal(order)}*`
     : (order.originalTotal && order.originalTotal > order.total
-        ? `💰 *الإجمالي بعد الخصم: ${order.total.toLocaleString()} د.أ* (بدل ${order.originalTotal.toLocaleString()} د.أ)`
-        : `💰 *الإجمالي: ${(order.total || 0).toLocaleString()} د.أ*`);
+        ? `💰 *الإجمالي بعد الخصم: ${fmtPrice(order.total)} د.أ* (بدل ${fmtPrice(order.originalTotal)} د.أ)`
+        : `💰 *الإجمالي: ${fmtPrice((order.total || 0))} د.أ*`);
   const msg = encodeURIComponent(
     `🦷 *DentaPro — تحديث طلبك*\n\nمرحباً ${order.clientName}،\n` +
     `طلبك رقم *#${order.id}* الآن في مرحلة: *${s.label}*\n\n` +
@@ -1531,7 +1531,7 @@ function searchSendOrderProducts() {
       </div>
       <div style="flex:1;min-width:0">
         <div style="font-size:13px;font-weight:700;color:var(--primary-dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis">${escHtml(p.ar||p.en)}</div>
-        <div style="font-size:12px;color:var(--text-muted)">${(p.price||0).toLocaleString()} د.أ</div>
+        <div style="font-size:12px;color:var(--text-muted)">${fmtPrice((p.price||0))} د.أ</div>
       </div>
     </div>`).join('');
   box.style.display = 'block';
@@ -1670,17 +1670,17 @@ function updateSendOrderTotalDisplay() {
     disp.textContent = `${totalPoints} نقطة`;
   } else if (_sendOrderPayMethod === 'free') {
     if (beforeRow) beforeRow.style.display = 'none';
-    disp.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px">${rawTotal.toLocaleString()} د.أ</span> مجانًا`;
+    disp.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px">${fmtPrice(rawTotal)} د.أ</span> مجانًا`;
   } else {
     const discountAmount = getSendOrderDiscountAmount(rawTotal);
     const finalTotal = Math.max(0, Math.round((rawTotal - discountAmount) * 100) / 100);
     if (discountAmount > 0) {
       if (beforeRow) beforeRow.style.display = 'flex';
-      if (beforeDisp) beforeDisp.textContent = `${rawTotal.toLocaleString()} د.أ`;
+      if (beforeDisp) beforeDisp.textContent = `${fmtPrice(rawTotal)} د.أ`;
     } else if (beforeRow) {
       beforeRow.style.display = 'none';
     }
-    disp.textContent = `${finalTotal.toLocaleString()} د.أ`;
+    disp.textContent = `${fmtPrice(finalTotal)} د.أ`;
   }
 }
 
@@ -1906,8 +1906,8 @@ async function runClientOrdersReport() {
             <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6">${idx + 1}</td>
             <td style="padding:8px;border-bottom:1px solid #eef2f6">${escHtml(it.ar || it.en || '—')}</td>
             <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6">${it.qty || 1}</td>
-            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6">${(it.price || 0).toFixed(2)}</td>
-            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6;font-weight:700">${lineTotal.toFixed(2)}</td>
+            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6">${fmtPrice(it.price || 0)}</td>
+            <td style="padding:8px;text-align:center;border-bottom:1px solid #eef2f6;font-weight:700">${fmtPrice(lineTotal)}</td>
           </tr>`;
       }).join('');
 
@@ -1931,8 +1931,8 @@ async function runClientOrdersReport() {
       const footerTotalHTML = isPointsPay
         ? formatOrderTotal(order, { prefix: '🏆 إجمالي الفاتورة: ' })
         : (hasDiscount
-            ? `إجمالي الفاتورة: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${order.originalTotal.toLocaleString()} د.أ</span>${actualTotal.toFixed(2)} د.أ <span style="font-size:11px;color:#e53e3e">(خصم ${order.discountPercent}%)</span>`
-            : `إجمالي الفاتورة: ${actualTotal.toFixed(2)} د.أ`);
+            ? `إجمالي الفاتورة: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(order.originalTotal)} د.أ</span>${fmtPrice(actualTotal)} د.أ <span style="font-size:11px;color:#e53e3e">(خصم ${order.discountPercent}%)</span>`
+            : `إجمالي الفاتورة: ${fmtPrice(actualTotal)} د.أ`);
 
       invoicesHTML += `
         <div style="margin-bottom:24px;border:1.5px solid var(--border);border-radius:14px;overflow:hidden;${isCancelled ? 'opacity:0.6' : ''}">
@@ -1970,7 +1970,7 @@ async function runClientOrdersReport() {
         <div style="display:flex;flex-direction:column;gap:8px;padding:16px;background:linear-gradient(135deg,var(--primary-dark),var(--primary));border-radius:14px;color:#fff;margin-top:8px">
           <div style="display:flex;justify-content:space-between;align-items:center">
             <span style="font-weight:800">الإجمالي العام (نقد)</span>
-            <strong style="font-size:20px">${grandTotalCash.toFixed(2)} د.أ</strong>
+            <strong style="font-size:20px">${fmtPrice(grandTotalCash)} د.أ</strong>
           </div>
           ${grandTotalPoints > 0 ? `
           <div style="display:flex;justify-content:space-between;align-items:center;padding-top:8px;border-top:1px solid rgba(255,255,255,0.25)">
@@ -2073,7 +2073,7 @@ async function showClientRecord(uid, email) {
           <div style="font-size:12px;color:var(--text-muted);margin-top:4px">إجمالي الطلبات</div>
         </div>
         <div style="background:#f0fff4;border-radius:12px;padding:16px;text-align:center;border:1px solid #bbf7d0">
-          <div style="font-size:22px;font-weight:900;color:#15803d">${totalSpent.toLocaleString()}</div>
+          <div style="font-size:22px;font-weight:900;color:#15803d">${fmtPrice(totalSpent)}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:4px">إجمالي المشتريات (د.أ)</div>
         </div>
         <div style="background:#fffbeb;border-radius:12px;padding:16px;text-align:center;border:1px solid #fde68a">
@@ -2107,7 +2107,7 @@ async function showClientRecord(uid, email) {
               <div style="display:flex;align-items:center;gap:10px">
                 <span class="status-badge ${s.class}"><i class="fas ${s.icon}"></i> ${s.label}</span>
                 <span style="font-weight:900;color:var(--primary);font-size:14px">
-                  ${o.total.toLocaleString()} د.أ
+                  ${fmtPrice(o.total)} د.أ
                 </span>
               </div>
             </div>
