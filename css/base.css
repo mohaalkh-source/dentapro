@@ -785,7 +785,7 @@ body.en .track-step.active::before { background: linear-gradient(to right, var(-
 }
 
 .qty-offer-highlight {
-  color:#e53e3e; font-weight:800; font-size:13px; margin:4px 0;
+  color:#e53e3e; font-weight:800; font-size:13px; margin:2px 0;
 }
 
 .qty-offer-frame {
