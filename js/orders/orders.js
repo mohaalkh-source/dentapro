@@ -101,7 +101,7 @@ function formatOrderTotal(order, opts = {}) {
   } else if (hasPoints) {
     return `${prefix}🏆 ${(order.totalPoints||0).toLocaleString()} نقطة`;
   } else {
-    return `${prefix}${(order.total||0).toLocaleString()} ${currency}`;
+    return `${prefix}${fmtPrice(order.total||0)} ${currency}`;
   }
 }
 
@@ -1094,7 +1094,7 @@ function showQuoteOrderDetail(docId) {
           </div>`).join('')}
         <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
           <span>الإجمالي</span>
-          <span>${total.toLocaleString()} د.أ</span>
+          <span>${fmtPrice(total)} د.أ</span>
         </div>
       </div>
       ${q.attachedImage ? `
@@ -1166,7 +1166,7 @@ function printQuoteInvoice(docId) {
         <thead><tr><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <div class="total">الإجمالي الكلي: ${total.toLocaleString()} د.أ</div>
+      <div class="total">الإجمالي الكلي: ${fmtPrice(total)} د.أ</div>
       <script>window.print();<\/script>
     </body></html>
   `);
@@ -1793,7 +1793,7 @@ async function submitAdminSendOrder() {
       targetEmail: email,
       icon: '🛒',
       title: 'طلبية جديدة',
-      message: `تم تجهيز طلبية لك بقيمة ${_sendOrderPayMethod === 'points' ? totalPoints + ' نقطة' : total.toLocaleString() + ' د.أ'}`,
+      message: `تم تجهيز طلبية لك بقيمة ${_sendOrderPayMethod === 'points' ? totalPoints + ' نقطة' : fmtPrice(total) + ' د.أ'}`,
       link: 'page:orders',
     });
   }
