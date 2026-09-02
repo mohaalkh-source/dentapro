@@ -851,7 +851,7 @@ function renderAdminOffers() {
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">🎁 ${escHtml(o.name_ar)}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${fmtPrice(original)} ← ${o.bundlefmtPrice(price)} د.أ</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${fmtPrice(original)} ← ${fmtPrice(o.bundlePrice)} د.أ</div>
             <div style="margin-top:4px">${itemsDetailHtml}</div>
             <div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <span style="font-size:11px;font-weight:800;color:${o.active?'#15803d':'#94a3b8'}">${o.active?'● فعّال':'○ متوقف'}</span>
@@ -1245,7 +1245,7 @@ function renderBannerBundleSlide(slide, current) {
         <i class="fas fa-box-open" style="font-size:10px"></i> ${t('باقة','Bundle')}${discountPct > 0 ? ` — ${discountPct}%` : ''}
       </span>
       <div style="display:flex;align-items:baseline;gap:5px">
-        <span style="font-size:28px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${bundlefmtPrice(price)}</span>
+        <span style="font-size:28px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${fmtPrice(bundlePrice)}</span>
         <span style="font-size:14px;font-weight:700;color:#e53e3e">${t('د.أ','JD')}</span>
       </div>
       <span style="font-size:14px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${fmtPrice(original)} ${t('د.أ','JD')}</span>
