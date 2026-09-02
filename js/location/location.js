@@ -232,14 +232,14 @@ async function submitOrder() {
 logActivity('order_placed', { orderId: orderNum, total: getTotal() });
   document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
   document.getElementById('orderTotalDisplay').innerHTML = discountResult
-    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','SAR')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','SAR')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
-    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','SAR')}`;
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
+    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','JD')}`;
   document.getElementById('orderTotalDisplay').innerHTML = discountResult
-    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','SAR')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','SAR')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
-    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','SAR')}`;
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
+    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','JD')}`;
   document.getElementById('orderTotalDisplay').innerHTML = discountResult
-    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','SAR')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','SAR')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
-    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','SAR')}`;
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
+    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','JD')}`;
   document.querySelector('.modal-steps').style.display = 'none';
   ['modalStep1','modalStep2','modalStep3','modalStep4'].forEach(id =>
     document.getElementById(id).style.display = 'none'
@@ -309,7 +309,7 @@ function sendWhatsApp() {
   const phone = document.getElementById('countryCode').value + document.getElementById('phoneNumber').value;
   const addr = locationData.address || document.getElementById('addressInput').value;
   const notes = document.getElementById('orderNotes').value;
-  const items = cart.map(i=>`• ${currentLang==='en'?i.en:i.ar} × ${i.qty} = ${fmtPrice((i.price*i.qty))} ${t('د.أ','SAR')}`).join('\n');
+  const items = cart.map(i=>`• ${currentLang==='en'?i.en:i.ar} × ${i.qty} = ${fmtPrice((i.price*i.qty))} ${t('د.أ','JD')}`).join('\n');
   const msg = encodeURIComponent(
     `🦷 *DentaPro - ${t('طلب جديد','New Order')}*\n\n` +
     `🏥 ${t('العيادة','Clinic')}: ${clinic}\n` +
@@ -318,7 +318,7 @@ function sendWhatsApp() {
     `📍 ${t('الموقع','Location')}: ${addr}\n` +
     `${notes ? `🗒️ ${t('ملاحظات','Notes')}: ${notes}\n` : ''}` +
     `\n📦 ${t('المنتجات','Products')}:\n${items}\n\n` +
-    `💰 ${t('الإجمالي','Total')}: ${fmtPrice(getTotal())} ${t('د.أ','SAR')}`
+    `💰 ${t('الإجمالي','Total')}: ${fmtPrice(getTotal())} ${t('د.أ','JD')}`
   );
   window.open(`https://wa.me/962790408680?text=${msg}`, '_blank');
 }
