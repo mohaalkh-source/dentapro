@@ -108,8 +108,8 @@ function renderAdminTable() {
       <td style="padding:14px 16px">
         <span style="padding:4px 12px;border-radius:50px;background:#e8f3fb;color:#0a5c8a;font-size:12px;font-weight:700">${catNames[p.cat]||p.cat}</span>
       </td>
-      <td style="padding:14px 16px;font-weight:800;color:#0a5c8a;font-size:15px">${p.price.toLocaleString()} د.أ</td>
-      <td style="padding:14px 16px;color:#5a7a90;font-size:13px;text-decoration:line-through">${p.old ? p.old.toLocaleString()+' د.أ' : '—'}</td>
+      <td style="padding:14px 16px;font-weight:800;color:#0a5c8a;font-size:15px">${fmtPrice(p.price)} د.أ</td>
+      <td style="padding:14px 16px;color:#5a7a90;font-size:13px;text-decoration:line-through">${p.old ? fmtPrice(p.old)+' د.أ' : '—'}</td>
       <td style="padding:14px 16px">
         ${p.badge ? `<span style="padding:4px 10px;border-radius:50px;background:${badgeColors[p.badge]||'#f59e0b'};color:#fff;font-size:11px;font-weight:700">${p.badge}</span>` : '<span style="color:#ccc;font-size:13px">—</span>'}
       </td>
@@ -511,7 +511,7 @@ async function saveProduct() {
       scope: 'broadcast',
       icon: '🆕',
       title: 'منتج جديد في DentaPro',
-      message: `${ar} — ${price.toLocaleString()} د.أ`,
+      message: `${ar} — ${fmtPrice(price)} د.أ`,
       link: `product:${newId}`,
     });
   }
@@ -753,7 +753,7 @@ async function renderAdminPoints() {
                 <i class="fas fa-shopping-bag" style="color:var(--primary-light)"></i> ${u.orderCount} طلب
               </span>
               <span style="font-size:12px;font-weight:800;color:var(--primary)">
-                ${u.totalSpent.toLocaleString()} د.أ
+                ${fmtPrice(u.totalSpent)} د.أ
               </span>
             </div>
           </div>
@@ -851,7 +851,7 @@ function renderAdminOffers() {
           </div>
           <div style="flex:1;min-width:0">
             <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">🎁 ${escHtml(o.name_ar)}</div>
-            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${original.toLocaleString()} ← ${o.bundlePrice.toLocaleString()} د.أ</div>
+            <div style="font-size:12px;color:var(--text-muted);margin-top:2px">${fmtPrice(original)} ← ${o.bundlefmtPrice(price)} د.أ</div>
             <div style="margin-top:4px">${itemsDetailHtml}</div>
             <div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
               <span style="font-size:11px;font-weight:800;color:${o.active?'#15803d':'#94a3b8'}">${o.active?'● فعّال':'○ متوقف'}</span>
@@ -1180,10 +1180,10 @@ function renderBannerQtySlide(slide, current) {
         <i class="fas fa-bolt" style="font-size:11px"></i> ${t('خصم','SAVE')} ${discountPct}%
       </span>` : ''}
       <div style="display:flex;align-items:baseline;gap:6px">
-        <span style="font-size:36px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${unitPrice.toFixed(2)}</span>
+        <span style="font-size:36px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${fmtPrice(unitPrice)}</span>
         <span style="font-size:16px;font-weight:700;color:#e53e3e">${t('د.أ','JD')}</span>
       </div>
-      <span style="font-size:16px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${p.price.toLocaleString()} ${t('د.أ','JD')}</span>
+      <span style="font-size:16px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${fmtPrice(p.price)} ${t('د.أ','JD')}</span>
     </div>`;
 }
 
@@ -1245,10 +1245,10 @@ function renderBannerBundleSlide(slide, current) {
         <i class="fas fa-box-open" style="font-size:10px"></i> ${t('باقة','Bundle')}${discountPct > 0 ? ` — ${discountPct}%` : ''}
       </span>
       <div style="display:flex;align-items:baseline;gap:5px">
-        <span style="font-size:28px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${bundlePrice.toLocaleString()}</span>
+        <span style="font-size:28px;font-weight:900;color:#e53e3e;letter-spacing:-0.5px">${bundlefmtPrice(price)}</span>
         <span style="font-size:14px;font-weight:700;color:#e53e3e">${t('د.أ','JD')}</span>
       </div>
-      <span style="font-size:14px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${original.toLocaleString()} ${t('د.أ','JD')}</span>
+      <span style="font-size:14px;color:var(--text-muted);text-decoration:line-through;font-weight:600">${fmtPrice(original)} ${t('د.أ','JD')}</span>
     </div>`;
 }
 
@@ -1369,7 +1369,7 @@ function updateBundleOriginalPreview() {
     return s + (p ? p.price * it.qty : 0);
   }, 0);
   const el = document.getElementById('bundleOriginalPreview');
-  if (el) el.textContent = total.toLocaleString() + ' د.أ';
+  if (el) el.textContent = fmtPrice(total) + ' د.أ';
 }
 
 function triggerBundleImgUpload() { document.getElementById('bundleImageFile').click(); }
@@ -1435,7 +1435,7 @@ function openAddBundle() {
   removeBundleImage();
   const sel = document.getElementById('bundleAddProductSelect');
   sel.innerHTML = `<option value="">— اختر مادة —</option>` +
-    products.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.ar)} (${p.price.toLocaleString()} د.أ)</option>`).join('');
+    products.map(p => `<option value="${escHtml(p.id)}">${escHtml(p.ar)} (${fmtPrice(p.price)} د.أ)</option>`).join('');
   document.getElementById('bundleAddProductQty').value = 1;
   renderBundleItemsList();
   document.getElementById('bundleModal').classList.add('open');
