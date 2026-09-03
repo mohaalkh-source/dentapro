@@ -297,6 +297,13 @@ function computeEarnPointsEligibleTotal(order) {
 
     eligible += lineTotal;
   });
+
+  // لو انطبق خصم مخصص عام على الفاتورة، نطبّق نفس نسبته على المبلغ المؤهل
+  // (بحيث تُحسب النقاط على السعر الفعلي المدفوع بعد الخصم، مش السعر الأصلي)
+  if (order.discountPercent) {
+    eligible = eligible * (1 - order.discountPercent / 100);
+  }
+
   return eligible;
 }
 var _heroEditImagePending = null;
