@@ -311,7 +311,7 @@ function switchAdminTab(tab) {
   if (rolesWrap) rolesWrap.style.display = isRoles ? 'block' : 'none';
 
   if (isOrders)   { renderAdminOrders(); markNotifsByLinkPrefixRead(['adminorders:']); }
-  if (isPoints)   { renderAdminPoints(); loadAutoPointsConfigIntoForm(); }
+  if (isPoints)   { renderAdminPoints(); loadAutoPointsConfigIntoForm(); loadEarnPointsConfigIntoForm(); }
   if (isOffers)   renderAdminOffers();
   if (isQuotes)   { renderAdminQuotes(); markNotifsByLinkPrefixRead(['adminquotes:']); }
   if (isMessages) { renderAdminMessages(); markNotifsByLinkPrefixRead(['clientmsg:']); }
@@ -659,6 +659,27 @@ async function updateOrderStatus(docId, orderId, newStatus) {
       };
       await saveClientPoints(order.clientUid, order.clientEmail, newBalance, log);
       await window._fbUpdateDoc(window._fbDoc(docId), { pointsDeducted: true });
+    }
+
+    // إضافة نقاط تلقائية من قيمة الطلب عند التسليم، وفقط إذا لم تُضف من قبل (مرة واحدة لكل طلب)
+    if (newStatus === 'delivered' && !order.earnPointsAwarded) {
+      if (order.clientUid) {
+        const eligibleTotal = computeEarnPointsEligibleTotal(order);
+        const earnedPoints = Math.round(eligibleTotal * (_earnPointsConfig.percent || 0) / 100);
+        if (earnedPoints > 0) {
+          const currentBalance = await getClientPoints(order.clientUid);
+          const newBalance = currentBalance + earnedPoints;
+          const log = {
+            type: 'earn',
+            amount: earnedPoints,
+            reason: `نقاط تلقائية من الطلب #${order.id || orderId}`,
+            balance: newBalance,
+            date: new Date().toISOString(),
+          };
+          await saveClientPoints(order.clientUid, order.clientEmail, newBalance, log);
+        }
+      }
+      await window._fbUpdateDoc(window._fbDoc(docId), { earnPointsAwarded: true });
     }
 
     const s = getStatusObj(newStatus);
