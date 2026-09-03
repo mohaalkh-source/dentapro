@@ -21,7 +21,12 @@ function addToCart(id) {
     showToast(`🗑️ ${p.en} ${t('أُزيل من السلة','removed from cart')}`, 'success');
     return;
   }
-  cart.push({...p, qty:1, basePrice: p.price, price: getEffectiveUnitPrice(p, 1), points: getEffectivePoints(p)});
+  // لو عليه عرض كمية نشط، نضيفه بالكمية المطلوبة لتحقيق العرض تلقائياً (بدل 1)، والعميل يقدر يعدّلها بعدين بحرّية
+  const activeOffer = getActiveQtyOffer(p.id);
+  const initialQty = (activeOffer && activeOffer.tiers && activeOffer.tiers.length)
+    ? activeOffer.tiers.slice().sort((a,b) => a.qty - b.qty)[0].qty
+    : 1;
+  cart.push({...p, qty:initialQty, basePrice: p.price, price: getEffectiveUnitPrice(p, initialQty), points: getEffectivePoints(p)});
   showToast(`✅ ${p.en} ${t('أُضيف للسلة','added to cart')}`, 'success');
   updateCartUI();
   renderProducts();
