@@ -222,6 +222,83 @@ async function saveAutoPointsConfig() {
     showToast('❌ فشل الحفظ: ' + e.message, 'error');
   }
 }
+// ============================
+// نقاط تلقائية من قيمة الطلب — تُضاف لرصيد العميل عند التسليم (منفصل عن نقاط الشراء أعلاه)
+// (محفوظة بـ Firestore: store_data/earn_points_settings)
+// includeOffers: احتساب النقاط على بنود عروض الكمية/الباقات
+// includeDiscounted: احتساب النقاط على المنتجات ذات الخصم المؤقت أو الطلبات المشمولة بالخصم المخصص
+// ============================
+var _earnPointsConfig = { enabled: false, percent: 0, includeOffers: false, includeDiscounted: false };
+
+async function loadEarnPointsConfig() {
+  try {
+    if (!await waitForFirebase(15)) return;
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'earn_points_settings'));
+    if (snap.exists()) {
+      const d = snap.data();
+      _earnPointsConfig = {
+        enabled: !!d.enabled,
+        percent: Number(d.percent) || 0,
+        includeOffers: !!d.includeOffers,
+        includeDiscounted: !!d.includeDiscounted
+      };
+    }
+  } catch(e) {
+    console.warn('Firebase loadEarnPointsConfig:', e.message);
+  }
+}
+
+function loadEarnPointsConfigIntoForm() {
+  const enabledEl = document.getElementById('earnPointsEnabled');
+  const percentEl = document.getElementById('earnPointsPercent');
+  const offersEl = document.getElementById('earnPointsIncludeOffers');
+  const discountedEl = document.getElementById('earnPointsIncludeDiscounted');
+  if (enabledEl) enabledEl.checked = _earnPointsConfig.enabled;
+  if (percentEl) percentEl.value = _earnPointsConfig.percent || '';
+  if (offersEl) offersEl.checked = _earnPointsConfig.includeOffers;
+  if (discountedEl) discountedEl.checked = _earnPointsConfig.includeDiscounted;
+}
+
+async function saveEarnPointsConfig() {
+  if (!isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+  const enabled = document.getElementById('earnPointsEnabled').checked;
+  const percent = parseFloat(document.getElementById('earnPointsPercent').value) || 0;
+  const includeOffers = document.getElementById('earnPointsIncludeOffers').checked;
+  const includeDiscounted = document.getElementById('earnPointsIncludeDiscounted').checked;
+  try {
+    await window._fbSetDoc(window._fbDoc2('store_data', 'earn_points_settings'), { enabled, percent, includeOffers, includeDiscounted });
+    _earnPointsConfig = { enabled, percent, includeOffers, includeDiscounted };
+    showToast('✅ تم حفظ إعدادات النقاط التلقائية', 'success');
+  } catch(e) {
+    showToast('❌ فشل الحفظ: ' + e.message, 'error');
+  }
+}
+
+// يحسب المبلغ المؤهل لاحتساب النقاط التلقائية من طلب معيّن، بعد تطبيق استثناءات العروض/الخصومات
+function computeEarnPointsEligibleTotal(order) {
+  if (!_earnPointsConfig.enabled || !_earnPointsConfig.percent) return 0;
+
+  // خصم عام (خصم مخصص) مطبّق على كامل الفاتورة — لو خيار الخصومات غير مفعّل، الطلب كامل يُستثنى
+  if (order.discountPercent && !_earnPointsConfig.includeDiscounted) return 0;
+
+  let eligible = 0;
+  (order.items || []).forEach(item => {
+    const qty = item.qty || 1;
+    const lineTotal = (item.price || 0) * qty;
+
+    const isOfferItem = item.isBundle || (item.basePrice && item.price < item.basePrice);
+    if (isOfferItem && !_earnPointsConfig.includeOffers) return;
+
+    if (!item.isBundle) {
+      const p = products.find(x => x.id === item.id);
+      const hasTempDiscount = p && p.old && p.old > p.price;
+      if (hasTempDiscount && !_earnPointsConfig.includeDiscounted) return;
+    }
+
+    eligible += lineTotal;
+  });
+  return eligible;
+}
 var _heroEditImagePending = null;
 
 function buildHeroLineRowHTML(prefix, i, placeholder) {
@@ -1194,7 +1271,8 @@ async function initializeProductsModule() {
     loadProductsFromFirebase(),
     loadCategoriesFromFirebase(),
     loadHeroSettings(),
-    loadAutoPointsConfig()
+    loadAutoPointsConfig(),
+    loadEarnPointsConfig()
   ]);
   await loadOffersFromFirebase();
 
