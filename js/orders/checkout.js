@@ -608,7 +608,7 @@ async function finalizeQuickOrderSend() {
         address, locationLat: locLat || null, locationLng: locLng || null,
         notes: fromQuoteDocId ? `طلب ناتج عن عرض سعر مقبول #${fromQuoteIdStr}` : 'تم الإرسال عبر ميزة الطلب السريع',
         sourceQuoteId: fromQuoteIdStr || null,
-        items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, qty: i.qty, points: 0 })),
+        items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, basePrice: i.basePrice || null, qty: i.qty, points: 0 })),
         total, totalPoints: 0, payMethod: 'money', pointsDeducted: false,
         status: 'pending', createdAt: new Date().toISOString(),
         ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {})
