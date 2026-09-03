@@ -179,6 +179,7 @@ async function submitOrder() {
     notes:       document.getElementById('orderNotes').value,
     items:       cart.map(i => ({
       id:i.id, ar:i.ar, en:i.en, icon:i.icon, price:i.price, qty:i.qty, points:i.points||0,
+      basePrice: i.basePrice || null,
       isBundle: i.isBundle || false,
       bundleItems: i.isBundle ? i.bundleItems : undefined
     })),
