@@ -1211,6 +1211,12 @@ function renderBannerImageSlide(slide, current) {
     const safeUrl = s.linkTarget.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
     slide.setAttribute('onclick', `window.open('${safeUrl}','_blank')`);
     slide.style.cursor = 'pointer';
+  } else if (s.linkType === 'qtyoffer' && s.linkTarget) {
+    slide.setAttribute('onclick', `openProductDetail(${s.linkTarget})`);
+    slide.style.cursor = 'pointer';
+  } else if (s.linkType === 'bundle' && s.linkTarget) {
+    slide.setAttribute('onclick', `openBundleDetail(${s.linkTarget})`);
+    slide.style.cursor = 'pointer';
   } else {
     slide.removeAttribute('onclick');
     slide.style.cursor = 'default';
@@ -1242,7 +1248,11 @@ function renderAdminHomeBanner() {
         ? (categories.find(c => c.id === s.linkTarget)?.ar || 'قسم')
         : s.linkType === 'url'
           ? s.linkTarget
-          : 'بدون رابط';
+          : s.linkType === 'qtyoffer'
+            ? `عرض كمية: ${products.find(p => p.id === s.linkTarget)?.ar || 'منتج غير موجود'}`
+            : s.linkType === 'bundle'
+              ? `باقة: ${offers.find(o => o.id === s.linkTarget)?.name_ar || 'باقة غير موجودة'}`
+              : 'بدون رابط';
     return `
     <div class="points-admin-card">
       <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
@@ -1264,7 +1274,7 @@ function renderAdminHomeBanner() {
 
 var _bannerSlideImagePending = null;
 
-function openAddHomeBannerSlide() {
+async function openAddHomeBannerSlide() {
   if (homeBannerSlides.length >= 10) { showToast('⚠️ الحد الأقصى 10 صور', 'error'); return; }
   document.getElementById('homeBannerSlideTitle').innerHTML = '<i class="fas fa-image"></i> إضافة صورة';
   document.getElementById('homeBannerSlideId').value = '';
@@ -1278,15 +1288,28 @@ function openAddHomeBannerSlide() {
   document.getElementById('homeBannerLinkUrl').value = '';
   const catSel = document.getElementById('homeBannerLinkCategory');
   catSel.innerHTML = categories.filter(c => c.id !== 'all').map(c => `<option value="${escHtml(c.id)}">${escHtml(c.ar)}</option>`).join('');
+
+  const qtyOfferProducts = await getActiveQtyOfferProducts();
+  const qtySel = document.getElementById('homeBannerLinkQtyOfferProduct');
+  qtySel.innerHTML = qtyOfferProducts.length
+    ? qtyOfferProducts.map(p => `<option value="${p.id}">${escHtml(p.ar)} — ${escHtml(p.brand)}</option>`).join('')
+    : `<option value="">لا يوجد عروض كمية نشطة حالياً</option>`;
+
+  const bundles = getActiveBundles();
+  const bundleSel = document.getElementById('homeBannerLinkBundle');
+  bundleSel.innerHTML = bundles.length
+    ? bundles.map(o => `<option value="${o.id}">${escHtml(o.name_ar)}</option>`).join('')
+    : `<option value="">لا يوجد باقات نشطة حالياً</option>`;
+
   _bannerSlideImagePending = null;
   document.getElementById('homeBannerImagePreview').style.display = 'none';
   document.getElementById('homeBannerSlideModal').classList.add('open');
 }
 
-function openEditHomeBannerSlide(id) {
+async function openEditHomeBannerSlide(id) {
   const s = homeBannerSlides.find(x => x.id === id);
   if (!s) return;
-  openAddHomeBannerSlide();
+  await openAddHomeBannerSlide();
   document.getElementById('homeBannerSlideTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل الصورة';
   document.getElementById('homeBannerSlideId').value = id;
   document.getElementById('homeBannerStartAt').value = s.startAt ? toDatetimeLocalValue(s.startAt) : '';
@@ -1301,6 +1324,10 @@ function openEditHomeBannerSlide(id) {
     document.getElementById('homeBannerLinkCategory').value = s.linkTarget;
   } else if (s.linkType === 'url') {
     document.getElementById('homeBannerLinkUrl').value = s.linkTarget || '';
+  } else if (s.linkType === 'qtyoffer') {
+    document.getElementById('homeBannerLinkQtyOfferProduct').value = s.linkTarget;
+  } else if (s.linkType === 'bundle') {
+    document.getElementById('homeBannerLinkBundle').value = s.linkTarget;
   }
   _bannerSlideImagePending = s.image;
   const preview = document.getElementById('homeBannerImagePreview');
@@ -1316,6 +1343,8 @@ function setHomeBannerLinkType(type) {
   document.getElementById('homeBannerLinkProductWrap').style.display = type === 'product' ? 'block' : 'none';
   document.getElementById('homeBannerLinkCategoryWrap').style.display = type === 'category' ? 'block' : 'none';
   document.getElementById('homeBannerLinkUrlWrap').style.display = type === 'url' ? 'block' : 'none';
+  document.getElementById('homeBannerLinkQtyOfferWrap').style.display = type === 'qtyoffer' ? 'block' : 'none';
+  document.getElementById('homeBannerLinkBundleWrap').style.display = type === 'bundle' ? 'block' : 'none';
 }
 
 async function handleHomeBannerImageSelect(input) {
@@ -1396,6 +1425,12 @@ async function saveHomeBannerSlide() {
   } else if (linkType === 'url') {
     linkTarget = document.getElementById('homeBannerLinkUrl').value.trim() || null;
     if (!linkTarget) { errMsgEl.textContent = 'يرجى إدخال رابط'; errEl.style.display = 'block'; return; }
+  } else if (linkType === 'qtyoffer') {
+    linkTarget = parseInt(document.getElementById('homeBannerLinkQtyOfferProduct').value) || null;
+    if (!linkTarget) { errMsgEl.textContent = 'يرجى اختيار منتج عليه عرض كمية'; errEl.style.display = 'block'; return; }
+  } else if (linkType === 'bundle') {
+    linkTarget = parseInt(document.getElementById('homeBannerLinkBundle').value) || null;
+    if (!linkTarget) { errMsgEl.textContent = 'يرجى اختيار باقة'; errEl.style.display = 'block'; return; }
   }
 
   const slideData = {
