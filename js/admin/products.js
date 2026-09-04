@@ -1207,6 +1207,10 @@ function renderBannerImageSlide(slide, current) {
   } else if (s.linkType === 'category' && s.linkTarget) {
     slide.setAttribute('onclick', `filterCat('${s.linkTarget}')`);
     slide.style.cursor = 'pointer';
+  } else if (s.linkType === 'url' && s.linkTarget) {
+    const safeUrl = s.linkTarget.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    slide.setAttribute('onclick', `window.open('${safeUrl}','_blank')`);
+    slide.style.cursor = 'pointer';
   } else {
     slide.removeAttribute('onclick');
     slide.style.cursor = 'default';
@@ -1236,7 +1240,9 @@ function renderAdminHomeBanner() {
       ? (products.find(p => p.id === s.linkTarget)?.ar || 'منتج غير موجود')
       : s.linkType === 'category'
         ? (categories.find(c => c.id === s.linkTarget)?.ar || 'قسم')
-        : 'بدون رابط';
+        : s.linkType === 'url'
+          ? s.linkTarget
+          : 'بدون رابط';
     return `
     <div class="points-admin-card">
       <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
@@ -1269,6 +1275,7 @@ function openAddHomeBannerSlide() {
   setHomeBannerLinkType('none');
   document.getElementById('homeBannerLinkProductId').value = '';
   document.getElementById('homeBannerLinkProductSearch').value = '';
+  document.getElementById('homeBannerLinkUrl').value = '';
   const catSel = document.getElementById('homeBannerLinkCategory');
   catSel.innerHTML = categories.filter(c => c.id !== 'all').map(c => `<option value="${escHtml(c.id)}">${escHtml(c.ar)}</option>`).join('');
   _bannerSlideImagePending = null;
@@ -1292,6 +1299,8 @@ function openEditHomeBannerSlide(id) {
     document.getElementById('homeBannerLinkProductSearch').value = p ? `${p.ar} — ${p.brand}` : '';
   } else if (s.linkType === 'category') {
     document.getElementById('homeBannerLinkCategory').value = s.linkTarget;
+  } else if (s.linkType === 'url') {
+    document.getElementById('homeBannerLinkUrl').value = s.linkTarget || '';
   }
   _bannerSlideImagePending = s.image;
   const preview = document.getElementById('homeBannerImagePreview');
@@ -1306,6 +1315,7 @@ function closeHomeBannerSlideModal() {
 function setHomeBannerLinkType(type) {
   document.getElementById('homeBannerLinkProductWrap').style.display = type === 'product' ? 'block' : 'none';
   document.getElementById('homeBannerLinkCategoryWrap').style.display = type === 'category' ? 'block' : 'none';
+  document.getElementById('homeBannerLinkUrlWrap').style.display = type === 'url' ? 'block' : 'none';
 }
 
 async function handleHomeBannerImageSelect(input) {
@@ -1383,6 +1393,9 @@ async function saveHomeBannerSlide() {
     if (!linkTarget) { errMsgEl.textContent = 'يرجى اختيار منتج'; errEl.style.display = 'block'; return; }
   } else if (linkType === 'category') {
     linkTarget = document.getElementById('homeBannerLinkCategory').value || null;
+  } else if (linkType === 'url') {
+    linkTarget = document.getElementById('homeBannerLinkUrl').value.trim() || null;
+    if (!linkTarget) { errMsgEl.textContent = 'يرجى إدخال رابط'; errEl.style.display = 'block'; return; }
   }
 
   const slideData = {
