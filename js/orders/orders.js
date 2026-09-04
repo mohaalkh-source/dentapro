@@ -263,7 +263,7 @@ async function renderClientOrders() {
 // ── ADMIN ORDERS ──
 var ADMIN_TAB_TITLES = {
   products: 'المنتجات', orders: 'الطلبات', points: 'النقاط', offers: 'العروض',
-  quotes: 'عروض الأسعار', messages: 'الرسائل', roles: 'الصلاحيات'
+  quotes: 'عروض الأسعار', messages: 'الرسائل', roles: 'الصلاحيات', homebanner: 'الصفحة الرئيسية'
 };
 
 function switchAdminTab(tab) {
@@ -274,8 +274,10 @@ function switchAdminTab(tab) {
   const isQuotes   = tab === 'quotes';
   const isMessages = tab === 'messages';
   const isRoles    = tab === 'roles';
+  const isHomeBanner = tab === 'homebanner';
 
   if (isRoles && !isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
+  if (isHomeBanner && !isAdmin()) { showToast('⛔ هذا القسم خاص بمدير النظام فقط', 'error'); return; }
 
   const titleEl = document.getElementById('adminPanelTitle');
   if (titleEl) titleEl.textContent = ADMIN_TAB_TITLES[tab] || 'المنتجات';
@@ -310,12 +312,16 @@ function switchAdminTab(tab) {
   const rolesWrap = document.getElementById('adminRolesWrap');
   if (rolesWrap) rolesWrap.style.display = isRoles ? 'block' : 'none';
 
+  const homeBannerWrap = document.getElementById('adminHomeBannerWrap');
+  if (homeBannerWrap) homeBannerWrap.style.display = isHomeBanner ? 'block' : 'none';
+
   if (isOrders)   { renderAdminOrders(); markNotifsByLinkPrefixRead(['adminorders:']); }
   if (isPoints)   { renderAdminPoints(); loadAutoPointsConfigIntoForm(); loadEarnPointsConfigIntoForm(); }
   if (isOffers)   renderAdminOffers();
   if (isQuotes)   { renderAdminQuotes(); markNotifsByLinkPrefixRead(['adminquotes:']); }
   if (isMessages) { renderAdminMessages(); markNotifsByLinkPrefixRead(['clientmsg:']); }
   if (isRoles)    renderAdminStaffList();
+  if (isHomeBanner) renderAdminHomeBanner();
 }
 
 // يُخفي عناصر الأدمن الحصرية (تبويب الصلاحيات + زر إعادة التعيين) عن Manager
