@@ -306,6 +306,36 @@ function computeEarnPointsEligibleTotal(order) {
 
   return eligible;
 }
+
+// ============================
+// شريط صور الصفحة الرئيسية — صور مجدولة (بداية/نهاية اختيارية) مع رابط اختياري لمنتج أو قسم
+// (محفوظة بـ Firestore: store_data/home_banner_slides). تُدمج ضمن نفس شريط الإعلان
+// المتحرك الموجود أصلاً (adBannerSection) مع عروض الكمية/الباقات/النصوص.
+// ============================
+var homeBannerSlides = [];
+
+async function loadHomeBannerSlides() {
+  try {
+    if (!await waitForFirebase(15)) return;
+    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'home_banner_slides'));
+    if (snap.exists()) {
+      const d = snap.data();
+      if (Array.isArray(d.slides)) homeBannerSlides = d.slides;
+    }
+  } catch(e) {
+    console.warn('Firebase loadHomeBannerSlides:', e.message);
+  }
+}
+
+// يرجع الصور "النشطة حالياً" فقط حسب موعد البداية/النهاية (بدون تاريخ = دائمة)
+function getActiveHomeBannerSlides() {
+  const now = new Date();
+  return homeBannerSlides.filter(s => {
+    if (s.startAt && new Date(s.startAt) > now) return false;
+    if (s.endAt && new Date(s.endAt) < now) return false;
+    return true;
+  });
+}
 var _heroEditImagePending = null;
 
 function buildHeroLineRowHTML(prefix, i, placeholder) {
@@ -1279,7 +1309,8 @@ async function initializeProductsModule() {
     loadCategoriesFromFirebase(),
     loadHeroSettings(),
     loadAutoPointsConfig(),
-    loadEarnPointsConfig()
+    loadEarnPointsConfig(),
+    loadHomeBannerSlides()
   ]);
   await loadOffersFromFirebase();
 
