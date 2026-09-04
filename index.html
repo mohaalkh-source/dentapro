@@ -1245,6 +1245,19 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
   <div id="adminOffersList"></div>
 </div>
 
+<div id="adminHomeBannerWrap" style="display:none;padding:0 28px 28px">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px;flex-wrap:wrap;gap:12px">
+    <div>
+      <div style="font-size:17px;font-weight:900;color:var(--primary-dark)">تعديل الصفحة الرئيسية</div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:4px">شريط صور مجدولة أعلى الصفحة الرئيسية (حتى 10 صور)</div>
+    </div>
+    <button id="addHomeBannerBtn" onclick="openAddHomeBannerSlide()" style="padding:9px 18px;border-radius:50px;background:linear-gradient(135deg,var(--primary),var(--primary-light));color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;gap:6px">
+      <i class="fas fa-plus"></i> إضافة صورة
+    </button>
+  </div>
+  <div id="adminHomeBannerList"></div>
+</div>
+
 <!-- TEXT OFFER MODAL -->
 <div class="modal-overlay" id="textOfferModal">
   <div class="modal" style="max-width:460px">
@@ -1652,6 +1665,68 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     <div class="modal-footer" style="justify-content:space-between">
       <button class="btn-back" onclick="closeQtyOfferModal()">إلغاء</button>
       <button class="btn-submit" onclick="saveQtyOffer()"><i class="fas fa-save"></i> حفظ العرض</button>
+    </div>
+  </div>
+</div>
+
+<!-- HOME BANNER SLIDE MODAL -->
+<div class="modal-overlay" id="homeBannerSlideModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title" id="homeBannerSlideTitle"><i class="fas fa-image"></i> إضافة صورة</div>
+      <button class="close-btn" onclick="closeHomeBannerSlideModal()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="homeBannerSlideId">
+      <div class="form-group">
+        <label class="form-label">الصورة <span class="required">*</span></label>
+        <img id="homeBannerImagePreview" style="display:none;width:100%;max-height:160px;border-radius:12px;margin-bottom:10px;object-fit:cover">
+        <label style="display:block;padding:10px;border-radius:10px;border:1.5px dashed var(--border);text-align:center;cursor:pointer;font-size:13px;font-weight:700;color:var(--text-muted)">
+          <i class="fas fa-image"></i> اختر صورة
+          <input type="file" accept="image/*" style="display:none" onchange="handleHomeBannerImageSelect(this)">
+        </label>
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-clock" style="color:#15803d"></i> وقت البداية
+          <small style="color:var(--text-muted);font-weight:500">(اختياري — فارغ = تظهر فوراً)</small>
+        </label>
+        <input type="datetime-local" class="form-input" id="homeBannerStartAt">
+      </div>
+      <div class="form-group">
+        <label class="form-label">
+          <i class="fas fa-hourglass-half" style="color:#be123c"></i> وقت الانتهاء
+          <small style="color:var(--text-muted);font-weight:500">(اختياري — فارغ = دائمة)</small>
+        </label>
+        <input type="datetime-local" class="form-input" id="homeBannerEndAt">
+      </div>
+      <div class="form-group">
+        <label class="form-label">عند الضغط على الصورة</label>
+        <select class="form-input" id="homeBannerLinkType" style="cursor:pointer" onchange="setHomeBannerLinkType(this.value)">
+          <option value="none">بدون رابط</option>
+          <option value="product">فتح منتج معيّن</option>
+          <option value="category">فتح قسم معيّن</option>
+        </select>
+      </div>
+      <div class="form-group" id="homeBannerLinkProductWrap" style="display:none;position:relative">
+        <label class="form-label">المنتج</label>
+        <input type="hidden" id="homeBannerLinkProductId">
+        <input type="text" class="form-input" id="homeBannerLinkProductSearch" placeholder="ابحث عن المنتج بالاسم أو الماركة"
+          oninput="filterHomeBannerLinkProductList()" onfocus="showHomeBannerLinkProductList()" autocomplete="off">
+        <div id="homeBannerLinkProductDropdown" style="display:none;position:absolute;top:100%;right:0;left:0;background:#fff;
+          border:1.5px solid var(--border);border-radius:12px;max-height:260px;overflow-y:auto;z-index:20;box-shadow:var(--shadow-lg)"></div>
+      </div>
+      <div class="form-group" id="homeBannerLinkCategoryWrap" style="display:none">
+        <label class="form-label">القسم</label>
+        <select class="form-input" id="homeBannerLinkCategory" style="cursor:pointer"></select>
+      </div>
+      <div id="homeBannerSlideError" style="display:none;color:var(--danger);font-size:13px;font-weight:700;padding:10px;background:#fff5f5;border-radius:8px">
+        <i class="fas fa-exclamation-circle"></i> <span id="homeBannerSlideErrorMsg">يرجى ملء الحقول بشكل صحيح</span>
+      </div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeHomeBannerSlideModal()">إلغاء</button>
+      <button class="btn-submit" onclick="saveHomeBannerSlide()"><i class="fas fa-save"></i> حفظ</button>
     </div>
   </div>
 </div>
