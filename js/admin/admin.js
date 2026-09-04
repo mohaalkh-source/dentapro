@@ -42,6 +42,9 @@ function adminAccountMenuButtonsHTML(itemStyle = '', closePrefix = '') {
     </button>` : ''}
     ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openCustomDiscountSettingsModal()">
       <i class="fas fa-user-tag" style="color:#7e22ce"></i> ${t('الخصم المخصص','Custom Discount')}
+    </button>` : ''}
+    ${isAdmin() ? `<button class="user-dropdown-item"${s} onclick="${closePrefix}openAdminTabDirect('homebanner')">
+      <i class="fas fa-images" style="color:#0a5c8a"></i> ${t('تعديل الصفحة الرئيسية','Edit Homepage')}
     </button>` : ''}`;
 }
 
