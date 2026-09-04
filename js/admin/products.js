@@ -1122,23 +1122,51 @@ function initAdBannerSwipe() {
 }
 
 function showAdBannerSlide() {
-  const slide = document.getElementById('adBannerSlide');
-  if (!slide || !_adBannerOffers.length) return;
+  const inner = document.getElementById('adBannerSlideInner');
+  if (!inner || !_adBannerOffers.length) return;
   const current = _adBannerOffers[_adBannerIndex];
 
-  slide.style.opacity = '0';
+  // الصورة الحالية تنزلق لليمين وتخرج
+  inner.style.transition = 'transform 0.28s ease-in';
+  inner.style.transform = 'translateX(100%)';
   setTimeout(() => {
     if (current.kind === 'bundle') {
-      renderBannerBundleSlide(slide, current);
+      renderBannerBundleSlide(inner, current);
     } else if (current.kind === 'text') {
-      renderBannerTextSlide(slide, current);
+      renderBannerTextSlide(inner, current);
     } else if (current.kind === 'image') {
-      renderBannerImageSlide(slide, current);
+      renderBannerImageSlide(inner, current);
     } else {
-      renderBannerQtySlide(slide, current);
+      renderBannerQtySlide(inner, current);
     }
-    slide.style.opacity = '1';
+    // نضع الصورة الجديدة خارج الإطار من جهة اليسار بدون حركة، ثم نُدخلها بحركة سريعة
+    inner.style.transition = 'none';
+    inner.style.transform = 'translateX(-100%)';
+    void inner.offsetWidth; // إجبار المتصفح على تطبيق الموضع قبل بدء حركة الدخول
+    inner.style.transition = 'transform 0.28s ease-out';
+    inner.style.transform = 'translateX(0)';
+    updateAdBannerDots();
   }, 200);
+}
+
+// نقاط التنقل تحت شريط الصور — تعرض عدد الشرائح والشريحة النشطة، وتدعم الضغط للانتقال المباشر
+function updateAdBannerDots() {
+  const dotsEl = document.getElementById('adBannerDots');
+  if (!dotsEl) return;
+  if (_adBannerOffers.length <= 1) { dotsEl.innerHTML = ''; dotsEl.style.display = 'none'; return; }
+  dotsEl.style.display = 'flex';
+  dotsEl.innerHTML = _adBannerOffers.map((_, i) => `
+    <button onclick="adBannerGoTo(${i})" aria-label="الشريحة ${i+1}"
+      style="width:${i===_adBannerIndex?'22px':'8px'};height:8px;border-radius:50px;border:none;padding:0;cursor:pointer;
+      background:${i===_adBannerIndex?'var(--primary)':'#d7e3ec'};transition:width 0.25s ease"></button>
+  `).join('');
+}
+
+function adBannerGoTo(index) {
+  if (index === _adBannerIndex) return;
+  _adBannerIndex = index;
+  showAdBannerSlide();
+  restartAdBannerAutoplay();
 }
 
 function renderBannerTextSlide(slide, current) {
