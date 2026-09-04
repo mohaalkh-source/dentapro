@@ -1050,8 +1050,9 @@ async function renderAdBanner() {
   const bannerQtyOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o) && o.showInBanner);
   const bannerBundles = offers.filter(o => o.type === 'bundle' && o.active && !isOfferExpired(o) && o.showInBanner);
   const bannerTexts = offers.filter(o => o.type === 'text' && o.active && !isOfferExpired(o) && o.showInBanner);
+  const bannerImages = getActiveHomeBannerSlides();
 
-  if (!bannerQtyOffers.length && !bannerBundles.length && !bannerTexts.length) {
+  if (!bannerQtyOffers.length && !bannerBundles.length && !bannerTexts.length && !bannerImages.length) {
     section.style.display = 'none';
     if (_adBannerInterval) { clearInterval(_adBannerInterval); _adBannerInterval = null; }
     return;
@@ -1076,7 +1077,9 @@ async function renderAdBanner() {
 
   const textSlides = bannerTexts.map(o => ({ kind: 'text', offer: o }));
 
-  _adBannerOffers = [...qtySlides, ...bundleSlides, ...textSlides];
+  const imageSlides = bannerImages.map(s => ({ kind: 'image', slideData: s }));
+
+  _adBannerOffers = [...qtySlides, ...bundleSlides, ...textSlides, ...imageSlides];
 
   if (!_adBannerOffers.length) { section.style.display = 'none'; return; }
 
@@ -1129,6 +1132,8 @@ function showAdBannerSlide() {
       renderBannerBundleSlide(slide, current);
     } else if (current.kind === 'text') {
       renderBannerTextSlide(slide, current);
+    } else if (current.kind === 'image') {
+      renderBannerImageSlide(slide, current);
     } else {
       renderBannerQtySlide(slide, current);
     }
@@ -1161,6 +1166,236 @@ function renderBannerTextSlide(slide, current) {
         </p>
       </div>`;
   }
+}
+
+// صورة شريط الصفحة الرئيسية — تعرض الصورة كاملة العرض، مع رابط اختياري لمنتج أو قسم
+function renderBannerImageSlide(slide, current) {
+  const s = current.slideData;
+  const imgUrl = cldOptimize(s.image, 1200);
+
+  if (s.linkType === 'product' && s.linkTarget) {
+    slide.setAttribute('onclick', `openProductDetail(${s.linkTarget})`);
+    slide.style.cursor = 'pointer';
+  } else if (s.linkType === 'category' && s.linkTarget) {
+    slide.setAttribute('onclick', `filterCat('${s.linkTarget}')`);
+    slide.style.cursor = 'pointer';
+  } else {
+    slide.removeAttribute('onclick');
+    slide.style.cursor = 'default';
+  }
+
+  slide.innerHTML = `<img src="${imgUrl}" alt="banner" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
+}
+
+// ============================
+// إدارة صور شريط الصفحة الرئيسية (لوحة تحكم الأدمن)
+// ============================
+function renderAdminHomeBanner() {
+  const container = document.getElementById('adminHomeBannerList');
+  const addBtn = document.getElementById('addHomeBannerBtn');
+  if (addBtn) addBtn.style.display = homeBannerSlides.length >= 10 ? 'none' : 'flex';
+  if (!container) return;
+  if (!homeBannerSlides.length) {
+    container.innerHTML = `<div style="text-align:center;padding:48px;color:var(--text-muted)">
+      <i class="fas fa-images" style="font-size:48px;opacity:0.2;display:block;margin-bottom:16px"></i>
+      لا توجد صور حالياً</div>`;
+    return;
+  }
+  const now = new Date();
+  container.innerHTML = homeBannerSlides.map(s => {
+    const isActive = (!s.startAt || new Date(s.startAt) <= now) && (!s.endAt || new Date(s.endAt) >= now);
+    const linkLabel = s.linkType === 'product'
+      ? (products.find(p => p.id === s.linkTarget)?.ar || 'منتج غير موجود')
+      : s.linkType === 'category'
+        ? (categories.find(c => c.id === s.linkTarget)?.ar || 'قسم')
+        : 'بدون رابط';
+    return `
+    <div class="points-admin-card">
+      <div style="display:flex;align-items:center;gap:14px;flex:1;min-width:0">
+        <img src="${escHtml(cldOptimize(s.image,80))}" style="width:60px;height:44px;border-radius:8px;object-fit:cover;flex-shrink:0">
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:800;font-size:13px;color:var(--primary-dark)">${escHtml(linkLabel)}</div>
+          <div style="margin-top:6px;display:flex;align-items:center;gap:10px;flex-wrap:wrap">
+            <span style="font-size:11px;font-weight:800;color:${isActive?'#15803d':'#94a3b8'}">${isActive?'● نشطة الآن':'○ غير نشطة الآن'}</span>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px">
+        <button onclick="openEditHomeBannerSlide(${s.id})" style="padding:7px 14px;border-radius:50px;background:#e8f3fb;color:var(--primary);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer"><i class="fas fa-edit"></i></button>
+        <button onclick="deleteHomeBannerSlide(${s.id})" style="padding:7px 14px;border-radius:50px;background:#fff5f5;color:var(--danger);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer"><i class="fas fa-trash-alt"></i></button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+var _bannerSlideImagePending = null;
+
+function openAddHomeBannerSlide() {
+  if (homeBannerSlides.length >= 10) { showToast('⚠️ الحد الأقصى 10 صور', 'error'); return; }
+  document.getElementById('homeBannerSlideTitle').innerHTML = '<i class="fas fa-image"></i> إضافة صورة';
+  document.getElementById('homeBannerSlideId').value = '';
+  document.getElementById('homeBannerSlideError').style.display = 'none';
+  document.getElementById('homeBannerStartAt').value = '';
+  document.getElementById('homeBannerEndAt').value = '';
+  document.getElementById('homeBannerLinkType').value = 'none';
+  setHomeBannerLinkType('none');
+  document.getElementById('homeBannerLinkProductId').value = '';
+  document.getElementById('homeBannerLinkProductSearch').value = '';
+  const catSel = document.getElementById('homeBannerLinkCategory');
+  catSel.innerHTML = categories.filter(c => c.id !== 'all').map(c => `<option value="${escHtml(c.id)}">${escHtml(c.ar)}</option>`).join('');
+  _bannerSlideImagePending = null;
+  document.getElementById('homeBannerImagePreview').style.display = 'none';
+  document.getElementById('homeBannerSlideModal').classList.add('open');
+}
+
+function openEditHomeBannerSlide(id) {
+  const s = homeBannerSlides.find(x => x.id === id);
+  if (!s) return;
+  openAddHomeBannerSlide();
+  document.getElementById('homeBannerSlideTitle').innerHTML = '<i class="fas fa-edit"></i> تعديل الصورة';
+  document.getElementById('homeBannerSlideId').value = id;
+  document.getElementById('homeBannerStartAt').value = s.startAt ? toDatetimeLocalValue(s.startAt) : '';
+  document.getElementById('homeBannerEndAt').value = s.endAt ? toDatetimeLocalValue(s.endAt) : '';
+  document.getElementById('homeBannerLinkType').value = s.linkType || 'none';
+  setHomeBannerLinkType(s.linkType || 'none');
+  if (s.linkType === 'product') {
+    const p = products.find(x => x.id === s.linkTarget);
+    document.getElementById('homeBannerLinkProductId').value = s.linkTarget;
+    document.getElementById('homeBannerLinkProductSearch').value = p ? `${p.ar} — ${p.brand}` : '';
+  } else if (s.linkType === 'category') {
+    document.getElementById('homeBannerLinkCategory').value = s.linkTarget;
+  }
+  _bannerSlideImagePending = s.image;
+  const preview = document.getElementById('homeBannerImagePreview');
+  preview.src = s.image;
+  preview.style.display = 'block';
+}
+
+function closeHomeBannerSlideModal() {
+  document.getElementById('homeBannerSlideModal').classList.remove('open');
+}
+
+function setHomeBannerLinkType(type) {
+  document.getElementById('homeBannerLinkProductWrap').style.display = type === 'product' ? 'block' : 'none';
+  document.getElementById('homeBannerLinkCategoryWrap').style.display = type === 'category' ? 'block' : 'none';
+}
+
+async function handleHomeBannerImageSelect(input) {
+  const file = input.files && input.files[0];
+  if (!file) return;
+  showToast('⏳ جاري رفع الصورة...', '');
+  try {
+    const url = await uploadToCloudinary(file, 'dentapro_home_banner');
+    _bannerSlideImagePending = url;
+    const preview = document.getElementById('homeBannerImagePreview');
+    preview.src = url;
+    preview.style.display = 'block';
+    showToast('✅ تم رفع الصورة', 'success');
+  } catch(e) {
+    showToast('❌ فشل رفع الصورة: ' + e.message, 'error');
+  }
+}
+
+function showHomeBannerLinkProductList() {
+  filterHomeBannerLinkProductList();
+  document.getElementById('homeBannerLinkProductDropdown').style.display = 'block';
+}
+function filterHomeBannerLinkProductList() {
+  const term = normalizeArabic(document.getElementById('homeBannerLinkProductSearch').value);
+  const list = getSortedProductsAr().filter(p =>
+    !term || normalizeArabic(p.ar).includes(term) || normalizeArabic(p.brand).includes(term) || p.en.toLowerCase().includes(term)
+  );
+  const dd = document.getElementById('homeBannerLinkProductDropdown');
+  if (!list.length) { dd.innerHTML = ''; dd.style.display = 'none'; return; }
+  dd.innerHTML = list.slice(0,30).map(p => `
+    <div onclick="selectHomeBannerLinkProduct(${p.id})"
+      style="display:flex;align-items:center;gap:10px;padding:10px 14px;cursor:pointer;border-bottom:1px solid #f0f4f8"
+      onmouseover="this.style.background='#f8fbfd'" onmouseout="this.style.background=''">
+      <span style="font-size:18px;flex-shrink:0">${p.image?`<img src="${escHtml(cldOptimize(p.image,40))}" style="width:24px;height:24px;border-radius:5px;object-fit:cover" loading="lazy">`:escHtml(p.icon || '')}</span>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:700;font-size:13px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${escHtml(p.ar)}</div>
+        <div style="font-size:11px;color:var(--text-muted)">${escHtml(p.brand)}</div>
+      </div>
+    </div>`).join('');
+  dd.style.display = 'block';
+}
+function selectHomeBannerLinkProduct(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  document.getElementById('homeBannerLinkProductId').value = id;
+  document.getElementById('homeBannerLinkProductSearch').value = `${p.ar} — ${p.brand}`;
+  document.getElementById('homeBannerLinkProductDropdown').style.display = 'none';
+}
+document.addEventListener('click', (e) => {
+  const dd = document.getElementById('homeBannerLinkProductDropdown');
+  const input = document.getElementById('homeBannerLinkProductSearch');
+  if (dd && dd.style.display === 'block' && !dd.contains(e.target) && e.target !== input) {
+    dd.style.display = 'none';
+  }
+});
+
+async function saveHomeBannerSlide() {
+  const errEl = document.getElementById('homeBannerSlideError');
+  const errMsgEl = document.getElementById('homeBannerSlideErrorMsg');
+  errEl.style.display = 'none';
+
+  if (!_bannerSlideImagePending) {
+    errMsgEl.textContent = 'يرجى رفع صورة';
+    errEl.style.display = 'block';
+    return;
+  }
+
+  const id = document.getElementById('homeBannerSlideId').value;
+  const startVal = document.getElementById('homeBannerStartAt').value;
+  const endVal = document.getElementById('homeBannerEndAt').value;
+  const linkType = document.getElementById('homeBannerLinkType').value;
+  let linkTarget = null;
+  if (linkType === 'product') {
+    linkTarget = parseInt(document.getElementById('homeBannerLinkProductId').value) || null;
+    if (!linkTarget) { errMsgEl.textContent = 'يرجى اختيار منتج'; errEl.style.display = 'block'; return; }
+  } else if (linkType === 'category') {
+    linkTarget = document.getElementById('homeBannerLinkCategory').value || null;
+  }
+
+  const slideData = {
+    id: id ? parseInt(id) : Date.now(),
+    image: _bannerSlideImagePending,
+    startAt: startVal ? new Date(startVal).toISOString() : null,
+    endAt: endVal ? new Date(endVal).toISOString() : null,
+    linkType, linkTarget
+  };
+
+  if (id) {
+    const idx = homeBannerSlides.findIndex(x => x.id === parseInt(id));
+    if (idx !== -1) homeBannerSlides[idx] = slideData;
+  } else {
+    if (homeBannerSlides.length >= 10) { errMsgEl.textContent = 'الحد الأقصى 10 صور'; errEl.style.display = 'block'; return; }
+    homeBannerSlides.push(slideData);
+  }
+
+  try {
+    await window._fbSetDoc(window._fbDoc2('store_data', 'home_banner_slides'), { slides: homeBannerSlides, updatedAt: new Date().toISOString() });
+    closeHomeBannerSlideModal();
+    renderAdminHomeBanner();
+    renderAdBanner();
+    showToast('✅ تم الحفظ', 'success');
+  } catch(e) {
+    errMsgEl.textContent = 'فشل الحفظ: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+async function deleteHomeBannerSlide(id) {
+  if (!confirm('هل أنت متأكد من حذف هذه الصورة؟')) return;
+  homeBannerSlides = homeBannerSlides.filter(x => x.id !== id);
+  try {
+    await window._fbSetDoc(window._fbDoc2('store_data', 'home_banner_slides'), { slides: homeBannerSlides, updatedAt: new Date().toISOString() });
+  } catch(e) {
+    showToast('❌ فشل الحذف: ' + e.message, 'error');
+  }
+  renderAdminHomeBanner();
+  renderAdBanner();
+  showToast('🗑️ تم الحذف', 'success');
 }
 
 function renderBannerQtySlide(slide, current) {
