@@ -54,18 +54,23 @@ async function confirmAddPoints() {
     return;
   }
 
-  const newBalance = mode === 'deduct' ? currentBalance - amount : currentBalance + amount;
+  const delta = mode === 'deduct' ? -amount : amount;
 
   const log = {
     type: mode === 'deduct' ? 'deduct' : 'add',
     amount,
     reason,
-    balance: newBalance,
     date: new Date().toISOString(),
     by: 'admin'
   };
 
-  await saveClientPoints(uid, email, newBalance, log);
+  try {
+    await saveClientPoints(uid, email, delta, log);
+  } catch(e) {
+    document.getElementById('pointsModalError').style.display = 'flex';
+    document.getElementById('pointsModalError').innerHTML = '<i class="fas fa-exclamation-circle"></i> ' + e.message;
+    return;
+  }
   closeAddPointsModal();
   showToast(
     mode === 'deduct'
@@ -654,16 +659,13 @@ async function updateOrderStatus(docId, orderId, newStatus) {
     }
     // خصم النقاط تلقائياً فقط عند التسليم، وفقط إذا لم تُخصم من قبل
     if (newStatus === 'delivered' && order.payMethod === 'points' && !order.pointsDeducted) {
-      const currentBalance = await getClientPoints(order.clientUid);
-      const newBalance = currentBalance - (order.totalPoints || 0);
       const log = {
         type: 'spend',
         amount: order.totalPoints || 0,
         reason: `شراء بالنقاط — طلب #${order.id || orderId}`,
-        balance: newBalance,
         date: new Date().toISOString(),
       };
-      await saveClientPoints(order.clientUid, order.clientEmail, newBalance, log);
+      await saveClientPoints(order.clientUid, order.clientEmail, -(order.totalPoints || 0), log);
       await window._fbUpdateDoc(window._fbDoc(docId), { pointsDeducted: true });
     }
 
@@ -673,16 +675,13 @@ async function updateOrderStatus(docId, orderId, newStatus) {
         const eligibleTotal = computeEarnPointsEligibleTotal(order);
         const earnedPoints = Math.round(eligibleTotal * (_earnPointsConfig.percent || 0) / 100);
         if (earnedPoints > 0) {
-          const currentBalance = await getClientPoints(order.clientUid);
-          const newBalance = currentBalance + earnedPoints;
           const log = {
             type: 'earn',
             amount: earnedPoints,
             reason: `نقاط تلقائية من الطلب #${order.id || orderId}`,
-            balance: newBalance,
             date: new Date().toISOString(),
           };
-          await saveClientPoints(order.clientUid, order.clientEmail, newBalance, log);
+          await saveClientPoints(order.clientUid, order.clientEmail, earnedPoints, log);
         }
       }
       await window._fbUpdateDoc(window._fbDoc(docId), { earnPointsAwarded: true });
