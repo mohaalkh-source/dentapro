@@ -336,6 +336,21 @@ function getActiveHomeBannerSlides() {
     return true;
   });
 }
+
+async function getNextId(counterKey, fallbackList) {
+  const counterRef = window._fbDoc2('store_data', 'id_counters');
+  return await window._fbRunTransaction(async (tx) => {
+    const snap = await tx.get(counterRef);
+    const data = snap.exists() ? snap.data() : {};
+    let current = data[counterKey];
+    if (current === undefined) {
+      current = (fallbackList && fallbackList.length) ? Math.max(...fallbackList.map(x => x.id)) : 0;
+    }
+    const next = current + 1;
+    tx.set(counterRef, { ...data, [counterKey]: next }, { merge: true });
+    return next;
+  });
+}
 var _heroEditImagePending = null;
 
 function buildHeroLineRowHTML(prefix, i, placeholder) {
