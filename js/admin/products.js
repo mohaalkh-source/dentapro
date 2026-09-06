@@ -503,7 +503,7 @@ async function saveProduct() {
     savedProduct = products[idx];
     showToast('✅ تم تعديل المنتج بنجاح', 'success');
   } else {
-    const newId = products.length ? Math.max(...products.map(p => p.id)) + 1 : 1;
+    const newId = await getNextId('products', products);
     savedProduct = { id: newId, ...productData };
     products.push(savedProduct);
     showToast('✅ تم إضافة المنتج بنجاح', 'success');
@@ -598,27 +598,35 @@ async function getClientPoints(uid) {
 }
 
 // حفظ نقاط عميل
-async function saveClientPoints(uid, email, balance, log) {
+async function saveClientPoints(uid, email, delta, logTemplate) {
   if (!uid) { console.warn('saveClientPoints: uid مفقود'); return; }
-  // حفظ محلي فوري دائماً
-  const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
-  saved[uid] = balance;
-  localStorage.setItem('dentapro_points', JSON.stringify(saved));
 
-  // حفظ في Firebase
   try {
     for (let i = 0; i < 15; i++) {
-      if (window._fbDoc2 && window._fbGetDoc && window._fbSetDoc) break;
+      if (window._fbDoc2 && window._fbRunTransaction) break;
       await new Promise(r => setTimeout(r, 200));
     }
     const ref = window._fbDoc2('points', uid);
-    const snap = await window._fbGetDoc(ref);
-    const logs = snap.exists() ? (snap.data().logs || []) : [];
-    logs.unshift(log);
-    await window._fbSetDoc(ref, { email, uid, balance, logs });
-    console.log('✅ تم حفظ النقاط في Firebase:', email, balance);
+    const finalBalance = await window._fbRunTransaction(async (tx) => {
+      const snap = await tx.get(ref);
+      const current = snap.exists() ? (snap.data().balance || 0) : 0;
+      const logs = snap.exists() ? (snap.data().logs || []) : [];
+      const next = current + delta;
+      if (next < 0) throw new Error('الرصيد غير كافٍ لإتمام هذه العملية');
+      const log = { ...logTemplate, balance: next };
+      logs.unshift(log);
+      tx.set(ref, { email, uid, balance: next, logs });
+      return next;
+    });
+
+    const saved = JSON.parse(localStorage.getItem('dentapro_points') || '{}');
+    saved[uid] = finalBalance;
+    localStorage.setItem('dentapro_points', JSON.stringify(saved));
+    console.log('✅ تم حفظ النقاط في Firebase:', email, finalBalance);
+    return finalBalance;
   } catch(e) {
-    console.warn('⚠️ Firebase فشل، محفوظ محلياً فقط:', e.message);
+    console.warn('⚠️ فشل تحديث النقاط:', e.message);
+    throw e;
   }
 }
 
@@ -892,7 +900,7 @@ function openAddTextOffer(id) {
 function closeTextOfferModal() {
   document.getElementById('textOfferModal').classList.remove('open');
 }
-function saveTextOffer() {
+async function saveTextOffer() {
   const text = document.getElementById('textOfferText').value.trim();
   const textEn = document.getElementById('textOfferTextEn').value.trim();
   if (!text) {
@@ -908,7 +916,7 @@ function saveTextOffer() {
     const o = offers.find(x => x.id === editId);
     if (o) { o.text = text; o.textEn = textEn; o.expiresAt = expiresAt; o.showInBanner = showInBanner; o.image = currentTextOfferImage; }
   } else {
-    const newId = offers.length ? Math.max(...offers.map(o => o.id)) + 1 : 1;
+    const newId = await getNextId('offers', offers);
     offers.push({ id: newId, type: 'text', text, textEn, expiresAt, showInBanner, image: currentTextOfferImage, active: true, createdAt: new Date().toISOString() });
   }
   saveOffers();
@@ -1563,7 +1571,7 @@ function renderBannerBundleSlide(slide, current) {
     </div>`;
 }
 
-function saveQtyOffer() {
+async function saveQtyOffer() {
   const productId = parseInt(document.getElementById('qtyOfferProduct').value);
   const rows = document.querySelectorAll('#qtyTiersList .tier-row');
   const tiers = [];
@@ -1596,7 +1604,7 @@ function saveQtyOffer() {
     showToast('✅ تم تعديل عرض الكمية', 'success');
   } else {
     const showInBanner = document.getElementById('qtyOfferShowBanner').checked;
-    const newId = offers.length ? Math.max(...offers.map(o => o.id)) + 1 : 1;
+    const newId = await getNextId('offers', offers);
     offers.push({ id: newId, type: 'qty', productId, tiers, expiresAt, showInBanner, active: true, createdAt: new Date().toISOString() });
     showToast('✅ تم إضافة عرض الكمية', 'success');
   }
@@ -1773,7 +1781,7 @@ function openEditBundle(id) {
 
 function closeBundleModal() { document.getElementById('bundleModal').classList.remove('open'); }
 
-function saveBundle() {
+async function saveBundle() {
   const name_ar = document.getElementById('bundleNameAr').value.trim();
   const name_en = document.getElementById('bundleNameEn').value.trim();
   const bundlePrice = parseFloat(document.getElementById('bundlePrice').value);
@@ -1806,7 +1814,7 @@ function saveBundle() {
     if (idx !== -1) offers[idx] = { ...offers[idx], ...data };
     showToast('✅ تم تعديل الباقة', 'success');
   } else {
-    const newId = offers.length ? Math.max(...offers.map(o => o.id)) + 1 : 1;
+    const newId = await getNextId('offers', offers);
     offers.push({ id: newId, ...data, active: true, createdAt: new Date().toISOString() });
     showToast('✅ تم إضافة الباقة', 'success');
   }
