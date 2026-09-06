@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { initializeFirestore, persistentLocalCache, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch }
+  import { initializeFirestore, persistentLocalCache, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch, runTransaction }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
            sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile,
@@ -77,6 +77,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   window._fbStartAfter = startAfter;
   window._fbWriteBatch = () => writeBatch(db);
   window._fbIsOnline   = () => navigator.onLine;
+  window._fbRunTransaction = (updateFn) => runTransaction(db, updateFn);
 
   // التخزين المحلي مُفعَّل تلقائياً عبر persistentLocalCache() في إعداد Firestore
 
