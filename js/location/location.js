@@ -183,7 +183,7 @@ async function submitOrder() {
       isBundle: i.isBundle || false,
       bundleItems: i.isBundle ? i.bundleItems : undefined
     })),
-    total:       discountResult ? discountResult.total : rawTotal,
+    total:       discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100,
     totalPoints: totalPoints,
     payMethod:   payWithPoints ? 'points' : 'money',
     pointsDeducted: false,
@@ -210,10 +210,21 @@ async function submitOrder() {
   }
   const cleanOrder = stripUndefinedDeep(order);
 
+  try {
+    const stockResult = await reserveOrderStock(cleanOrder.items);
+    cleanOrder.stockReserved = stockResult.reserved;
+  } catch(stockErr) {
+    btn.disabled = false;
+    btn.innerHTML = btnOriginalHTML;
+    showToast(`❌ ${stockErr.message}`, 'error');
+    return;
+  }
+
   // مع تفعيل persistentLocalCache، عملية addDoc تنجح فوراً محلياً حتى بدون إنترنت
   // وتُرسل تلقائياً لـ Firebase بمجرد عودة الاتصال — لا داعي لاعتبارها فشلاً
   try {
     await window._fbSetDoc(window._fbDoc2('orders', orderNum), cleanOrder);
+    if (cleanOrder.clientEmail === 'guest') rememberGuestOrder(cleanOrder);
     console.log(navigator.onLine ? '✅ تم الحفظ في Firebase' : '📦 تم حفظ الطلب محلياً، سيُرسل تلقائياً عند عودة الاتصال');
   } catch(e) {
     console.error('❌ Firebase error:', e.code || e.message, e);
@@ -232,12 +243,6 @@ async function submitOrder() {
   });
 logActivity('order_placed', { orderId: orderNum, total: getTotal() });
   document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
-  document.getElementById('orderTotalDisplay').innerHTML = discountResult
-    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
-    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','JD')}`;
-  document.getElementById('orderTotalDisplay').innerHTML = discountResult
-    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
-    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','JD')}`;
   document.getElementById('orderTotalDisplay').innerHTML = discountResult
     ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
     : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','JD')}`;
