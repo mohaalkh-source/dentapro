@@ -564,28 +564,19 @@ window._onMessagesUpdate = function() {
 (function() {
   let lastScroll = 0;
   const header = document.querySelector('header');
-  const bottomNav = document.getElementById('bottomNavBar');
-
-  // إضافة انتقال سلس للشريط السفلي (الشريط العلوي already لديه transition في الـ CSS)
-  if (bottomNav) {
-    bottomNav.style.transition = 'transform 0.3s ease';
-  }
 
   window.addEventListener('scroll', () => {
     const currentScroll = window.scrollY;
 
     if (currentScroll <= 50) {
-      // بالقرب من أعلى الصفحة: أظهر الشريطين دائماً
+      // بالقرب من أعلى الصفحة: أظهر الشريط العلوي دائماً
       header.style.transform = 'translateY(0)';
-      if (bottomNav) bottomNav.style.transform = 'translateY(0)';
     } else if (currentScroll > lastScroll) {
-      // تمرير للأسفل: أخفِ الشريط العلوي للأعلى والسفلي للأسفل
+      // تمرير للأسفل: أخفِ الشريط العلوي للأعلى
       header.style.transform = 'translateY(-100%)';
-      if (bottomNav) bottomNav.style.transform = 'translateY(100%)';
     } else {
-      // تمرير للأعلى (ولو قليلاً): أظهر الشريطين
+      // تمرير للأعلى (ولو قليلاً): أظهر الشريط العلوي
       header.style.transform = 'translateY(0)';
-      if (bottomNav) bottomNav.style.transform = 'translateY(0)';
     }
 
     lastScroll = currentScroll;
