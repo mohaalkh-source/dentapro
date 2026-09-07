@@ -9,7 +9,7 @@ firebase.initializeApp({
   storageBucket: 'dentapro-db2f6.firebasestorage.app',
   messagingSenderId: '834989089132',
   appId: '1:834989089132:web:91172f8e00c616fa291349',
-  measurementId: 'G-HTL7R7C59'
+  measurementId: 'G-HTL7R7C59S'
 });
 
 const messaging = firebase.messaging();
