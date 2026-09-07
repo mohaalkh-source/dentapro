@@ -93,6 +93,12 @@ var ORDER_STATUSES = [
 ];
 
 // تنسيق موحّد لعرض إجمالي الطلب — يراعي حالة الدفع المختلط (نقاط + نقد سوا)
+function getOrderDiscountPercent(order) {
+  if (!order.originalTotal || order.originalTotal <= order.total) return null;
+  if (order.discountPercent) return order.discountPercent;
+  return Math.round((1 - order.total / order.originalTotal) * 100);
+}
+
 function formatOrderTotal(order, opts = {}) {
   const currency = opts.currency || 'د.أ';
   const prefix = opts.prefix || '';
@@ -210,7 +216,7 @@ async function renderClientOrders() {
       const date = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
         { year:'numeric', month:'long', day:'numeric' });
       return `
-      <div class="order-track-card">
+      <div class="order-track-card" data-order-id="${escHtml(String(order._docId || order.id))}">
         <div class="order-track-header">
           <div>
             <div class="order-track-num">
@@ -625,9 +631,10 @@ async function updateOrderStatus(docId, orderId, newStatus) {
         link: 'page:orders',
       });
     }
-// خصم المخزون تلقائياً عند التسليم، فقط إذا لم يُخصم من قبل
+// خصم المخزون تلقائياً عند التسليم، فقط للطلبات القديمة التي لم يُحجز مخزونها عند الإنشاء
+// (الطلبات الجديدة تُحجز فعلياً وقت الإرسال عبر reserveOrderStock، فلا داعي لخصمها مرة أخرى هنا)
     const orderForStock = (window._cachedOrders || []).find(o => o._docId === docId);
-    if (newStatus === 'delivered' && orderForStock && !orderForStock.stockDeducted) {
+    if (newStatus === 'delivered' && orderForStock && !orderForStock.stockDeducted && !orderForStock.stockReserved) {
       await ensureAllProductsLoaded(); // نضمن أن كل المنتجات محمّلة محلياً قبل تعديل مخزونها
       const changedProducts = [];
       (orderForStock.items || []).forEach(item => {
@@ -685,6 +692,12 @@ async function updateOrderStatus(docId, orderId, newStatus) {
         }
       }
       await window._fbUpdateDoc(window._fbDoc(docId), { earnPointsAwarded: true });
+    }
+
+    if (newStatus === 'cancelled' && orderForStock && orderForStock.stockReserved && !orderForStock.stockReleased) {
+      await ensureAllProductsLoaded();
+      await releaseOrderStock(orderForStock.items);
+      await window._fbUpdateDoc(window._fbDoc(docId), { stockReleased: true });
     }
 
     const s = getStatusObj(newStatus);
@@ -838,7 +851,7 @@ function showAdminOrderDetail(orderId) {
               : order.payMethod==='points'
                 ? formatOrderTotal(order)
                 : (order.originalTotal && order.originalTotal > order.total
-                    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${fmtPrice(order.originalTotal)} د.أ</span><span style="font-weight:800">${fmtPrice(order.total)} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${order.discountPercent}%)</span>`
+                    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${fmtPrice(order.originalTotal)} د.أ</span><span style="font-weight:800">${fmtPrice(order.total)} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${getOrderDiscountPercent(order)}%)</span>`
                     : `${fmtPrice(order.total)} د.أ`)}
           </span>
         </div>
@@ -1804,6 +1817,16 @@ async function submitAdminSendOrder() {
   const cleanOrder = stripUndefinedDeep(order);
 
   try {
+    const stockResult = await reserveOrderStock(cleanOrder.items);
+    cleanOrder.stockReserved = stockResult.reserved;
+  } catch(stockErr) {
+    showToast(`❌ ${stockErr.message}`, 'error');
+    btn.disabled = false;
+    btn.innerHTML = originalHTML;
+    return;
+  }
+
+  try {
     await window._fbSetDoc(window._fbDoc2('orders', orderNum), cleanOrder);
   } catch (e) {
     console.error('❌ Firebase error:', e.code || e.message, e);
@@ -1957,7 +1980,7 @@ async function runClientOrdersReport() {
       const footerTotalHTML = isPointsPay
         ? formatOrderTotal(order, { prefix: '🏆 إجمالي الفاتورة: ' })
         : (hasDiscount
-            ? `إجمالي الفاتورة: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(order.originalTotal)} د.أ</span>${fmtPrice(actualTotal)} د.أ <span style="font-size:11px;color:#e53e3e">(خصم ${order.discountPercent}%)</span>`
+            ? `إجمالي الفاتورة: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(order.originalTotal)} د.أ</span>${fmtPrice(actualTotal)} د.أ <span style="font-size:11px;color:#e53e3e">(خصم ${getOrderDiscountPercent(order)}%)</span>`
             : `إجمالي الفاتورة: ${fmtPrice(actualTotal)} د.أ`);
 
       invoicesHTML += `
