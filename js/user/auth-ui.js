@@ -65,13 +65,27 @@ async function autofillClientByPhone(phoneId, nameId, clinicId) {
 }
 
 // مراقب حالة الجلسة - Firebase Auth
-window.addEventListener('load', () => {
+window.addEventListener('load', async () => {
+  for (let i = 0; i < 30; i++) {
+    if (typeof window._fbAuthState === 'function' && window._auth) break;
+    await new Promise(r => setTimeout(r, 300));
+  }
+  if (typeof window._fbAuthState !== 'function' || !window._auth) {
+    console.warn('⚠️ تعذّر تهيئة مراقب حالة الدخول: Firebase Auth غير متاح');
+    return;
+  }
   window._fbAuthState(window._auth, async (fbUser) => {
     if (fbUser) {
       let resolved;
       try {
         resolved = await resolveUserRole(fbUser);
       } catch(e) {
+        if (e.code === 'account-disabled') {
+          console.warn('⛔ محاولة دخول لحساب معطّل:', fbUser.email);
+          await window._fbSignOut(window._auth);
+          showToast('⛔ تم إيقاف هذا الحساب من قبل الإدارة', 'error');
+          return;
+        }
         console.warn('⚠️ تعذّر تحديد صلاحية المستخدم، سيتم اعتباره عميلاً:', e.message);
         resolved = { role: 'client', name: fbUser.displayName || 'عميل', clinic: '', phone: '' };
       }
@@ -103,6 +117,11 @@ async function resolveUserRole(fbUser) {
     const snap = await window._fbGetDoc(window._fbDoc2('users', fbUser.uid));
     if (snap.exists()) {
       const data = snap.data();
+      if (data.disabled) {
+        const err = new Error('هذا الحساب معطّل من قبل الإدارة');
+        err.code = 'account-disabled';
+        throw err;
+      }
       const role = (data.role === 'admin' || data.role === 'manager') ? data.role : 'client';
       return {
         role,
@@ -115,6 +134,7 @@ async function resolveUserRole(fbUser) {
       };
     }
   } catch(e) {
+    if (e.code === 'account-disabled') throw e;
     console.warn('⚠️ Firestore users/{uid}:', e.message);
   }
   // احتياطي: نسخة محلية قديمة (تتوافق مع البيانات السابقة فقط، لا تُستخدم لتحديد صلاحيات حساسة)
