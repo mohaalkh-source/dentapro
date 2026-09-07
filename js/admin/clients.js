@@ -134,7 +134,7 @@ function renderClientsList() {
       <div style="font-weight:800;color:var(--text-muted)">${idx+1}</div>
       <div style="font-weight:700;color:var(--primary-dark)">${escHtml(u.firstName||u.name||'—')} ${u.isGuest ? '<span style="font-size:10px;background:#fff7ed;color:#c2410c;border-radius:50px;padding:2px 8px;font-weight:800;margin-right:4px">غير مسجّل</span>' : ''}</div>
       <div style="color:var(--text-muted)">${escHtml(u.clinic||'—')}</div>
-      ${showSpentCol ? `<div style="font-weight:800;color:var(--primary)">${(u.totalSpent||0).toLocaleString()} د.أ</div>` : ''}
+      ${showSpentCol ? `<div style="font-weight:800;color:var(--primary)">${fmtPrice((u.totalSpent||0))} د.أ</div>` : ''}
       <button type="button" title="حذف العميل" onclick="event.stopPropagation();confirmDeleteClient('${escJsAttr(u.uid||'')}','${escJsAttr(u.email)}','${escJsAttr(u.firstName||u.name||'—')}')" style="width:36px;height:36px;border:0;border-radius:10px;background:#fff1f2;color:#be123c;cursor:pointer;font-size:14px" aria-label="حذف العميل">
         <i class="fas fa-trash-alt"></i>
       </button>
@@ -206,7 +206,10 @@ async function deleteClientRecord() {
       await Promise.all([...orderDeletes, ...quoteDeletes]);
     } else {
       if (!pending.uid) throw new Error('معرّف العميل غير موجود');
-      await window._fbDeleteDoc(window._fbDoc2('users', pending.uid));
+      await window._fbUpdateDoc(window._fbDoc2('users', pending.uid), {
+        disabled: true,
+        disabledAt: new Date().toISOString()
+      });
     }
 
     _cachedClientsList = _cachedClientsList.filter(client => client.email !== pending.email && (!pending.uid || client.uid !== pending.uid));
@@ -318,7 +321,7 @@ async function openClientDetailModal(uid, email) {
           `}
           <div>
             <div style="font-size:12px;color:var(--text-muted);font-weight:700;margin-bottom:4px">إجمالي المشتريات</div>
-            <div style="font-weight:900;font-size:16px;color:var(--primary)">${totalSpent.toLocaleString()} د.أ</div>
+            <div style="font-weight:900;font-size:16px;color:var(--primary)">${fmtPrice(totalSpent)} د.أ</div>
           </div>
         </div>
       </div>
@@ -414,7 +417,7 @@ function openClientAllOrdersModal(email) {
                   ${statusBadgeHTML(item.status)}
                 </div>
                 <div style="font-size:12px;color:var(--text-muted);margin-top:6px">📅 ${date} · ${item.items.length} مادة</div>
-                <div style="font-weight:900;color:var(--primary);margin-top:6px">${item.payMethod==='points' ? formatOrderTotal(item) : `${item.total.toLocaleString()} د.أ`}</div>
+                <div style="font-weight:900;color:var(--primary);margin-top:6px">${item.payMethod==='points' ? formatOrderTotal(item) : `${fmtPrice(item.total)} د.أ`}</div>
                 <div style="font-size:11px;color:var(--primary-light);margin-top:6px;font-weight:700"><i class="fas fa-eye"></i> اضغط لعرض التفاصيل الكاملة</div>
               </div>`;
             } else {
