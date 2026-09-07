@@ -314,9 +314,6 @@ function triggerConfetti() {
   };
   step();
 }
-
-(احذف هذا الجزء بالكامل — لا تستبدله بأي شيء)
-
 var _tickerRAF = null;
 var _tickerPaused = false;
 
