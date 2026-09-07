@@ -613,7 +613,17 @@ async function finalizeQuickOrderSend() {
         status: 'pending', createdAt: new Date().toISOString(),
         ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {})
       };
+
+      try {
+        const stockResult = await reserveOrderStock(order.items);
+        order.stockReserved = stockResult.reserved;
+      } catch(stockErr) {
+        showToast(`❌ ${stockErr.message}`, 'error');
+        return;
+      }
+
       await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
+      if (!guestClient) rememberGuestOrder(order);
 
       if (fromQuoteDocId) {
         await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
@@ -636,6 +646,7 @@ async function finalizeQuickOrderSend() {
           : '🎉 تم إرسال طلبك بنجاح، سنتواصل معك قريباً',
         'success'
       );
+      if (!guestClient) showOrderConfirmation(orderNum);
       if (fromQuoteDocId) renderMyQuotesPage();
     } else {
       const ts = Date.now().toString(36).toUpperCase();
