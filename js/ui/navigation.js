@@ -45,7 +45,7 @@ function renderCurrentCatList() {
                  border:none;font-size:12px;font-weight:700;cursor:pointer">
           <i class="fas fa-edit"></i>
         </button>
-        <button onclick="deleteCategory('${c.id}')"
+        <button onclick="deleteCategory('${escJsAttr(c.id)}')"
           style="padding:5px 12px;border-radius:50px;background:#fff5f5;color:var(--danger);
                  border:none;font-size:12px;font-weight:700;cursor:pointer">
           <i class="fas fa-trash-alt"></i>
@@ -315,13 +315,7 @@ function triggerConfetti() {
   step();
 }
 
-function applySeasonalTheme() {
-  const now = new Date();
-  const month = now.getMonth()+1, day = now.getDate();
-  const ramadanLikely = (month === 3 && day >= 1 && day <= 31) || (month === 4 && day <= 10);
-  const eidLikely = (month === 4 && day >= 10 && day <= 20) || (month === 6 && day >= 1 && day <= 15);
-  document.body.classList.toggle('seasonal-ramadan', ramadanLikely || eidLikely);
-}
+(احذف هذا الجزء بالكامل — لا تستبدله بأي شيء)
 
 var _tickerRAF = null;
 var _tickerPaused = false;
@@ -483,7 +477,6 @@ function enhanceQuickViewAndReorder() {
   setupScrollHideBottomNav();
   // No auto-popups or daily-deal banners
   initProductZoom();
-  applySeasonalTheme();
   setupReorderButtons();
   hookBottomNavIntoPageChanges();
   updateBottomNavStateFromSection();
@@ -847,7 +840,62 @@ function openTrackOrderPage() {
   document.getElementById('trackOrderPhone').value = '';
   document.getElementById('trackErrorBox').style.display = 'none';
   document.getElementById('trackResultBox').innerHTML = '';
+  renderTrackRecentBox();
   showPage('trackOrder');
+}
+
+function renderTrackRecentBox() {
+  const box = document.getElementById('trackRecentBox');
+  if (!box) return;
+  const orderRefs = getGuestOrderRefs();
+  const quoteRefs = getGuestQuoteRefs();
+  const all = [...orderRefs, ...quoteRefs].sort((a,b) => new Date(b.createdAt) - new Date(a.createdAt));
+  if (!all.length) { box.style.display = 'none'; box.innerHTML = ''; return; }
+  box.style.display = 'block';
+  box.innerHTML = `
+    <div style="font-size:13px;font-weight:800;color:var(--text-muted);margin-bottom:10px">📱 طلباتك الأخيرة على هذا الجهاز</div>
+    <div style="display:flex;flex-direction:column;gap:8px">
+      ${all.slice(0,10).map(r => `
+        <button onclick="trackRecentTap('${escJsAttr(r.id)}','${escJsAttr(r.phone||'')}')"
+          style="display:flex;align-items:center;justify-content:space-between;padding:12px 16px;border-radius:10px;
+          background:#f8fbfd;border:1.5px solid var(--border);cursor:pointer;font-family:inherit;text-align:right">
+          <span style="font-weight:800;color:var(--primary-dark)">#${escHtml(r.id)}</span>
+          <i class="fas fa-chevron-left" style="color:var(--text-muted);font-size:12px"></i>
+        </button>`).join('')}
+    </div>`;
+}
+
+function trackRecentTap(id, phone) {
+  document.getElementById('trackOrderId').value = id;
+  document.getElementById('trackOrderPhone').value = phone;
+  if (phone) {
+    trackGuestOrder();
+  } else {
+    document.getElementById('trackOrderPhone').focus();
+  }
+}
+
+function showOrderConfirmation(orderId) {
+  document.getElementById('orderConfirmNumber').textContent = orderId;
+  document.getElementById('orderConfirmModal').classList.add('open');
+}
+function closeOrderConfirmModal() {
+  document.getElementById('orderConfirmModal').classList.remove('open');
+}
+function copyOrderConfirmNumber() {
+  const num = document.getElementById('orderConfirmNumber').textContent;
+  navigator.clipboard.writeText(num).then(() => showToast('✅ تم نسخ رقم الطلب', 'success'))
+    .catch(() => showToast('❌ تعذّر النسخ', 'error'));
+}
+function copyDisplayedOrderNumber() {
+  const num = document.getElementById('orderNumberDisplay').textContent;
+  navigator.clipboard.writeText(num).then(() => showToast('✅ تم نسخ رقم الطلب', 'success'))
+    .catch(() => showToast('❌ تعذّر النسخ', 'error'));
+}
+function shareOrderConfirmWhatsApp() {
+  const num = document.getElementById('orderConfirmNumber').textContent;
+  const text = encodeURIComponent(`رقم طلبي من DentaPro: ${num}`);
+  window.open(`https://wa.me/?text=${text}`, '_blank');
 }
 function showTrackError(msg) {
   document.getElementById('trackResultBox').innerHTML = '';
@@ -879,6 +927,9 @@ async function trackGuestOrder() {
     // مقارنة آخر 9 أرقام (تغطي الرقم المحلي الكامل بدون رمز الدولة، أدق من 7 أرقام)
     const matches = cleanPhone.length >= 9 && inputPhone.length >= 9 && cleanPhone.slice(-9) === inputPhone.slice(-9);
     if (!matches) return showTrackError('رقم الهاتف لا يطابق بيانات هذا الطلب');
+
+    if (isQuote) rememberGuestQuote({ id: idInput, phone: data.phone, createdAt: data.createdAt });
+    else rememberGuestOrder({ id: idInput, phone: data.phone, createdAt: data.createdAt });
 
     const date = new Date(data.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
       { year:'numeric', month:'long', day:'numeric' });
