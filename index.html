@@ -250,6 +250,20 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         عرض الكل
       </button>
     </div>
+    <div id="quickAccessWrap" style="display:none;gap:14px;margin-bottom:20px;flex-wrap:wrap">
+      <button class="bundles" onclick="goToOffersFiltered('bundle')"
+        style="display:none;flex:1;min-width:160px;align-items:center;gap:10px;padding:16px;border-radius:14px;
+        background:linear-gradient(135deg,#fff7ed,#ffedd5);border:1.5px solid #fdba74;cursor:pointer;font-family:inherit;text-align:right">
+        <span style="font-size:26px">🎁</span>
+        <span style="font-weight:800;color:#9a3412">الباقات المميزة</span>
+      </button>
+      <button class="qtyoffers" onclick="goToOffersFiltered('qty')"
+        style="display:none;flex:1;min-width:160px;align-items:center;gap:10px;padding:16px;border-radius:14px;
+        background:linear-gradient(135deg,#fef2f2,#fee2e2);border:1.5px solid #fca5a5;cursor:pointer;font-family:inherit;text-align:right">
+        <span style="font-size:26px">🏷️</span>
+        <span style="font-weight:800;color:#991b1b">عروض الكمية</span>
+      </button>
+    </div>
     <div class="offers-grid" id="offersGrid"></div>
   </div>
 </section>
@@ -261,6 +275,16 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       <h2 class="section-title" style="margin-bottom:0"><span data-ar="الأكثر مبيعاً" data-en="Best Sellers">الأكثر مبيعاً</span></h2>
     </div>
     <div class="products-grid" id="bestSellersGrid"></div>
+  </div>
+</section>
+<!-- LATEST PRODUCTS -->
+<section id="latestProductsSection" style="padding:32px 24px 16px;display:none">
+  <div class="section-inner">
+    <div class="section-header" style="text-align:right;margin-bottom:24px">
+      <div class="section-tag" style="background:rgba(10,140,180,0.1);color:#0a8cb4">🆕 <span data-ar="وصل حديثاً" data-en="New Arrivals">وصل حديثاً</span></div>
+      <h2 class="section-title" style="margin-bottom:0"><span data-ar="أحدث المنتجات" data-en="Latest Products">أحدث المنتجات</span></h2>
+    </div>
+    <div class="products-grid" id="latestProductsGrid"></div>
   </div>
 </section>
 <!-- PRODUCTS -->
@@ -546,6 +570,10 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <div class="success-title" data-ar="تم إرسال طلبك بنجاح! 🎉" data-en="Order Submitted Successfully! 🎉">تم إرسال طلبك بنجاح! 🎉</div>
         <div class="success-sub" data-ar="سيتواصل معك فريقنا خلال 30 دقيقة لتأكيد الطلب والمتابعة" data-en="Our team will contact you within 30 minutes to confirm and follow up">سيتواصل معك فريقنا خلال 30 دقيقة لتأكيد الطلب والمتابعة</div>
         <div class="order-number" id="orderNumberDisplay">#DP-000000</div>
+        <button onclick="copyDisplayedOrderNumber()" style="background:none;border:1.5px solid var(--border);border-radius:8px;
+          padding:5px 12px;font-size:12px;font-weight:700;color:var(--text-muted);cursor:pointer;margin-bottom:8px">
+          <i class="fas fa-copy"></i> نسخ رقم الطلب
+        </button>
         <div class="order-total-display" id="orderTotalDisplay" style="margin:8px 0 16px;font-size:15px;font-weight:700;color:var(--primary-dark)"></div>
         <div class="success-actions">
           <button class="whatsapp-btn" onclick="sendWhatsApp()">
@@ -937,6 +965,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     </div>
     <div class="section-tag">تتبع الطلب</div>
     <h2 class="section-title" data-ar="تتبع طلبك أو عرض السعر" data-en="Track Your Order or Quote">تتبع طلبك أو عرض السعر</h2>
+    <div id="trackRecentBox" style="display:none;margin-bottom:24px"></div>
     <p style="color:var(--text-muted);font-size:14px;margin:8px 0 24px;line-height:1.7">
       أدخل رقم الطلب أو عرض السعر (كما وصلك بشاشة التأكيد أو واتساب) ورقم الهاتف المستخدم عند الطلب.
     </p>
@@ -958,6 +987,28 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
     <div id="trackResultBox" style="margin-top:24px"></div>
   </div>
 </div>
+<!-- ORDER CONFIRMATION MODAL (guest orders — رقم الطلب + نسخ/واتساب) -->
+<div class="modal-overlay" id="orderConfirmModal">
+  <div class="modal" style="max-width:420px;text-align:center">
+    <div class="modal-body" style="padding:32px 24px">
+      <div style="font-size:48px;margin-bottom:12px">🎉</div>
+      <h3 style="margin:0 0 8px;color:var(--primary-dark)">تم إرسال طلبك بنجاح</h3>
+      <p style="color:var(--text-muted);font-size:14px;margin-bottom:20px">احتفظ برقم طلبك لتتمكن من تتبعه لاحقاً</p>
+      <div style="background:#f8fbfd;border:1.5px solid var(--border);border-radius:12px;padding:16px;margin-bottom:20px">
+        <div style="font-size:12px;color:var(--text-muted);margin-bottom:4px">رقم الطلب</div>
+        <div id="orderConfirmNumber" style="font-size:20px;font-weight:900;color:var(--primary-dark);letter-spacing:0.5px"></div>
+      </div>
+      <div style="display:flex;gap:10px">
+        <button onclick="copyOrderConfirmNumber()" class="btn-back" style="flex:1"><i class="fas fa-copy"></i> نسخ الرقم</button>
+        <button onclick="shareOrderConfirmWhatsApp()" style="flex:1;background:#25D366;color:#fff;border:none;border-radius:10px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          <i class="fab fa-whatsapp"></i> واتساب
+        </button>
+      </div>
+      <button onclick="closeOrderConfirmModal()" class="btn-primary" style="width:100%;margin-top:14px">حسناً</button>
+    </div>
+  </div>
+</div>
+
 <!-- ===== ERROR PAGE ===== -->
 <div class="page-section" id="errorPage">
   <div class="orders-page" style="max-width:760px;text-align:center;padding-top:60px">
