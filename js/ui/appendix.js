@@ -98,6 +98,7 @@ function updateBellState(){
 // ─── Run all enhancements after page loads ───
 document.addEventListener('DOMContentLoaded', function(){
   setTimeout(updateBellState, 2000);
+  insertBrandsSection();
 
   // Re-enhance after products render
   const observer = new MutationObserver(() => {
