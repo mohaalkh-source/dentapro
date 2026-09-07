@@ -306,15 +306,6 @@ function computeEarnPointsEligibleTotal(order) {
   return eligible;
 }
 
-  // لو انطبق خصم مخصص عام على الفاتورة، نطبّق نفس نسبته على المبلغ المؤهل
-  // (بحيث تُحسب النقاط على السعر الفعلي المدفوع بعد الخصم، مش السعر الأصلي)
-  if (order.discountPercent) {
-    eligible = eligible * (1 - order.discountPercent / 100);
-  }
-
-  return eligible;
-}
-
 // ============================
 // شريط صور الصفحة الرئيسية — صور مجدولة (بداية/نهاية اختيارية) مع رابط اختياري لمنتج أو قسم
 // (محفوظة بـ Firestore: store_data/home_banner_slides). تُدمج ضمن نفس شريط الإعلان
