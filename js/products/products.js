@@ -458,6 +458,13 @@ function computeDeliveryFee(deliverySettings, subtotal) {
   }
   return { fee, determined: true };
 }
+function deliveryLineHTML(deliveryFee, deliveryDetermined) {
+  if (!deliveryDetermined) {
+    return `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">+ ${t('خدمة التوصيل','delivery service')}</div>`;
+  }
+  if (!deliveryFee) return '';
+  return `<div style="font-size:12px;color:var(--text-muted);margin-top:4px">+ ${t('توصيل','Delivery')}: ${fmtPrice(deliveryFee)} ${t('د.أ','JD')}</div>`;
+}
 async function getNextId(counterKey, fallbackList) {
   const counterRef = window._fbDoc2('store_data', 'id_counters');
   return await window._fbRunTransaction(async (tx) => {
