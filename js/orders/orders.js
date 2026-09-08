@@ -228,7 +228,7 @@ async function renderClientOrders() {
             ${statusBadgeHTML(order.status)}
             ${order.payMethod === 'points'
               ? `<div class="order-track-total" style="background:#fffbeb;color:#92400e;border:1.5px solid #f59e0b">${formatOrderTotal(order)}</div>`
-              : `<div class="order-track-total">${fmtPrice(order.total)} د.أ</div>`}
+              : `<div class="order-track-total">${fmtPrice(order.total)} د.أ${deliveryLineHTML(order.deliveryFee, order.deliveryDetermined)}</div>`}
             <button onclick="printOrderInvoice('${order.id}')"
               style="padding:6px 16px;border-radius:50px;background:#f0f8ff;color:#0a5c8a;
                      border:1.5px solid #d0e4ef;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
@@ -588,6 +588,13 @@ async function renderAdminOrders() {
         </div>
         <div class="admin-order-field" data-label="الإجمالي:" style="font-weight:900;color:${order.payMethod==='points'?'#d97706':'var(--primary)'}">
           ${formatOrderTotal(order)}
+          <div style="display:flex;align-items:center;gap:4px;margin-top:4px;font-weight:400">
+            <input type="number" id="deliveryFeeInput_${order._docId}" placeholder="توصيل" min="0" step="0.1"
+              value="${order.deliveryFee !== null && order.deliveryFee !== undefined ? order.deliveryFee : ''}"
+              style="width:60px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);font-size:11px;font-family:inherit">
+            <button onclick="saveOrderDeliveryFee('${order._docId}')" title="حفظ أجور التوصيل لهذا الطلب فقط"
+              style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;padding:0"><i class="fas fa-check"></i></button>
+          </div>
         </div>
         <div class="admin-order-field" data-label="التاريخ:" style="font-size:12px;color:var(--text-muted)">${date}</div>
         <div class="admin-order-field" data-label="الحالة:">
@@ -615,6 +622,33 @@ async function renderAdminOrders() {
       </div>`;
   }
 }
+async function saveOrderDeliveryFee(docId) {
+  const input = document.getElementById(`deliveryFeeInput_${docId}`);
+  if (!input) return;
+  const val = input.value.trim();
+  const fee = val === '' ? null : parseFloat(val);
+
+  const order = (window._cachedOrders || []).find(o => o._docId === docId);
+  if (!order) return;
+
+  const previousDeliveryInTotal = order.deliveryDetermined ? (order.deliveryFee || 0) : 0;
+  const subtotal = (order.total || 0) - previousDeliveryInTotal;
+  const newTotal = fee === null ? subtotal : subtotal + fee;
+
+  try {
+    await window._fbUpdateDoc(window._fbDoc(docId), {
+      deliveryFee: fee,
+      deliveryDetermined: fee !== null,
+      total: newTotal
+    });
+    showToast('✅ تم تحديث أجور التوصيل لهذا الطلب', 'success');
+    renderAdminOrders();
+  } catch(e) {
+    showToast('❌ فشل التحديث: ' + e.message, 'error');
+  }
+}
+
+async function updateOrderStatus(docId, orderId, newStatus) {
 async function updateOrderStatus(docId, orderId, newStatus) {
   try {
     const order = (window._cachedOrders || []).find(o => o._docId === docId) || {};
@@ -1697,30 +1731,42 @@ function getSendOrderDiscountAmount(rawTotal) {
   return Math.min(val, rawTotal);
 }
 
-function updateSendOrderTotalDisplay() {
+async function updateSendOrderTotalDisplay() {
   const rawTotal = _sendOrderItems.reduce((s, i) => s + i.price * i.qty, 0);
   const totalPoints = _sendOrderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
   const disp = document.getElementById('sendOrderTotalDisplay');
   const beforeRow = document.getElementById('sendOrderTotalBeforeRow');
   const beforeDisp = document.getElementById('sendOrderTotalBeforeDisplay');
+  const deliveryRow = document.getElementById('sendOrderDeliveryRow');
+  const uid = document.getElementById('sendOrderClientUid').value || null;
 
+  let subtotal;
   if (_sendOrderPayMethod === 'points') {
     if (beforeRow) beforeRow.style.display = 'none';
     disp.textContent = `${totalPoints} نقطة`;
+    if (deliveryRow) deliveryRow.innerHTML = '';
+    return;
   } else if (_sendOrderPayMethod === 'free') {
     if (beforeRow) beforeRow.style.display = 'none';
     disp.innerHTML = `<span style="text-decoration:line-through;color:var(--text-muted);font-size:14px">${fmtPrice(rawTotal)} د.أ</span> مجانًا`;
+    if (deliveryRow) deliveryRow.innerHTML = '';
+    return;
   } else {
     const discountAmount = getSendOrderDiscountAmount(rawTotal);
-    const finalTotal = Math.max(0, Math.round((rawTotal - discountAmount) * 100) / 100);
+    subtotal = Math.max(0, Math.round((rawTotal - discountAmount) * 100) / 100);
     if (discountAmount > 0) {
       if (beforeRow) beforeRow.style.display = 'flex';
       if (beforeDisp) beforeDisp.textContent = `${fmtPrice(rawTotal)} د.أ`;
     } else if (beforeRow) {
       beforeRow.style.display = 'none';
     }
-    disp.textContent = `${fmtPrice(finalTotal)} د.أ`;
   }
+
+  const deliverySettings = uid ? await loadClientDeliverySettings(uid) : null;
+  const deliveryResult = computeDeliveryFee(deliverySettings, subtotal);
+  const finalTotal = deliveryResult.determined ? subtotal + (deliveryResult.fee || 0) : subtotal;
+  disp.textContent = `${fmtPrice(finalTotal)} د.أ`;
+  if (deliveryRow) deliveryRow.innerHTML = deliveryLineHTML(deliveryResult.fee, deliveryResult.determined);
 }
 
 async function submitAdminSendOrder() {
@@ -1771,6 +1817,10 @@ async function submitAdminSendOrder() {
     }
   }
 
+  const deliverySettings = uid ? await loadClientDeliverySettings(uid) : null;
+  const deliveryResult = computeDeliveryFee(deliverySettings, total);
+  const totalWithDelivery = deliveryResult.determined ? total + (deliveryResult.fee || 0) : total;
+
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
   const orderNum = `DP-${ts}-${rand}`;
@@ -1788,7 +1838,9 @@ async function submitAdminSendOrder() {
     items: _sendOrderItems.map(i => ({
       id: i.id, ar: i.ar, en: i.en, icon: i.icon, price: i.price, qty: i.qty, points: i.points || 0
     })),
-    total,
+    total: totalWithDelivery,
+    deliveryFee: deliveryResult.determined ? (deliveryResult.fee || 0) : null,
+    deliveryDetermined: deliveryResult.determined,
     originalTotal: originalTotal,
     manualDiscountAmount: discountAmount > 0 ? discountAmount : 0,
     manualDiscountType: discountAmount > 0 ? _sendOrderDiscountType : null,
