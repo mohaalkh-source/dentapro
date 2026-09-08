@@ -416,7 +416,48 @@ async function releaseOrderStock(items) {
     console.warn('⚠️ تعذّر استرجاع المخزون المحجوز لطلب ملغي:', e.message);
   }
 }
+// ============================
+// أجور التوصيل الخاصة بكل عميل (محفوظة بـ Firestore: delivery_settings/{uid})
+// enabled=false → مجاني دائماً. fee=null (غير محدد) وما فيه درجة خصم تعطي نتيجة محددة →
+// "غير محدد" (المجموع + خدمة التوصيل). fee=0 → مجاني فعلياً. fee=رقم → هذا المبلغ (قبل الخصم).
+// tiers: [{minTotal, type:'free'|'fixed'|'percent', value}] — حسب مجموع الفاتورة (تصاعدي)
+// ============================
+async function loadClientDeliverySettings(uid) {
+  if (!uid) return null;
+  try {
+    if (!await waitForFirebase(15)) return null;
+    const snap = await window._fbGetDoc(window._fbDoc2('delivery_settings', uid));
+    return snap.exists() ? snap.data() : null;
+  } catch(e) {
+    console.warn('loadClientDeliverySettings:', e.message);
+    return null;
+  }
+}
 
+function computeDeliveryFee(deliverySettings, subtotal) {
+  if (!deliverySettings || !deliverySettings.enabled) return { fee: 0, determined: true };
+
+  const tiers = Array.isArray(deliverySettings.tiers) ? deliverySettings.tiers : [];
+  const applicable = deliverySettings.discountEnabled
+    ? tiers.filter(t => subtotal >= t.minTotal).sort((a,b) => b.minTotal - a.minTotal)[0]
+    : null;
+
+  let fee = deliverySettings.fee;
+  if (fee === null || fee === undefined) {
+    if (applicable) {
+      if (applicable.type === 'free') return { fee: 0, determined: true };
+      if (applicable.type === 'fixed') return { fee: applicable.value, determined: true };
+    }
+    return { fee: null, determined: false };
+  }
+
+  if (applicable) {
+    if (applicable.type === 'free') fee = 0;
+    else if (applicable.type === 'fixed') fee = applicable.value;
+    else if (applicable.type === 'percent') fee = fee * (1 - applicable.value / 100);
+  }
+  return { fee, determined: true };
+}
 async function getNextId(counterKey, fallbackList) {
   const counterRef = window._fbDoc2('store_data', 'id_counters');
   return await window._fbRunTransaction(async (tx) => {
