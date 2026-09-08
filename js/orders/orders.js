@@ -647,8 +647,6 @@ async function saveOrderDeliveryFee(docId) {
     showToast('❌ فشل التحديث: ' + e.message, 'error');
   }
 }
-
-async function updateOrderStatus(docId, orderId, newStatus) {
 async function updateOrderStatus(docId, orderId, newStatus) {
   try {
     const order = (window._cachedOrders || []).find(o => o._docId === docId) || {};
