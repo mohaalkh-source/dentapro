@@ -164,6 +164,11 @@ async function submitOrder() {
     ? cashOnlyItems.reduce((s, i) => s + i.price * i.qty, 0)
     : getTotal();
   const discountResult = await computeGeneralDiscountForCart(cashOnlyItems, orderClientEmail, orderPhone);
+  const subtotalForDelivery = discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100;
+
+  const deliverySettings = linkedClient?.uid ? await loadClientDeliverySettings(linkedClient.uid) : null;
+  const deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+  const finalTotal = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
   const order = {
     id:          orderNum,
@@ -183,7 +188,9 @@ async function submitOrder() {
       isBundle: i.isBundle || false,
       bundleItems: i.isBundle ? i.bundleItems : undefined
     })),
-    total:       discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100,
+    total:       finalTotal,
+    deliveryFee: deliveryResult.determined ? (deliveryResult.fee || 0) : null,
+    deliveryDetermined: deliveryResult.determined,
     totalPoints: totalPoints,
     payMethod:   payWithPoints ? 'points' : 'money',
     pointsDeducted: false,
@@ -243,9 +250,11 @@ async function submitOrder() {
   });
 logActivity('order_placed', { orderId: orderNum, total: getTotal() });
   document.getElementById('orderNumberDisplay').textContent = '#' + orderNum;
-  document.getElementById('orderTotalDisplay').innerHTML = discountResult
-    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountResult.total)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
-    : `${t('الإجمالي','Total')}: ${fmtPrice(rawTotal)} ${t('د.أ','JD')}`;
+  const subtotalLine = discountResult
+    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountResult.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(subtotalForDelivery)} ${t('د.أ','JD')} <span style="font-size:11px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountResult.discountPercent}%)</span>`
+    : `${t('المجموع','Subtotal')}: ${fmtPrice(subtotalForDelivery)} ${t('د.أ','JD')}`;
+  document.getElementById('orderTotalDisplay').innerHTML = subtotalLine + deliveryLineHTML(order.deliveryFee, order.deliveryDetermined) +
+    (order.deliveryDetermined ? `<div style="font-weight:900;margin-top:6px">${t('الإجمالي','Total')}: ${fmtPrice(order.total)} ${t('د.أ','JD')}</div>` : '');
   document.querySelector('.modal-steps').style.display = 'none';
   ['modalStep1','modalStep2','modalStep3','modalStep4'].forEach(id =>
     document.getElementById(id).style.display = 'none'
