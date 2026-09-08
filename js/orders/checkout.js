@@ -387,9 +387,12 @@ async function updateQuickOrderTotal() {
     const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
     const discountItems = currentQuickOrderItems.filter(it => !it.isCustom).map(it => ({ price: it.unitPrice, qty: it.qty, basePrice: it.basePrice }));
     const discountPreview = await computeGeneralDiscountForCart(discountItems, previewClientEmail, previewClientPhone);
-    label.innerHTML = discountPreview
+    const subtotalForDelivery = discountPreview ? discountPreview.total : total;
+    const deliverySettings = currentUser?.uid ? await loadClientDeliverySettings(currentUser.uid) : null;
+    const deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+    label.innerHTML = (discountPreview
       ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} د.أ</span><strong style="color:var(--primary);font-size:15px">${fmtPrice(discountPreview.total)} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
-      : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${fmtPrice(total)} د.أ</strong>`;
+      : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${fmtPrice(total)} د.أ</strong>`) + deliveryLineHTML(deliveryResult.fee, deliveryResult.determined);
   }
 }
 
@@ -598,7 +601,12 @@ async function finalizeQuickOrderSend() {
       const clientEmailForOrder = guestClient ? (guestClient.email || 'guest') : 'guest';
       const discountItems = items.map(i => ({ price: i.unitPrice, qty: i.qty, basePrice: i.basePrice }));
       const discountResult = await computeGeneralDiscountForCart(discountItems, clientEmailForOrder, phone);
-      const total = discountResult ? discountResult.total : rawTotal;
+      const subtotalForDelivery = discountResult ? discountResult.total : rawTotal;
+
+      const deliverySettings = guestClient?.uid ? await loadClientDeliverySettings(guestClient.uid) : null;
+      const deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+      const total = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
+
       const order = {
         id: orderNum,
         clientName: guestClient ? (guestClient.name || doctor) : doctor,
@@ -610,6 +618,8 @@ async function finalizeQuickOrderSend() {
         sourceQuoteId: fromQuoteIdStr || null,
         items: items.map(i => ({ id: i.productId, ar: i.ar, en: i.en, icon: i.icon, price: i.unitPrice, basePrice: i.basePrice || null, qty: i.qty, points: 0 })),
         total, totalPoints: 0, payMethod: 'money', pointsDeducted: false,
+        deliveryFee: deliveryResult.determined ? (deliveryResult.fee || 0) : null,
+        deliveryDetermined: deliveryResult.determined,
         status: 'pending', createdAt: new Date().toISOString(),
         ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {})
       };
