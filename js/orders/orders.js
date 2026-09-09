@@ -804,6 +804,7 @@ function printOrderInvoice(orderId) {
         الإجمالي الكلي: ${formatOrderTotal(order)}
         ${order.payMethod==='points' ? ' (دفع بالنقاط)' : ''}
       </div>
+      ${order.payMethod!=='free' ? `<div class="muted" style="text-align:left">${deliveryLineHTML(order.deliveryFee, order.deliveryDetermined)}</div>` : ''}
       <script>window.print();<\/script>
     </body></html>
   `);
@@ -887,6 +888,7 @@ function showAdminOrderDetail(orderId) {
                     : `${fmtPrice(order.total)} د.أ`)}
           </span>
         </div>
+        ${order.payMethod!=='free' ? `<div style="text-align:left">${deliveryLineHTML(order.deliveryFee, order.deliveryDetermined)}</div>` : ''}
       </div>
       ${order.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(order.notes)}</div>`:''}
       <div style="margin-top:16px;text-align:center">${statusBadgeHTML(order.status)}</div>
