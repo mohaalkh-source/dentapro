@@ -177,10 +177,37 @@ async function refreshCartDiscountedTotal() {
   }
 }
 
-function updateFreeShippingBar() {
+// يحدد أجور التوصيل الواجب عرضها/اعتمادها: الإعداد العام (إن كان مفعّلاً) يُلغي أي تسعير خاص بالعميل
+// ويطبَّق على الجميع، وإلا تُعتمد إعدادات العميل الخاصة إن وُجد، وإلا "غير محدد" لغير المسجلين.
+async function computeCartDeliveryPreview(subtotal, phone, linkedClientOverride) {
+  const globalSettings = await loadGlobalDeliverySettings();
+  if (globalSettings && globalSettings.discountEnabled) {
+    return computeGlobalDeliveryFee(globalSettings, subtotal);
+  }
+
+  let linkedClient = linkedClientOverride !== undefined ? linkedClientOverride : (currentUser || null);
+  if (linkedClientOverride === undefined && !linkedClient && phone && typeof findRegisteredClientByPhone === 'function') {
+    linkedClient = await findRegisteredClientByPhone(phone) || null;
+  }
+  if (linkedClient && linkedClient.uid) {
+    const clientSettings = await loadClientDeliverySettings(linkedClient.uid);
+    return computeDeliveryFee(clientSettings, subtotal);
+  }
+  return { fee: null, determined: false };
+}
+
+async function updateFreeShippingBar() {
   const wrap = document.getElementById('freeShipWrap');
   if (!wrap) return;
-  wrap.innerHTML = '';
+  if (!cart.length) { wrap.innerHTML = ''; return; }
+  const subtotal = getTotal();
+  const phoneInput = document.getElementById('phoneNumber');
+  const phone = (!currentUser && phoneInput && phoneInput.value)
+    ? formatPhoneForWhatsApp((document.getElementById('countryCode')?.value || '') + phoneInput.value)
+    : null;
+  const deliveryResult = await computeCartDeliveryPreview(subtotal, phone);
+  if (getTotal() !== subtotal) return;
+  wrap.innerHTML = deliveryLineHTML(deliveryResult.fee, deliveryResult.determined);
 }
 
 function openCart() {
@@ -336,6 +363,9 @@ async function renderModalSummary() {
   const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
   const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
   const discountPreview = await computeGeneralDiscountForCart(cart, previewClientEmail, previewClientPhone);
+  const subtotalForDelivery = discountPreview ? discountPreview.total : getTotal();
+  const deliveryResult = await computeCartDeliveryPreview(subtotalForDelivery, null);
+  const finalTotal = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
   div.innerHTML = cart.map(item => `
     <div class="summary-item">
@@ -347,8 +377,9 @@ async function renderModalSummary() {
       <span>${t('الإجمالي','Total')}</span>
       <span>
         ${discountPreview
-          ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(discountPreview.total)} ${t('د.أ','JD')} <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
-          : `${fmtPrice(getTotal())} ${t('د.أ','JD')}`}
+          ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','JD')}</span>${fmtPrice(finalTotal)} ${t('د.أ','JD')} <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
+          : `${fmtPrice(finalTotal)} ${t('د.أ','JD')}`}
+        ${deliveryLineHTML(deliveryResult.fee, deliveryResult.determined)}
       </span>
     </div>`;
 }
@@ -368,6 +399,9 @@ async function renderConfirmDetails() {
   const previewClientEmail = previewLinkedClient ? (previewLinkedClient.email || 'guest') : 'guest';
   const previewClientPhone = previewLinkedClient ? (previewLinkedClient.phone || previewPhone) : previewPhone;
   const discountPreview = await computeGeneralDiscountForCart(cart, previewClientEmail, previewClientPhone);
+  const subtotalForDelivery = discountPreview ? discountPreview.total : getTotal();
+  const deliveryResult = await computeCartDeliveryPreview(subtotalForDelivery, previewPhone, previewLinkedClient);
+  const finalTotalWithDelivery = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
   let clientPoints = 0;
   if (currentUser && currentUser.role === 'client') {
@@ -407,9 +441,10 @@ async function renderConfirmDetails() {
         <div style="text-align:left">
           <div>
             ${discountPreview
-              ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','JD')}</span><span>${fmtPrice(discountPreview.total)} ${t('د.أ','JD')}</span> <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
-              : `${fmtPrice(getTotal())} ${t('د.أ','JD')}`}
+              ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} ${t('د.أ','JD')}</span><span>${fmtPrice(finalTotalWithDelivery)} ${t('د.أ','JD')}</span> <span style="font-size:10px;color:#e53e3e;font-weight:800">(${t('خصم','off')} ${discountPreview.discountPercent}%)</span>`
+              : `${fmtPrice(finalTotalWithDelivery)} ${t('د.أ','JD')}`}
           </div>
+          ${deliveryLineHTML(deliveryResult.fee, deliveryResult.determined)}
           ${totalPoints > 0 ? `<div style="font-size:12px;color:#d97706;font-weight:700">🏆 ${totalPoints} نقطة مطلوبة</div>` : ''}
         </div>
       </div>
@@ -433,7 +468,7 @@ async function renderConfirmDetails() {
           onclick="selectPayMethod('money')">
           <span class="pay-method-icon">💵</span>
           <div class="pay-method-label">${t('الدفع بالمال','Pay with Money')}</div>
-          <div class="pay-method-sub">${fmtPrice(getTotal())} ${t('د.أ','JD')}</div>
+          <div class="pay-method-sub">${fmtPrice(finalTotalWithDelivery)} ${t('د.أ','JD')}</div>
         </button>
 
         ${isClient && hasPoints ? `
