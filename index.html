@@ -3,7 +3,6 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0, user-scalable=no, viewport-fit=cover">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%230a5c8a'/%3E%3Ctext x='32' y='45' text-anchor='middle' font-size='38' fill='white'%3E%E2%9C%A6%3C/text%3E%3C/svg%3E">
 <script>
 (function(){
   function fixViewport(){
@@ -1114,7 +1113,7 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
       </div>
 
       <!-- LOGIN FORM -->
-      <form id="authLoginForm" novalidate onsubmit="event.preventDefault();doLogin()">
+      <div id="authLoginForm">
         <div class="form-group">
           <label class="form-label"><i class="fas fa-envelope" style="color:var(--primary-light)"></i> البريد الإلكتروني أو اسم المستخدم <span class="required">*</span></label>
           <div class="input-with-icon">
@@ -1125,23 +1124,23 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <div class="form-group">
           <label class="form-label"><i class="fas fa-lock" style="color:var(--primary-light)"></i> كلمة المرور <span class="required">*</span></label>
           <div class="input-with-icon">
-            <input type="password" class="form-input" id="loginPassword" placeholder="••••••••">
+            <input type="password" class="form-input" id="loginPassword" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()">
             <i class="fas fa-eye input-icon" style="cursor:pointer;pointer-events:all" onclick="togglePassVis('loginPassword',this)"></i>
           </div>
         </div>
         <div id="loginError" style="display:none" class="field-error show">
           <i class="fas fa-exclamation-circle"></i> <span id="loginErrorMsg">بيانات الدخول غير صحيحة</span>
         </div>
-        <button type="submit" class="btn-next" style="width:100%;justify-content:center;margin-top:8px">
+        <button onclick="doLogin()" class="btn-next" style="width:100%;justify-content:center;margin-top:8px">
           <i class="fas fa-sign-in-alt"></i> دخول
         </button>
         <button type="button" onclick="sendPasswordReset()" style="width:100%;margin-top:10px;border:0;background:transparent;color:var(--primary);font-family:inherit;font-weight:700;cursor:pointer">
           نسيت كلمة المرور؟ إرسال رابط استعادة
         </button>
-      </form>
+      </div>
 
       <!-- REGISTER FORM -->
-      <form id="authRegisterForm" novalidate style="display:none" onsubmit="event.preventDefault();doRegister()">
+      <div id="authRegisterForm" style="display:none">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label">الاسم الأول <span class="required">*</span></label>
@@ -1195,10 +1194,10 @@ heYrBcBUD1ai2X/czjevdWnaNtDo5OjY1OS5PL+ntXLegzOpe766dfVLL2pZUzPJYbHp3L5QmtTw6r+n
         <div id="regError" style="display:none" class="field-error show">
           <i class="fas fa-exclamation-circle"></i> <span id="regErrorMsg">يرجى ملء جميع الحقول</span>
         </div>
-        <button type="submit" class="btn-submit" style="width:100%;justify-content:center;margin-top:8px">
+        <button onclick="doRegister()" class="btn-submit" style="width:100%;justify-content:center;margin-top:8px">
           <i class="fas fa-user-plus"></i> إنشاء الحساب
         </button>
-      </form>
+      </div>
 
     </div>
   </div>
