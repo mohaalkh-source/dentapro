@@ -1329,16 +1329,47 @@ function sendWhatsAppAdmin(orderId) {
   const order = orders.find(o => o.id === orderId);
   if (!order) return;
   const s = getStatusObj(order.status);
-  const itemsTxt = (order.items || []).map(i => `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''}`).join('\n');
+
+  // 1) السعر الفردي لكل مادة × العدد
+  const itemsTxt = (order.items || []).map(i =>
+    `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''} — ${fmtPrice(i.price)} د.أ × ${i.qty}`
+  ).join('\n');
+
+  // 2) 📦 المجموع (سعر المواد قبل أي خصم)
+  const itemsSubtotal = (order.items || []).reduce((sum, i) => sum + (i.price * i.qty), 0);
+  const productsSubtotal = (order.originalTotal && order.originalTotal > 0) ? order.originalTotal : itemsSubtotal;
+  const subtotalLine = `📦 المجموع: ${fmtPrice(productsSubtotal)} د.أ`;
+
+  // 3) الخصم (إن وُجد)
+  let discountLine = '';
+  if (order.originalTotal && order.originalTotal > 0) {
+    const subtotalAfterDiscount = (order.total || 0) - (order.deliveryDetermined ? (order.deliveryFee || 0) : 0);
+    const discountAmount = order.originalTotal - subtotalAfterDiscount;
+    if (discountAmount > 0.001) {
+      discountLine = `\nالخصم: ${fmtPrice(discountAmount)} د.أ`;
+    }
+  }
+
+  // 4) 🚚 التوصيل
+  let deliveryLine;
+  if (!order.deliveryDetermined) {
+    deliveryLine = `\n🚚 التوصيل: يُحدَّد لاحقاً`;
+  } else if (order.deliveryFee > 0) {
+    deliveryLine = `\n🚚 التوصيل: ${fmtPrice(order.deliveryFee)} د.أ`;
+  } else {
+    deliveryLine = `\n🚚 التوصيل: مجاني`;
+  }
+
+  // 5) 💰 الإجمالي النهائي
   const totalLine = order.payMethod === 'points'
-    ? `💰🏆 *الإجمالي: ${formatOrderTotal(order)}*`
-    : (order.originalTotal && order.originalTotal > order.total
-        ? `💰 *الإجمالي بعد الخصم: ${fmtPrice(order.total)} د.أ* (بدل ${fmtPrice(order.originalTotal)} د.أ)`
-        : `💰 *الإجمالي: ${fmtPrice((order.total || 0))} د.أ*`);
+    ? `💰🏆 *الإجمالي النهائي: ${formatOrderTotal(order)}*`
+    : `💰 *الإجمالي النهائي: ${fmtPrice((order.total || 0))} د.أ*`;
+
   const msg = encodeURIComponent(
     `🦷 *DentaPro — تحديث طلبك*\n\nمرحباً ${order.clientName}،\n` +
     `طلبك رقم *#${order.id}* الآن في مرحلة: *${s.label}*\n\n` +
-    `المواد:\n${itemsTxt}\n\n${totalLine}\n\n` +
+    `المواد:\n${itemsTxt}\n\n` +
+    `${subtotalLine}${discountLine}${deliveryLine}\n\n${totalLine}\n\n` +
     `شكراً لثقتك بـ DentaPro 💙`
   );
   const clean = formatPhoneForWhatsApp(order.phone);
