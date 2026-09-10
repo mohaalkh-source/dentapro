@@ -2975,7 +2975,7 @@ async function saveQuoteToFavorites(docId) {
 // =====================
 // PRODUCT DETAIL PAGE
 // =====================
-var lastPageBeforeDetail = 'homePage';
+var lastPageBeforeDetail = 'home';
 var lastScrollYBeforeDetail = 0;
 
 function openProductDetail(id, _isRefresh) {
@@ -3105,8 +3105,7 @@ function openProductDetail(id, _isRefresh) {
 
 function closeProductDetail() {
   document.querySelectorAll('.page-section').forEach(s => s.classList.remove('active'));
-  const previousPage = document.getElementById(lastPageBeforeDetail) || document.getElementById('homePage');
-  if (previousPage) previousPage.classList.add('active');
+  document.getElementById(lastPageBeforeDetail).classList.add('active');
   window.scrollTo(0, lastScrollYBeforeDetail);
   history.replaceState(null, '', window.location.pathname);
 }
