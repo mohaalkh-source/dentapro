@@ -99,6 +99,16 @@ function getOrderDiscountPercent(order) {
   return Math.round((1 - order.total / order.originalTotal) * 100);
 }
 
+// يفكّك المجموع المخزَّن بالطلب (والذي يدمج الخصم والتوصيل) إلى بنود منفصلة لعرضها بالفاتورة
+function getOrderBreakdown(order) {
+  const deliveryDetermined = !!order.deliveryDetermined;
+  const deliveryFee = deliveryDetermined ? (order.deliveryFee || 0) : 0;
+  const postDiscountSubtotal = deliveryDetermined ? (order.total || 0) - deliveryFee : (order.total || 0);
+  const hasDiscount = order.originalTotal && order.originalTotal > postDiscountSubtotal;
+  const subtotal = hasDiscount ? order.originalTotal : postDiscountSubtotal;
+  const discount = hasDiscount ? Math.round((subtotal - postDiscountSubtotal) * 100) / 100 : 0;
+  return { subtotal, discount, deliveryFee, deliveryDetermined, finalTotal: order.total || 0 };
+}
 function formatOrderTotal(order, opts = {}) {
   const currency = opts.currency || 'د.أ';
   const prefix = opts.prefix || '';
@@ -622,25 +632,46 @@ async function renderAdminOrders() {
       </div>`;
   }
 }
+// يحوّل الأرقام العربية (٠-٩) والفاصلة العربية إلى صيغة تفهمها parseFloat
+function normalizeNumericInput(str) {
+  const arabicDigits = '٠١٢٣٤٥٦٧٨٩';
+  return String(str)
+    .replace(/[٠-٩]/g, d => arabicDigits.indexOf(d))
+    .replace(/،/g, '.')
+    .trim();
+}
 async function saveOrderDeliveryFee(docId) {
   const input = document.getElementById(`deliveryFeeInput_${docId}`);
   if (!input) return;
-  const val = input.value.trim();
-  const fee = val === '' ? null : parseFloat(val);
-
-  const order = (window._cachedOrders || []).find(o => o._docId === docId);
-  if (!order) return;
-
-  const previousDeliveryInTotal = order.deliveryDetermined ? (order.deliveryFee || 0) : 0;
-  const subtotal = (order.total || 0) - previousDeliveryInTotal;
-  const newTotal = fee === null ? subtotal : subtotal + fee;
+  const rawVal = normalizeNumericInput(input.value);
+  const fee = rawVal === '' ? null : parseFloat(rawVal);
+  if (fee !== null && isNaN(fee)) {
+    showToast('⚠️ قيمة التوصيل غير صحيحة', 'error');
+    return;
+  }
 
   try {
+    // نقرأ الطلب طازجاً من قاعدة البيانات مباشرة (وليس من الكاش المحلي الذي قد يكون قديماً)
+    // حتى نضمن أن التعديل اليدوي لهذا الطلب تحديداً يُطبَّق فوق آخر بيانات فعلية ولا يُفقد
+    const snap = await window._fbGetDoc(window._fbDoc(docId));
+    if (!snap.exists()) { showToast('❌ تعذر إيجاد الطلب', 'error'); return; }
+    const order = snap.data();
+
+    const previousDeliveryInTotal = order.deliveryDetermined ? (order.deliveryFee || 0) : 0;
+    const subtotal = (order.total || 0) - previousDeliveryInTotal;
+    const newTotal = fee === null ? subtotal : subtotal + fee;
+
     await window._fbUpdateDoc(window._fbDoc(docId), {
       deliveryFee: fee,
       deliveryDetermined: fee !== null,
       total: newTotal
     });
+
+    // نحدّث الكاش المحلي والحقل فوراً بنفس القيمة المحفوظة كي لا يظهر أي ارتداد بصري للقيمة القديمة
+    const cachedOrder = (window._cachedOrders || []).find(o => o._docId === docId);
+    if (cachedOrder) { cachedOrder.deliveryFee = fee; cachedOrder.deliveryDetermined = fee !== null; cachedOrder.total = newTotal; }
+    input.value = fee !== null ? fee : '';
+
     showToast('✅ تم تحديث أجور التوصيل لهذا الطلب', 'success');
     renderAdminOrders();
   } catch(e) {
@@ -800,11 +831,20 @@ function printOrderInvoice(orderId) {
         <thead><tr><th>المنتج</th><th>الكمية</th><th>السعر</th><th>الإجمالي</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
+      ${(order.payMethod !== 'points' && order.payMethod !== 'free') ? (() => {
+        const b = getOrderBreakdown(order);
+        return `
+      <div class="grid" style="grid-template-columns:1fr;gap:6px;margin:16px 0 0">
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span>المجموع</span><span>${fmtPrice(b.subtotal)} د.أ</span></div>
+        ${b.discount > 0 ? `<div style="display:flex;justify-content:space-between;font-size:14px;color:#e53e3e"><span>الخصم</span><span>- ${fmtPrice(b.discount)} د.أ</span></div>` : ''}
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span>التوصيل</span><span>${b.deliveryDetermined ? (b.deliveryFee ? fmtPrice(b.deliveryFee) + ' د.أ' : 'مجاني') : 'غير محدد بعد'}</span></div>
+      </div>
+      <div class="total">المجموع النهائي: ${fmtPrice(b.finalTotal)} د.أ</div>`;
+      })() : `
       <div class="total">
         الإجمالي الكلي: ${formatOrderTotal(order)}
         ${order.payMethod==='points' ? ' (دفع بالنقاط)' : ''}
-      </div>
-      ${order.payMethod!=='free' ? `<div class="muted" style="text-align:left">${deliveryLineHTML(order.deliveryFee, order.deliveryDetermined)}</div>` : ''}
+      </div>`}
       <script>window.print();<\/script>
     </body></html>
   `);
@@ -874,21 +914,24 @@ function showAdminOrderDetail(orderId) {
             </span>
           </div>`;
         }).join('')}
+        ${(order.payMethod !== 'free' && order.payMethod !== 'points') ? (() => {
+          const b = getOrderBreakdown(order);
+          return `
+        <div style="border-top:1px dashed var(--border);margin-top:4px;padding-top:10px;display:flex;flex-direction:column;gap:6px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;color:var(--text-muted)"><span>المجموع</span><span>${fmtPrice(b.subtotal)} د.أ</span></div>
+          ${b.discount > 0 ? `<div style="display:flex;justify-content:space-between;color:#e53e3e"><span>الخصم</span><span>- ${fmtPrice(b.discount)} د.أ</span></div>` : ''}
+          <div style="display:flex;justify-content:space-between;color:var(--text-muted)">
+            <span>التوصيل</span><span>${b.deliveryDetermined ? (b.deliveryFee ? fmtPrice(b.deliveryFee) + ' د.أ' : 'مجاني') : 'غير محدد بعد'}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-weight:900;font-size:16px;color:var(--primary)">
+            <span>المجموع النهائي</span><span>${fmtPrice(b.finalTotal)} د.أ</span>
+          </div>
+        </div>`;
+        })() : `
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
           <span>الإجمالي</span>
-          <span>
-            ${order.payMethod==='free'
-              ? formatOrderTotal(order)
-              : order.payMethod==='points' && !(order.total > 0)
-              ? `🏆 ${order.totalPoints||0} نقطة`
-              : order.payMethod==='points'
-                ? formatOrderTotal(order)
-                : (order.originalTotal && order.originalTotal > order.total
-                    ? `<span style="text-decoration:line-through;color:var(--text-muted);font-size:13px;font-weight:600;margin-inline-end:8px">${fmtPrice(order.originalTotal)} د.أ</span><span style="font-weight:800">${fmtPrice(order.total)} د.أ</span> <span style="font-size:11px;color:#e53e3e;font-weight:800">(خصم ${getOrderDiscountPercent(order)}%)</span>`
-                    : `${fmtPrice(order.total)} د.أ`)}
-          </span>
-        </div>
-        ${order.payMethod!=='free' ? `<div style="text-align:left">${deliveryLineHTML(order.deliveryFee, order.deliveryDetermined)}</div>` : ''}
+          <span>${order.payMethod==='free' ? formatOrderTotal(order) : (order.total > 0 ? formatOrderTotal(order) : `🏆 ${order.totalPoints||0} نقطة`)}</span>
+        </div>`}
       </div>
       ${order.notes?`<div style="background:#fffbeb;border-radius:10px;padding:10px 14px;font-size:13px"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(order.notes)}</div>`:''}
       <div style="margin-top:16px;text-align:center">${statusBadgeHTML(order.status)}</div>
@@ -988,6 +1031,12 @@ async function renderAdminQuotes() {
         <div>${quoteStatusBadge(q.status)}</div>
       </div>
       <div style="background:#f8fbfd;border-radius:10px;padding:10px 14px">${itemsHtml}</div>
+      ${(q.status === 'priced' || q.status === 'accepted' || q.status === 'saved') ? `
+      <div style="display:flex;flex-wrap:wrap;gap:14px;font-size:12px;color:var(--text-muted);padding:0 4px">
+        <span>المجموع: <strong style="color:var(--text)">${fmtPrice(getQuoteItemsTotal(q))} د.أ</strong></span>
+        <span>التوصيل: <strong style="color:var(--text)">${q.deliveryDetermined ? (q.deliveryFee ? fmtPrice(q.deliveryFee) + ' د.أ' : 'مجاني') : 'غير محدد بعد'}</strong></span>
+        <span>المجموع النهائي: <strong style="color:var(--primary)">${fmtPrice(getQuoteTotal(q))} د.أ</strong></span>
+      </div>` : ''}
       ${q.attachedImage ? `
       <div>
         <img src="${cldOptimize(q.attachedImage,200)}" loading="lazy" onclick="window.open('${escJsAttr(q.attachedImage)}','_blank')"
@@ -1048,6 +1097,8 @@ function openPriceQuoteModal(docId) {
         <input type="number" min="0" step="0.01" placeholder="سعر الوحدة" value="${i.unitPrice || ''}" id="quoteItemPrice_${idx}" style="width:100px;padding:7px 8px;border-radius:8px;border:1.5px solid var(--border);font-family:inherit;font-size:13px;text-align:center">
       </div>
     </div>`).join('');
+  document.getElementById('priceQuoteDeliveryFee').value =
+    (q.deliveryFee !== null && q.deliveryFee !== undefined) ? q.deliveryFee : '';
   document.getElementById('priceQuoteModal').classList.add('open');
 }
 
@@ -1078,8 +1129,16 @@ async function sendQuotePricing() {
   }
   document.getElementById('priceQuoteError').style.display = 'none';
 
+  const deliveryVal = document.getElementById('priceQuoteDeliveryFee').value.trim();
+  const deliveryFee = deliveryVal === '' ? null : parseFloat(deliveryVal);
+
   try {
-    await updateQuote(docId, { items: updatedItems, status: 'priced' });
+    await updateQuote(docId, {
+      items: updatedItems,
+      status: 'priced',
+      deliveryFee,
+      deliveryDetermined: deliveryFee !== null,
+    });
     if (q.clientEmail && q.clientEmail !== 'guest') {
       createNotification({
         scope: 'client',
@@ -1107,8 +1166,11 @@ function sendWhatsAppQuote(docId) {
   const itemsTxt = q.items.map(i =>
     `• ${i.ar}${i.qty ? ` × ${i.qty}` : ''}${hasPrices && i.unitPrice ? ` — ${fmtPrice((i.unitPrice * (i.qty || 1)))} د.أ` : ''}`
   ).join('\n');
+  const deliveryLine = (hasPrices && q.deliveryDetermined)
+    ? `\n🚚 التوصيل: ${q.deliveryFee ? fmtPrice(q.deliveryFee) + ' د.أ' : 'مجاني'}`
+    : '';
   const totalLine = hasPrices
-    ? `\n\n💰 *الإجمالي: ${fmtPrice(q.items.reduce((s, i) => s + (i.unitPrice * (i.qty || 1)), 0))} د.أ*`
+    ? `\n📦 المجموع: ${fmtPrice(getQuoteItemsTotal(q))} د.أ${deliveryLine}\n\n💰 *الإجمالي النهائي: ${fmtPrice(getQuoteTotal(q))} د.أ*`
     : '';
   const msg = encodeURIComponent(
     `🦷 *DentaPro — بخصوص طلب عرض السعر #${q.id}*\n\nمرحباً ${q.clientName}،\n\n` +
@@ -1120,8 +1182,12 @@ function sendWhatsAppQuote(docId) {
   window.open(`https://wa.me/${phone}?text=${msg}`, '_blank');
 }
 
-function getQuoteTotal(q) {
+function getQuoteItemsTotal(q) {
   return q.items.reduce((s,i) => s + ((i.unitPrice||0) * (i.qty||1)), 0);
+}
+function getQuoteTotal(q) {
+  const itemsTotal = getQuoteItemsTotal(q);
+  return itemsTotal + (q.deliveryDetermined ? (q.deliveryFee || 0) : 0);
 }
 
 function showQuoteOrderDetail(docId) {
@@ -1165,9 +1231,17 @@ function showQuoteOrderDetail(docId) {
             <span style="color:var(--text-muted)">× ${i.qty||1}</span>
             <span style="font-weight:800;color:var(--primary)">${fmtPrice(((i.unitPrice||0)*(i.qty||1)))} د.أ</span>
           </div>`).join('')}
-        <div style="display:flex;justify-content:space-between;padding-top:10px;font-weight:900;font-size:16px;color:var(--primary)">
-          <span>الإجمالي</span>
-          <span>${fmtPrice(total)} د.أ</span>
+        <div style="border-top:1px dashed var(--border);margin-top:10px;padding-top:10px;display:flex;flex-direction:column;gap:6px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;color:var(--text-muted)">
+            <span>المجموع</span><span>${fmtPrice(getQuoteItemsTotal(q))} د.أ</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;color:var(--text-muted)">
+            <span>التوصيل</span>
+            <span>${q.deliveryDetermined ? (q.deliveryFee ? `${fmtPrice(q.deliveryFee)} د.أ` : 'مجاني') : 'غير محدد بعد'}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-weight:900;font-size:16px;color:var(--primary)">
+            <span>المجموع النهائي</span><span>${fmtPrice(total)} د.أ</span>
+          </div>
         </div>
       </div>
       ${q.attachedImage ? `
@@ -1239,7 +1313,11 @@ function printQuoteInvoice(docId) {
         <thead><tr><th>المنتج</th><th>الكمية</th><th>سعر الوحدة</th><th>الإجمالي</th></tr></thead>
         <tbody>${rows}</tbody>
       </table>
-      <div class="total">الإجمالي الكلي: ${fmtPrice(total)} د.أ</div>
+      <div class="grid" style="grid-template-columns:1fr;gap:6px;margin:16px 0 0">
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span>المجموع</span><span>${fmtPrice(getQuoteItemsTotal(q))} د.أ</span></div>
+        <div style="display:flex;justify-content:space-between;font-size:14px"><span>التوصيل</span><span>${q.deliveryDetermined ? (q.deliveryFee ? fmtPrice(q.deliveryFee) + ' د.أ' : 'مجاني') : 'غير محدد بعد'}</span></div>
+      </div>
+      <div class="total">المجموع النهائي: ${fmtPrice(total)} د.أ</div>
       <script>window.print();<\/script>
     </body></html>
   `);
