@@ -65,7 +65,8 @@ async function autofillClientByPhone(phoneId, nameId, clinicId) {
 }
 
 // مراقب حالة الجلسة - Firebase Auth
-window.addEventListener('load', async () => {
+// الوحدة تُحمّل ديناميكياً، لذلك قد يكون حدث load قد وقع قبل تحميلها.
+async function initializeAuthStateListener() {
   for (let i = 0; i < 30; i++) {
     if (typeof window._fbAuthState === 'function' && window._auth) break;
     await new Promise(r => setTimeout(r, 300));
@@ -105,7 +106,13 @@ window.addEventListener('load', async () => {
       document.getElementById('notifBtn').style.display = 'none';
     }
   });
-});
+}
+
+if (document.readyState === 'complete') {
+  initializeAuthStateListener();
+} else {
+  window.addEventListener('load', initializeAuthStateListener, { once: true });
+}
 
 // يحدد دور المستخدم الحقيقي (admin / manager / client) من مستند Firestore users/{uid}
 // البريد الإداري الثابت يبقى كحساب احتياطي (bootstrap) لضمان وجود أدمن دائماً حتى لو فشلت قراءة Firestore
@@ -161,7 +168,7 @@ function isManager()  { return hasVerifiedFirebaseSession() && currentUser.role 
 function isStaff()    { return isAdmin() || isManager(); }
 
 // تحميل الجلسة المحلية فوراً (لتجنب الوميض)
-document.addEventListener('DOMContentLoaded', () => {
+function restoreLocalSession() {
   const saved = localStorage.getItem('dentapro_session');
   if (saved) {
     try {
@@ -174,7 +181,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     } catch(e) {}
   } else { renderAuthHeader(); }
-});
+}
+
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', restoreLocalSession, { once: true });
+} else {
+  restoreLocalSession();
+}
 
 function renderAuthHeader() {
   const area = document.getElementById('authHeaderArea');
@@ -192,7 +205,18 @@ function renderAuthHeader() {
   const avatarIcon = isAdminRole ? '🔧' : (isManagerRole ? '🗂️' : '👤');
   const roleLabel = isAdminRole ? 'مدير النظام' : (isManagerRole ? 'مدير فرعي' : 'عميل');
 
-  area.innerHTML = '';
+  const displayName = escHtml(currentUser.name || currentUser.email || 'حسابي');
+  area.innerHTML = `
+    <div class="user-chip" role="button" tabindex="0"
+      onclick="openAccountMenu()"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAccountMenu();}">
+      <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
+      <div style="min-width:0">
+        <div class="user-chip-name">${displayName}</div>
+        <div class="user-chip-role">${roleLabel}</div>
+      </div>
+      <i class="fas fa-chevron-down" style="font-size:10px;color:var(--text-muted);margin-inline-start:2px"></i>
+    </div>`;
 }
 
 function openAuthModal(tab = 'login') {
