@@ -418,9 +418,9 @@ async function releaseOrderStock(items) {
 }
 // ============================
 // أجور التوصيل الخاصة بكل عميل (محفوظة بـ Firestore: delivery_settings/{uid})
-// enabled=false → مجاني دائماً. fee=null (غير محدد) وما فيه درجة خصم تعطي نتيجة محددة →
-// "غير محدد" (المجموع + خدمة التوصيل). fee=0 → مجاني فعلياً. fee=رقم → هذا المبلغ (قبل الخصم).
-// tiers: [{minTotal, type:'free'|'fixed'|'percent', value}] — حسب مجموع الفاتورة (تصاعدي)
+// enabled=false → مجاني دائماً. fee=null (غير محدد) → "غير محدد" (+ خدمة التوصيل). fee=0 → مجاني. fee=رقم → هذا المبلغ.
+// ملاحظة: خصم التوصيل حسب مجموع الفاتورة لم يعد جزءاً من إعداد العميل — أصبح إعداداً عاماً واحداً
+// (delivery_settings/_global) يطبَّق على جميع العملاء (مسجلين وغير مسجلين) ويُلغي أي تسعير خاص بالعميل.
 // ============================
 async function loadClientDeliverySettings(uid) {
   if (!uid) return null;
@@ -436,27 +436,31 @@ async function loadClientDeliverySettings(uid) {
 
 function computeDeliveryFee(deliverySettings, subtotal) {
   if (!deliverySettings || !deliverySettings.enabled) return { fee: 0, determined: true };
-
-  const tiers = Array.isArray(deliverySettings.tiers) ? deliverySettings.tiers : [];
-  const applicable = deliverySettings.discountEnabled
-    ? tiers.filter(t => subtotal >= t.minTotal).sort((a,b) => b.minTotal - a.minTotal)[0]
-    : null;
-
-  let fee = deliverySettings.fee;
-  if (fee === null || fee === undefined) {
-    if (applicable) {
-      if (applicable.type === 'free') return { fee: 0, determined: true };
-      if (applicable.type === 'fixed') return { fee: applicable.value, determined: true };
-    }
-    return { fee: null, determined: false };
-  }
-
-  if (applicable) {
-    if (applicable.type === 'free') fee = 0;
-    else if (applicable.type === 'fixed') fee = applicable.value;
-    else if (applicable.type === 'percent') fee = fee * (1 - applicable.value / 100);
-  }
+  const fee = deliverySettings.fee;
+  if (fee === null || fee === undefined) return { fee: null, determined: false };
   return { fee, determined: true };
+}
+
+// إعداد عام واحد للمتجر بالكامل (delivery_settings/_global)
+// { discountEnabled: bool, tiers: [{minTotal, type:'free'|'fixed', value}] }
+// لما discountEnabled=true: تُحسب الأجور من الدرجات فقط، وتُلغى تلقائياً أي أجور خاصة بأي عميل — للجميع.
+async function loadGlobalDeliverySettings() {
+  try {
+    if (!await waitForFirebase(15)) return null;
+    const snap = await window._fbGetDoc(window._fbDoc2('delivery_settings', '_global'));
+    return snap.exists() ? snap.data() : null;
+  } catch(e) {
+    console.warn('loadGlobalDeliverySettings:', e.message);
+    return null;
+  }
+}
+
+function computeGlobalDeliveryFee(globalSettings, subtotal) {
+  const tiers = Array.isArray(globalSettings.tiers) ? globalSettings.tiers : [];
+  const applicable = tiers.filter(t => subtotal >= t.minTotal).sort((a,b) => b.minTotal - a.minTotal)[0];
+  if (!applicable) return { fee: null, determined: false };
+  if (applicable.type === 'free') return { fee: 0, determined: true };
+  return { fee: applicable.value, determined: true }; // fixed
 }
 function deliveryLineHTML(deliveryFee, deliveryDetermined) {
   if (!deliveryDetermined) {
