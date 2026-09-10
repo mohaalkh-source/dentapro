@@ -603,8 +603,15 @@ async function finalizeQuickOrderSend() {
       const discountResult = await computeGeneralDiscountForCart(discountItems, clientEmailForOrder, phone);
       const subtotalForDelivery = discountResult ? discountResult.total : rawTotal;
 
-      const deliverySettings = guestClient?.uid ? await loadClientDeliverySettings(guestClient.uid) : null;
-      const deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+      let deliveryResult;
+      if (fromQuoteDocId) {
+        // العرض سبق أن حُدِّدت له أجور توصيل من الأدمن وعُرضت على العميل قبل الموافقة،
+        // لذا نعتمد نفس القيمة هنا بدل إعادة احتسابها تلقائياً حتى لا يتفاجأ العميل بفرق بالسعر
+        deliveryResult = { fee: window._qoQuoteDeliveryFee, determined: !!window._qoQuoteDeliveryDetermined };
+      } else {
+        const deliverySettings = guestClient?.uid ? await loadClientDeliverySettings(guestClient.uid) : null;
+        deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+      }
       const total = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
       const order = {
@@ -688,6 +695,7 @@ async function finalizeQuickOrderSend() {
     window._qoClinic = null; window._qoDoctor = null; window._qoPhone = null;
     window._qoLocationText = null; window._qoLocationLat = null; window._qoLocationLng = null;
     window._qoQuoteDocId = null; window._qoQuoteIdStr = null;
+    window._qoQuoteDeliveryFee = null; window._qoQuoteDeliveryDetermined = false;
   }
 }
 async function submitQuoteRequest(event) {
