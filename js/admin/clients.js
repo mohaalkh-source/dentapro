@@ -632,46 +632,18 @@ async function openDeliverySettingsModal(uid, email, name, clinic) {
   document.getElementById('deliverySettingsError').style.display = 'none';
   document.getElementById('deliveryEnabled').checked = false;
   document.getElementById('deliveryFee').value = '';
-  document.getElementById('deliveryDiscountEnabled').checked = false;
-  document.getElementById('deliveryTiersList').innerHTML = '';
   document.getElementById('deliverySettingsModal').classList.add('open');
-  toggleDeliveryDiscountSection();
 
   const settings = await loadClientDeliverySettings(uid);
   if (settings) {
     document.getElementById('deliveryEnabled').checked = !!settings.enabled;
     document.getElementById('deliveryFee').value = (settings.fee === null || settings.fee === undefined) ? '' : settings.fee;
-    document.getElementById('deliveryDiscountEnabled').checked = !!settings.discountEnabled;
-    (settings.tiers || []).forEach(t => addDeliveryTierRow(t.minTotal, t.type, t.value));
-    toggleDeliveryDiscountSection();
   }
 }
 
 function closeDeliverySettingsModal() {
   document.getElementById('deliverySettingsModal').classList.remove('open');
   _currentDeliveryUid = null;
-}
-
-function toggleDeliveryDiscountSection() {
-  const on = document.getElementById('deliveryDiscountEnabled').checked;
-  document.getElementById('deliveryTiersWrap').style.display = on ? 'block' : 'none';
-}
-
-function addDeliveryTierRow(minTotal='', type='free', value='') {
-  const list = document.getElementById('deliveryTiersList');
-  const row = document.createElement('div');
-  row.className = 'tier-row';
-  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
-  row.innerHTML = `
-    <input type="number" class="form-input tier-min" placeholder="الفاتورة من (د.أ)" min="0" value="${minTotal}" style="flex:1">
-    <select class="form-input tier-type" style="flex:1" onchange="this.nextElementSibling.style.display = this.value==='free' ? 'none':'block'">
-      <option value="free" ${type==='free'?'selected':''}>توصيل مجاني</option>
-      <option value="fixed" ${type==='fixed'?'selected':''}>مبلغ ثابت (د.أ)</option>
-      <option value="percent" ${type==='percent'?'selected':''}>نسبة خصم (%)</option>
-    </select>
-    <input type="number" class="form-input tier-value" placeholder="القيمة" min="0" value="${value}" style="flex:1;display:${type==='free'?'none':'block'}">
-    <button type="button" onclick="this.closest('.tier-row').remove()" style="width:38px;height:38px;border-radius:50%;background:#fff5f5;color:var(--danger);border:none;cursor:pointer;flex-shrink:0"><i class="fas fa-times"></i></button>`;
-  list.appendChild(row);
 }
 
 async function saveDeliverySettings() {
@@ -682,10 +654,67 @@ async function saveDeliverySettings() {
   const enabled = document.getElementById('deliveryEnabled').checked;
   const feeVal = document.getElementById('deliveryFee').value;
   const fee = feeVal === '' ? null : parseFloat(feeVal);
-  const discountEnabled = document.getElementById('deliveryDiscountEnabled').checked;
 
+  try {
+    await window._fbSetDoc(window._fbDoc2('delivery_settings', _currentDeliveryUid), {
+      enabled, fee
+    });
+    closeDeliverySettingsModal();
+    showToast('✅ تم حفظ إعدادات التوصيل', 'success');
+  } catch(e) {
+    errEl.textContent = 'فشل الحفظ: ' + e.message;
+    errEl.style.display = 'block';
+  }
+}
+
+// ===== إعداد الخصم العام على التوصيل (خارجي — يطبَّق على الجميع ويُلغي تسعير أي عميل) =====
+async function openGlobalDeliveryDiscountModal() {
+  document.getElementById('globalDeliveryError').style.display = 'none';
+  document.getElementById('globalDeliveryDiscountEnabled').checked = false;
+  document.getElementById('globalDeliveryTiersList').innerHTML = '';
+  document.getElementById('globalDeliveryDiscountModal').classList.add('open');
+  toggleGlobalDeliveryTiersSection();
+
+  const settings = await loadGlobalDeliverySettings();
+  if (settings) {
+    document.getElementById('globalDeliveryDiscountEnabled').checked = !!settings.discountEnabled;
+    (settings.tiers || []).forEach(t => addGlobalDeliveryTierRow(t.minTotal, t.type, t.value));
+    toggleGlobalDeliveryTiersSection();
+  }
+}
+
+function closeGlobalDeliveryDiscountModal() {
+  document.getElementById('globalDeliveryDiscountModal').classList.remove('open');
+}
+
+function toggleGlobalDeliveryTiersSection() {
+  const on = document.getElementById('globalDeliveryDiscountEnabled').checked;
+  document.getElementById('globalDeliveryTiersWrap').style.display = on ? 'block' : 'none';
+}
+
+function addGlobalDeliveryTierRow(minTotal='', type='free', value='') {
+  const list = document.getElementById('globalDeliveryTiersList');
+  const row = document.createElement('div');
+  row.className = 'tier-row';
+  row.style.cssText = 'display:flex;gap:8px;margin-bottom:8px;align-items:center';
+  row.innerHTML = `
+    <input type="number" class="form-input tier-min" placeholder="الفاتورة من (د.أ)" min="0" value="${minTotal}" style="flex:1">
+    <select class="form-input tier-type" style="flex:1" onchange="this.nextElementSibling.style.display = this.value==='free' ? 'none':'block'">
+      <option value="free" ${type==='free'?'selected':''}>توصيل مجاني</option>
+      <option value="fixed" ${type==='fixed'?'selected':''}>مبلغ ثابت (د.أ)</option>
+    </select>
+    <input type="number" class="form-input tier-value" placeholder="القيمة" min="0" value="${value}" style="flex:1;display:${type==='free'?'none':'block'}">
+    <button type="button" onclick="this.closest('.tier-row').remove()" style="width:38px;height:38px;border-radius:50%;background:#fff5f5;color:var(--danger);border:none;cursor:pointer;flex-shrink:0"><i class="fas fa-times"></i></button>`;
+  list.appendChild(row);
+}
+
+async function saveGlobalDeliveryDiscount() {
+  const errEl = document.getElementById('globalDeliveryError');
+  errEl.style.display = 'none';
+
+  const discountEnabled = document.getElementById('globalDeliveryDiscountEnabled').checked;
   const tiers = [];
-  document.querySelectorAll('#deliveryTiersList .tier-row').forEach(row => {
+  document.querySelectorAll('#globalDeliveryTiersList .tier-row').forEach(row => {
     const minTotal = parseFloat(row.querySelector('.tier-min').value);
     const type = row.querySelector('.tier-type').value;
     const value = parseFloat(row.querySelector('.tier-value').value) || 0;
@@ -694,17 +723,17 @@ async function saveDeliverySettings() {
   tiers.sort((a,b) => a.minTotal - b.minTotal);
 
   if (discountEnabled && !tiers.length) {
-    errEl.textContent = 'أضف درجة واحدة على الأقل أو ألغِ تفعيل خصم التوصيل';
+    errEl.textContent = 'أضف درجة واحدة على الأقل أو ألغِ تفعيل الخصم العام';
     errEl.style.display = 'block';
     return;
   }
 
   try {
-    await window._fbSetDoc(window._fbDoc2('delivery_settings', _currentDeliveryUid), {
-      enabled, fee, discountEnabled, tiers
+    await window._fbSetDoc(window._fbDoc2('delivery_settings', '_global'), {
+      discountEnabled, tiers
     });
-    closeDeliverySettingsModal();
-    showToast('✅ تم حفظ إعدادات التوصيل', 'success');
+    closeGlobalDeliveryDiscountModal();
+    showToast('✅ تم حفظ الخصم العام على التوصيل — يُطبَّق الآن على جميع العملاء', 'success');
   } catch(e) {
     errEl.textContent = 'فشل الحفظ: ' + e.message;
     errEl.style.display = 'block';
