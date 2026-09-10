@@ -517,11 +517,7 @@ window.addEventListener('offline', () => {
   showToast('📡 انقطع الاتصال بالإنترنت', 'error');
 });
 
-if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', updateOfflineBanner, { once: true });
-} else {
-  updateOfflineBanner();
-}
+document.addEventListener('DOMContentLoaded', updateOfflineBanner);
 if (document.readyState === 'loading') {
   document.addEventListener('DOMContentLoaded', enhanceQuickViewAndReorder);
 } else {
@@ -1012,10 +1008,7 @@ async function registerServiceWorkerForPush() {
   if (!('serviceWorker' in navigator)) return null;
   try {
     if (_swRegistration) return _swRegistration;
-    // استخدم مساراً نسبياً حتى يعمل المتجر أيضاً عند نشره داخل مجلد
-    // مثل GitHub Pages، وليس فقط عند النشر من جذر النطاق.
-    const swUrl = new URL('firebase-messaging-sw.js', document.baseURI);
-    _swRegistration = await navigator.serviceWorker.register(swUrl);
+    _swRegistration = await navigator.serviceWorker.register('/firebase-messaging-sw.js');
     return _swRegistration;
   } catch(e) {
     console.warn('⚠️ فشل تسجيل Service Worker:', e.message);
