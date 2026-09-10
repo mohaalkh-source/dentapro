@@ -2815,7 +2815,8 @@ async function renderMyQuotesPage() {
   container.innerHTML = quotes.map(q => {
     const date = new Date(q.createdAt).toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric' });
     const isPriced = q.status === 'priced';
-    const totalPriced = isPriced ? q.items.reduce((s,i) => s + ((i.unitPrice||0) * (i.qty||1)), 0) : 0;
+    const itemsSubtotal = isPriced ? getQuoteItemsTotal(q) : 0;
+    const totalPriced = isPriced ? getQuoteTotal(q) : 0;
 
     const itemsHtml = q.items.map(i => `
       <div class="order-item-row">
@@ -2880,6 +2881,15 @@ async function renderMyQuotesPage() {
       </div>
       <div class="order-track-body">
         <div class="order-items-list">${itemsHtml}</div>
+        ${(isPriced || q.status === 'saved') ? `
+        <div style="margin-top:10px;padding-top:10px;border-top:1px dashed var(--border);display:flex;flex-direction:column;gap:5px;font-size:13px">
+          <div style="display:flex;justify-content:space-between;color:var(--text-muted)"><span>المجموع</span><span>${fmtPrice(itemsSubtotal)} د.أ</span></div>
+          <div style="display:flex;justify-content:space-between;color:var(--text-muted)">
+            <span>التوصيل</span>
+            <span>${q.deliveryDetermined ? (q.deliveryFee ? `${fmtPrice(q.deliveryFee)} د.أ` : 'مجاني') : t('سيتم تحديدها لاحقاً','To be determined')}</span>
+          </div>
+          <div style="display:flex;justify-content:space-between;font-weight:800;color:var(--primary)"><span>المجموع النهائي</span><span>${fmtPrice(totalPriced)} د.أ</span></div>
+        </div>` : ''}
         ${q.notes ? `<div style="margin-top:12px;padding:10px 14px;background:#f8fbfd;border-radius:10px;font-size:13px;color:var(--text-muted)"><i class="fas fa-sticky-note" style="color:var(--accent2)"></i> ${escHtml(q.notes)}</div>` : ''}
         ${actionsHtml}
       </div>
@@ -2906,6 +2916,8 @@ async function acceptQuote(docId) {
 
   window._qoQuoteDocId = docId;
   window._qoQuoteIdStr = q.id;
+  window._qoQuoteDeliveryFee = q.deliveryFee ?? null;
+  window._qoQuoteDeliveryDetermined = !!q.deliveryDetermined;
   proceedQuickOrderCheckout(items, false);
 }
 
