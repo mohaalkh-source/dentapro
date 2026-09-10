@@ -166,8 +166,7 @@ async function submitOrder() {
   const discountResult = await computeGeneralDiscountForCart(cashOnlyItems, orderClientEmail, orderPhone);
   const subtotalForDelivery = discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100;
 
-  const deliverySettings = linkedClient?.uid ? await loadClientDeliverySettings(linkedClient.uid) : null;
-  const deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+  const deliveryResult = await computeCartDeliveryPreview(subtotalForDelivery, orderPhone, linkedClient);
   const finalTotal = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
   const order = {
