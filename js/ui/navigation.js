@@ -1101,3 +1101,24 @@ document.addEventListener('click', (e) => {
     wrap.classList.remove('open');
   }
 }, true);
+// =====================
+// MOBILE DRAWER MENU
+// =====================
+
+function toggleMobileDrawer() {
+  const mobileDrawer = document.getElementById('mobileDrawer');
+  const drawerOverlay = document.getElementById('drawerOverlay');
+
+  if (!mobileDrawer || !drawerOverlay) return;
+
+  mobileDrawer.classList.toggle('open');
+  drawerOverlay.classList.toggle('open');
+
+  document.body.classList.toggle(
+    'drawer-open',
+    mobileDrawer.classList.contains('open')
+  );
+}
+
+// جعل الدالة متاحة لأزرار onclick الموجودة داخل index.html
+window.toggleMobileDrawer = toggleMobileDrawer;
