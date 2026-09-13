@@ -16,7 +16,6 @@ const DOMAIN_SCRIPTS = [
   './js/admin/clients.js',
   './js/messages/messages.js',
   './js/admin/admin.js',
-  './js/ui/appendix.js',
 ];
 
 function loadDomainScript(src) {
