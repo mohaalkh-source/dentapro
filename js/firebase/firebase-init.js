@@ -7,6 +7,8 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getMessaging, getToken, onMessage, isSupported }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
+  import { getFunctions, httpsCallable }
+    from "https://www.gstatic.com/firebasejs/10.12.0/firebase-functions.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDVVEzXPlfJAD7NSV0tGHzzsx8LiyK2i4w",
@@ -78,6 +80,11 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   window._fbWriteBatch = () => writeBatch(db);
   window._fbIsOnline   = () => navigator.onLine;
   window._fbRunTransaction = (updateFn) => runTransaction(db, updateFn);
+
+  // Cloud Function لإنشاء الطلب من الخادم (السعر/الخصم/المخزون تُحسب هناك)
+  // معطّلة افتراضياً (SERVER_ORDER_CREATION_ENABLED = false) لحد ما تُنشر الدالة فعلياً على Blaze
+  const functions = getFunctions(app);
+  window._fbCreateOrderFn = httpsCallable(functions, 'createOrder');
 
   // التخزين المحلي مُفعَّل تلقائياً عبر persistentLocalCache() في إعداد Firestore
 
