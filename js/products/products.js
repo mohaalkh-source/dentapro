@@ -652,13 +652,20 @@ async function fetchProductsPage() {
   if (_productsAllLoaded) return [];
   if (!navigator.onLine) throw new Error('لا يوجد اتصال بالإنترنت');
   if (!await waitForFirebase()) throw new Error('Firebase غير جاهز');
-  // تم إلغاء الاعتماد على orderBy('id') لأنه يستثني بصمت أي منتج
-  // ناقصه حقل id أو نوعه مختلف (نص بدل رقم). بدلاً من ذلك نجلب كل
-  // المنتجات دفعة واحدة (المجموعة صغيرة) ونرتبها محلياً بالجافاسكربت.
-  const q = window._fbCollection(window._db, 'products');
+  // نرتب حسب معرّف المستند نفسه (__name__) بدل حقل id — موجود دايماً بكل مستند
+  // بدون استثناء، فما فيه خطر إسقاط منتجات ناقصها الحقل أو نوعه مختلف
+  const baseCol = window._fbCollection(window._db, 'products');
+  const constraints = _productsLastDoc
+    ? [window._fbOrderBy('__name__'), window._fbStartAfter(_productsLastDoc), window._fbLimit(FIRESTORE_PAGE_SIZE)]
+    : [window._fbOrderBy('__name__'), window._fbLimit(FIRESTORE_PAGE_SIZE)];
+  const q = window._fbQuery(baseCol, ...constraints);
   const snap = await window._fbGetDocs(q);
-  _productsAllLoaded = true;
-  if (snap.empty) return [];
+
+  if (snap.empty) { _productsAllLoaded = true; return []; }
+
+  _productsLastDoc = snap.docs[snap.docs.length - 1];
+  if (snap.docs.length < FIRESTORE_PAGE_SIZE) _productsAllLoaded = true;
+
   const list = snap.docs.map(d => d.data());
   list.sort((a, b) => (Number(a.id) || 0) - (Number(b.id) || 0));
   return list;
@@ -774,16 +781,35 @@ async function ensureAllProductsLoaded() {
 }
 
 // حفظ منتج واحد فقط في Firestore (إضافة/تعديل) — كتابة جزئية بدل إعادة كتابة القائمة كاملة
+// يرجع true/false ويضبط علم _syncFailed على المنتج المحلي ليبقى ظاهراً بالجدول لحد ما ينجح فعلياً
 async function saveProductToFirebase(product) {
   try {
     if (!navigator.onLine) throw new Error('لا يوجد اتصال بالإنترنت');
     if (!await waitForFirebase(15)) throw new Error('Firebase غير جاهز');
-    await window._fbSetDoc(window._fbDoc2('products', String(product.id)), product);
+    const { _syncFailed, ...cleanProduct } = product;
+    await window._fbSetDoc(window._fbDoc2('products', String(product.id)), cleanProduct);
+    delete product._syncFailed;
+    cacheProductsLocally();
+    if (typeof renderAdminTable === 'function') renderAdminTable();
+    return true;
   } catch(e) {
     console.error('❌ saveProductToFirebase:', e.message);
+    product._syncFailed = true;
+    cacheProductsLocally();
+    if (typeof renderAdminTable === 'function') renderAdminTable();
     showToast('⚠️ تم الحفظ محلياً فقط، فشل الحفظ في Firebase: ' + e.message, 'error');
+    return false;
   }
 }
+
+// إعادة محاولة حفظ منتج فشلت مزامنته سابقاً — تُستدعى من زر "إعادة المزامنة" بالجدول
+async function retryProductSync(id) {
+  const p = products.find(x => x.id === id);
+  if (!p) return;
+  showToast('⏳ جاري إعادة المحاولة...', '');
+  await saveProductToFirebase(p);
+}
+window.retryProductSync = retryProductSync;
 
 // حذف منتج واحد فقط من Firestore
 async function deleteProductFromFirebase(id) {
@@ -2826,7 +2852,7 @@ async function renderMyQuotesPage() {
       <div class="order-item-row">
         <div class="order-item-icon">${i.image ? `<img src="${escHtml(cldOptimize(i.image,60))}" style="width:100%;height:100%;object-fit:contain" loading="lazy">` : escHtml(i.icon || '')}</div>
         <div style="flex:1;font-weight:600;color:var(--primary-dark)">${escHtml(i.ar)}</div>
-        <div style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : t('الكمية غير محددة','Qty not specified')}</div>
+        <div style="color:var(--text-muted)">${i.qty ? `× ${escHtml(String(i.qty))}` : t('الكمية غير محددة','Qty not specified')}</div>
         ${isPriced ? `<div style="font-weight:800;color:var(--primary)">${fmtPrice((i.unitPrice||0))} د.أ${i.qty?` × ${i.qty} = ${fmtPrice(((i.unitPrice||0)*i.qty))} د.أ`:''}</div>` : ''}
       </div>`).join('');
 
@@ -2834,23 +2860,23 @@ async function renderMyQuotesPage() {
     if (q.status === 'priced') {
       actionsHtml = `
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-          <button class="btn-primary" style="padding:9px 20px;font-size:13px" onclick="acceptQuote('${q._docId}')">
+          <button class="btn-primary" style="padding:9px 20px;font-size:13px" onclick="acceptQuote('${escJsAttr(q._docId)}')">
             <i class="fas fa-check"></i> أوافق وأكمل الطلب
           </button>
-          <button onclick="rejectQuote('${q._docId}')" style="padding:9px 20px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+          <button onclick="rejectQuote('${escJsAttr(q._docId)}')" style="padding:9px 20px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
             <i class="fas fa-times"></i> رفض العرض
           </button>
-          <button onclick="saveQuoteToFavorites('${q._docId}')" style="padding:9px 20px;border-radius:50px;background:#fdf4ff;color:#7e22ce;border:2px solid #e9d5ff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+          <button onclick="saveQuoteToFavorites('${escJsAttr(q._docId)}')" style="padding:9px 20px;border-radius:50px;background:#fdf4ff;color:#7e22ce;border:2px solid #e9d5ff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
             <i class="fas fa-bookmark"></i> حفظ بالمفضلة لاحقاً
           </button>
         </div>`;
     } else if (q.status === 'saved') {
       actionsHtml = `
         <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:14px">
-          <button class="btn-primary" style="padding:9px 20px;font-size:13px" onclick="acceptQuote('${q._docId}')">
+          <button class="btn-primary" style="padding:9px 20px;font-size:13px" onclick="acceptQuote('${escJsAttr(q._docId)}')">
             <i class="fas fa-check"></i> أوافق وأكمل الطلب الآن
           </button>
-          <button onclick="rejectQuote('${q._docId}')" style="padding:9px 20px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
+          <button onclick="rejectQuote('${escJsAttr(q._docId)}')" style="padding:9px 20px;border-radius:50px;background:#fff5f5;color:var(--danger);border:2px solid #fecaca;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer">
             <i class="fas fa-times"></i> رفض العرض
           </button>
         </div>`;
@@ -2875,7 +2901,7 @@ async function renderMyQuotesPage() {
     <div class="order-track-card">
       <div class="order-track-header">
         <div>
-          <div class="order-track-num"><i class="fas fa-file-invoice-dollar" style="color:var(--primary-light)"></i> #${q.id}</div>
+          <div class="order-track-num"><i class="fas fa-file-invoice-dollar" style="color:var(--primary-light)"></i> #${escHtml(q.id)}</div>
           <div class="order-track-date">📅 ${date}</div>
         </div>
         <div style="display:flex;align-items:center;gap:12px">
