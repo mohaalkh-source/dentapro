@@ -19,7 +19,7 @@ messaging.onBackgroundMessage((payload) => {
   const title = notification.title || 'DentaPro';
   const options = {
     body: notification.body || '',
-    icon: notification.icon || '/favicon.ico',
+    icon: notification.icon || './icons/icon-192.png',
     data: payload.data || {}
   };
   self.registration.showNotification(title, options);
