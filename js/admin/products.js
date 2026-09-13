@@ -102,6 +102,7 @@ function renderAdminTable() {
             <div style="font-size:12px;color:#5a7a90">${escHtml(p.brand)} · ${escHtml(p.en.substring(0,30))}${p.en.length>30?'...':''}</div>
             ${p.points ? `<div style="margin-top:4px"><span style="background:rgba(245,158,11,0.15);color:#d97706;border-radius:50px;padding:2px 10px;font-size:11px;font-weight:800">🏆 ${p.points} نقطة</span></div>` : ''}
             ${(p.stock !== undefined && p.stock !== null) ? `<div style="margin-top:4px"><span style="background:${p.stock<=0?'rgba(229,62,62,0.12)':(p.stock<=LOW_STOCK_THRESHOLD?'rgba(245,158,11,0.15)':'rgba(16,185,129,0.12)')};color:${p.stock<=0?'#e53e3e':(p.stock<=LOW_STOCK_THRESHOLD?'#d97706':'#059669')};border-radius:50px;padding:2px 10px;font-size:11px;font-weight:800">${p.stock<=0?'⛔ نفذت الكمية':(p.stock<=LOW_STOCK_THRESHOLD?'⚠️ منخفض: '+p.stock:'📦 المخزون: '+p.stock)}</span></div>` : ''}
+            ${p._syncFailed ? `<div style="margin-top:4px"><span onclick="retryProductSync(${p.id})" style="cursor:pointer;background:rgba(229,62,62,0.15);color:#e53e3e;border-radius:50px;padding:2px 10px;font-size:11px;font-weight:800">⚠️ لم يُحفظ بالسحابة — اضغط لإعادة المحاولة</span></div>` : ''}
           </div>
         </div>
       </td>
