@@ -1,0 +1,273 @@
+const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { initializeApp } = require('firebase-admin/app');
+const { getFirestore, FieldValue } = require('firebase-admin/firestore');
+
+initializeApp();
+const db = getFirestore();
+
+// =====================================================
+// أدوات مساعدة — نسخة خادمية مطابقة لمنطق العميل في
+// js/admin/clients.js و js/products/products.js
+// =====================================================
+
+function normalizePhone(p) {
+  return String(p || '').replace(/\D/g, '').replace(/^0+/, '');
+}
+
+async function loadCustomDiscountConfig() {
+  const snap = await db.doc('store_data/custom_discount_settings').get();
+  return snap.exists ? snap.data() : null;
+}
+
+async function computeCustomDiscount(rawTotal, clientEmail, clientPhone) {
+  const cfg = await loadCustomDiscountConfig();
+  if (!cfg || !cfg.enabled || !Array.isArray(cfg.tiers)) return null;
+
+  const isEligible = (tier) => {
+    if (tier.expiresAt && new Date(tier.expiresAt) <= new Date()) return false;
+    if (tier.scope === 'all') return true;
+    if (!tier.targetIds || !tier.targetIds.length) return false;
+    return tier.targetIds.some((id) => {
+      if (id.startsWith('guest:')) return normalizePhone(clientPhone) === normalizePhone(id.slice(6));
+      return id === clientEmail;
+    });
+  };
+
+  const eligibleTiers = cfg.tiers.filter(isEligible).sort((a, b) => a.amount - b.amount);
+  if (!eligibleTiers.length) return null;
+
+  let matchedTier = null;
+  for (const tItem of eligibleTiers) {
+    if (rawTotal >= tItem.amount) matchedTier = tItem;
+  }
+  if (!matchedTier || matchedTier.percent <= 0) return null;
+
+  const discounted = Math.max(0, rawTotal - (rawTotal * matchedTier.percent) / 100);
+  return {
+    originalTotal: rawTotal,
+    total: Math.round(discounted * 100) / 100,
+    discountPercent: matchedTier.percent,
+  };
+}
+
+// cartItems هنا هي عناصر بعد ما استبدلنا السعر بالسعر الحقيقي من قاعدة البيانات
+async function computeGeneralDiscountForCart(cartItems, clientEmail, clientPhone) {
+  const cfg = await loadCustomDiscountConfig();
+  if (!cfg || !cfg.enabled) return null;
+
+  const isOfferItem = (item) => item.isBundle || (item.basePrice && item.price < item.basePrice);
+
+  if (cfg.applyToOffers !== false) {
+    const rawTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
+    return computeCustomDiscount(rawTotal, clientEmail, clientPhone);
+  }
+
+  const offerTotal = cartItems.filter(isOfferItem).reduce((s, i) => s + i.price * i.qty, 0);
+  const normalTotal = cartItems.filter((i) => !isOfferItem(i)).reduce((s, i) => s + i.price * i.qty, 0);
+  if (normalTotal <= 0) return null;
+
+  const discountOnNormal = await computeCustomDiscount(normalTotal, clientEmail, clientPhone);
+  if (!discountOnNormal) return null;
+
+  return {
+    originalTotal: offerTotal + normalTotal,
+    total: Math.round((discountOnNormal.total + offerTotal) * 100) / 100,
+    discountPercent: discountOnNormal.discountPercent,
+  };
+}
+
+async function loadGlobalDeliverySettings() {
+  const snap = await db.doc('delivery_settings/_global').get();
+  return snap.exists ? snap.data() : null;
+}
+
+async function loadClientDeliverySettings(uid) {
+  if (!uid) return null;
+  const snap = await db.doc(`delivery_settings/${uid}`).get();
+  return snap.exists ? snap.data() : null;
+}
+
+function computeGlobalDeliveryFee(globalSettings, subtotal) {
+  const tiers = Array.isArray(globalSettings.tiers) ? globalSettings.tiers : [];
+  const applicable = tiers.filter((tItem) => subtotal >= tItem.minTotal).sort((a, b) => b.minTotal - a.minTotal)[0];
+  if (!applicable) return { fee: null, determined: false };
+  if (applicable.type === 'free') return { fee: 0, determined: true };
+  return { fee: applicable.value, determined: true };
+}
+
+function computeDeliveryFee(deliverySettings, subtotal) {
+  if (!deliverySettings || !deliverySettings.enabled) return { fee: 0, determined: true };
+  const fee = deliverySettings.fee;
+  if (fee === null || fee === undefined) return { fee: null, determined: false };
+  return { fee, determined: true };
+}
+
+// أجور التوصيل النهائية: الإعداد العام يلغي أي تسعير خاص بالعميل لو discountEnabled مفعّل
+async function resolveDeliveryFee(uid, subtotal) {
+  const globalSettings = await loadGlobalDeliverySettings();
+  if (globalSettings && globalSettings.discountEnabled) {
+    return computeGlobalDeliveryFee(globalSettings, subtotal);
+  }
+  const clientSettings = uid ? await loadClientDeliverySettings(uid) : null;
+  return computeDeliveryFee(clientSettings, subtotal);
+}
+
+// =====================================================
+// createOrder — الدالة الرئيسية
+// تستقبل من العميل فقط: معرّفات المنتجات + الكميات + بيانات التواصل
+// وتحسب كل شيء آخر (سعر، خصم، توصيل، نقاط، مخزون) من الخادم
+// =====================================================
+exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
+  const auth = request.auth; // قد تكون null لطلب زائر — هذا مسموح به تجارياً هنا
+  const data = request.data || {};
+
+  const rawItems = Array.isArray(data.items) ? data.items : [];
+  if (!rawItems.length) throw new HttpsError('invalid-argument', 'السلة فارغة');
+
+  const payMethod = data.payMethod === 'points' ? 'points' : 'money';
+  const clinic = String(data.clinic || '').trim();
+  const doctor = String(data.doctor || '').trim();
+  const phone = String(data.phone || '').trim();
+  const address = String(data.address || '').trim();
+  const locationLat = typeof data.locationLat === 'number' ? data.locationLat : null;
+  const locationLng = typeof data.locationLng === 'number' ? data.locationLng : null;
+  const notes = String(data.notes || '').slice(0, 1000);
+  const sourceQuoteId = data.sourceQuoteId ? String(data.sourceQuoteId) : null;
+
+  if (!clinic || !doctor || !phone) {
+    throw new HttpsError('invalid-argument', 'بيانات العيادة/الطبيب/الهاتف مطلوبة');
+  }
+
+  // تحديد هوية العميل: مسجّل عبر auth.uid، أو زائر
+  let clientDoc = null;
+  let clientUid = null;
+  if (auth && auth.uid) {
+    clientUid = auth.uid;
+    const uSnap = await db.doc(`users/${clientUid}`).get();
+    clientDoc = uSnap.exists ? uSnap.data() : null;
+  }
+  const clientEmail = clientDoc ? (clientDoc.email || 'guest') : 'guest';
+  const clientName = clientDoc ? (clientDoc.name || doctor) : doctor;
+
+  // توسيع الباقات (bundles) إلى منتجات فردية لحجز المخزون، مع الإبقاء على العنصر الأصلي في الطلب
+  const merged = {}; // productId -> qty إجمالي مطلوب حجزه
+  const requestedItems = []; // العناصر كما وصلت من العميل (id/qty/isBundle/bundleItems فقط - بلا سعر)
+  for (const raw of rawItems) {
+    const id = String(raw.id || raw.productId || '');
+    const qty = Number(raw.qty) || 0;
+    if (!id || qty <= 0 || !Number.isInteger(qty)) {
+      throw new HttpsError('invalid-argument', `كمية أو معرف منتج غير صالح: ${id}`);
+    }
+    const isBundle = !!raw.isBundle;
+    const bundleItems = isBundle && Array.isArray(raw.bundleItems) ? raw.bundleItems : null;
+    requestedItems.push({ id, qty, isBundle, bundleItems });
+
+    if (isBundle && bundleItems) {
+      for (const bi of bundleItems) {
+        const biId = String(bi.productId || '');
+        const biQty = (Number(bi.qty) || 1) * qty;
+        if (!biId) throw new HttpsError('invalid-argument', 'عنصر باقة غير صالح');
+        merged[biId] = (merged[biId] || 0) + biQty;
+      }
+    } else {
+      merged[id] = (merged[id] || 0) + qty;
+    }
+  }
+
+  const allProductIds = Array.from(new Set([...Object.keys(merged), ...requestedItems.map((i) => i.id)]));
+
+  // نبني رقم الطلب وباقي الحسابات، ثم ننفذ الحجز + الحفظ ذرياً بمعاملة واحدة
+  const orderNum = sourceQuoteId
+    ? `DP-${sourceQuoteId.replace('QT-', '')}`
+    : `DP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
+
+  const orderRef = db.doc(`orders/${orderNum}`);
+
+  const result = await db.runTransaction(async (tx) => {
+    // 1) نقرأ كل مستندات المنتجات المطلوبة فعلياً (من مصدر الحقيقة الوحيد: products)
+    const productRefs = allProductIds.map((id) => db.doc(`products/${id}`));
+    const productSnaps = await Promise.all(productRefs.map((ref) => tx.get(ref)));
+    const productById = {};
+    productSnaps.forEach((snap, idx) => {
+      if (!snap.exists) throw new HttpsError('failed-precondition', `منتج غير موجود: ${allProductIds[idx]}`);
+      productById[allProductIds[idx]] = snap.data();
+    });
+
+    // 2) نتحقق من كفاية المخزون لكل منتج فعلي (بعد توسيع الباقات)
+    for (const [productId, qty] of Object.entries(merged)) {
+      const p = productById[productId];
+      if (p.stock === undefined || p.stock === null) continue; // منتج بلا تتبع مخزون
+      if (p.stock - qty < 0) {
+        throw new HttpsError('resource-exhausted', `الكمية المتوفرة من "${p.ar || productId}" غير كافية (متبقي ${p.stock})`);
+      }
+    }
+
+    // 3) نعيد بناء عناصر الطلب بالسعر الحقيقي من قاعدة البيانات (نتجاهل أي سعر أرسله العميل)
+    const orderItems = requestedItems.map((ri) => {
+      const p = productById[ri.id];
+      if (ri.isBundle && ri.bundleItems) {
+        // سعر الباقة يُقرأ من مستند المنتج نفسه (منتج-باقة له سعره الخاص المخزّن)
+        return {
+          id: ri.id, ar: p.ar || '', en: p.en || '', icon: p.icon || '',
+          price: p.price, basePrice: p.basePrice || null, qty: ri.qty,
+          points: p.points || 0, isBundle: true, bundleItems: ri.bundleItems,
+        };
+      }
+      return {
+        id: ri.id, ar: p.ar || '', en: p.en || '', icon: p.icon || '',
+        price: p.price, basePrice: p.basePrice || null, qty: ri.qty, points: p.points || 0,
+      };
+    });
+
+    // 4) الدفع بالنقاط: المبلغ النقدي المطلوب هو فقط قيمة المواد التي لا تدعم الدفع بالنقاط
+    const cashOnlyItems = payMethod === 'points' ? orderItems.filter((i) => !i.points) : orderItems;
+    const rawTotal = cashOnlyItems.reduce((s, i) => s + i.price * i.qty, 0);
+    const totalPointsNeeded = orderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
+
+    if (payMethod === 'points') {
+      if (!clientUid) throw new HttpsError('failed-precondition', 'الدفع بالنقاط متاح فقط للعملاء المسجلين');
+      const ptsSnap = await tx.get(db.doc(`points/${clientUid}`));
+      const balance = ptsSnap.exists ? (ptsSnap.data().balance || 0) : 0;
+      if (balance < totalPointsNeeded) {
+        throw new HttpsError('failed-precondition', `رصيد النقاط (${balance}) لا يكفي — المطلوب ${totalPointsNeeded}`);
+      }
+    }
+
+    // 5) الخصم العام/المخصص يُحسب من إعدادات الخادم فقط
+    const discountResult = await computeGeneralDiscountForCart(cashOnlyItems, clientEmail, phone);
+    const subtotalForDelivery = discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100;
+
+    // 6) أجور التوصيل تُحسب من إعدادات الخادم فقط
+    const deliveryResult = await resolveDeliveryFee(clientUid, subtotalForDelivery);
+    const finalTotal = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
+
+    // 7) نخصم المخزون فعلياً (نفس المعاملة — ذرّي بالكامل مع إنشاء الطلب)
+    for (const [productId, qty] of Object.entries(merged)) {
+      const p = productById[productId];
+      if (p.stock === undefined || p.stock === null) continue;
+      tx.update(db.doc(`products/${productId}`), { stock: p.stock - qty });
+    }
+
+    const order = {
+      id: orderNum,
+      clientName, clientEmail, clientUid,
+      clinic, doctor, phone, address, locationLat, locationLng, notes,
+      sourceQuoteId,
+      items: orderItems,
+      total: finalTotal,
+      totalPoints: payMethod === 'points' ? totalPointsNeeded : 0,
+      payMethod, pointsDeducted: false,
+      deliveryFee: deliveryResult.determined ? (deliveryResult.fee || 0) : null,
+      deliveryDetermined: deliveryResult.determined,
+      status: 'pending',
+      createdAt: FieldValue.serverTimestamp(),
+      stockReserved: true,
+      ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {}),
+    };
+
+    tx.set(orderRef, order);
+    return { orderNum, total: finalTotal, totalPoints: order.totalPoints };
+  });
+
+  return result;
+});
