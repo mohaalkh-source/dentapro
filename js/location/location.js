@@ -141,7 +141,7 @@ async function submitOrder() {
 
   const ts = Date.now().toString(36).toUpperCase();
   const rand = Math.random().toString(36).substring(2, 5).toUpperCase();
-  const orderNum = `DP-${ts}-${rand}`;
+  let orderNum = `DP-${ts}-${rand}`;
 
   const totalPoints = cart.reduce((s, i) => s + ((i.points || 0) * i.qty), 0);
   const payWithPoints = window._selectedPayMethod === 'points';
@@ -216,28 +216,58 @@ async function submitOrder() {
   }
   const cleanOrder = stripUndefinedDeep(order);
 
-  try {
-    const stockResult = await reserveOrderStock(cleanOrder.items);
-    cleanOrder.stockReserved = stockResult.reserved;
-  } catch(stockErr) {
-    btn.disabled = false;
-    btn.innerHTML = btnOriginalHTML;
-    showToast(`❌ ${stockErr.message}`, 'error');
-    return;
-  }
+  if (window.SERVER_ORDER_CREATION_ENABLED) {
+    // مسار الخادم: الدالة تحسب السعر/الخصم/التوصيل/المخزون بنفسها وتنشئ الطلب
+    try {
+      const serverResult = await window._fbCreateOrderFn({
+        items: cart.map(i => ({
+          id: i.id, qty: i.qty,
+          isBundle: i.isBundle || false,
+          bundleItems: i.isBundle ? i.bundleItems : undefined,
+        })),
+        clinic: cleanOrder.clinic, doctor: cleanOrder.doctor,
+        phone: cleanOrder.phone, address: cleanOrder.address,
+        locationLat: cleanOrder.locationLat, locationLng: cleanOrder.locationLng,
+        notes: cleanOrder.notes,
+        payMethod: cleanOrder.payMethod,
+        sourceQuoteId: null,
+      });
+      orderNum = serverResult.data.orderNum;
+      cleanOrder.id = orderNum;
+      cleanOrder.total = serverResult.data.total;
+      cleanOrder.totalPoints = serverResult.data.totalPoints;
+      if (cleanOrder.clientEmail === 'guest') rememberGuestOrder(cleanOrder);
+    } catch(serverErr) {
+      btn.disabled = false;
+      btn.innerHTML = btnOriginalHTML;
+      showToast(`❌ ${serverErr.message}`, 'error');
+      return;
+    }
+  } else {
+    // المسار المحلي الحالي (سيُزال لاحقاً بعد التأكد من عمل مسار الخادم بثقة)
+    try {
+      const stockResult = await reserveOrderStock(cleanOrder.items);
+      cleanOrder.stockReserved = stockResult.reserved;
+    } catch(stockErr) {
+      btn.disabled = false;
+      btn.innerHTML = btnOriginalHTML;
+      showToast(`❌ ${stockErr.message}`, 'error');
+      return;
+    }
 
-  // مع تفعيل persistentLocalCache، عملية addDoc تنجح فوراً محلياً حتى بدون إنترنت
-  // وتُرسل تلقائياً لـ Firebase بمجرد عودة الاتصال — لا داعي لاعتبارها فشلاً
-  try {
-    await window._fbSetDoc(window._fbDoc2('orders', orderNum), cleanOrder);
-    if (cleanOrder.clientEmail === 'guest') rememberGuestOrder(cleanOrder);
-    console.log(navigator.onLine ? '✅ تم الحفظ في Firebase' : '📦 تم حفظ الطلب محلياً، سيُرسل تلقائياً عند عودة الاتصال');
-  } catch(e) {
-    console.error('❌ Firebase error:', e.code || e.message, e);
-    showToast('❌ تعذّر إرسال الطلب، تحقق من اتصال الإنترنت وحاول مجدداً', 'error');
-    btn.disabled = false;
-    btn.innerHTML = btnOriginalHTML;
-    return;
+    // مع تفعيل persistentLocalCache، عملية addDoc تنجح فوراً محلياً حتى بدون إنترنت
+    // وتُرسل تلقائياً لـ Firebase بمجرد عودة الاتصال — لا داعي لاعتبارها فشلاً
+    try {
+      await window._fbSetDoc(window._fbDoc2('orders', orderNum), cleanOrder);
+      if (cleanOrder.clientEmail === 'guest') rememberGuestOrder(cleanOrder);
+      console.log(navigator.onLine ? '✅ تم الحفظ في Firebase' : '📦 تم حفظ الطلب محلياً، سيُرسل تلقائياً عند عودة الاتصال');
+    } catch(e) {
+      console.error('❌ Firebase error:', e.code || e.message, e);
+      showToast('❌ تعذّر إرسال الطلب، تحقق من اتصال الإنترنت وحاول مجدداً', 'error');
+      btn.disabled = false;
+      btn.innerHTML = btnOriginalHTML;
+      return;
+    }
   }
 
   createNotification({
