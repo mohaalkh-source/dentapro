@@ -577,7 +577,7 @@ async function renderAdminOrders() {
       const date = new Date(order.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
         { month:'short', day:'numeric', hour:'2-digit', minute:'2-digit' });
       const itemsSummary = order.items.slice(0,2)
-        .map(i => `${i.icon} ${i.ar.substring(0,12)}`).join(' · ')
+        .map(i => `${escHtml(i.icon || '')} ${escHtml((i.ar||'').substring(0,12))}`).join(' · ')
         + (order.items.length > 2 ? ` +${order.items.length - 2}` : '');
       const statusOpts = ORDER_STATUSES.map(s =>
         `<option value="${s.key}" ${order.status===s.key?'selected':''}>${s.label}</option>`
@@ -602,14 +602,14 @@ async function renderAdminOrders() {
             <input type="number" id="deliveryFeeInput_${order._docId}" placeholder="توصيل" min="0" step="0.1"
               value="${order.deliveryFee !== null && order.deliveryFee !== undefined ? order.deliveryFee : ''}"
               style="width:60px;padding:3px 6px;border-radius:6px;border:1px solid var(--border);font-size:11px;font-family:inherit">
-            <button onclick="saveOrderDeliveryFee('${order._docId}')" title="حفظ أجور التوصيل لهذا الطلب فقط"
+            <button onclick="saveOrderDeliveryFee('${escJsAttr(order._docId)}')" title="حفظ أجور التوصيل لهذا الطلب فقط"
               style="background:none;border:none;color:var(--primary);cursor:pointer;font-size:12px;padding:0"><i class="fas fa-check"></i></button>
           </div>
         </div>
         <div class="admin-order-field" data-label="التاريخ:" style="font-size:12px;color:var(--text-muted)">${date}</div>
         <div class="admin-order-field" data-label="الحالة:">
           <select class="status-select"
-            onchange="updateOrderStatus('${order._docId}','${order.id}',this.value)">
+            onchange="updateOrderStatus('${escJsAttr(order._docId)}','${escJsAttr(order.id)}',this.value)">
             ${statusOpts}
           </select>
         </div>
@@ -1016,7 +1016,7 @@ async function renderAdminQuotes() {
         <span style="font-size:18px">${escHtml(i.icon || '')}</span>
         <span style="flex:1;font-weight:600">${escHtml(i.ar)}</span>
         ${i.isCustom ? `<span style="font-size:10px;background:#fff7ed;color:#c2410c;border:1px solid #fed7aa;border-radius:50px;padding:2px 8px;font-weight:700;flex-shrink:0">⚠️ غير مدرجة بالمتجر</span>` : ''}
-        <span style="color:var(--text-muted)">${i.qty ? `× ${i.qty}` : 'كمية غير محددة'}</span>
+        <span style="color:var(--text-muted)">${i.qty ? `× ${escHtml(String(i.qty))}` : 'كمية غير محددة'}</span>
         ${i.unitPrice ? `<span style="font-weight:800;color:var(--primary)">${fmtPrice(i.unitPrice)} د.أ</span>` : ''}
       </div>`).join('');
 
@@ -1024,7 +1024,7 @@ async function renderAdminQuotes() {
     <div class="points-admin-card" style="flex-direction:column;align-items:stretch;gap:12px">
       <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:10px">
         <div>
-          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">📄 #${q.id}</div>
+          <div style="font-weight:800;font-size:14px;color:var(--primary-dark)">📄 #${escHtml(q.id)}</div>
           <div style="font-size:12px;color:var(--text-muted);margin-top:2px">👤 ${escHtml(q.clientName)} ${q.clinic?'· '+escHtml(q.clinic):''} · ${escHtml(q.clientEmail)}</div>
           <div style="font-size:11px;color:var(--text-muted)">📅 ${date}</div>
         </div>
@@ -1051,14 +1051,14 @@ async function renderAdminQuotes() {
       </div>` : ''}
       <div style="display:flex;gap:8px;flex-wrap:wrap">
         ${(q.status === 'pending' || q.status === 'priced') ? `
-        <button onclick="openPriceQuoteModal('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+        <button onclick="openPriceQuoteModal('${escJsAttr(q._docId)}')" style="padding:8px 18px;border-radius:50px;background:linear-gradient(135deg,#0a5c8a,#1a8bbf);color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
           <i class="fas fa-tag"></i> ${q.status === 'pending' ? 'تحديد السعر وإرسال العرض' : 'تعديل السعر'}
         </button>` : ''}
-        <button onclick="sendWhatsAppQuote('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:#e8fdf2;color:#16a34a;border:1.5px solid #bbf7d0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+        <button onclick="sendWhatsAppQuote('${escJsAttr(q._docId)}')" style="padding:8px 18px;border-radius:50px;background:#e8fdf2;color:#16a34a;border:1.5px solid #bbf7d0;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
           <i class="fab fa-whatsapp"></i> تواصل مع العميل
         </button>
         ${q.status === 'accepted' ? `
-        <button onclick="showQuoteOrderDetail('${q._docId}')" style="padding:8px 18px;border-radius:50px;background:#e8f3fb;color:var(--primary);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
+        <button onclick="showQuoteOrderDetail('${escJsAttr(q._docId)}')" style="padding:8px 18px;border-radius:50px;background:#e8f3fb;color:var(--primary);border:none;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer">
           <i class="fas fa-eye"></i> عرض التفاصيل
         </button>` : ''}
       </div>
