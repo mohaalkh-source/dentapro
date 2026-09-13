@@ -596,7 +596,7 @@ async function finalizeQuickOrderSend() {
 
     if (!hasCustomItem) {
       const ts = Date.now().toString(36).toUpperCase();
-      const orderNum = fromQuoteIdStr ? `DP-${fromQuoteIdStr.replace('QT-','')}` : `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
+      let orderNum = fromQuoteIdStr ? `DP-${fromQuoteIdStr.replace('QT-','')}` : `DP-${ts}-${Math.random().toString(36).substring(2,5).toUpperCase()}`;
       const rawTotal = items.reduce((s,i) => s + (i.unitPrice * i.qty), 0);
       const clientEmailForOrder = guestClient ? (guestClient.email || 'guest') : 'guest';
       const discountItems = items.map(i => ({ price: i.unitPrice, qty: i.qty, basePrice: i.basePrice }));
@@ -612,7 +612,7 @@ async function finalizeQuickOrderSend() {
         const deliverySettings = guestClient?.uid ? await loadClientDeliverySettings(guestClient.uid) : null;
         deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
       }
-      const total = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
+      let total = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
       const order = {
         id: orderNum,
@@ -631,16 +631,37 @@ async function finalizeQuickOrderSend() {
         ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {})
       };
 
-      try {
-        const stockResult = await reserveOrderStock(order.items);
-        order.stockReserved = stockResult.reserved;
-      } catch(stockErr) {
-        showToast(`❌ ${stockErr.message}`, 'error');
-        return;
-      }
+      if (window.SERVER_ORDER_CREATION_ENABLED) {
+        // مسار الخادم: الدالة تحسب السعر/الخصم/التوصيل/المخزون بنفسها وتنشئ الطلب
+        try {
+          const serverResult = await window._fbCreateOrderFn({
+            items: items.map(i => ({ id: i.productId, qty: i.qty })),
+            clinic, doctor, phone, address,
+            locationLat: locLat || null, locationLng: locLng || null,
+            notes: order.notes, payMethod: 'money',
+            sourceQuoteId: fromQuoteIdStr || null,
+          });
+          orderNum = serverResult.data.orderNum;
+          total = serverResult.data.total;
+          order.id = orderNum;
+          order.total = total;
+        } catch(serverErr) {
+          showToast(`❌ ${serverErr.message}`, 'error');
+          return;
+        }
+      } else {
+        // المسار المحلي الحالي (سيُزال لاحقاً بعد التأكد من عمل مسار الخادم بثقة)
+        try {
+          const stockResult = await reserveOrderStock(order.items);
+          order.stockReserved = stockResult.reserved;
+        } catch(stockErr) {
+          showToast(`❌ ${stockErr.message}`, 'error');
+          return;
+        }
 
-      await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
-      if (!guestClient) rememberGuestOrder(order);
+        await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
+        if (!guestClient) rememberGuestOrder(order);
+      }
 
       if (fromQuoteDocId) {
         await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
