@@ -4,6 +4,10 @@
 function switchLocMethod(method) {
   document.querySelectorAll('.loc-method-btn').forEach(b => b.classList.remove('active'));
   document.getElementById('btn' + method.charAt(0).toUpperCase() + method.slice(1))?.classList.add('active');
+  if (method === 'manual') {
+    const input = document.getElementById('addressInput');
+    if (input) setTimeout(() => input.focus(), 50);
+  }
 }
 
 function onAddressType() {
