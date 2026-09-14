@@ -1132,7 +1132,7 @@ function closeFabFan() {
       if (!dragging) return;
       const p = e.touches ? e.touches[0] : e;
       const dx = p.clientX - startX, dy = p.clientY - startY;
-      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+      if (Math.abs(dx) > 14 || Math.abs(dy) > 14) moved = true;
       if (moved) applyPosition(wrap, origX + dx, origY + dy);
     }
     function onPointerUp() {
