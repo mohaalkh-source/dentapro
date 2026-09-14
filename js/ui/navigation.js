@@ -1159,14 +1159,16 @@ function closeFabFan() {
     if (wrap) wrap.classList.remove('open');
   };
 
-  document.addEventListener('pointerdown', (e) => {
+  function closeIfOutside(e) {
     const wrap = document.getElementById('contactFabWrap');
     if (wrap && wrap.classList.contains('open') && !wrap.contains(e.target)) {
       e.stopPropagation();
       e.preventDefault();
       wrap.classList.remove('open');
     }
-  }, true);
+  }
+  document.addEventListener('touchstart', closeIfOutside, { capture: true, passive: false });
+  document.addEventListener('click', closeIfOutside, true);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setup);
