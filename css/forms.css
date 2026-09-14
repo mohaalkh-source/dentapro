@@ -331,13 +331,12 @@ body.en .fab-fan-label { right: auto; left: 52px; }
 .contact-fab-btn:active { cursor: grabbing; transform: scale(0.94); }
 
 .contact-fab-menu {
-  position: absolute; bottom: 66px; left: 0;
+  position: fixed; bottom: 110px; right: 16px;
   display: flex; flex-direction: column; gap: 10px;
   opacity: 0; pointer-events: none; transform: translateY(10px);
   transition: opacity 0.2s, transform 0.2s;
+  z-index: 1901;
 }
-.contact-fab-menu.open-down { bottom: auto; top: 66px; }
-.contact-fab-menu.align-right { left: auto; right: 0; }
 .contact-fab-wrap.open .contact-fab-menu {
   opacity: 1; pointer-events: auto; transform: translateY(0);
 }
