@@ -1159,7 +1159,7 @@ function closeFabFan() {
     if (wrap) wrap.classList.remove('open');
   };
 
-  document.addEventListener('click', (e) => {
+  document.addEventListener('pointerdown', (e) => {
     const wrap = document.getElementById('contactFabWrap');
     if (wrap && wrap.classList.contains('open') && !wrap.contains(e.target)) {
       e.stopPropagation();
