@@ -1162,9 +1162,11 @@ function closeFabFan() {
   document.addEventListener('click', (e) => {
     const wrap = document.getElementById('contactFabWrap');
     if (wrap && wrap.classList.contains('open') && !wrap.contains(e.target)) {
+      e.stopPropagation();
+      e.preventDefault();
       wrap.classList.remove('open');
     }
-  });
+  }, true);
 
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', setup);
