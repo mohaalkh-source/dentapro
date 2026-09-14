@@ -1123,15 +1123,13 @@ function closeFabFan() {
 
     function onPointerDown(e) {
       dragging = true; moved = false;
-      const p = e.touches ? e.touches[0] : e;
-      startX = p.clientX; startY = p.clientY;
+      startX = e.clientX; startY = e.clientY;
       const rect = wrap.getBoundingClientRect();
       origX = rect.left; origY = rect.top;
     }
     function onPointerMove(e) {
       if (!dragging) return;
-      const p = e.touches ? e.touches[0] : e;
-      const dx = p.clientX - startX, dy = p.clientY - startY;
+      const dx = e.clientX - startX, dy = e.clientY - startY;
       if (Math.abs(dx) > 14 || Math.abs(dy) > 14) moved = true;
       if (moved) applyPosition(wrap, origX + dx, origY + dy);
     }
@@ -1146,12 +1144,9 @@ function closeFabFan() {
       }
     }
 
-    btn.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('mousemove', onPointerMove);
-    document.addEventListener('mouseup', onPointerUp);
-    btn.addEventListener('touchstart', onPointerDown, { passive: true });
-    document.addEventListener('touchmove', onPointerMove, { passive: true });
-    document.addEventListener('touchend', onPointerUp);
+    btn.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('pointermove', onPointerMove);
+    document.addEventListener('pointerup', onPointerUp);
 
     window.addEventListener('resize', () => {
       const rect = wrap.getBoundingClientRect();
