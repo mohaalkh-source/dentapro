@@ -766,6 +766,15 @@ function activatePageSection(id) {
     requestAnimationFrame(() => el.classList.add('active'));
   });
 }
+// ينزل تلقائياً لبداية محتوى الصفحة نفسها، متخطياً الهيدر وشريط العروض المثبّت بالأعلى
+function scrollToPageSection(id) {
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'auto', block: 'start' });
+    });
+  });
+}
 function showPage(page) {
   document.querySelectorAll('.page-section').forEach(s => { s.classList.remove('active'); s.style.display = ''; });
   
@@ -801,13 +810,13 @@ function showPage(page) {
     window.scrollTo(0, 0);
   } else if (page === 'favorites') {
     activatePageSection('favoritesPage');
-    window.scrollTo(0, 0);
+    scrollToPageSection('favoritesPage');
   } else if (page === 'reordered') {
     activatePageSection('reorderedProductsPage');
-    window.scrollTo(0, 0);
+    scrollToPageSection('reorderedProductsPage');
   } else if (page === 'myQuotes') {
     activatePageSection('myQuotesPage');
-    window.scrollTo(0, 0);
+    scrollToPageSection('myQuotesPage');
     renderMyQuotesPage();
     markNotifsByLinkPrefixRead(['page:myQuotes']);
   } else if (page === 'messages') {
@@ -819,10 +828,10 @@ function showPage(page) {
     markNotifsByLinkPrefixRead(['page:messages']);
   } else if (page === 'trackOrder') {
     activatePageSection('trackOrderPage');
-    window.scrollTo(0, 0);
+    scrollToPageSection('trackOrderPage');
   } else if (page === 'error') {
     activatePageSection('errorPage');
-    window.scrollTo(0, 0);
+    scrollToPageSection('errorPage');
   }
 }
 
