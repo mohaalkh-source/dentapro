@@ -1,5 +1,5 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
-  import { initializeFirestore, persistentLocalCache, collection, addDoc, getDocs, doc, getDoc, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch, runTransaction }
+  import { initializeFirestore, persistentLocalCache, collection, addDoc, getDocs, doc, getDoc, getDocFromServer, setDoc, updateDoc, deleteDoc, query, orderBy, where, onSnapshot, limit, startAfter, writeBatch, runTransaction }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
            sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile,
@@ -63,6 +63,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   window._db           = db;
   window._fbGetDoc     = getDoc;
   window._fbSetDoc     = setDoc;
+window._fbGetDocFromServer = getDocFromServer;
   window._fbDeleteDoc  = deleteDoc;
   window._fbDoc2       = (col, id) => doc(db, col, id);
   window._fbCollection = collection;
