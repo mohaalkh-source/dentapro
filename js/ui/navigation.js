@@ -1133,22 +1133,6 @@ function closeFabFan() {
       if (Math.abs(dx) > 14 || Math.abs(dy) > 14) moved = true;
       if (moved) applyPosition(wrap, origX + dx, origY + dy);
     }
-    function positionMenu() {
-      const menu = document.getElementById('contactFabMenu');
-      if (!menu) return;
-      const rect = wrap.getBoundingClientRect();
-      const menuHeight = menu.offsetHeight || 220;
-      const menuWidth = menu.offsetWidth || 180;
-
-      // عمودي: لو المساحة فوق الزر ما تكفي القائمة، افتحها لتحت بدل فوق
-      const spaceAbove = rect.top;
-      menu.classList.toggle('open-down', spaceAbove < menuHeight + 20);
-
-      // أفقي: لو الزر قريب من حافة الشاشة اليمين، افتح القائمة لجهة الشمال بدل اليمين
-      const spaceRight = window.innerWidth - rect.left;
-      menu.classList.toggle('align-right', spaceRight < menuWidth + 20);
-    }
-
     function onPointerUp() {
       if (!dragging) return;
       dragging = false;
@@ -1156,7 +1140,6 @@ function closeFabFan() {
         const rect = wrap.getBoundingClientRect();
         localStorage.setItem(STORAGE_KEY, JSON.stringify({ x: rect.left, y: rect.top }));
       } else {
-        if (!wrap.classList.contains('open')) positionMenu();
         wrap.classList.toggle('open');
       }
     }
