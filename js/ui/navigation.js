@@ -1092,6 +1092,92 @@ function closeFabFan() {
   if (wrap) wrap.classList.remove('open');
 }
 
+// ═══════ زر التواصل العائم القابل بالسحب ═══════
+(function initContactFab() {
+  const STORAGE_KEY = 'dentapro_contactFabPos';
+
+  function clamp(val, min, max) { return Math.max(min, Math.min(max, val)); }
+
+  function applyPosition(wrap, x, y) {
+    const w = wrap.offsetWidth || 56, h = wrap.offsetHeight || 56;
+    const maxX = window.innerWidth - w - 8;
+    const maxY = window.innerHeight - h - 8;
+    wrap.style.left = clamp(x, 8, Math.max(8, maxX)) + 'px';
+    wrap.style.top  = clamp(y, 8, Math.max(8, maxY)) + 'px';
+    wrap.style.bottom = 'auto';
+  }
+
+  function setup() {
+    const wrap = document.getElementById('contactFabWrap');
+    const btn  = document.getElementById('contactFabBtn');
+    if (!wrap || !btn) return;
+
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+        applyPosition(wrap, saved.x, saved.y);
+      }
+    } catch(e) {}
+
+    let dragging = false, moved = false, startX = 0, startY = 0, origX = 0, origY = 0;
+
+    function onPointerDown(e) {
+      dragging = true; moved = false;
+      const p = e.touches ? e.touches[0] : e;
+      startX = p.clientX; startY = p.clientY;
+      const rect = wrap.getBoundingClientRect();
+      origX = rect.left; origY = rect.top;
+    }
+    function onPointerMove(e) {
+      if (!dragging) return;
+      const p = e.touches ? e.touches[0] : e;
+      const dx = p.clientX - startX, dy = p.clientY - startY;
+      if (Math.abs(dx) > 6 || Math.abs(dy) > 6) moved = true;
+      if (moved) applyPosition(wrap, origX + dx, origY + dy);
+    }
+    function onPointerUp() {
+      if (!dragging) return;
+      dragging = false;
+      if (moved) {
+        const rect = wrap.getBoundingClientRect();
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({ x: rect.left, y: rect.top }));
+      } else {
+        wrap.classList.toggle('open');
+      }
+    }
+
+    btn.addEventListener('mousedown', onPointerDown);
+    document.addEventListener('mousemove', onPointerMove);
+    document.addEventListener('mouseup', onPointerUp);
+    btn.addEventListener('touchstart', onPointerDown, { passive: true });
+    document.addEventListener('touchmove', onPointerMove, { passive: true });
+    document.addEventListener('touchend', onPointerUp);
+
+    window.addEventListener('resize', () => {
+      const rect = wrap.getBoundingClientRect();
+      applyPosition(wrap, rect.left, rect.top);
+    });
+  }
+
+  window.closeContactFab = function() {
+    const wrap = document.getElementById('contactFabWrap');
+    if (wrap) wrap.classList.remove('open');
+  };
+
+  document.addEventListener('click', (e) => {
+    const wrap = document.getElementById('contactFabWrap');
+    if (wrap && wrap.classList.contains('open') && !wrap.contains(e.target)) {
+      wrap.classList.remove('open');
+    }
+  });
+
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', setup);
+  } else {
+    setup();
+  }
+})();
+
 // إغلاق تلقائي لو ضغط المستخدم بأي مكان تاني برّا اللسان والقائمة
 document.addEventListener('click', (e) => {
   const wrap = document.getElementById('fabFanWrap');
