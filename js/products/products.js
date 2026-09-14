@@ -787,7 +787,11 @@ async function saveProductToFirebase(product) {
     if (!navigator.onLine) throw new Error('لا يوجد اتصال بالإنترنت');
     if (!await waitForFirebase(15)) throw new Error('Firebase غير جاهز');
     const { _syncFailed, ...cleanProduct } = product;
-    await window._fbSetDoc(window._fbDoc2('products', String(product.id)), cleanProduct);
+    const ref = window._fbDoc2('products', String(product.id));
+    await window._fbSetDoc(ref, cleanProduct);
+    // setDoc وحدها ترجع "نجحت" فوراً من الكاش المحلي حتى بدون إنترنت فعلي —
+    // نجبر تحقق حقيقي من وصول البيانات للسيرفر قبل ما نعتبرها نجحت فعلاً
+    await window._fbGetDocFromServer(ref);
     delete product._syncFailed;
     cacheProductsLocally();
     if (typeof renderAdminTable === 'function') renderAdminTable();
