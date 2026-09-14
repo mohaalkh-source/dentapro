@@ -775,7 +775,13 @@ function scrollToPageSection(id) {
     });
   });
 }
+let pageScrollPositions = {};
+
 function showPage(page) {
+  // احفظ موضع التمرير الحالي للصفحة يلي عم نغادرها، لإعادته لاحقاً لو رجعنالها
+  const leavingPage = pageHistory[pageHistory.length - 1];
+  if (leavingPage) pageScrollPositions[leavingPage] = window.scrollY;
+
   document.querySelectorAll('.page-section').forEach(s => { s.classList.remove('active'); s.style.display = ''; });
   
   // أضيف الصفحة الجديدة للسجل (إذا لم تكن عملية رجوع)
@@ -792,6 +798,10 @@ function showPage(page) {
     activatePageSection('homePage');
     // كل مرة نصل فيها فعلياً لجذر الصفحة الرئيسية (تنقل عادي أو رجوع)، نعيد تسليح حارس الخروج
     if (pageHistory.length <= 1) armHomeGuard();
+    if (typeof pageScrollPositions[page] === 'number') {
+      const savedY = pageScrollPositions[page];
+      requestAnimationFrame(() => requestAnimationFrame(() => window.scrollTo(0, savedY)));
+    }
   } else if (page === 'orders') {
     activatePageSection('ordersPage');
     window.scrollTo(0, 0);
