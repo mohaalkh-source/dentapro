@@ -85,6 +85,24 @@ async function openMapPicker() {
   await loadLeafletIfNeeded();
   switchLocMethod('MapPick');
   document.getElementById('mapPickerModal').classList.add('open');
+
+  // لو ما كان عندنا موقع محدد مسبقاً، نحاول نجيب GPS الحالي تلقائياً قبل ما نفتح الخريطة
+  if (!locationData.lat && navigator.geolocation) {
+    await new Promise((resolve) => {
+      const timeoutId = setTimeout(resolve, 3000); // لا تنتظر أكثر من 3 ثواني
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          clearTimeout(timeoutId);
+          locationData.lat = pos.coords.latitude.toFixed(5);
+          locationData.lng = pos.coords.longitude.toFixed(5);
+          resolve();
+        },
+        () => { clearTimeout(timeoutId); resolve(); },
+        { timeout: 2500 }
+      );
+    });
+  }
+
   setTimeout(initPickerMap, 150);
 }
 
