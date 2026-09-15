@@ -1250,11 +1250,9 @@ function onNotifClick(docId, link) {
   _notificationActionInProgress = true;
 
   try {
-    // أغلق القائمة فوراً ولا تعِد بناء notifList أثناء حدث النقرة.
-    // إعادة innerHTML للقائمة وهي تحت حدث click كانت تمنع الانتقال على بعض الهواتف.
-    closeNotifDropdown();
-
-    if (!link) return;
+    // لا نغلق القائمة قبل تحديد الوجهة؛ إغلاقها قد يطلق history.go(-1)
+    // عبر مراقب طبقات الواجهة، لذلك يجب تسجيل الوجهة أولاً.
+    if (!link) { closeNotifDropdown(); return; }
 
     if (link.startsWith('page:')) {
       // لا نمرر قيمة الرابط مباشرة إلى showPage؛ رابط الإشعار بيانات خارجية
@@ -1277,17 +1275,25 @@ function onNotifClick(docId, link) {
       if (!page) {
         console.warn('مسار إشعار غير معروف:', requestedPage);
         showToast('⚠️ لا يمكن فتح وجهة هذا الإشعار حالياً', 'error');
+        closeNotifDropdown();
         return;
       }
-      // أخرج من حدث النقرة أولاً؛ تغيير DOM وhistory داخل inline onclick
-      // يسبب تجمداً في بعض WebView/هواتف Android.
+      // اطلب من معالج popstate فتح الصفحة بعد تنظيف حالة قائمة الإشعارات.
+      window._pendingNotificationPage = page;
+      closeNotifDropdown();
+      // في حال لم تكن القائمة مسجلة كطبقة، افتح الصفحة مباشرة في دورة لاحقة.
+      const hasTrackedLayer = typeof uiLayerStack !== 'undefined' && uiLayerStack.some(l => l.id === 'notifDropdown');
+      if (!hasTrackedLayer) {
+        setTimeout(() => {
+          try { showPage(page); } catch (e) { console.warn('تعذر فتح صفحة الإشعار:', e); }
+        }, 0);
+      }
       setTimeout(() => {
         try {
-          showPage(page);
           if (docId) markNotifIdRead(docId);
           updateNotifBadge();
         } catch (e) { console.warn('تعذر تحديث قراءة الإشعار:', e); }
-      }, 0);
+      }, 50);
 
     } else if (link.startsWith('adminorders:')) {
       if (isStaff()) {
