@@ -388,8 +388,7 @@ async function updateQuickOrderTotal() {
     const discountItems = currentQuickOrderItems.filter(it => !it.isCustom).map(it => ({ price: it.unitPrice, qty: it.qty, basePrice: it.basePrice }));
     const discountPreview = await computeGeneralDiscountForCart(discountItems, previewClientEmail, previewClientPhone);
     const subtotalForDelivery = discountPreview ? discountPreview.total : total;
-    const deliverySettings = currentUser?.uid ? await loadClientDeliverySettings(currentUser.uid) : null;
-    const deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+    const deliveryResult = await computeCartDeliveryPreview(subtotalForDelivery, currentUser?.phone || '', currentUser || null);
     label.innerHTML = (discountPreview
       ? `الإجمالي: <span style="text-decoration:line-through;color:var(--text-muted);font-size:12px;font-weight:600;margin-inline-end:6px">${fmtPrice(discountPreview.originalTotal)} د.أ</span><strong style="color:var(--primary);font-size:15px">${fmtPrice(discountPreview.total)} د.أ</strong> <span style="font-size:10px;color:#e53e3e;font-weight:800">(خصم ${discountPreview.discountPercent}%)</span>`
       : `الإجمالي: <strong style="color:var(--primary);font-size:15px">${fmtPrice(total)} د.أ</strong>`) + deliveryLineHTML(deliveryResult.fee, deliveryResult.determined);
@@ -609,8 +608,7 @@ async function finalizeQuickOrderSend() {
         // لذا نعتمد نفس القيمة هنا بدل إعادة احتسابها تلقائياً حتى لا يتفاجأ العميل بفرق بالسعر
         deliveryResult = { fee: window._qoQuoteDeliveryFee, determined: !!window._qoQuoteDeliveryDetermined };
       } else {
-        const deliverySettings = guestClient?.uid ? await loadClientDeliverySettings(guestClient.uid) : null;
-        deliveryResult = computeDeliveryFee(deliverySettings, subtotalForDelivery);
+        deliveryResult = await computeCartDeliveryPreview(subtotalForDelivery, phone, guestClient || null);
       }
       let total = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
