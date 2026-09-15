@@ -621,7 +621,6 @@ var _exitWarningTimer = null;
 // ============================================================
 var uiLayerStack = [];          // {id, el} لكل طبقة مفتوحة حالياً، بترتيب الفتح
 var _pendingHistoryCleanup = false; // يمنع أي popstate ناتج عن تنظيفنا التلقائي للسجل من التسبب بتنقل غير مقصود
-var _pendingNotificationPage = null; // وجهة إشعار تنتظر انتهاء تنظيف سجل القائمة
 
 // المودالات الثابتة الموجودة أصلاً بالـ HTML (تُغلق بإزالة كلاس open فقط، لا تُحذف من الـ DOM)
 var STATIC_MODAL_IDS = new Set([
@@ -652,6 +651,23 @@ function trackUILayerClose(el) {
   uiLayerStack.splice(idx, 1);
   scheduleUIHistoryReconcile();
 }
+
+// [إصلاح تجمّد الإشعارات] يزيل طبقة من المكدّس فوراً *بدون* استدعاء history.go().
+// نستخدمها فقط عندما نعلم أن تنقلاً لصفحة/طبقة جديدة (history.pushState) سيحدث
+// مباشرة بعد إغلاق هذه الطبقة (مثال: الضغط على إشعار بينما قائمة الإشعارات مفتوحة).
+// المشكلة الأصلية: إغلاق الطبقة عادةً بيجدوِل history.go(-1) بشكل غير متزامن
+// (عبر MutationObserver)، وهذا كان أحياناً يتضارب فعلياً مع history.pushState()
+// اللي بيصير بعده مباشرة عند فتح صفحة جديدة — حتى لو أجّلنا التنقل بـ setTimeout،
+// النتيجة أحياناً كانت: الرابط (URL) يتغيّر فعلاً لكن الشاشة تجمّد ولا تنتقل بصرياً.
+// حذف الطبقة يدوياً هنا (بدون history.go إطلاقاً) يقطع التعارض من جذوره.
+function untrackUILayerSilently(el) {
+  if (!el) return;
+  const idx = uiLayerStack.findIndex(l => l.id === el.id);
+  if (idx === -1) return;
+  uiLayerStack.splice(idx, 1);
+  _historyLayerCount = Math.max(0, _historyLayerCount - 1);
+}
+window._untrackUILayerSilently = untrackUILayerSilently;
 
 var _historyLayerCount = 0;
 var _uiHistoryReconcileScheduled = false;
@@ -756,14 +772,6 @@ window.addEventListener('popstate', (e) => {
   // (مثلاً: ضغط المستخدم زر X لإغلاق مودال، وليس زر الرجوع الفيزيائي)
   if (_pendingHistoryCleanup) {
     _pendingHistoryCleanup = false;
-    if (_pendingNotificationPage) {
-      const pendingPage = _pendingNotificationPage;
-      _pendingNotificationPage = null;
-      setTimeout(() => {
-        try { showPage(pendingPage); }
-        catch (err) { console.warn('تعذر فتح وجهة الإشعار:', err); }
-      }, 0);
-    }
     return;
   }
 
