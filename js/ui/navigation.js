@@ -635,10 +635,7 @@ var STATIC_MODAL_IDS = new Set([
 
 function isTrackableUIElement(el) {
   if (!el || !el.classList || !el.id) return false;
-  // قائمة الإشعارات ليست صفحة ولا يجب أن تضيف حالات إلى history.
-  // إدخالها في مكدس history ثم فتح صفحة الطلبات في نفس النقرة
-  // يسبب تعارضاً بين history.go و history.pushState على بعض WebView.
-  if (el.id === 'cartSidebar') return true;
+  if (el.id === 'cartSidebar' || el.id === 'notifDropdown') return true;
   return el.classList.contains('modal-overlay');
 }
 
@@ -654,23 +651,6 @@ function trackUILayerClose(el) {
   uiLayerStack.splice(idx, 1);
   scheduleUIHistoryReconcile();
 }
-
-// [إصلاح تجمّد الإشعارات] يزيل طبقة من المكدّس فوراً *بدون* استدعاء history.go().
-// نستخدمها فقط عندما نعلم أن تنقلاً لصفحة/طبقة جديدة (history.pushState) سيحدث
-// مباشرة بعد إغلاق هذه الطبقة (مثال: الضغط على إشعار بينما قائمة الإشعارات مفتوحة).
-// المشكلة الأصلية: إغلاق الطبقة عادةً بيجدوِل history.go(-1) بشكل غير متزامن
-// (عبر MutationObserver)، وهذا كان أحياناً يتضارب فعلياً مع history.pushState()
-// اللي بيصير بعده مباشرة عند فتح صفحة جديدة — حتى لو أجّلنا التنقل بـ setTimeout،
-// النتيجة أحياناً كانت: الرابط (URL) يتغيّر فعلاً لكن الشاشة تجمّد ولا تنتقل بصرياً.
-// حذف الطبقة يدوياً هنا (بدون history.go إطلاقاً) يقطع التعارض من جذوره.
-function untrackUILayerSilently(el) {
-  if (!el) return;
-  const idx = uiLayerStack.findIndex(l => l.id === el.id);
-  if (idx === -1) return;
-  uiLayerStack.splice(idx, 1);
-  _historyLayerCount = Math.max(0, _historyLayerCount - 1);
-}
-window._untrackUILayerSilently = untrackUILayerSilently;
 
 var _historyLayerCount = 0;
 var _uiHistoryReconcileScheduled = false;
@@ -867,14 +847,8 @@ function showPage(page) {
   } else if (page === 'orders') {
     activatePageSection('ordersPage');
     window.scrollTo(0, 0);
-    // لا نبدأ قراءة Firebase أو إعادة رسم الإشعارات أثناء تغيير الصفحة.
-    // هذا يمنع تجمّد WebView عند فتح الصفحة من نقرة إشعار.
-    setTimeout(() => {
-      if (typeof renderClientOrders === 'function') renderClientOrders();
-      if (typeof markNotifsByLinkPrefixRead === 'function') {
-        markNotifsByLinkPrefixRead(['page:orders']);
-      }
-    }, 0);
+    renderClientOrders();
+    markNotifsByLinkPrefixRead(['page:orders']);
   } else if (page === 'productDetail') {
     activatePageSection('productDetailPage');
     requestAnimationFrame(() => {
