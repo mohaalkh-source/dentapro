@@ -177,7 +177,6 @@ function trackStepsHTML(currentStatus) {
 function openClientOrders() {
   if (!currentUser) { openAuthModal('login'); return; }
   showPage('orders');
-  renderClientOrders();
   renderPointsInHeader();
 }
 let _clientOrdersRenderPromise = null;
