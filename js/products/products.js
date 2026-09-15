@@ -1113,7 +1113,27 @@ async function loadAndRenderNotifIcon() {
   if (msgBtn) {
     msgBtn.style.display = 'flex';
     msgBtn.title = isAdminUser ? 'رسائل العملاء' : 'تواصل مع الإدارة';
-    msgBtn.onclick = isAdminUser ? openAdminMessagesPanel : openClientMessages;
+
+    // لا نأخذ مرجع openClientMessages أثناء تهيئة الجلسة؛
+    // ملف الرسائل قد يُحمّل بعد products.js بسبب التحميل الديناميكي.
+    // الاستدعاء المتأخر يمنع ReferenceError ويُبقي زر الرسائل يعمل بعد اكتمال التحميل.
+    msgBtn.onclick = () => {
+      const handler = isAdminUser
+        ? window.openAdminMessagesPanel
+        : window.openClientMessages;
+
+      if (typeof handler === 'function') {
+        handler();
+      } else {
+        console.warn('لم يتم تحميل معالج الرسائل بعد، ستتم المحاولة مرة أخرى.');
+        setTimeout(() => {
+          const retryHandler = isAdminUser
+            ? window.openAdminMessagesPanel
+            : window.openClientMessages;
+          if (typeof retryHandler === 'function') retryHandler();
+        }, 0);
+      }
+    };
   }
   _cachedNotifs = await fetchNotificationsFor(currentUser.email, isAdminUser);
   updateNotifBadge();
@@ -1220,45 +1240,83 @@ function renderNotifList() {
   }).join('');
 }
 
+// تمنع هذه الأقفال تكرار نفس عملية النقر أو إرسال أكثر من طلب
+// أثناء انتظار تحميل إشعارات Firebase.
+let _notificationActionInProgress = false;
+let _notificationDropdownLoading = false;
+
 function onNotifClick(docId, link) {
-  markNotifIdRead(docId);
-  updateNotifBadge();
-  renderNotifList();
-  if (!link) return;
-  closeNotifDropdown();
-  if (link.startsWith('page:')) {
-    showPage(link.replace('page:',''));
-  } else if (link.startsWith('adminorders:')) {
-    if (isStaff()) {
-      document.getElementById('adminPanel').classList.add('open');
-      switchAdminTab('orders');
+  if (_notificationActionInProgress) return;
+  _notificationActionInProgress = true;
+
+  try {
+    if (docId) markNotifIdRead(docId);
+    updateNotifBadge();
+    renderNotifList();
+    closeNotifDropdown();
+
+    if (!link) return;
+
+    if (link.startsWith('page:')) {
+      // تأجيل التنقل إلى دورة الرسم التالية حتى تنتهي إعادة رسم القائمة.
+      const page = link.replace('page:', '').trim();
+      requestAnimationFrame(() => showPage(page));
+
+    } else if (link.startsWith('adminorders:')) {
+      if (isStaff()) {
+        const panel = document.getElementById('adminPanel');
+        if (panel) panel.classList.add('open');
+        switchAdminTab('orders');
+      }
+
+    } else if (link.startsWith('adminquotes:')) {
+      if (isStaff()) {
+        const panel = document.getElementById('adminPanel');
+        if (panel) panel.classList.add('open');
+        switchAdminTab('quotes');
+      }
+
+    } else if (link.startsWith('product:')) {
+      const id = parseInt(link.replace('product:', '').trim(), 10);
+      showPage('home');
+
+      setTimeout(async () => {
+        try {
+          let p = products.find(x => x.id === id);
+          if (!p) {
+            await loadProductsFromFirebase();
+            p = products.find(x => x.id === id);
+          }
+          if (p) openProductDetail(id);
+          else showToast('⚠️ هذا المنتج غير متاح حالياً', 'error');
+        } catch (e) {
+          console.error('خطأ أثناء فتح المنتج من الإشعار:', e);
+          showToast('⚠️ تعذر فتح المنتج حالياً', 'error');
+        }
+      }, 100);
+
+    } else if (link.startsWith('clientmsg:')) {
+      const email = link.replace('clientmsg:', '').trim();
+      if (isStaff()) {
+        const panel = document.getElementById('adminPanel');
+        if (panel) panel.classList.add('open');
+        switchAdminTab('messages');
+        setTimeout(() => openAdminThreadModal(email), 400);
+      }
     }
-  } else if (link.startsWith('adminquotes:')) {
-    if (isStaff()) {
-      document.getElementById('adminPanel').classList.add('open');
-      switchAdminTab('quotes');
-    }
-  } else if (link.startsWith('product:')) {
-    const id = parseInt(link.replace('product:',''));
-    showPage('home');
-    setTimeout(async () => {
-      let p = products.find(x => x.id === id);
-      if (!p) { await loadProductsFromFirebase(); p = products.find(x => x.id === id); }
-      if (p) openProductDetail(id);
-      else showToast('⚠️ هذا المنتج غير متاح حالياً', 'error');
-    }, 100);
-  } else if (link.startsWith('clientmsg:')) {
-    const email = link.replace('clientmsg:','');
-    if (isStaff()) {
-      document.getElementById('adminPanel').classList.add('open');
-      switchAdminTab('messages');
-      setTimeout(() => openAdminThreadModal(email), 400);
-    }
+  } catch (e) {
+    console.error('خطأ أثناء معالجة الضغط على الإشعار:', e);
+    showToast('⚠️ تعذر فتح الإشعار حالياً', 'error');
+  } finally {
+    // يحرر القفل بعد انتهاء أحداث الواجهة الحالية.
+    setTimeout(() => { _notificationActionInProgress = false; }, 250);
   }
 }
 
 function markAllNotifsRead() {
-  _cachedNotifs.forEach(n => markNotifIdRead(n._docId));
+  _cachedNotifs.forEach(n => {
+    if (n && n._docId) markNotifIdRead(n._docId);
+  });
   updateNotifBadge();
   renderNotifList();
   showToast('✅ تم تعليم الكل كمقروء', 'success');
@@ -1266,36 +1324,71 @@ function markAllNotifsRead() {
 
 // تعليم كل الإشعارات المرتبطة بقسم معيّن كمقروءة، فقط عند فتح ذلك القسم فعلياً
 function markNotifsByLinkPrefixRead(prefixes) {
+  if (!Array.isArray(prefixes)) return;
+
   let changed = false;
   _cachedNotifs.forEach(n => {
-    if (!n.link) return;
+    if (!n || !n.link || !n._docId) return;
     if (prefixes.some(p => n.link.startsWith(p)) && !isNotifRead(n._docId)) {
       markNotifIdRead(n._docId);
       changed = true;
     }
   });
+
   if (changed) {
     updateNotifBadge();
-    if (document.getElementById('notifDropdown')?.classList.contains('open')) renderNotifList();
+    const dropdown = document.getElementById('notifDropdown');
+    if (dropdown && dropdown.classList.contains('open')) renderNotifList();
   }
 }
+
 async function toggleNotifDropdown() {
-  const dd = document.getElementById('notifDropdown');
-  const willOpen = !dd.classList.contains('open');
-  if (willOpen && currentUser) {
-    _cachedNotifs = await fetchNotificationsFor(currentUser.email, isStaff());
-    updateNotifBadge();
+  const dropdown = document.getElementById('notifDropdown');
+  if (!dropdown || _notificationDropdownLoading) return;
+
+  const willOpen = !dropdown.classList.contains('open');
+  if (!willOpen) {
+    dropdown.classList.remove('open');
+    return;
   }
-  if (willOpen) renderNotifList();
-  dd.classList.toggle('open', willOpen);
+
+  // لا نرسل طلباً جديداً إذا كان الطلب السابق ما زال قيد التنفيذ.
+  _notificationDropdownLoading = true;
+  dropdown.classList.add('open');
+
+  try {
+    if (currentUser) {
+      const notifications = await fetchNotificationsFor(
+        currentUser.email,
+        isStaff()
+      );
+      _cachedNotifs = Array.isArray(notifications) ? notifications : [];
+      updateNotifBadge();
+    }
+    renderNotifList();
+  } catch (e) {
+    console.error('خطأ أثناء تحميل الإشعارات:', e);
+    renderNotifList();
+  } finally {
+    _notificationDropdownLoading = false;
+  }
 }
+
 function closeNotifDropdown() {
-  document.getElementById('notifDropdown').classList.remove('open');
+  const dropdown = document.getElementById('notifDropdown');
+  if (dropdown) dropdown.classList.remove('open');
 }
+
 document.addEventListener('click', (e) => {
-  const dd = document.getElementById('notifDropdown');
-  const btn = document.getElementById('notifBtn');
-  if (dd && dd.classList.contains('open') && !dd.contains(e.target) && !btn.contains(e.target)) {
+  const dropdown = document.getElementById('notifDropdown');
+  const button = document.getElementById('notifBtn');
+  if (!dropdown || !button) return;
+
+  if (
+    dropdown.classList.contains('open') &&
+    !dropdown.contains(e.target) &&
+    !button.contains(e.target)
+  ) {
     e.stopPropagation();
     e.preventDefault();
     closeNotifDropdown();
