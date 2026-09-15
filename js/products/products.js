@@ -1258,9 +1258,36 @@ function onNotifClick(docId, link) {
     if (!link) return;
 
     if (link.startsWith('page:')) {
+      // لا نمرر قيمة الرابط مباشرة إلى showPage؛ رابط الإشعار بيانات خارجية
+      // وقد يحتوي على اسم صفحة غير موجود، فيبقى المستخدم على شاشة فارغة.
+      // إشعارات حالة الطلب يجب أن تفتح صفحة طلباتي دائماً.
+      const requestedPage = link.slice('page:'.length).trim();
+      const pageAliases = {
+        orders: 'orders',
+        order: 'orders',
+        clientorders: 'orders',
+        messages: 'messages',
+        myquotes: 'myQuotes',
+        quotes: 'myQuotes',
+        home: 'home',
+        favorites: 'favorites',
+        reordered: 'reordered',
+        trackorder: 'trackOrder',
+      };
+      const page = pageAliases[requestedPage.toLowerCase()];
+      if (!page) {
+        console.warn('مسار إشعار غير معروف:', requestedPage);
+        showToast('⚠️ لا يمكن فتح وجهة هذا الإشعار حالياً', 'error');
+        return;
+      }
       // تأجيل التنقل إلى دورة الرسم التالية حتى تنتهي إعادة رسم القائمة.
-      const page = link.replace('page:', '').trim();
-      requestAnimationFrame(() => showPage(page));
+      requestAnimationFrame(() => {
+        if (page === 'orders' && typeof openClientOrders === 'function') {
+          openClientOrders();
+        } else {
+          showPage(page);
+        }
+      });
 
     } else if (link.startsWith('adminorders:')) {
       if (isStaff()) {
