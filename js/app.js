@@ -17,11 +17,16 @@ const DOMAIN_SCRIPTS = [
   './js/messages/messages.js',
   './js/admin/admin.js',
 ];
+const DOMAIN_SCRIPT_VERSION = 'fix-3';
+
+function versionedScriptSrc(src) {
+  return `${src}${src.includes('?') ? '&' : '?'}v=${DOMAIN_SCRIPT_VERSION}`;
+}
 
 function loadDomainScript(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = src;
+    script.src = versionedScriptSrc(src);
     script.onload = resolve;
     script.onerror = () => reject(new Error(`Failed to load ${src}`));
     document.head.appendChild(script);
@@ -31,7 +36,7 @@ function loadDomainScript(src) {
 function loadDomainScriptOrdered(src) {
   return new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = src;
+    script.src = versionedScriptSrc(src);
     script.async = false; // يحافظ على ترتيب التنفيذ الأصلي، بس التحميل نفسه يصير بالتوازي
     script.onload = resolve;
     script.onerror = () => reject(new Error(`Failed to load ${src}`));
