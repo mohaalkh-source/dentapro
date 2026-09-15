@@ -474,8 +474,6 @@ body.dark-mode .trust-badge { background:var(--card); border-color:var(--border)
 
 .offers-ticker-item i { color:#ffd700; font-size:14px; }
 
-.offers-ticker-track { direction: ltr; }
-
 body.en .offers-ticker { direction:ltr; }
 
 body.en .offers-ticker-track { animation-name:tickerScrollEn; }
