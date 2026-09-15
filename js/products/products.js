@@ -1250,10 +1250,10 @@ function onNotifClick(docId, link) {
   _notificationActionInProgress = true;
 
   try {
-    // أغلق القائمة بصرياً فقط. لا نلمس history هنا لأن قائمة الإشعارات
-    // ليست صفحة، وفتح صفحة الطلبات سيضيف حالة history مستقلة بعد قليل.
-    const notifDropdown = document.getElementById('notifDropdown');
-    if (notifDropdown) notifDropdown.classList.remove('open');
+    if (docId) markNotifIdRead(docId);
+    updateNotifBadge();
+    renderNotifList();
+    closeNotifDropdown();
 
     if (!link) return;
 
@@ -1280,40 +1280,35 @@ function onNotifClick(docId, link) {
         showToast('⚠️ لا يمكن فتح وجهة هذا الإشعار حالياً', 'error');
         return;
       }
-      // أخرج من حدث النقرة أولاً؛ تغيير DOM وhistory داخل inline onclick
-      // يسبب تجمداً في بعض WebView/هواتف Android.
-      setTimeout(() => {
-        try {
+      // تأجيل التنقل إلى دورة الرسم التالية حتى تنتهي إعادة رسم القائمة.
+      requestAnimationFrame(() => {
+        if (page === 'orders' && typeof openClientOrders === 'function') {
+          openClientOrders();
+        } else {
           showPage(page);
-          if (docId) markNotifIdRead(docId);
-          updateNotifBadge();
-        } catch (e) { console.warn('تعذر تحديث قراءة الإشعار:', e); }
-      }, 0);
+        }
+      });
 
     } else if (link.startsWith('adminorders:')) {
       if (isStaff()) {
-        setTimeout(() => {
-          const panel = document.getElementById('adminPanel');
-          if (panel) panel.classList.add('open');
-          switchAdminTab('orders');
-        }, 0);
+        const panel = document.getElementById('adminPanel');
+        if (panel) panel.classList.add('open');
+        switchAdminTab('orders');
       }
 
     } else if (link.startsWith('adminquotes:')) {
       if (isStaff()) {
-        setTimeout(() => {
-          const panel = document.getElementById('adminPanel');
-          if (panel) panel.classList.add('open');
-          switchAdminTab('quotes');
-        }, 0);
+        const panel = document.getElementById('adminPanel');
+        if (panel) panel.classList.add('open');
+        switchAdminTab('quotes');
       }
 
     } else if (link.startsWith('product:')) {
       const id = parseInt(link.replace('product:', '').trim(), 10);
+      showPage('home');
 
       setTimeout(async () => {
         try {
-          showPage('home');
           let p = products.find(x => x.id === id);
           if (!p) {
             await loadProductsFromFirebase();
@@ -1330,12 +1325,10 @@ function onNotifClick(docId, link) {
     } else if (link.startsWith('clientmsg:')) {
       const email = link.replace('clientmsg:', '').trim();
       if (isStaff()) {
-        setTimeout(() => {
-          const panel = document.getElementById('adminPanel');
-          if (panel) panel.classList.add('open');
-          switchAdminTab('messages');
-          setTimeout(() => openAdminThreadModal(email), 400);
-        }, 0);
+        const panel = document.getElementById('adminPanel');
+        if (panel) panel.classList.add('open');
+        switchAdminTab('messages');
+        setTimeout(() => openAdminThreadModal(email), 400);
       }
     }
   } catch (e) {
