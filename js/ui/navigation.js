@@ -390,46 +390,81 @@ function runTickerLoop(ticker, track) {
   ticker.onmouseenter = () => { _tickerPaused = true; };
   ticker.onmouseleave = () => { _tickerPaused = false; };
 
+  // pos is stored in the ticker's logical coordinate system.
+  // Convert it to the physical CSS transform only here.
+  function getPhysicalX(value) {
+    return isEn ? -value : value;
+  }
+
   function applyTransform() {
-    track.style.transform = isEn ? `translateX(${-pos}px)` : `translateX(${pos}px)`;
+    track.style.transform = `translateX(${getPhysicalX(pos)}px)`;
   }
 
   // ===== سحب الشريط بالإصبع =====
   let dragging = false;
   let dragStartX = 0;
   let dragStartPos = 0;
+  let dragStartPhysicalX = 0;
   let dragMoved = false;
 
   ticker.addEventListener('touchstart', (e) => {
+    if (!e.touches || !e.touches.length) return;
+
     dragging = true;
     _tickerPaused = true;
     dragMoved = false;
     dragStartX = e.touches[0].clientX;
     dragStartPos = pos;
+    dragStartPhysicalX = getPhysicalX(pos);
   }, { passive: true });
 
   ticker.addEventListener('touchmove', (e) => {
-    if (!dragging) return;
+    if (!dragging || !e.touches || !e.touches.length) return;
+
     const dx = e.touches[0].clientX - dragStartX;
     if (Math.abs(dx) > 4) dragMoved = true;
+
     const halfWidth = track.scrollWidth / 2;
     if (halfWidth <= 0) return;
-    let newPos = dragStartPos + (isEn ? -dx : dx);
-    newPos = ((newPos % halfWidth) + halfWidth) % halfWidth;
-    pos = newPos;
-    applyTransform();
-  }, { passive: true });
+
+    // Move the rendered track by exactly the same physical delta as the finger.
+    // Therefore a right-to-left finger movement (negative dx) is always
+    // rendered as a leftward movement, including in RTL mode.
+    const physicalX = dragStartPhysicalX + dx;
+    track.style.transform = `translateX(${physicalX}px)`;
+
+    // Keep the logical position synchronized for autoplay after release.
+    pos = isEn ? -physicalX : physicalX;
+
+    if (Math.abs(dx) > 8 && e.cancelable) {
+      e.preventDefault();
+    }
+  }, { passive: false });
 
   const endDrag = () => {
     if (!dragging) return;
+
     dragging = false;
     _tickerPaused = false;
+
+    // Normalize only after the finger is released, never during the drag.
+    const halfWidth = track.scrollWidth / 2;
+    if (halfWidth > 0) {
+      pos = ((pos % halfWidth) + halfWidth) % halfWidth;
+      applyTransform();
+    }
+
     if (dragMoved) {
       // إن كانت سحبًا فعليًا، نمنع نقرة الفتح العرضية التي قد تلي الإفلات
-      const suppressClick = (e) => { e.preventDefault(); e.stopPropagation(); ticker.removeEventListener('click', suppressClick, true); };
+      const suppressClick = (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        ticker.removeEventListener('click', suppressClick, true);
+      };
       ticker.addEventListener('click', suppressClick, true);
     }
   };
+
   ticker.addEventListener('touchend', endDrag, { passive: true });
   ticker.addEventListener('touchcancel', endDrag, { passive: true });
 
@@ -444,11 +479,12 @@ function runTickerLoop(ticker, track) {
       if (pos >= halfWidth) pos -= halfWidth;
       applyTransform();
     }
+
     _tickerRAF = requestAnimationFrame(step);
   }
+
   _tickerRAF = requestAnimationFrame(step);
 }
-
 function setupReorderButtons() {
   const body = document.getElementById('clientOrdersList');
   if (!body) return;
