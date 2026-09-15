@@ -180,7 +180,13 @@ function openClientOrders() {
   renderClientOrders();
   renderPointsInHeader();
 }
-async function renderClientOrders() {
+let _clientOrdersRenderPromise = null;
+
+function renderClientOrders() {
+  // منع تشغيل أكثر من تحميل في نفس الوقت عند فتح إشعار تحديث الطلب.
+  if (_clientOrdersRenderPromise) return _clientOrdersRenderPromise;
+
+  _clientOrdersRenderPromise = (async function() {
   const container = document.getElementById('clientOrdersList');
   container.innerHTML = skeletonOrderCardsHTML(3);
 
@@ -280,6 +286,11 @@ async function renderClientOrders() {
         <button class="btn-primary" style="margin-top:16px" onclick="renderClientOrders()">إعادة المحاولة</button>
       </div>`;
   }
+  })().finally(() => {
+    _clientOrdersRenderPromise = null;
+  });
+
+  return _clientOrdersRenderPromise;
 }
 // ── ADMIN ORDERS ──
 var ADMIN_TAB_TITLES = {
