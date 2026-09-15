@@ -621,6 +621,7 @@ var _exitWarningTimer = null;
 // ============================================================
 var uiLayerStack = [];          // {id, el} لكل طبقة مفتوحة حالياً، بترتيب الفتح
 var _pendingHistoryCleanup = false; // يمنع أي popstate ناتج عن تنظيفنا التلقائي للسجل من التسبب بتنقل غير مقصود
+var _pendingNotificationPage = null; // وجهة إشعار تنتظر انتهاء تنظيف سجل القائمة
 
 // المودالات الثابتة الموجودة أصلاً بالـ HTML (تُغلق بإزالة كلاس open فقط، لا تُحذف من الـ DOM)
 var STATIC_MODAL_IDS = new Set([
@@ -755,6 +756,14 @@ window.addEventListener('popstate', (e) => {
   // (مثلاً: ضغط المستخدم زر X لإغلاق مودال، وليس زر الرجوع الفيزيائي)
   if (_pendingHistoryCleanup) {
     _pendingHistoryCleanup = false;
+    if (_pendingNotificationPage) {
+      const pendingPage = _pendingNotificationPage;
+      _pendingNotificationPage = null;
+      setTimeout(() => {
+        try { showPage(pendingPage); }
+        catch (err) { console.warn('تعذر فتح وجهة الإشعار:', err); }
+      }, 0);
+    }
     return;
   }
 
