@@ -1250,22 +1250,10 @@ function onNotifClick(docId, link) {
   _notificationActionInProgress = true;
 
   try {
-    // أغلق القائمة فوراً ولا تعِد بناء notifList أثناء حدث النقرة.
-    // إعادة innerHTML للقائمة وهي تحت حدث click كانت تمنع الانتقال على بعض الهواتف.
-    //
-    // [إصلاح تجمّد الشاشة] لو رح ننتقل مباشرة بعدها لصفحة/طبقة أخرى (link موجود)،
-    // نغلق القائمة بطريقة "صامتة" ما بتحرّك تاريخ المتصفح (history.go) إطلاقاً،
-    // بدل الإغلاق العادي اللي بيجدوِل تحريك تاريخ بالخلفية. لأنه حتى مع تأجيل
-    // التنقل بـ setTimeout، كان ممكن يصادف تحريك التاريخ الخاص بإغلاق القائمة
-    // فيتعارض الاثنان ويجمّد الشاشة (الرابط يتغيّر لكن العرض ما ينتقل).
-    // بدون link (يعني مجرد إغلاق قائمة بدون أي انتقال) نستخدم الإغلاق العادي عادي.
-    const _notifDropdownEl = document.getElementById('notifDropdown');
-    if (link && _notifDropdownEl && typeof window._untrackUILayerSilently === 'function') {
-      _notifDropdownEl.classList.remove('open');
-      window._untrackUILayerSilently(_notifDropdownEl);
-    } else {
-      closeNotifDropdown();
-    }
+    // أغلق القائمة بصرياً فقط. لا نلمس history هنا لأن قائمة الإشعارات
+    // ليست صفحة، وفتح صفحة الطلبات سيضيف حالة history مستقلة بعد قليل.
+    const notifDropdown = document.getElementById('notifDropdown');
+    if (notifDropdown) notifDropdown.classList.remove('open');
 
     if (!link) return;
 
