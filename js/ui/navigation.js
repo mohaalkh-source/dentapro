@@ -847,8 +847,14 @@ function showPage(page) {
   } else if (page === 'orders') {
     activatePageSection('ordersPage');
     window.scrollTo(0, 0);
-    renderClientOrders();
-    markNotifsByLinkPrefixRead(['page:orders']);
+    // لا نبدأ قراءة Firebase أو إعادة رسم الإشعارات أثناء تغيير الصفحة.
+    // هذا يمنع تجمّد WebView عند فتح الصفحة من نقرة إشعار.
+    setTimeout(() => {
+      if (typeof renderClientOrders === 'function') renderClientOrders();
+      if (typeof markNotifsByLinkPrefixRead === 'function') {
+        markNotifsByLinkPrefixRead(['page:orders']);
+      }
+    }, 0);
   } else if (page === 'productDetail') {
     activatePageSection('productDetailPage');
     requestAnimationFrame(() => {
