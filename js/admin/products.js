@@ -1050,316 +1050,95 @@ var _adBannerOffers = [];
 var _adBannerIndex = 0;
 
 var _adBannerTouchStartX = null;
-var _adBannerTouchCurrentX = null;
-var _adBannerTouchDragging = false;
-var _adBannerTouchMoved = false;
-var _adBannerDragOffset = 0;
-
-var _adBannerTransitionTimer = null;
 
 async function renderAdBanner() {
   const section = document.getElementById('adBannerSection');
   const slide = document.getElementById('adBannerSlide');
-
   if (!section || !slide) return;
 
-  const bannerQtyOffers = offers.filter(o =>
-    o.type === 'qty' &&
-    o.active &&
-    !isOfferExpired(o) &&
-    o.showInBanner
-  );
-
-  const bannerBundles = offers.filter(o =>
-    o.type === 'bundle' &&
-    o.active &&
-    !isOfferExpired(o) &&
-    o.showInBanner
-  );
-
-  const bannerTexts = offers.filter(o =>
-    o.type === 'text' &&
-    o.active &&
-    !isOfferExpired(o) &&
-    o.showInBanner
-  );
-
+  const bannerQtyOffers = offers.filter(o => o.type === 'qty' && o.active && !isOfferExpired(o) && o.showInBanner);
+  const bannerBundles = offers.filter(o => o.type === 'bundle' && o.active && !isOfferExpired(o) && o.showInBanner);
+  const bannerTexts = offers.filter(o => o.type === 'text' && o.active && !isOfferExpired(o) && o.showInBanner);
   const bannerImages = getActiveHomeBannerSlides();
 
-  if (
-    !bannerQtyOffers.length &&
-    !bannerBundles.length &&
-    !bannerTexts.length &&
-    !bannerImages.length
-  ) {
+  if (!bannerQtyOffers.length && !bannerBundles.length && !bannerTexts.length && !bannerImages.length) {
     section.style.display = 'none';
-
-    if (_adBannerInterval) {
-      clearInterval(_adBannerInterval);
-      _adBannerInterval = null;
-    }
-
+    if (_adBannerInterval) { clearInterval(_adBannerInterval); _adBannerInterval = null; }
     return;
   }
 
   await fetchProductsByIds([
     ...bannerQtyOffers.map(o => o.productId),
-    ...bannerBundles.flatMap(o =>
-      o.items.map(it => it.productId)
-    )
+    ...bannerBundles.flatMap(o => o.items.map(it => it.productId))
   ]);
 
   const qtySlides = bannerQtyOffers
-    .map(o => ({
-      kind: 'qty',
-      offer: o,
-      product: products.find(p => p.id === o.productId)
-    }))
+    .map(o => ({ kind: 'qty', offer: o, product: products.find(p => p.id === o.productId) }))
     .filter(x => x.product);
 
   const bundleSlides = bannerBundles
     .map(o => ({
       kind: 'bundle',
       offer: o,
-      bundleProducts: o.items
-        .map(it => products.find(p => p.id === it.productId))
-        .filter(Boolean)
+      bundleProducts: o.items.map(it => products.find(p => p.id === it.productId)).filter(Boolean)
     }))
     .filter(x => x.bundleProducts.length);
 
-  const textSlides = bannerTexts.map(o => ({
-    kind: 'text',
-    offer: o
-  }));
+  const textSlides = bannerTexts.map(o => ({ kind: 'text', offer: o }));
 
-  const imageSlides = bannerImages.map(s => ({
-    kind: 'image',
-    slideData: s
-  }));
+  const imageSlides = bannerImages.map(s => ({ kind: 'image', slideData: s }));
 
-  _adBannerOffers = [
-    ...qtySlides,
-    ...bundleSlides,
-    ...textSlides,
-    ...imageSlides
-  ];
+  _adBannerOffers = [...qtySlides, ...bundleSlides, ...textSlides, ...imageSlides];
 
-  if (!_adBannerOffers.length) {
-    section.style.display = 'none';
-    return;
-  }
+  if (!_adBannerOffers.length) { section.style.display = 'none'; return; }
 
   section.style.display = 'block';
   _adBannerIndex = 0;
-
-  showAdBannerSlide(1);
+  showAdBannerSlide();
   initAdBannerSwipe();
   restartAdBannerAutoplay();
 }
 
 function restartAdBannerAutoplay() {
-  if (_adBannerInterval) {
-    clearInterval(_adBannerInterval);
-    _adBannerInterval = null;
-  }
-
+  if (_adBannerInterval) clearInterval(_adBannerInterval);
   if (_adBannerOffers.length > 1) {
     _adBannerInterval = setInterval(() => {
-      _adBannerIndex =
-        (_adBannerIndex + 1) % _adBannerOffers.length;
-
-      showAdBannerSlide(1);
+      _adBannerIndex = (_adBannerIndex + 1) % _adBannerOffers.length;
+      showAdBannerSlide();
     }, 4500);
-  }
-}
-
-function stopAdBannerAutoplay() {
-  if (_adBannerInterval) {
-    clearInterval(_adBannerInterval);
-    _adBannerInterval = null;
   }
 }
 
 function adBannerNav(dir) {
   if (!_adBannerOffers.length) return;
-
-  _adBannerIndex =
-    (_adBannerIndex + dir + _adBannerOffers.length) %
-    _adBannerOffers.length;
-
-  showAdBannerSlide(dir);
+  _adBannerIndex = (_adBannerIndex + dir + _adBannerOffers.length) % _adBannerOffers.length;
+  showAdBannerSlide();
   restartAdBannerAutoplay();
 }
 
 function initAdBannerSwipe() {
   const slide = document.getElementById('adBannerSlide');
-
   if (!slide || slide.dataset.swipeBound) return;
-
   slide.dataset.swipeBound = '1';
-
-  slide.addEventListener(
-    'touchstart',
-    e => {
-      if (!e.touches || !e.touches.length) return;
-
-      stopAdBannerAutoplay();
-
-      _adBannerTouchStartX = e.touches[0].clientX;
-      _adBannerTouchCurrentX = _adBannerTouchStartX;
-      _adBannerTouchDragging = true;
-      _adBannerTouchMoved = false;
-      _adBannerDragOffset = 0;
-
-      const inner =
-        document.getElementById('adBannerSlideInner');
-
-      if (inner) {
-        inner.style.transition = 'none';
-      }
-    },
-    { passive: true }
-  );
-
-  slide.addEventListener(
-    'touchmove',
-    e => {
-      if (
-        !_adBannerTouchDragging ||
-        _adBannerTouchStartX === null ||
-        !e.touches ||
-        !e.touches.length
-      ) {
-        return;
-      }
-
-      const currentX = e.touches[0].clientX;
-      const dx = currentX - _adBannerTouchStartX;
-
-      _adBannerTouchCurrentX = currentX;
-      _adBannerDragOffset = dx;
-
-      if (Math.abs(dx) > 5) {
-        _adBannerTouchMoved = true;
-      }
-
-      const inner =
-        document.getElementById('adBannerSlideInner');
-
-      if (inner) {
-        inner.style.transition = 'none';
-        inner.style.transform = `translateX(${dx}px)`;
-      }
-
-      if (Math.abs(dx) > 8 && e.cancelable) {
-        e.preventDefault();
-      }
-    },
-    { passive: false }
-  );
-
-  slide.addEventListener(
-    'touchend',
-    e => {
-      if (
-        !_adBannerTouchDragging ||
-        _adBannerTouchStartX === null
-      ) {
-        return;
-      }
-
-      const endX =
-        e.changedTouches && e.changedTouches.length
-          ? e.changedTouches[0].clientX
-          : _adBannerTouchCurrentX;
-
-      const dx = endX - _adBannerTouchStartX;
-
-      _adBannerTouchStartX = null;
-      _adBannerTouchCurrentX = null;
-      _adBannerTouchDragging = false;
-
-      const minimumSwipeDistance = 40;
-
-      if (Math.abs(dx) < minimumSwipeDistance) {
-        const inner =
-          document.getElementById('adBannerSlideInner');
-
-        if (inner) {
-          inner.style.transition =
-            'transform 0.2s ease-out';
-          inner.style.transform = 'translateX(0)';
-        }
-
-        _adBannerDragOffset = 0;
-        _adBannerTouchMoved = false;
-
-        restartAdBannerAutoplay();
-        return;
-      }
-
-      if (dx < 0) {
-        adBannerNav(1);
-      } else {
-        adBannerNav(-1);
-      }
-
-      _adBannerDragOffset = 0;
-      _adBannerTouchMoved = false;
-    },
-    { passive: true }
-  );
-
-  slide.addEventListener(
-    'touchcancel',
-    () => {
-      if (!_adBannerTouchDragging) return;
-
-      const inner =
-        document.getElementById('adBannerSlideInner');
-
-      if (inner) {
-        inner.style.transition =
-          'transform 0.2s ease-out';
-        inner.style.transform = 'translateX(0)';
-      }
-
-      _adBannerTouchStartX = null;
-      _adBannerTouchCurrentX = null;
-      _adBannerTouchDragging = false;
-      _adBannerTouchMoved = false;
-      _adBannerDragOffset = 0;
-
-      restartAdBannerAutoplay();
-    },
-    { passive: true }
-  );
+  slide.addEventListener('touchstart', e => { _adBannerTouchStartX = e.touches[0].clientX; }, { passive: true });
+  slide.addEventListener('touchend', e => {
+    if (_adBannerTouchStartX === null) return;
+    const dx = e.changedTouches[0].clientX - _adBannerTouchStartX;
+    _adBannerTouchStartX = null;
+    if (Math.abs(dx) < 40) return;
+    if (dx < 0) adBannerNav(1); else adBannerNav(-1);
+  }, { passive: true });
 }
 
-function showAdBannerSlide(direction = 1) {
-  const inner =
-    document.getElementById('adBannerSlideInner');
-
+function showAdBannerSlide() {
+  const inner = document.getElementById('adBannerSlideInner');
   if (!inner || !_adBannerOffers.length) return;
-
-  if (_adBannerTransitionTimer) {
-    clearTimeout(_adBannerTransitionTimer);
-    _adBannerTransitionTimer = null;
-  }
-
   const current = _adBannerOffers[_adBannerIndex];
 
-  const exitX = direction === 1 ? '-100%' : '100%';
-  const enterX = direction === 1 ? '100%' : '-100%';
-
-  inner.style.transition =
-    'transform 0.28s ease-out';
-  inner.style.transform =
-    `translateX(${exitX})`;
-
-  _adBannerTransitionTimer = setTimeout(() => {
-    _adBannerTransitionTimer = null;
-
+  // الصورة الحالية تنزلق لليمين وتخرج
+  inner.style.transition = 'transform 0.28s ease-in';
+  inner.style.transform = 'translateX(100%)';
+  setTimeout(() => {
     if (current.kind === 'bundle') {
       renderBannerBundleSlide(inner, current);
     } else if (current.kind === 'text') {
@@ -1369,20 +1148,16 @@ function showAdBannerSlide(direction = 1) {
     } else {
       renderBannerQtySlide(inner, current);
     }
-
+    // نضع الصورة الجديدة خارج الإطار من جهة اليسار بدون حركة، ثم نُدخلها بحركة سريعة
     inner.style.transition = 'none';
-    inner.style.transform =
-      `translateX(${enterX})`;
-
-    void inner.offsetWidth;
-
-    inner.style.transition =
-      'transform 0.28s ease-out';
+    inner.style.transform = 'translateX(-100%)';
+    void inner.offsetWidth; // إجبار المتصفح على تطبيق الموضع قبل بدء حركة الدخول
+    inner.style.transition = 'transform 0.28s ease-out';
     inner.style.transform = 'translateX(0)';
-
     updateAdBannerDots();
   }, 200);
 }
+
 // نقاط التنقل تحت شريط الصور — تعرض عدد الشرائح والشريحة النشطة، وتدعم الضغط للانتقال المباشر
 function updateAdBannerDots() {
   const dotsEl = document.getElementById('adBannerDots');
