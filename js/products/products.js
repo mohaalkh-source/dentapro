@@ -1279,11 +1279,11 @@ function onNotifClick(docId, link) {
         showToast('⚠️ لا يمكن فتح وجهة هذا الإشعار حالياً', 'error');
         return;
       }
-      // الانتقال أولاً؛ لا ننتظر Firebase أو إعادة رسم الإشعارات.
-      showPage(page);
-      // تعليم الإشعار كمقروء وتحديث العداد لاحقاً خارج مسار التنقل.
+      // أخرج من حدث النقرة أولاً؛ تغيير DOM وhistory داخل inline onclick
+      // يسبب تجمداً في بعض WebView/هواتف Android.
       setTimeout(() => {
         try {
+          showPage(page);
           if (docId) markNotifIdRead(docId);
           updateNotifBadge();
         } catch (e) { console.warn('تعذر تحديث قراءة الإشعار:', e); }
