@@ -814,6 +814,12 @@ function scrollToPageSection(id) {
 let pageScrollPositions = {};
 
 function showPage(page) {
+  const validPages = new Set(['home', 'orders', 'productDetail', 'about', 'compare', 'favorites', 'reordered', 'myQuotes', 'messages', 'trackOrder', 'error']);
+  if (!validPages.has(page)) {
+    console.warn('محاولة فتح صفحة غير معروفة:', page);
+    page = 'home';
+  }
+
   // احفظ موضع التمرير الحالي للصفحة يلي عم نغادرها، لإعادته لاحقاً لو رجعنالها
   const leavingPage = pageHistory[pageHistory.length - 1];
   if (leavingPage) pageScrollPositions[leavingPage] = window.scrollY;
