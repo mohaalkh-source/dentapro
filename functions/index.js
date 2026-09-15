@@ -5,6 +5,11 @@ const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 initializeApp();
 const db = getFirestore();
 
+// حدود صارمة تمنع طلبات غير منطقية أو محاولات استنزاف
+const MAX_DISTINCT_ITEMS = 30;
+const MAX_QTY_PER_ITEM = 200;
+const MAX_TOTAL_RESERVED_QTY = 1000;
+
 // =====================================================
 // أدوات مساعدة — نسخة خادمية مطابقة لمنطق العميل في
 // js/admin/clients.js و js/products/products.js
@@ -12,6 +17,10 @@ const db = getFirestore();
 
 function normalizePhone(p) {
   return String(p || '').replace(/\D/g, '').replace(/^0+/, '');
+}
+
+function isOfferExpired(offer) {
+  return !!(offer && offer.expiresAt && new Date(offer.expiresAt) <= new Date());
 }
 
 async function loadCustomDiscountConfig() {
@@ -50,7 +59,6 @@ async function computeCustomDiscount(rawTotal, clientEmail, clientPhone) {
   };
 }
 
-// cartItems هنا هي عناصر بعد ما استبدلنا السعر بالسعر الحقيقي من قاعدة البيانات
 async function computeGeneralDiscountForCart(cartItems, clientEmail, clientPhone) {
   const cfg = await loadCustomDiscountConfig();
   if (!cfg || !cfg.enabled) return null;
@@ -102,7 +110,6 @@ function computeDeliveryFee(deliverySettings, subtotal) {
   return { fee, determined: true };
 }
 
-// أجور التوصيل النهائية: الإعداد العام يلغي أي تسعير خاص بالعميل لو discountEnabled مفعّل
 async function resolveDeliveryFee(uid, subtotal) {
   const globalSettings = await loadGlobalDeliverySettings();
   if (globalSettings && globalSettings.discountEnabled) {
@@ -114,7 +121,7 @@ async function resolveDeliveryFee(uid, subtotal) {
 
 // =====================================================
 // createOrder — الدالة الرئيسية
-// تستقبل من العميل فقط: معرّفات المنتجات + الكميات + بيانات التواصل
+// تستقبل من العميل فقط: معرّفات المنتجات/الباقات + الكميات + بيانات التواصل
 // وتحسب كل شيء آخر (سعر، خصم، توصيل، نقاط، مخزون) من الخادم
 // =====================================================
 exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
@@ -123,6 +130,9 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
 
   const rawItems = Array.isArray(data.items) ? data.items : [];
   if (!rawItems.length) throw new HttpsError('invalid-argument', 'السلة فارغة');
+  if (rawItems.length > MAX_DISTINCT_ITEMS) {
+    throw new HttpsError('invalid-argument', `عدد العناصر أكبر من الحد المسموح (${MAX_DISTINCT_ITEMS})`);
+  }
 
   const payMethod = data.payMethod === 'points' ? 'points' : 'money';
   const clinic = String(data.clinic || '').trim();
@@ -133,6 +143,12 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
   const locationLng = typeof data.locationLng === 'number' ? data.locationLng : null;
   const notes = String(data.notes || '').slice(0, 1000);
   const sourceQuoteId = data.sourceQuoteId ? String(data.sourceQuoteId) : null;
+
+  // مفتاح تكرار إلزامي: العميل يولّده مرة واحدة لكل محاولة شراء ويعيد إرساله نفسه عند أي إعادة محاولة تلقائية
+  const idempotencyKey = String(data.idempotencyKey || '').trim();
+  if (!idempotencyKey || idempotencyKey.length < 8 || idempotencyKey.length > 100) {
+    throw new HttpsError('invalid-argument', 'idempotencyKey مطلوب وغير صالح');
+  }
 
   if (!clinic || !doctor || !phone) {
     throw new HttpsError('invalid-argument', 'بيانات العيادة/الطبيب/الهاتف مطلوبة');
@@ -149,42 +165,103 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
   const clientEmail = clientDoc ? (clientDoc.email || 'guest') : 'guest';
   const clientName = clientDoc ? (clientDoc.name || doctor) : doctor;
 
-  // توسيع الباقات (bundles) إلى منتجات فردية لحجز المخزون، مع الإبقاء على العنصر الأصلي في الطلب
-  const merged = {}; // productId -> qty إجمالي مطلوب حجزه
-  const requestedItems = []; // العناصر كما وصلت من العميل (id/qty/isBundle/bundleItems فقط - بلا سعر)
+  // تحقق مبدئي من صيغة العناصر (قبل الدخول بالمعاملة)
+  const requestedItems = [];
   for (const raw of rawItems) {
-    const id = String(raw.id || raw.productId || '');
+    const id = raw.id !== undefined && raw.id !== null ? raw.id : raw.productId;
     const qty = Number(raw.qty) || 0;
-    if (!id || qty <= 0 || !Number.isInteger(qty)) {
-      throw new HttpsError('invalid-argument', `كمية أو معرف منتج غير صالح: ${id}`);
+    if (id === undefined || id === null || id === '' || qty <= 0 || !Number.isInteger(qty)) {
+      throw new HttpsError('invalid-argument', `كمية أو معرف عنصر غير صالح: ${id}`);
     }
-    const isBundle = !!raw.isBundle;
-    const bundleItems = isBundle && Array.isArray(raw.bundleItems) ? raw.bundleItems : null;
-    requestedItems.push({ id, qty, isBundle, bundleItems });
-
-    if (isBundle && bundleItems) {
-      for (const bi of bundleItems) {
-        const biId = String(bi.productId || '');
-        const biQty = (Number(bi.qty) || 1) * qty;
-        if (!biId) throw new HttpsError('invalid-argument', 'عنصر باقة غير صالح');
-        merged[biId] = (merged[biId] || 0) + biQty;
-      }
-    } else {
-      merged[id] = (merged[id] || 0) + qty;
+    if (qty > MAX_QTY_PER_ITEM) {
+      throw new HttpsError('invalid-argument', `الكمية المطلوبة من "${id}" أكبر من الحد المسموح (${MAX_QTY_PER_ITEM})`);
     }
+    // isBundle/bundleItems القادمة من العميل تُستخدم فقط لتحديد "هل هذا معرّف باقة" —
+    // محتوى الباقة الفعلي (المنتجات والكميات والسعر) يُقرأ حصراً من store_data/offers داخل المعاملة
+    requestedItems.push({ id, qty, isBundle: !!raw.isBundle });
   }
 
-  const allProductIds = Array.from(new Set([...Object.keys(merged), ...requestedItems.map((i) => i.id)]));
-
-  // نبني رقم الطلب وباقي الحسابات، ثم ننفذ الحجز + الحفظ ذرياً بمعاملة واحدة
   const orderNum = sourceQuoteId
     ? `DP-${sourceQuoteId.replace('QT-', '')}`
     : `DP-${Date.now().toString(36).toUpperCase()}-${Math.random().toString(36).slice(2, 5).toUpperCase()}`;
 
+  const idempotencyRef = db.doc(`order_idempotency/${idempotencyKey}`);
   const orderRef = db.doc(`orders/${orderNum}`);
 
   const result = await db.runTransaction(async (tx) => {
-    // 1) نقرأ كل مستندات المنتجات المطلوبة فعلياً (من مصدر الحقيقة الوحيد: products)
+    // 0) تحقق من التكرار أولاً — لو نفس المفتاح استُخدم قبل، نرجّع نتيجة الطلب الأصلي بدل إنشاء طلب ثانٍ
+    const idemSnap = await tx.get(idempotencyRef);
+    if (idemSnap.exists) {
+      const existing = idemSnap.data();
+      return { orderNum: existing.orderNum, total: existing.total, totalPoints: existing.totalPoints, duplicate: true };
+    }
+
+    // 1) لو الطلب مبني على عرض سعر مقبول، تحقق من صحة العرض وملكيته وحالته أولاً
+    let quoteSnap = null;
+    if (sourceQuoteId) {
+      quoteSnap = await tx.get(db.doc(`quotes/${sourceQuoteId}`));
+      if (!quoteSnap.exists) throw new HttpsError('failed-precondition', 'عرض السعر غير موجود');
+      const q = quoteSnap.data();
+      if (q.status !== 'accepted') {
+        throw new HttpsError('failed-precondition', 'عرض السعر ليس بحالة مقبولة');
+      }
+      if (q.orderCreated) {
+        throw new HttpsError('failed-precondition', 'تم إنشاء طلب من هذا العرض مسبقاً');
+      }
+      const ownsQuote = clientUid ? q.clientUid === clientUid : q.clientEmail === 'guest';
+      if (!ownsQuote) throw new HttpsError('permission-denied', 'هذا العرض لا يخص هذا الحساب');
+    }
+
+    // 2) نجيب تعريفات الباقات الحقيقية (store_data/offers) لأي عنصر isBundle، ونتجاهل أي بيانات باقة من العميل تماماً
+    const bundleRequests = requestedItems.filter((i) => i.isBundle);
+    let offersDoc = null;
+    if (bundleRequests.length) {
+      const offersSnap = await tx.get(db.doc('store_data/offers'));
+      offersDoc = offersSnap.exists ? offersSnap.data() : null;
+    }
+
+    const resolvedBundles = {};
+    for (const bi of bundleRequests) {
+      const list = (offersDoc && Array.isArray(offersDoc.list)) ? offersDoc.list
+                 : (offersDoc && Array.isArray(offersDoc.offers)) ? offersDoc.offers
+                 : Array.isArray(offersDoc) ? offersDoc : [];
+      const def = list.find((o) => String(o.id) === String(bi.id) && o.type === 'bundle');
+      if (!def) throw new HttpsError('failed-precondition', `باقة غير موجودة: ${bi.id}`);
+      if (def.active === false) throw new HttpsError('failed-precondition', `الباقة "${def.name_ar || bi.id}" غير مفعّلة`);
+      if (isOfferExpired(def)) throw new HttpsError('failed-precondition', `الباقة "${def.name_ar || bi.id}" منتهية`);
+      const items = Array.isArray(def.items) ? def.items : [];
+      if (!items.length) throw new HttpsError('failed-precondition', `الباقة "${def.name_ar || bi.id}" بلا محتوى معرّف`);
+      resolvedBundles[bi.id] = {
+        name_ar: def.name_ar || '', name_en: def.name_en || '', icon: def.icon || '🎁',
+        price: Number(def.bundlePrice) || 0, points: Number(def.points) || 0,
+        items: items.map((it) => ({ productId: it.productId, qty: Number(it.qty) || 1 })),
+      };
+    }
+
+    // 3) نبني خريطة خصم المخزون الفعلي (بعد توسيع الباقات لمنتجاتها الحقيقية)
+    const merged = {};
+    let totalReservedQty = 0;
+    for (const ri of requestedItems) {
+      if (ri.isBundle) {
+        const b = resolvedBundles[ri.id];
+        for (const bi of b.items) {
+          const addQty = bi.qty * ri.qty;
+          merged[bi.productId] = (merged[bi.productId] || 0) + addQty;
+          totalReservedQty += addQty;
+        }
+      } else {
+        merged[ri.id] = (merged[ri.id] || 0) + ri.qty;
+        totalReservedQty += ri.qty;
+      }
+    }
+    if (totalReservedQty > MAX_TOTAL_RESERVED_QTY) {
+      throw new HttpsError('invalid-argument', `إجمالي الكمية المطلوبة أكبر من الحد المسموح (${MAX_TOTAL_RESERVED_QTY})`);
+    }
+
+    const plainProductIds = requestedItems.filter((i) => !i.isBundle).map((i) => i.id);
+    const allProductIds = Array.from(new Set([...Object.keys(merged), ...plainProductIds]));
+
+    // 4) نقرأ كل مستندات المنتجات المطلوبة فعلياً (من مصدر الحقيقة الوحيد: products)
     const productRefs = allProductIds.map((id) => db.doc(`products/${id}`));
     const productSnaps = await Promise.all(productRefs.map((ref) => tx.get(ref)));
     const productById = {};
@@ -193,59 +270,74 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
       productById[allProductIds[idx]] = snap.data();
     });
 
-    // 2) نتحقق من كفاية المخزون لكل منتج فعلي (بعد توسيع الباقات)
+    // 5) نتحقق من كفاية المخزون لكل منتج فعلي (بعد توسيع الباقات)
     for (const [productId, qty] of Object.entries(merged)) {
       const p = productById[productId];
-      if (p.stock === undefined || p.stock === null) continue; // منتج بلا تتبع مخزون
+      if (p.stock === undefined || p.stock === null) continue;
       if (p.stock - qty < 0) {
         throw new HttpsError('resource-exhausted', `الكمية المتوفرة من "${p.ar || productId}" غير كافية (متبقي ${p.stock})`);
       }
     }
 
-    // 3) نعيد بناء عناصر الطلب بالسعر الحقيقي من قاعدة البيانات (نتجاهل أي سعر أرسله العميل)
+    // 6) نعيد بناء عناصر الطلب بالسعر الحقيقي (من products أو من تعريف الباقة الحقيقي) — نتجاهل أي سعر أرسله العميل
     const orderItems = requestedItems.map((ri) => {
-      const p = productById[ri.id];
-      if (ri.isBundle && ri.bundleItems) {
-        // سعر الباقة يُقرأ من مستند المنتج نفسه (منتج-باقة له سعره الخاص المخزّن)
+      if (ri.isBundle) {
+        const b = resolvedBundles[ri.id];
         return {
-          id: ri.id, ar: p.ar || '', en: p.en || '', icon: p.icon || '',
-          price: p.price, basePrice: p.basePrice || null, qty: ri.qty,
-          points: p.points || 0, isBundle: true, bundleItems: ri.bundleItems,
+          id: ri.id, ar: b.name_ar, en: b.name_en, icon: b.icon,
+          price: b.price, basePrice: null, qty: ri.qty, points: b.points,
+          isBundle: true, bundleItems: b.items,
         };
       }
+      const p = productById[ri.id];
       return {
         id: ri.id, ar: p.ar || '', en: p.en || '', icon: p.icon || '',
         price: p.price, basePrice: p.basePrice || null, qty: ri.qty, points: p.points || 0,
       };
     });
 
-    // 4) الدفع بالنقاط: المبلغ النقدي المطلوب هو فقط قيمة المواد التي لا تدعم الدفع بالنقاط
+    // 7) الدفع بالنقاط: المبلغ النقدي المطلوب هو فقط قيمة المواد التي لا تدعم الدفع بالنقاط
     const cashOnlyItems = payMethod === 'points' ? orderItems.filter((i) => !i.points) : orderItems;
     const rawTotal = cashOnlyItems.reduce((s, i) => s + i.price * i.qty, 0);
     const totalPointsNeeded = orderItems.reduce((s, i) => s + (i.points || 0) * i.qty, 0);
 
+    let pointsDeducted = false;
     if (payMethod === 'points') {
       if (!clientUid) throw new HttpsError('failed-precondition', 'الدفع بالنقاط متاح فقط للعملاء المسجلين');
-      const ptsSnap = await tx.get(db.doc(`points/${clientUid}`));
+      const ptsRef = db.doc(`points/${clientUid}`);
+      const ptsSnap = await tx.get(ptsRef);
       const balance = ptsSnap.exists ? (ptsSnap.data().balance || 0) : 0;
       if (balance < totalPointsNeeded) {
         throw new HttpsError('failed-precondition', `رصيد النقاط (${balance}) لا يكفي — المطلوب ${totalPointsNeeded}`);
       }
+      tx.update(ptsRef, {
+        balance: balance - totalPointsNeeded,
+        logs: FieldValue.arrayUnion({
+          type: 'order_deduct', orderId: orderNum, amount: -totalPointsNeeded,
+          at: new Date().toISOString(),
+        }),
+      });
+      pointsDeducted = true;
     }
 
-    // 5) الخصم العام/المخصص يُحسب من إعدادات الخادم فقط
+    // 8) الخصم العام/المخصص يُحسب من إعدادات الخادم فقط
     const discountResult = await computeGeneralDiscountForCart(cashOnlyItems, clientEmail, phone);
     const subtotalForDelivery = discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100;
 
-    // 6) أجور التوصيل تُحسب من إعدادات الخادم فقط
+    // 9) أجور التوصيل تُحسب من إعدادات الخادم فقط
     const deliveryResult = await resolveDeliveryFee(clientUid, subtotalForDelivery);
     const finalTotal = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
-    // 7) نخصم المخزون فعلياً (نفس المعاملة — ذرّي بالكامل مع إنشاء الطلب)
+    // 10) نخصم المخزون فعلياً (نفس المعاملة — ذرّي بالكامل مع إنشاء الطلب)
     for (const [productId, qty] of Object.entries(merged)) {
       const p = productById[productId];
       if (p.stock === undefined || p.stock === null) continue;
       tx.update(db.doc(`products/${productId}`), { stock: p.stock - qty });
+    }
+
+    // 11) لو الطلب مرتبط بعرض سعر، نعلّمه كمُحوَّل لطلب حتى لا يُستخدم مرة ثانية
+    if (sourceQuoteId) {
+      tx.update(db.doc(`quotes/${sourceQuoteId}`), { orderCreated: true, orderId: orderNum });
     }
 
     const order = {
@@ -256,7 +348,7 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
       items: orderItems,
       total: finalTotal,
       totalPoints: payMethod === 'points' ? totalPointsNeeded : 0,
-      payMethod, pointsDeducted: false,
+      payMethod, pointsDeducted,
       deliveryFee: deliveryResult.determined ? (deliveryResult.fee || 0) : null,
       deliveryDetermined: deliveryResult.determined,
       status: 'pending',
@@ -266,7 +358,13 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
     };
 
     tx.set(orderRef, order);
-    return { orderNum, total: finalTotal, totalPoints: order.totalPoints };
+
+    tx.set(idempotencyRef, {
+      orderNum, total: finalTotal, totalPoints: order.totalPoints,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+
+    return { orderNum, total: finalTotal, totalPoints: order.totalPoints, duplicate: false };
   });
 
   return result;
