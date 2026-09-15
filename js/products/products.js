@@ -1250,9 +1250,8 @@ function onNotifClick(docId, link) {
   _notificationActionInProgress = true;
 
   try {
-    if (docId) markNotifIdRead(docId);
-    updateNotifBadge();
-    renderNotifList();
+    // أغلق القائمة فوراً ولا تعِد بناء notifList أثناء حدث النقرة.
+    // إعادة innerHTML للقائمة وهي تحت حدث click كانت تمنع الانتقال على بعض الهواتف.
     closeNotifDropdown();
 
     if (!link) return;
@@ -1280,14 +1279,15 @@ function onNotifClick(docId, link) {
         showToast('⚠️ لا يمكن فتح وجهة هذا الإشعار حالياً', 'error');
         return;
       }
-      // تأجيل التنقل إلى دورة الرسم التالية حتى تنتهي إعادة رسم القائمة.
-      requestAnimationFrame(() => {
-        if (page === 'orders' && typeof openClientOrders === 'function') {
-          openClientOrders();
-        } else {
-          showPage(page);
-        }
-      });
+      // الانتقال أولاً؛ لا ننتظر Firebase أو إعادة رسم الإشعارات.
+      showPage(page);
+      // تعليم الإشعار كمقروء وتحديث العداد لاحقاً خارج مسار التنقل.
+      setTimeout(() => {
+        try {
+          if (docId) markNotifIdRead(docId);
+          updateNotifBadge();
+        } catch (e) { console.warn('تعذر تحديث قراءة الإشعار:', e); }
+      }, 0);
 
     } else if (link.startsWith('adminorders:')) {
       if (isStaff()) {
