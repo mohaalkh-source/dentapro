@@ -181,26 +181,15 @@ function openClientOrders() {
 }
 let _clientOrdersRenderPromise = null;
 
-function withClientOrdersTimeout(promise, timeoutMs = 12000) {
-  let timer;
-  const timeout = new Promise((_, reject) => {
-    timer = setTimeout(() => reject(new Error('انتهت مهلة تحميل الطلبات')), timeoutMs);
-  });
-  return Promise.race([promise, timeout]).finally(() => clearTimeout(timer));
-}
-
 function renderClientOrders() {
   // منع تشغيل أكثر من تحميل في نفس الوقت عند فتح إشعار تحديث الطلب.
   if (_clientOrdersRenderPromise) return _clientOrdersRenderPromise;
 
   _clientOrdersRenderPromise = (async function() {
   const container = document.getElementById('clientOrdersList');
-    if (!container) throw new Error('حاوية الطلبات غير موجودة');
   container.innerHTML = skeletonOrderCardsHTML(3);
 
   try {
-    if (!currentUser) throw new Error('يجب تسجيل الدخول لعرض الطلبات');
-
     // انتظر حتى يصبح Firebase جاهزاً
     for (let i = 0; i < 30; i++) {
       if (window._fbQuery && window._fbOrdersRef && window._fbGetDocs) break;
@@ -210,7 +199,8 @@ function renderClientOrders() {
 
     let q;
     if (isStaff()) {
-      q = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
+      // تحديد عدد الطلبات المجلوبة دفعة واحدة لتفادي تجميد الصفحة عند تراكم آلاف الطلبات
+      q = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'), window._fbLimit(50));
     } else {
       // لازم نفلتر من السيرفر عبر where() حتى تتوافق مع قواعد Firestore
       q = window._fbQuery(
@@ -218,8 +208,7 @@ function renderClientOrders() {
         window._fbWhere('clientEmail', '==', currentUser.email)
       );
     }
-    // لا تترك الصفحة في حالة تحميل لا نهائية إذا علقت الشبكة أو Firestore.
-    const snap = await withClientOrdersTimeout(window._fbGetDocs(q));
+    const snap = await window._fbGetDocs(q);
     let orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
 
     if (currentUser.role !== 'admin') {
@@ -293,9 +282,7 @@ function renderClientOrders() {
       <div class="empty-orders">
         <i class="fas fa-triangle-exclamation" style="color:var(--danger)"></i>
         <h3>تعذّر تحميل الطلبات</h3>
-        <p>${e.message === 'انتهت مهلة تحميل الطلبات'
-          ? 'استغرق الاتصال وقتاً أطول من المتوقع'
-          : 'يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً'}</p>
+        <p>يرجى التحقق من اتصال الإنترنت والمحاولة مجدداً</p>
         <button class="btn-primary" style="margin-top:16px" onclick="renderClientOrders()">إعادة المحاولة</button>
       </div>`;
   }
@@ -566,7 +553,18 @@ async function reconcileGuestRecordNames(records) {
   }
 }
 
+let _adminOrdersRenderPromise = null;
+
 async function renderAdminOrders() {
+  // منع تشغيل أكثر من رسم متزامن عند وصول عدة إشعارات onSnapshot متتالية
+  if (_adminOrdersRenderPromise) return _adminOrdersRenderPromise;
+  _adminOrdersRenderPromise = _renderAdminOrdersInner().finally(() => {
+    _adminOrdersRenderPromise = null;
+  });
+  return _adminOrdersRenderPromise;
+}
+
+async function _renderAdminOrdersInner() {
   const body = document.getElementById('adminOrdersBody');
   if (!body) return;
 
@@ -577,7 +575,8 @@ async function renderAdminOrders() {
     </div>`;
 
   try {
-    const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'));
+    // نفس تحديد العدد المطبّق في renderClientOrders لمنع تجميد الصفحة عند تراكم آلاف الطلبات
+    const q    = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt','desc'), window._fbLimit(50));
     const snap = await window._fbGetDocs(q);
     const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
     await reconcileGuestRecordNames(orders);
