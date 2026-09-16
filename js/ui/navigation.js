@@ -488,21 +488,59 @@ function runTickerLoop(ticker, track) {
 function setupReorderButtons() {
   const body = document.getElementById('clientOrdersList');
   if (!body) return;
-  const mo = new MutationObserver(() => {
-    body.querySelectorAll('.reorder-btn').forEach(btn => btn.remove());
-    body.querySelectorAll('[data-order-id]').forEach(card => {
-      if (card.querySelector('.reorder-btn')) return;
-      const order = (window._cachedOrders || []).find(o => String(o._docId || o.id) === String(card.dataset.orderId));
-      if (!order) return;
-      const btn = document.createElement('button');
-      btn.className = 'reorder-btn btn-primary';
-      btn.style.marginTop = '12px';
-      btn.innerHTML = `<i class="fas fa-redo"></i> ${t('إعادة الطلب','Reorder')}`;
-      btn.onclick = () => { (order.items || []).forEach(item => { const p = products.find(x => String(x.id) === String(item.id)); if (p) { const existing = cart.find(x => String(x.id) === String(p.id)); if (!existing) cart.push({...p, qty:item.qty||1, basePrice:p.price, price:p.price}); else existing.qty += item.qty || 1; } }); updateCartUI(); showToast(t('تمت إضافة عناصر الطلب إلى السلة','Order items added to cart'),'success'); };
-      card.appendChild(btn);
+
+  // منع إنشاء أكثر من MutationObserver لنفس القائمة.
+  if (body._reorderObserver) body._reorderObserver.disconnect();
+
+  let isUpdating = false;
+  const addReorderButtons = () => {
+    if (isUpdating) return;
+    isUpdating = true;
+    try {
+      body.querySelectorAll('[data-order-id]').forEach(card => {
+        if (card.querySelector('.reorder-btn')) return;
+        const order = (window._cachedOrders || []).find(o => String(o._docId || o.id) === String(card.dataset.orderId));
+        if (!order) return;
+        const btn = document.createElement('button');
+        btn.className = 'reorder-btn btn-primary';
+        btn.style.marginTop = '12px';
+        btn.innerHTML = `<i class="fas fa-redo"></i> ${t('إعادة الطلب','Reorder')}`;
+        btn.onclick = () => {
+          (order.items || []).forEach(item => {
+            const p = products.find(x => String(x.id) === String(item.id));
+            if (!p) return;
+            const existing = cart.find(x => String(x.id) === String(p.id));
+            if (!existing) cart.push({...p, qty: item.qty || 1, basePrice: p.price, price: p.price});
+            else existing.qty += item.qty || 1;
+          });
+          updateCartUI();
+          showToast(t('تمت إضافة عناصر الطلب إلى السلة','Order items added to cart'),'success');
+        };
+        card.appendChild(btn);
+      });
+    } finally {
+      isUpdating = false;
+    }
+  };
+
+  addReorderButtons();
+
+  const mo = new MutationObserver(mutations => {
+    const hasRelevantChanges = mutations.some(mutation => {
+      if (mutation.type !== 'childList') return false;
+      const nodes = [...Array.from(mutation.addedNodes), ...Array.from(mutation.removedNodes)];
+      return nodes.some(node => {
+        if (node.nodeType !== Node.ELEMENT_NODE) return true;
+        if (node.classList && node.classList.contains('reorder-btn')) return false;
+        if (node.querySelector && node.querySelector('.reorder-btn')) return false;
+        return true;
+      });
     });
+    if (hasRelevantChanges) addReorderButtons();
   });
-  mo.observe(body, {childList:true, subtree:true});
+
+  mo.observe(body, {childList: true, subtree: true});
+  body._reorderObserver = mo;
 }
 
 function enhanceQuickViewAndReorder() {
@@ -621,6 +659,7 @@ var _exitWarningTimer = null;
 // ============================================================
 var uiLayerStack = [];          // {id, el} لكل طبقة مفتوحة حالياً، بترتيب الفتح
 var _pendingHistoryCleanup = false; // يمنع أي popstate ناتج عن تنظيفنا التلقائي للسجل من التسبب بتنقل غير مقصود
+var _pendingNotificationPage = null; // وجهة إشعار تنتظر انتهاء تنظيف سجل القائمة
 
 // المودالات الثابتة الموجودة أصلاً بالـ HTML (تُغلق بإزالة كلاس open فقط، لا تُحذف من الـ DOM)
 var STATIC_MODAL_IDS = new Set([
@@ -755,6 +794,14 @@ window.addEventListener('popstate', (e) => {
   // (مثلاً: ضغط المستخدم زر X لإغلاق مودال، وليس زر الرجوع الفيزيائي)
   if (_pendingHistoryCleanup) {
     _pendingHistoryCleanup = false;
+    if (_pendingNotificationPage) {
+      const pendingPage = _pendingNotificationPage;
+      _pendingNotificationPage = null;
+      setTimeout(() => {
+        try { showPage(pendingPage); }
+        catch (err) { console.warn('تعذر فتح وجهة الإشعار:', err); }
+      }, 0);
+    }
     return;
   }
 
@@ -847,8 +894,14 @@ function showPage(page) {
   } else if (page === 'orders') {
     activatePageSection('ordersPage');
     window.scrollTo(0, 0);
-    renderClientOrders();
-    markNotifsByLinkPrefixRead(['page:orders']);
+    // لا نبدأ قراءة Firebase أو إعادة رسم الإشعارات أثناء تغيير الصفحة.
+    // هذا يمنع تجمّد WebView عند فتح الصفحة من نقرة إشعار.
+    setTimeout(() => {
+      if (typeof renderClientOrders === 'function') renderClientOrders();
+      if (typeof markNotifsByLinkPrefixRead === 'function') {
+        markNotifsByLinkPrefixRead(['page:orders']);
+      }
+    }, 0);
   } else if (page === 'productDetail') {
     activatePageSection('productDetailPage');
     requestAnimationFrame(() => {
