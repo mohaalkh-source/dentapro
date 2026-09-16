@@ -65,8 +65,8 @@
 <link rel="stylesheet" href="./css/location.css?v=final">
 <link rel="stylesheet" href="./css/footer.css?v=final">
 <link rel="stylesheet" href="./css/responsive.css?v=final">
-<script type="module" src="./js/firebase/firebase-init.js?v=fix-3"></script>
-<script type="module" src="./js/app.js?v=fix-3"></script>
+<script type="module" src="./js/firebase/firebase-init.js?v=final"></script>
+<script type="module" src="./js/app.js?v=final"></script>
 </head>
 <body>
 
@@ -2605,6 +2605,164 @@
 
 <!-- ─── Stats & Brands inserted by JS ─── -->
 
-  <script src="./js/mobile-debug-panel.js"></script>
+<script>
+(function () {
+  var STORE_KEY = 'dp_debug_logs_v1';
+  var LAST_CLICK_KEY = 'dp_debug_lastclick_v1';
+  var MAX_LOGS = 150;
+
+  function loadLogs() {
+    try { return JSON.parse(sessionStorage.getItem(STORE_KEY) || '[]'); }
+    catch (e) { return []; }
+  }
+  function saveLogs(logs) {
+    try { sessionStorage.setItem(STORE_KEY, JSON.stringify(logs.slice(-MAX_LOGS))); }
+    catch (e) {}
+  }
+  var logs = loadLogs();
+
+  function nowStr() {
+    return new Date().toLocaleTimeString('ar-EG-u-nu-latn', { hour12: false });
+  }
+  function pushLog(type, args) {
+    var text;
+    try {
+      text = Array.prototype.map.call(args, function (a) {
+        if (typeof a === 'object') { try { return JSON.stringify(a); } catch (e) { return String(a); } }
+        return String(a);
+      }).join(' ');
+    } catch (e) { text = '[log error]'; }
+    logs.push({ t: nowStr(), type: type, text: text });
+    if (logs.length > MAX_LOGS) logs = logs.slice(-MAX_LOGS);
+    saveLogs(logs);
+    renderIfOpen();
+  }
+
+  // اعتراض console الأصلي بدون كسره
+  ['log', 'warn', 'error', 'info'].forEach(function (level) {
+    var orig = console[level] ? console[level].bind(console) : function () {};
+    console[level] = function () {
+      pushLog(level, arguments);
+      orig.apply(console, arguments);
+    };
+  });
+
+  // التقاط أخطاء JS غير الملتقطة وأخطاء الـ Promise
+  window.addEventListener('error', function (e) {
+    pushLog('error', ['JS ERROR:', e.message, 'at', e.filename + ':' + e.lineno]);
+  });
+  window.addEventListener('unhandledrejection', function (e) {
+    pushLog('error', ['UNHANDLED PROMISE:', (e.reason && e.reason.message) || e.reason]);
+  });
+
+  // تسجيل آخر نقرة قبل أي إغلاق/انهيار للصفحة (نفس فكرة الفاحص القديم المفيدة)
+  document.addEventListener('click', function (e) {
+    var target = e.target && e.target.closest ? e.target.closest('button, a, [onclick]') : null;
+    var info = {
+      time: nowStr(),
+      label: target ? (target.getAttribute('onclick') || target.textContent || target.tagName) : 'unknown',
+      page: (document.querySelector('.page-section.active') || {}).id || 'homePage',
+      href: location.href
+    };
+    try { localStorage.setItem(LAST_CLICK_KEY, JSON.stringify(info)); } catch (e2) {}
+  }, true);
+
+  window.addEventListener('beforeunload', function () {
+    try {
+      var last = localStorage.getItem(LAST_CLICK_KEY);
+      if (last) pushLog('warn', ['آخر نقرة قبل الإغلاق/الانهيار:', last]);
+    } catch (e) {}
+  });
+
+  // عند تحميل الصفحة، إذا في نقرة محفوظة من جلسة سابقة انتهت بانهيار غير متوقع، بلّغ عنها فورًا
+  (function reportPreviousCrashIfAny() {
+    try {
+      var last = localStorage.getItem(LAST_CLICK_KEY);
+      if (last) {
+        pushLog('warn', ['⚠️ آخر نقرة مسجّلة من الجلسة السابقة (قد تكون سبب انهيار):', last]);
+      }
+    } catch (e) {}
+  })();
+
+  // ============== واجهة صغيرة غير محجوبة للشاشة ==============
+  var bubble = document.createElement('div');
+  bubble.id = 'dpDebugBubble';
+  bubble.textContent = '🐞';
+  bubble.style.cssText = [
+    'position:fixed', 'bottom:14px', 'left:14px', 'z-index:999999',
+    'width:40px', 'height:40px', 'border-radius:50%',
+    'background:#1e2327', 'color:#fff', 'display:flex',
+    'align-items:center', 'justify-content:center',
+    'font-size:18px', 'box-shadow:0 2px 8px rgba(0,0,0,.35)',
+    'cursor:pointer', 'opacity:0.85', 'user-select:none'
+  ].join(';');
+
+  var panel = document.createElement('div');
+  panel.id = 'dpDebugPanel';
+  panel.style.cssText = [
+    'position:fixed', 'bottom:64px', 'left:14px', 'z-index:999999',
+    'width:min(92vw,380px)', 'height:45vh', 'max-height:400px',
+    'background:#111318', 'color:#eee', 'font:12px/1.5 monospace',
+    'border-radius:12px', 'box-shadow:0 6px 24px rgba(0,0,0,.5)',
+    'display:none', 'flex-direction:column', 'overflow:hidden'
+  ].join(';');
+
+  var header = document.createElement('div');
+  header.style.cssText = 'display:flex;gap:6px;padding:8px;background:#1e2327;flex-shrink:0';
+  header.innerHTML =
+    '<span style="flex:1;font-weight:bold;align-self:center">Debug</span>' +
+    '<button id="dpDebugCopy" style="padding:4px 8px;border:none;border-radius:6px;background:#333;color:#fff">نسخ</button>' +
+    '<button id="dpDebugClear" style="padding:4px 8px;border:none;border-radius:6px;background:#333;color:#fff">مسح</button>' +
+    '<button id="dpDebugClose" style="padding:4px 8px;border:none;border-radius:6px;background:#333;color:#fff">إغلاق</button>';
+
+  var body = document.createElement('div');
+  body.id = 'dpDebugBody';
+  body.style.cssText = 'flex:1;overflow:auto;padding:8px;white-space:pre-wrap;word-break:break-word';
+
+  panel.appendChild(header);
+  panel.appendChild(body);
+
+  function mount() {
+    document.body.appendChild(bubble);
+    document.body.appendChild(panel);
+  }
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', mount);
+  } else {
+    mount();
+  }
+
+  function colorFor(type) {
+    if (type === 'error') return '#ff6b6b';
+    if (type === 'warn') return '#ffd166';
+    return '#9ad1ff';
+  }
+  function render() {
+    body.innerHTML = logs.map(function (l) {
+      return '<div style="color:' + colorFor(l.type) + ';margin-bottom:4px">[' + l.t + '] ' +
+        l.text.replace(/</g, '&lt;') + '</div>';
+    }).join('');
+    body.scrollTop = body.scrollHeight;
+  }
+  function renderIfOpen() {
+    if (panel.style.display !== 'none') render();
+  }
+
+  bubble.addEventListener('click', function () {
+    var opening = panel.style.display === 'none';
+    panel.style.display = opening ? 'flex' : 'none';
+    if (opening) render();
+  });
+  document.addEventListener('click', function (e) {
+    if (e.target && e.target.id === 'dpDebugClose') panel.style.display = 'none';
+    if (e.target && e.target.id === 'dpDebugClear') { logs = []; saveLogs(logs); render(); }
+    if (e.target && e.target.id === 'dpDebugCopy') {
+      var text = logs.map(function (l) { return '[' + l.t + '] ' + l.type.toUpperCase() + ': ' + l.text; }).join('\n');
+      if (navigator.clipboard) navigator.clipboard.writeText(text);
+    }
+  });
+})();
+</script>
+
 </body>
 </html>
