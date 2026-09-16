@@ -121,17 +121,25 @@ window._fbGetDocFromServer = getDocFromServer;
         }
         window._currentRole = role;
         const isStaffUser = (role === 'admin' || role === 'manager');
+        // تحديد عدد الطلبات المراقَبة لحظياً لتفادي تجميد الصفحة عند تراكم آلاف الطلبات
         const q = isStaffUser
-          ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'))
+          ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50))
           : query(collection(db, 'orders'), where('clientEmail', '==', fbUser.email));
+        // debounce: onSnapshot قد يطلق عدة أحداث متتالية بسرعة (من الكاش ثم من السيرفر)،
+        // فبدل ما نعيد رسم القوائم الثقيلة في كل مرة، ننتظر لحظة قصيرة وننفّذ آخر تحديث فقط
+        let _ordersSnapDebounce = null;
         _ordersUnsub = onSnapshot(q, (snap) => {
-          const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
-          const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
-          if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
-          if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
           const pending = snap.docs.filter(d => !['delivered','cancelled'].includes(d.data().status)).length;
           const badge = document.getElementById('adminOrdersBadge');
           if (badge) badge.textContent = pending > 0 ? pending : '';
+
+          clearTimeout(_ordersSnapDebounce);
+          _ordersSnapDebounce = setTimeout(() => {
+            const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
+            const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
+            if (adminOpen  && typeof renderAdminOrders  === 'function') renderAdminOrders();
+            if (ordersOpen && typeof renderClientOrders === 'function') renderClientOrders();
+          }, 300);
         }, (err) => console.warn('⚠️ مراقبة الطلبات:', err.message));
 
         // مراقبة الرسائل لحظياً (لتحديث شارة الإشعار فوراً)
