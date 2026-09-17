@@ -362,9 +362,15 @@ async function renderModalSummary() {
 
   const previewClientEmail = currentUser ? (currentUser.email || 'guest') : 'guest';
   const previewClientPhone = currentUser ? (currentUser.phone || '') : '';
+  const guestPhoneInput = document.getElementById('phoneNumber');
+  const previewPhoneForDelivery = currentUser
+    ? previewClientPhone
+    : (guestPhoneInput && guestPhoneInput.value
+        ? formatPhoneForWhatsApp((document.getElementById('countryCode')?.value || '') + guestPhoneInput.value)
+        : '');
   const discountPreview = await computeGeneralDiscountForCart(cart, previewClientEmail, previewClientPhone);
   const subtotalForDelivery = discountPreview ? discountPreview.total : getTotal();
-  const deliveryResult = await computeCartDeliveryPreview(subtotalForDelivery, null);
+  const deliveryResult = await computeCartDeliveryPreview(subtotalForDelivery, previewPhoneForDelivery, currentUser || undefined);
   const finalTotal = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
   div.innerHTML = cart.map(item => `
