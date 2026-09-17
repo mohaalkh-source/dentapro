@@ -113,7 +113,8 @@ function computeDeliveryFee(deliverySettings, subtotal) {
 async function resolveDeliveryFee(uid, subtotal) {
   const globalSettings = await loadGlobalDeliverySettings();
   if (globalSettings && globalSettings.discountEnabled) {
-    return computeGlobalDeliveryFee(globalSettings, subtotal);
+    const globalResult = computeGlobalDeliveryFee(globalSettings, subtotal);
+    if (globalResult.determined) return globalResult;
   }
   const clientSettings = uid ? await loadClientDeliverySettings(uid) : null;
   return computeDeliveryFee(clientSettings, subtotal);
