@@ -182,7 +182,10 @@ async function refreshCartDiscountedTotal() {
 async function computeCartDeliveryPreview(subtotal, phone, linkedClientOverride) {
   const globalSettings = await loadGlobalDeliverySettings();
   if (globalSettings && globalSettings.discountEnabled) {
-    return computeGlobalDeliveryFee(globalSettings, subtotal);
+    const globalResult = computeGlobalDeliveryFee(globalSettings, subtotal);
+    // الخصم العام له الأولوية بس فقط لو فعلاً انطبق (وصلت المشتريات للحد) —
+    // إذا ما انطبق أي درجة، نكمل ونرجع نعتمد سعر التوصيل الخاص بالعميل بدل التوقف هون
+    if (globalResult.determined) return globalResult;
   }
 
   let linkedClient = linkedClientOverride !== undefined ? linkedClientOverride : (currentUser || null);
