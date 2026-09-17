@@ -1392,7 +1392,7 @@ function updateAdBannerDots() {
   dotsEl.innerHTML = _adBannerOffers.map((_, i) => `
     <button onclick="adBannerGoTo(${i})" aria-label="الشريحة ${i+1}"
       style="width:${i===_adBannerIndex?'22px':'8px'};height:8px;border-radius:50px;border:none;padding:0;cursor:pointer;
-      background:${i===_adBannerIndex?'var(--primary)':'#d7e3ec'};transition:width 0.25s ease"></button>
+      background:${i===_adBannerIndex?'#0a5c8a':'#334155'};transition:width 0.25s ease"></button>
   `).join('');
 }
 
