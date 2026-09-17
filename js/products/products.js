@@ -2377,20 +2377,10 @@ function bundleCardHTML(b) {
 async function renderOffers() {
   const section = document.getElementById('offersSection');
   const grid = document.getElementById('offersGrid');
-  const quickAccess = document.getElementById('quickAccessWrap');
   if (!section || !grid) return;
 
   const bundles = getActiveBundles();
   const qtyProducts = await getActiveQtyOfferProducts();
-
-  // إظهار/إخفاء أزرار الوصول السريع حسب توفر كل نوع
-  if (quickAccess) {
-    quickAccess.style.display = (bundles.length || qtyProducts.length) ? 'flex' : 'none';
-    const bundleCard = quickAccess.querySelector('.bundles');
-    const qtyCard = quickAccess.querySelector('.qtyoffers');
-    if (bundleCard) bundleCard.style.display = bundles.length ? 'flex' : 'none';
-    if (qtyCard) qtyCard.style.display = qtyProducts.length ? 'flex' : 'none';
-  }
 
   if (!bundles.length && !qtyProducts.length) {
     section.style.display = 'none';
