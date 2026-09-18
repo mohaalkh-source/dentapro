@@ -580,9 +580,7 @@ async function saveHeroTitle() {
       align: document.getElementById(`heroLineEnAlign${i}`).value || 'left'
     });
   }
-  if (!linesAr.some(l => l.text) && !linesEn.some(l => l.text)) {
-    showToast('⚠️ عبّي سطر واحد على الأقل', 'error'); return;
-  }
+  // سماح بالحفظ فارغاً بالكامل — هذا يخفي القسم كلياً من الصفحة الرئيسية (بدل ما يمنع الحفظ)
   const expiryVal = document.getElementById('heroExpiryInput').value;
   const expiresAt = expiryVal ? new Date(expiryVal).toISOString() : null;
 
