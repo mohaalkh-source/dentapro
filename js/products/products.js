@@ -2060,7 +2060,7 @@ function productCardHTML(p) {
           <button class="split-cart-btn ${inCart?'added':''}" onclick="event.stopPropagation();${outOfStock?'':`addToCart(${p.id})`}"
             ${outOfStock?'disabled style="opacity:0.5;cursor:not-allowed"':''}
             title="${outOfStock?t('نفذت الكمية','Out of stock'):t('أضف للسلة','Add to Cart')}">
-            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-plus')}"></i> <span class="cart-btn-label">${t('السلة','Cart')}</span>
+            <i class="fas ${inCart?'fa-check':(outOfStock?'fa-ban':'fa-plus')}"></i> <i class="fas fa-shopping-cart cart-btn-label"></i>
           </button>
           <button class="split-details-btn" onclick="event.stopPropagation();openProductDetail(${p.id})">
             <span class="details-btn-label">${t('التفاصيل','Details')}</span>
