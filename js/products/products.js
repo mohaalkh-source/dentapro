@@ -127,12 +127,20 @@ function renderHeroTitle() {
     if (section) section.style.display = 'none'; // يخفي القسم بالكامل — الحيز يختفي تماماً
     return;
   }
+
+  const lines = currentLang === 'en' ? heroLinesEn : heroLinesAr;
+  const filledLines = lines.filter(l => l.text && l.text.trim());
+
+  // لا أسطر نص ولا صورة → القسم كامل بلا محتوى، نخفيه بدل ما يظهر فاضي
+  if (!filledLines.length && !heroImage) {
+    if (section) section.style.display = 'none';
+    return;
+  }
+
   if (section) section.style.display = '';
   wrap.style.display = 'block';
 
-  const lines = currentLang === 'en' ? heroLinesEn : heroLinesAr;
-  el.innerHTML = lines
-    .filter(l => l.text && l.text.trim())
+  el.innerHTML = filledLines
     .map(l => `<div style="font-size:${l.size}px;color:${l.color};line-height:1.15;text-align:${l.align || 'right'}">${escHtml(l.text)}</div>`)
     .join('');
 
