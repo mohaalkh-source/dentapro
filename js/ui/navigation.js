@@ -1206,6 +1206,13 @@ function closeFabFan() {
   if (wrap) wrap.classList.remove('open');
 }
 
+function focusSearchInput() {
+  const input = document.getElementById('searchInput');
+  if (!input) return;
+  input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  setTimeout(() => input.focus(), 300);
+}
+
 // ═══════ قائمة "تواصل معنا" — تُفتح من زر الشريط السفلي ═══════
 function toggleContactMenu() {
   const menu = document.getElementById('contactFabMenu');
