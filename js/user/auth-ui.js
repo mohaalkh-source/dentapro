@@ -189,7 +189,22 @@ if (document.readyState === 'loading') {
   restoreLocalSession();
 }
 
+function updateBottomNavAccountButton() {
+  const icon = document.getElementById('bottomNavAccountIcon');
+  const label = document.getElementById('bottomNavAccountLabel');
+  if (!icon || !label) return;
+  if (currentUser && isStaff()) {
+    icon.className = 'fas fa-bars';
+    label.style.display = 'none';
+  } else {
+    icon.className = 'fas fa-home';
+    label.textContent = t('الرئيسية','Home');
+    label.style.display = 'block';
+  }
+}
+
 function renderAuthHeader() {
+  updateBottomNavAccountButton();
   const area = document.getElementById('authHeaderArea');
   if (!currentUser) {
     area.innerHTML = `
