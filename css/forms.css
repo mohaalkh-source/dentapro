@@ -322,7 +322,7 @@ body.en .fab-fan-label { right: auto; left: 52px; }
   transition: opacity 0.2s, transform 0.2s;
   z-index: 1901;
 }
-.contact-fab-wrap.open .contact-fab-menu {
+.contact-fab-menu.open {
   opacity: 1; pointer-events: auto; transform: translateY(0);
 }
 .contact-fab-item {
