@@ -2467,11 +2467,11 @@
   display:flex;align-items:center;justify-content:space-around;
   padding:8px 4px calc(8px + env(safe-area-inset-bottom,0)) 4px;">
 
-  <div class="bottom-nav-item" data-page="home" onclick="goHome()"
+  <div class="bottom-nav-item" id="contactNavBtn" onclick="toggleContactMenu()"
     style="display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;
     padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:80px">
-    <i class="fas fa-home" style="font-size:20px"></i>
-    <span style="font-size:10px;font-weight:700" data-ar="الرئيسية" data-en="Home">الرئيسية</span>
+    <i class="fas fa-headset" style="font-size:20px"></i>
+    <span style="font-size:10px;font-weight:700" data-ar="تواصل معنا" data-en="Contact Us">تواصل معنا</span>
   </div>
 
   <div class="bottom-nav-item" data-page="cart" onclick="openCart();updateBottomNav('cart')"
@@ -2567,25 +2567,20 @@
   </button>
 </div>
 
-<!-- زر عائم قابل للسحب: تواصل معنا -->
-<div class="contact-fab-wrap" id="contactFabWrap">
-  <button class="contact-fab-btn" id="contactFabBtn" title="تواصل معنا">
-    <i class="fas fa-headset"></i>
+<!-- قائمة "تواصل معنا" — تُفتح من زر الشريط السفلي -->
+<div class="contact-fab-menu" id="contactFabMenu">
+  <button class="contact-fab-item" onclick="showPage('messages');closeContactFab()">
+    <i class="fas fa-comment-dots"></i><span>رسالة داخل التطبيق</span>
   </button>
-  <div class="contact-fab-menu" id="contactFabMenu">
-    <button class="contact-fab-item" onclick="showPage('messages');closeContactFab()">
-      <i class="fas fa-comment-dots"></i><span>رسالة داخل التطبيق</span>
-    </button>
-    <a class="contact-fab-item" href="https://wa.me/962790408680" target="_blank" onclick="closeContactFab()">
-      <i class="fab fa-whatsapp"></i><span>واتساب</span>
-    </a>
-    <a class="contact-fab-item" href="tel:+962790408680" onclick="closeContactFab()">
-      <i class="fas fa-phone"></i><span>اتصال</span>
-    </a>
-    <a class="contact-fab-item" href="sms:+962790408680" onclick="closeContactFab()">
-      <i class="fas fa-comment-sms"></i><span>SMS</span>
-    </a>
-  </div>
+  <a class="contact-fab-item" href="https://wa.me/962790408680" target="_blank" onclick="closeContactFab()">
+    <i class="fab fa-whatsapp"></i><span>واتساب</span>
+  </a>
+  <a class="contact-fab-item" href="tel:+962790408680" onclick="closeContactFab()">
+    <i class="fas fa-phone"></i><span>اتصال</span>
+  </a>
+  <a class="contact-fab-item" href="sms:+962790408680" onclick="closeContactFab()">
+    <i class="fas fa-comment-sms"></i><span>SMS</span>
+  </a>
 </div>
 
 <!-- ─── Stats & Brands inserted by JS ─── -->
