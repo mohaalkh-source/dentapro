@@ -193,7 +193,7 @@
     <div class="drawer-divider"></div>
     <button class="drawer-link" onclick="openMyQuotesPage();toggleMobileDrawer()"><i class="fas fa-file-invoice-dollar"></i><span data-ar="عروض أسعاري" data-en="My Quotes">عروض أسعاري</span></button>
     <button class="drawer-link" onclick="openEditProfile();toggleMobileDrawer()"><i class="fas fa-user-edit"></i><span data-ar="تعديل الملف" data-en="Edit Profile">تعديل الملف</span></button>
-    <button class="drawer-link" onclick="doLogout();toggleMobileDrawer()"><i class="fas fa-sign-out-alt"></i><span data-ar="تسجيل الخروج" data-en="Log Out">تسجيل الخروج</span></button>
+    <button class="drawer-link" id="drawerAuthBtn" onclick="handleDrawerAuthClick();toggleMobileDrawer()"><i class="fas fa-sign-out-alt" id="drawerAuthIcon"></i><span id="drawerAuthLabel" data-ar="تسجيل الخروج" data-en="Log Out">تسجيل الخروج</span></button>
     <button class="drawer-link" onclick="openDeleteAccountModal();toggleMobileDrawer()"><i class="fas fa-user-times"></i><span data-ar="حذف الحساب نهائياً" data-en="Delete Account">حذف الحساب نهائياً</span></button>
   </div>
 </div>
