@@ -1213,6 +1213,18 @@ function focusSearchInput() {
   setTimeout(() => input.focus(), 300);
 }
 
+function toggleDarkMode() {
+  document.body.classList.toggle('dark-mode');
+  localStorage.setItem('dentapro_darkMode', document.body.classList.contains('dark-mode') ? '1' : '0');
+}
+
+// تطبيق التفضيل المحفوظ فور تحميل الصفحة
+(function applyStoredDarkMode() {
+  if (localStorage.getItem('dentapro_darkMode') === '1') {
+    document.body.classList.add('dark-mode');
+  }
+})();
+
 // ═══════ قائمة "تواصل معنا" — تُفتح من زر الشريط السفلي ═══════
 function toggleContactMenu() {
   const menu = document.getElementById('contactFabMenu');
