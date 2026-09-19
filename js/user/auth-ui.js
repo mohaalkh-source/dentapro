@@ -328,8 +328,7 @@ function showClientWelcome(user) {
   banner.innerHTML = `
     <i class="fas fa-hand-sparkles"></i>
     <div>
-      <div style="font-weight:800;font-size:15px;color:var(--primary-dark)">أهلاً بك ${user.name}! ${user.clinic ? '— ' + user.clinic : ''}</div>
-      <div style="font-size:13px;color:#fff;margin-top:2px">تمتع بأسعار العيادات الحصرية وتتبع طلباتك</div>
+      <div style="font-weight:800;font-size:15px;color:var(--primary-dark)">أهلاً بك ${user.name}!</div>
     </div>`;
   host.appendChild(banner);
 }
