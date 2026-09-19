@@ -189,6 +189,23 @@ if (document.readyState === 'loading') {
   restoreLocalSession();
 }
 
+function handleDrawerAuthClick() {
+  if (currentUser) { doLogout(); } else { openAuthModal('login'); }
+}
+
+function updateDrawerAuthButton() {
+  const icon = document.getElementById('drawerAuthIcon');
+  const label = document.getElementById('drawerAuthLabel');
+  if (!icon || !label) return;
+  if (currentUser) {
+    icon.className = 'fas fa-sign-out-alt';
+    label.textContent = t('تسجيل الخروج','Log Out');
+  } else {
+    icon.className = 'fas fa-sign-in-alt';
+    label.textContent = t('تسجيل الدخول','Log In');
+  }
+}
+
 function updateBottomNavAccountButton() {
   const icon = document.getElementById('bottomNavAccountIcon');
   const label = document.getElementById('bottomNavAccountLabel');
@@ -205,6 +222,7 @@ function updateBottomNavAccountButton() {
 
 function renderAuthHeader() {
   updateBottomNavAccountButton();
+  updateDrawerAuthButton();
   const area = document.getElementById('authHeaderArea');
   if (!currentUser) {
     area.innerHTML = `
