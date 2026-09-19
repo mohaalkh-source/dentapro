@@ -132,10 +132,13 @@
       </button>
     </div>
     <div class="header-row-break"></div>
- <div class="header-search" style="position:relative">
+ <div class="header-search" id="headerSearchBar" style="position:relative">
   <input type="text" id="searchInput" placeholder="ابحث عن منتج... / Search product..." autocomplete="off">
   <button type="button" class="header-search-submit" onclick="document.getElementById('searchInput').focus()" title="بحث" aria-label="بحث">
     <i class="fas fa-search"></i>
+  </button>
+  <button type="button" class="header-search-close" onclick="closeFloatingSearch()" title="إغلاق" aria-label="إغلاق" style="display:none">
+    <i class="fas fa-times"></i>
   </button>
 </div>
 <button class="notif-btn" id="favBtn" onclick="openFavoritesPage()" title="المفضلة">
