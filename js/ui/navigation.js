@@ -275,11 +275,16 @@ function setupScrollHideBottomNav() {
   const nav = document.getElementById('bottomNavBar');
   if (!nav) return;
   let lastY = window.scrollY;
+  let accum = 0;
   window.addEventListener('scroll', () => {
     if (window.innerWidth >= 768) return;
     const y = window.scrollY;
-    nav.classList.toggle('hidden', y > lastY + 8 && y > 100);
-    if (y < lastY - 8) nav.classList.remove('hidden');
+    const delta = y - lastY;
+    // تغيّر الاتجاه فعلياً → نصفّر التراكم ونبلش نحسب من جديد
+    if ((delta > 0 && accum < 0) || (delta < 0 && accum > 0)) accum = 0;
+    accum += delta;
+    if (accum > 24 && y > 100) { nav.classList.add('hidden'); accum = 0; }
+    else if (accum < -24) { nav.classList.remove('hidden'); accum = 0; }
     lastY = y;
   }, {passive:true});
 }
