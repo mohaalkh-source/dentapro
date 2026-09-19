@@ -187,10 +187,14 @@
     <button class="drawer-link" onclick="openFavoritesPage();toggleMobileDrawer()"><i class="fas fa-heart"></i><span data-ar="المفضلة" data-en="Favorites">المفضلة</span></button>
     <button class="drawer-link" onclick="openClientOrders();toggleMobileDrawer()"><i class="fas fa-box"></i><span data-ar="طلباتي" data-en="My Orders">طلباتي</span></button>
     <button class="drawer-link" onclick="openTrackOrderPage();toggleMobileDrawer()"><i class="fas fa-search-location"></i><span data-ar="تتبع طلب سابق" data-en="Track an Order">تتبع طلب سابق</span></button>
-    <button class="drawer-link" onclick="handleBottomNavAccount();toggleMobileDrawer()"><i class="fas fa-user"></i><span data-ar="حسابي" data-en="My Account">حسابي</span></button>
     <div class="drawer-divider"></div>
     <button class="drawer-link" onclick="toggleLang();toggleMobileDrawer()"><i class="fas fa-globe"></i><span data-ar="English" data-en="العربية">English</span></button>
     <button class="drawer-link" onclick="toggleDarkMode()"><i class="fas fa-moon"></i><span data-ar="الوضع الليلي" data-en="Dark Mode">الوضع الليلي</span></button>
+    <div class="drawer-divider"></div>
+    <button class="drawer-link" onclick="openMyQuotesPage();toggleMobileDrawer()"><i class="fas fa-file-invoice-dollar"></i><span data-ar="عروض أسعاري" data-en="My Quotes">عروض أسعاري</span></button>
+    <button class="drawer-link" onclick="openEditProfile();toggleMobileDrawer()"><i class="fas fa-user-edit"></i><span data-ar="تعديل الملف" data-en="Edit Profile">تعديل الملف</span></button>
+    <button class="drawer-link" onclick="doLogout();toggleMobileDrawer()"><i class="fas fa-sign-out-alt"></i><span data-ar="تسجيل الخروج" data-en="Log Out">تسجيل الخروج</span></button>
+    <button class="drawer-link" onclick="openDeleteAccountModal();toggleMobileDrawer()"><i class="fas fa-user-times"></i><span data-ar="حذف الحساب نهائياً" data-en="Delete Account">حذف الحساب نهائياً</span></button>
   </div>
 </div>
 
@@ -2501,10 +2505,11 @@
     <span style="font-size:10px;font-weight:700" data-ar="اطلب عرض" data-en="Request Quote">اطلب عرض</span>
   </div>
 
-  <div class="bottom-nav-item" data-page="account" onclick="handleBottomNavAccount();updateBottomNav('account')"
-    style="display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;
+  <div class="bottom-nav-item" id="bottomNavAccountBtn" data-page="account" onclick="handleBottomNavAccount();updateBottomNav('account')"
+    style="display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;
     padding:6px 4px;border-radius:12px;transition:all 0.2s;flex:1;max-width:96px">
-    <i class="fas fa-bars" style="font-size:22px"></i>
+    <i class="fas fa-bars" id="bottomNavAccountIcon" style="font-size:22px"></i>
+    <span id="bottomNavAccountLabel" style="font-size:10px;font-weight:700;display:none"></span>
   </div>
 </div>
 
