@@ -1208,9 +1208,20 @@ function closeFabFan() {
 
 function focusSearchInput() {
   const input = document.getElementById('searchInput');
-  if (!input) return;
-  input.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  setTimeout(() => input.focus(), 300);
+  const bar = document.getElementById('headerSearchBar');
+  if (!input || !bar) return;
+  bar.classList.add('floating-search');
+  const closeBtn = bar.querySelector('.header-search-close');
+  if (closeBtn) closeBtn.style.display = 'flex';
+  setTimeout(() => input.focus(), 250);
+}
+
+function closeFloatingSearch() {
+  const bar = document.getElementById('headerSearchBar');
+  if (!bar) return;
+  bar.classList.remove('floating-search');
+  const closeBtn = bar.querySelector('.header-search-close');
+  if (closeBtn) closeBtn.style.display = 'none';
 }
 
 // ═══════ قائمة "تواصل معنا" — تُفتح من زر الشريط السفلي ═══════
