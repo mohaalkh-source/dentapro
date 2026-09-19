@@ -66,26 +66,8 @@ function accountMenuItemsHTML() {
         <i class="fas fa-sign-out-alt"></i> ${t('تسجيل الخروج','Log Out')}
       </button>`;
   }
-  return `
-    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openClientOrders()">
-      <i class="fas fa-shopping-bag" style="color:var(--primary)"></i> ${t('طلباتي','My Orders')}
-    </button>
-    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openMyQuotesPage()">
-      <i class="fas fa-file-invoice-dollar" style="color:#0a5c8a"></i> ${t('عروض أسعاري','My Quotes')}
-    </button>
-    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openFavoritesPage()">
-      <i class="fas fa-heart" style="color:#e53e3e"></i> ${t('المفضلة','Favorites')}
-    </button>
-    <button class="user-dropdown-item" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openEditProfile()">
-      <i class="fas fa-user-edit" style="color:var(--accent)"></i> ${t('تعديل الملف','Edit Profile')}
-    </button>
-    <div class="user-dropdown-divider"></div>
-    <button class="user-dropdown-item danger" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();doLogout()">
-      <i class="fas fa-sign-out-alt"></i> ${t('تسجيل الخروج','Log Out')}
-    </button>
-    <button class="user-dropdown-item danger" style="width:100%;text-align:right;padding:16px 22px;font-size:15px" onclick="closeAccountMenu();openDeleteAccountModal()">
-      <i class="fas fa-user-times"></i> ${t('حذف الحساب نهائياً','Delete Account')}
-    </button>`;
+  // العميل ما عاد يستخدم هالقائمة — كل عناصره صارت مباشرة بالدرج العلوي، وزر الشريط السفلي صار "الرئيسية"
+  return '';
 }
 
 function openAccountMenu() {
@@ -122,10 +104,10 @@ function closeAccountMenu() {
   document.getElementById('accountMenuModal').classList.remove('open');
 }
 
-// [مُعدَّل] زر "حسابي" بالشريط السفلي الآن يفتح نفس القائمة الكاملة بدل تعديل الملف مباشرة
+// للعميل (غير الموظف): الزر صار "الرئيسية" مباشرة. للموظف/الأدمن: يفتح قائمة الإدارة كما هي.
 function handleBottomNavAccount() {
-  if (!currentUser) { openAuthModal('login'); return; }
-  openAccountMenu();
+  if (currentUser && isStaff()) { openAccountMenu(); return; }
+  goHome();
 }
 function syncBottomNavCartBadge() {
   const badge = document.getElementById('bottomNavCartBadge');
