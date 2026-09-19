@@ -315,21 +315,6 @@ body.en .fab-fan-label { right: auto; left: 52px; }
 .fab-fan-item { z-index: 1; }
 
 /* ═══════════════ زر التواصل العائم القابل للسحب ═══════════════ */
-.contact-fab-wrap {
-  position: fixed; z-index: 1900;
-  bottom: 90px; left: 16px;
-  touch-action: none; user-select: none;
-}
-.contact-fab-btn {
-  width: 56px; height: 56px; border-radius: 50%; border: none; cursor: grab;
-  background: linear-gradient(135deg, var(--primary-dark), var(--primary));
-  color: #fff; font-size: 22px;
-  display: flex; align-items: center; justify-content: center;
-  box-shadow: 0 6px 18px rgba(10,92,138,0.45);
-  transition: transform 0.15s;
-}
-.contact-fab-btn:active { cursor: grabbing; transform: scale(0.94); }
-
 .contact-fab-menu {
   position: fixed; bottom: 110px; right: 16px;
   display: flex; flex-direction: column; gap: 10px;
