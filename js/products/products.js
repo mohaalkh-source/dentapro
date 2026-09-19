@@ -1865,6 +1865,11 @@ function goHome() {
   renderCategories();
   renderProducts();
 
+  // نمسح موضع التمرير المحفوظ سابقاً للرئيسية، عشان زر "الرئيسية" يضمن الرجوع لأعلى الصفحة دايماً
+  if (typeof pageScrollPositions === 'object' && pageScrollPositions) {
+    delete pageScrollPositions['home'];
+  }
+
   showPage('home');
   updateBottomNav('home');
   window.scrollTo(0, 0);
