@@ -517,7 +517,39 @@ body.dark-mode header { background:rgba(15,25,35,0.92); }
 
 body.dark-mode .header-search input { background: var(--card); color: var(--text); border-color: var(--border); }
 
-body.dark-mode .dark-toggle-inline { background:rgba(26,37,51,0.6); border-color:var(--border); }
+body.dark-mode .header-search input::placeholder{color:var(--text-muted)}
+
+body.dark-mode .dark-toggle-inline { background:rgba(26,37,51,0.6); border-color:var(--border); color:var(--text); }
+
+body.dark-mode .dark-toggle-inline i{color:var(--text)}
+
+body.dark-mode .logo-text{color:var(--text)}
+
+body.dark-mode .lang-btn,
+body.dark-mode .header-actions .lang-btn{
+  background:var(--card); border-color:var(--border); color:var(--text);
+}
+
+body.dark-mode .lang-btn i,
+body.dark-mode .header-actions .lang-btn i{color:var(--text)}
+
+body.dark-mode .lang-btn:hover,
+body.dark-mode .header-actions .lang-btn:hover{background:var(--card-elevated); border-color:var(--accent)}
+
+body.dark-mode .header-actions .offers-pill-btn{background:rgba(20,184,166,0.15); color:var(--accent)}
+
+body.dark-mode .order-track-header{background:linear-gradient(135deg,var(--card),var(--card-elevated))}
+
+body.dark-mode #favBtn,
+body.dark-mode #notifBtn,
+body.dark-mode .cart-btn{color:var(--text) !important}
+
+body.dark-mode #favBtn:hover,
+body.dark-mode #msgBtn:hover,
+body.dark-mode #notifBtn:hover,
+body.dark-mode .cart-btn:hover{background:var(--card-elevated) !important; color:var(--accent) !important}
+
+body.dark-mode .voice-search-btn{color:var(--text-muted)}
 
 /* ===== UNIFIED HEADER: desktop follows the mobile arrangement ===== */
 @media (min-width:769px){
