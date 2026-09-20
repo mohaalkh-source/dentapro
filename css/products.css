@@ -161,6 +161,8 @@ body.en .product-badge{right:auto; left:-32px; transform:rotate(-45deg)}
   font-size:72px; padding:16px; cursor:pointer;
 }
 
+body.dark-mode .product-img{background:#2a2a2a}
+
 .product-info{padding:6px 14px 6px; display:flex; flex-direction:column; flex:1; min-height:0; overflow:hidden}
 
 .product-brand{font-size:11px; color:var(--accent); font-weight:700; text-transform:uppercase; letter-spacing:1px; margin-bottom:1px; text-align:right; display:flex; align-items:center; gap:5px}
@@ -220,6 +222,8 @@ body.en .product-stars span{margin-right:0; margin-left:4px}
   font-size:72px; padding:16px; cursor:pointer;
   position:relative; overflow:hidden; z-index:2;
 }
+
+body.dark-mode .product-img-wrap{background:#2a2a2a}
 
 .product-img-wrap img {
   width:100%; height:100%; object-fit:contain;
