@@ -210,7 +210,10 @@ body.en .header-search-submit{right:auto; left:4px}
   .logo-text{font-size:38px;letter-spacing:-1.2px;color:#123b62}
   .logo-text span{color:#078f91}
   .header-actions{display:block;position:static}
-  #authHeaderArea{display:none}
+  #authHeaderArea{
+    display:block; position:absolute;
+    top:24px; right:310px;
+  }
   .header-search{
     position:absolute !important;
     top:118px;
