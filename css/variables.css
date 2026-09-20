@@ -47,3 +47,34 @@
   --font-ar: 'Cairo', sans-serif;
   --font-en: 'DM Sans', sans-serif;
 }
+
+body.dark-mode {
+  --bg:#121212;
+  --card:#1e1e1e;
+  --card-elevated:#2a2a2a;
+  --text:#f1f1f1;
+  --text-muted:#b0b0b0;
+  --border:#3a3a3a;
+  --border-soft:#333333;
+  --primary:#2196c9;
+  --primary-light:#4db8e8;
+  --primary-dark:#1a8bbf;
+  --accent:#14b8a6;
+  --accent-light:#2dd4c4;
+  --accent2:#f5a623;
+  --gold:#e0b04a;
+  --gold-light:#f0c96a;
+  --danger:#ef4444;
+  --success:#22c55e;
+
+  --gradient-primary: linear-gradient(135deg, var(--primary) 0%, var(--primary-light) 100%);
+  --gradient-accent: linear-gradient(135deg, var(--accent) 0%, #0d9488 100%);
+  --gradient-gold: linear-gradient(135deg, #d4a017 0%, var(--gold) 100%);
+  --gradient-hero: linear-gradient(120deg, #1a1a1a 0%, #232323 48%, #1e2b2a 100%);
+
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.3), 0 1px 2px rgba(0,0,0,0.2);
+  --shadow: 0 6px 22px rgba(0,0,0,0.35), 0 2px 6px rgba(0,0,0,0.25);
+  --shadow-hover: 0 18px 42px rgba(0,0,0,0.45), 0 6px 14px rgba(0,0,0,0.3);
+  --shadow-lg: 0 24px 64px rgba(0,0,0,0.5), 0 10px 24px rgba(0,0,0,0.3);
+  --shadow-gold: 0 10px 26px rgba(224,176,74,0.25);
+}
