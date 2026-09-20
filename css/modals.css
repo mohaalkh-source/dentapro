@@ -68,3 +68,11 @@ body.en .drawer-link{text-align:left}
   background: radial-gradient(circle, rgba(0,194,168,0.15), rgba(10,92,138,0.08));
   animation: quickOrderPulse 2.2s ease-in-out infinite;
 }
+
+body.dark-mode .drawer-close-btn{color:var(--text)}
+
+body.dark-mode .drawer-link{color:var(--text)}
+
+body.dark-mode .modal-steps{background:var(--card-elevated)}
+
+body.dark-mode .modal-footer{background:var(--card-elevated)}
