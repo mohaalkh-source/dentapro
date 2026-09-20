@@ -477,3 +477,26 @@ body.dark-mode .trust-badge { background:var(--card); border-color:var(--border)
 body.en .offers-ticker { direction:ltr; }
 
 body.en .offers-ticker-track { animation-name:tickerScrollEn; }
+
+body.dark-mode .category-picker-label{background:var(--card); color:var(--text)}
+
+body.dark-mode .filter-select{background:var(--card); color:var(--text-muted)}
+
+body.dark-mode .filter-clear-btn{background:rgba(239,68,68,0.1)}
+
+body.dark-mode .cart-details-split::after{background:var(--card)}
+
+body.dark-mode .compare-bar-chip{background:var(--card-elevated)}
+
+body.dark-mode .compare-toggle-btn,
+body.dark-mode .favorite-toggle-btn{background:var(--card)}
+
+body.dark-mode .compare-table th,
+body.dark-mode .compare-table td:first-child{background:var(--card-elevated)}
+
+body.dark-mode .skeleton-order-card{background:var(--card)}
+
+body.dark-mode .skeleton-block{
+  background:linear-gradient(90deg,#2a2a2a 25%,#333333 50%,#2a2a2a 75%);
+  background-size:200% 100%;
+}
