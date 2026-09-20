@@ -211,6 +211,13 @@ body.en .input-with-icon .form-input{padding-right:16px; padding-left:44px}
 }
 body.en .fab-fan-wrap { right: auto; left: 0; }
 
+/* على الشاشات الواسعة (كمبيوتر/تابلت أو وضع "سطح المكتب")، ننقل اللسان لركن ثابت
+   بدل منتصف الشاشة، عشان ما يتداخل مع بطاقات المنتجات */
+@media (min-width: 768px) {
+  .fab-fan-wrap { top: auto; bottom: 90px; transform: none; }
+  body.en .fab-fan-wrap { right: auto; left: 0; }
+}
+
 /* اللسان نفسه — نص دائرة ملتصق بالحافة */
 .fab-fan-tab {
   position: relative;
