@@ -1,6 +1,6 @@
 /* DentaPro CSS module: responsive responsibilities. */
 
-@media(min-width:769px){ .drawer-overlay, .mobile-drawer{display:none} }
+@media(min-width:1200px){ .drawer-overlay, .mobile-drawer{display:none} }
 
 @media (max-width:768px){
   .category-picker-label{min-height:50px;border-radius:16px;padding:11px 15px;font-size:15px}
