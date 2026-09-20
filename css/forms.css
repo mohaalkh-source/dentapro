@@ -343,3 +343,20 @@ body.en .fab-fan-label { right: auto; left: 52px; }
 .contact-fab-item:nth-child(2) i { background: linear-gradient(135deg,#25d366,#128c7e); }
 .contact-fab-item:nth-child(3) i { background: linear-gradient(135deg, var(--primary), var(--primary-dark)); }
 .contact-fab-item:nth-child(4) i { background: var(--gradient-accent); }
+
+body.dark-mode .form-input,
+body.dark-mode .form-textarea,
+body.dark-mode .form-select{background:var(--card)}
+
+body.dark-mode .form-input:focus,
+body.dark-mode .form-textarea:focus,
+body.dark-mode .form-select:focus{background:var(--card-elevated)}
+
+body.dark-mode .form-input.error,
+body.dark-mode .form-textarea.error{background:rgba(239,68,68,0.08)}
+
+body.dark-mode .status-select{background:var(--card); color:var(--text)}
+
+body.dark-mode .fab-fan-label{background:rgba(30,30,30,0.92); color:var(--text)}
+
+body.dark-mode .contact-fab-item{background:var(--card); color:var(--text)}
