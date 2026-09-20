@@ -355,10 +355,23 @@
   align-items: center !important; justify-content: center !important;
   gap: 6px !important; z-index: 7 !important;
 }
+body.dark-mode .offers-pill-btn,
+body.dark-mode #reorderMobileBtn,
+body.dark-mode #msgBtn {
+  background: var(--card) !important;
+  border-color: var(--border) !important;
+  color: var(--text) !important;
+}
 .offers-pill-btn i, #reorderMobileBtn i, #msgBtn i { font-size: 15px !important; color: #13283e !important; }
+body.dark-mode .offers-pill-btn i,
+body.dark-mode #reorderMobileBtn i,
+body.dark-mode #msgBtn i { color: var(--text) !important; }
 .offers-pill-btn span, #reorderMobileBtn .notif-btn-label, #msgBtn .notif-btn-label {
   font-size: 12px !important; font-weight: 700 !important; color: #3e3e3e !important;
 }
+body.dark-mode .offers-pill-btn span,
+body.dark-mode #reorderMobileBtn .notif-btn-label,
+body.dark-mode #msgBtn .notif-btn-label { color: var(--text) !important; }
 /* تم حذف هذا السطر بالكامل — النص الآن حقيقي بالـHTML (span.notif-btn-label) ومترجم تلقائيًا، مو CSS ثابت */
 
 .offers-pill-btn  { left: 12px !important; }
