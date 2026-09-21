@@ -1509,6 +1509,55 @@ function detectProfileLocation() {
   );
 }
 
+// ═══ خريطة اختيار الموقع لصفحة الملف الشخصي — مستقلة تماماً عن خريطة الطلب (location.js) ═══
+let _profilePickerMap = null;
+let _profilePickerMarker = null;
+
+async function openProfileMapPicker() {
+  if (typeof loadLeafletIfNeeded === 'function') await loadLeafletIfNeeded();
+  document.getElementById('profileMapPickerModal').classList.add('open');
+  setTimeout(initProfilePickerMap, 150);
+}
+
+function closeProfileMapPicker() {
+  document.getElementById('profileMapPickerModal').classList.remove('open');
+}
+
+function initProfilePickerMap() {
+  const savedLat = document.getElementById('epLocationLat')?.value;
+  const savedLng = document.getElementById('epLocationLng')?.value;
+  const defaultLat = savedLat ? parseFloat(savedLat) : 31.9539;
+  const defaultLng = savedLng ? parseFloat(savedLng) : 35.9106;
+  if (!_profilePickerMap) {
+    _profilePickerMap = L.map('leafletProfilePickerMap').setView([defaultLat, defaultLng], 13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      attribution: '&copy; OpenStreetMap contributors'
+    }).addTo(_profilePickerMap);
+    _profilePickerMarker = L.marker([defaultLat, defaultLng], { draggable: true }).addTo(_profilePickerMap);
+    _profilePickerMap.on('click', (e) => { _profilePickerMarker.setLatLng(e.latlng); });
+  } else {
+    _profilePickerMap.invalidateSize();
+    _profilePickerMap.setView([defaultLat, defaultLng], 13);
+    _profilePickerMarker.setLatLng([defaultLat, defaultLng]);
+  }
+}
+
+function confirmProfileMapPick() {
+  const pos = _profilePickerMarker.getLatLng();
+  const lat = pos.lat.toFixed(5);
+  const lng = pos.lng.toFixed(5);
+  document.getElementById('epLocationLat').value = lat;
+  document.getElementById('epLocationLng').value = lng;
+  const statusEl = document.getElementById('epLocationStatus');
+  if (statusEl) {
+    statusEl.style.display = 'block';
+    statusEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success)"></i>
+      <a href="https://www.google.com/maps?q=${lat},${lng}" target="_blank" style="color:var(--primary);text-decoration:underline">عرض الموقع المحفوظ على خرائط جوجل</a>`;
+  }
+  closeProfileMapPicker();
+  showToast(t('✅ تم تحديد الموقع من الخريطة','✅ Location selected from map'), 'success');
+}
+
 async function saveProfile() {
   const name   = document.getElementById('epName').value.trim();
   const clinic = document.getElementById('epClinic').value.trim();
