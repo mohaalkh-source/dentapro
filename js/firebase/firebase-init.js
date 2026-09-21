@@ -3,7 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
   import { getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
            sendPasswordResetEmail, signOut, onAuthStateChanged, updateProfile,
-           deleteUser, EmailAuthProvider, reauthenticateWithCredential }
+           deleteUser, EmailAuthProvider, reauthenticateWithCredential, updateEmail }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-auth.js";
   import { getMessaging, getToken, onMessage, isSupported }
     from "https://www.gstatic.com/firebasejs/10.12.0/firebase-messaging.js";
@@ -36,7 +36,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/fireba
   window._fbDeleteUser        = deleteUser;
   window._fbEmailAuthProvider = EmailAuthProvider;
   window._fbReauthenticate    = reauthenticateWithCredential;
-
+window._fbUpdateEmail       = updateEmail;
   // إعداد Firebase Cloud Messaging (إشعارات فعلية حتى عند إغلاق المتصفح)
   const FCM_VAPID_KEY = "BEOJcmas6Rpa_BT3UXB4d3Sjx9dNuAa4-N6s7Fm2MsjCoHudMD46W3wWEzZmUSapX4DSuN7Tt6QLtAxBBW91CPw";
   window._fcmGetTokenFn = null;
