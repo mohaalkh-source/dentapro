@@ -1459,11 +1459,18 @@ function openEditProfile() {
           <label class="form-label"><i class="fas fa-map-marked-alt" style="color:var(--primary-light)"></i> تحديد الموقع عبر خرائط جوجل <small style="color:var(--text-muted);font-weight:500">(اختياري)</small></label>
           <input type="hidden" id="epLocationLat" value="${currentUser.profileLocationLat||''}">
           <input type="hidden" id="epLocationLng" value="${currentUser.profileLocationLng||''}">
-          <button type="button" onclick="detectProfileLocation()" style="width:100%;padding:11px;border-radius:var(--radius-sm);
-            background:#f0f8ff;color:var(--primary);border:1.5px dashed var(--border);font-family:inherit;
-            font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
-            <i class="fas fa-crosshairs"></i> تحديد موقعي الحالي
-          </button>
+          <div style="display:flex;gap:8px">
+            <button type="button" onclick="detectProfileLocation()" style="flex:1;padding:11px;border-radius:var(--radius-sm);
+              background:#f0f8ff;color:var(--primary);border:1.5px dashed var(--border);font-family:inherit;
+              font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+              <i class="fas fa-crosshairs"></i> موقعي الحالي
+            </button>
+            <button type="button" onclick="openProfileMapPicker()" style="flex:1;padding:11px;border-radius:var(--radius-sm);
+              background:#0a5c8a;color:#fff;border:none;font-family:inherit;
+              font-size:13px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+              <i class="fas fa-map-marked-alt"></i> اختر من الخريطة
+            </button>
+          </div>
           <div id="epLocationStatus" style="margin-top:8px;font-size:12px;font-weight:600;${currentUser.profileLocationLat ? '' : 'display:none;'}">
             ${currentUser.profileLocationLat ? `<i class="fas fa-check-circle" style="color:var(--success)"></i> <a href="https://www.google.com/maps?q=${currentUser.profileLocationLat},${currentUser.profileLocationLng}" target="_blank" style="color:var(--primary);text-decoration:underline">عرض الموقع المحفوظ على خرائط جوجل</a>` : ''}
           </div>
