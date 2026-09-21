@@ -471,6 +471,33 @@
             <i class="fas fa-phone-alt input-icon"></i>
           </div>
         </div>
+        <div id="guestAccountFieldsWrap" style="border-top:1.5px dashed var(--border);margin-top:16px;padding-top:16px">
+          <div style="font-size:12px;color:var(--text-muted);margin-bottom:10px">
+            <i class="fas fa-info-circle"></i> بيانصير عندك حساب تلقائياً بعد الطلب — الأسهل تحدّد كلمة سر عشان تدخل بيها لاحقاً وتتابع طلباتك
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-envelope" style="color:var(--text-muted)"></i> <span data-ar="البريد الإلكتروني (اختياري)" data-en="Email (optional)">البريد الإلكتروني (اختياري)</span></label>
+            <input type="email" class="form-input" id="guestEmail" placeholder="بريدك الإلكتروني (اختياري)">
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-lock" style="color:var(--primary-light)"></i> <span data-ar="كلمة المرور" data-en="Password">كلمة المرور</span> <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <input type="password" class="form-input" id="guestPassword" placeholder="8 أحرف على الأقل" oninput="checkPassStrength(this.value)">
+              <i class="fas fa-eye input-icon" style="cursor:pointer;pointer-events:all" onclick="togglePassVis('guestPassword',this)"></i>
+            </div>
+            <div class="pass-strength">
+              <div class="pass-strength-bar"><div class="pass-strength-fill" id="guestPassStrengthFill"></div></div>
+            </div>
+          </div>
+          <div class="form-group">
+            <label class="form-label"><i class="fas fa-lock" style="color:var(--primary-light)"></i> <span data-ar="تأكيد كلمة المرور" data-en="Confirm Password">تأكيد كلمة المرور</span> <span class="required">*</span></label>
+            <div class="input-with-icon">
+              <input type="password" class="form-input" id="guestPasswordConfirm" placeholder="أعد كتابة كلمة المرور">
+              <i class="fas fa-eye input-icon" style="cursor:pointer;pointer-events:all" onclick="togglePassVis('guestPasswordConfirm',this)"></i>
+            </div>
+            <div class="field-error" id="guestPasswordError"><i class="fas fa-exclamation-circle"></i> <span>كلمتا المرور غير متطابقتين، أو أقل من 8 أحرف</span></div>
+          </div>
+        </div>
         </div>
 
       <!-- STEP 3: Location -->
