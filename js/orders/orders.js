@@ -1519,8 +1519,10 @@ function detectProfileLocation() {
 // ═══ خريطة اختيار الموقع لصفحة الملف الشخصي — مستقلة تماماً عن خريطة الطلب (location.js) ═══
 let _profilePickerMap = null;
 let _profilePickerMarker = null;
+let _profileMapPickerContext = 'ep'; // 'ep' = تعديل الملف، 'reg' = إنشاء حساب جديد
 
-async function openProfileMapPicker() {
+async function openProfileMapPicker(context) {
+  _profileMapPickerContext = context || 'ep';
   if (typeof loadLeafletIfNeeded === 'function') await loadLeafletIfNeeded();
   document.getElementById('profileMapPickerModal').classList.add('open');
   setTimeout(initProfilePickerMap, 150);
@@ -1531,8 +1533,9 @@ function closeProfileMapPicker() {
 }
 
 function initProfilePickerMap() {
-  const savedLat = document.getElementById('epLocationLat')?.value;
-  const savedLng = document.getElementById('epLocationLng')?.value;
+  const prefix = _profileMapPickerContext;
+  const savedLat = document.getElementById(prefix + 'LocationLat')?.value;
+  const savedLng = document.getElementById(prefix + 'LocationLng')?.value;
   const defaultLat = savedLat ? parseFloat(savedLat) : 31.9539;
   const defaultLng = savedLng ? parseFloat(savedLng) : 35.9106;
   if (!_profilePickerMap) {
@@ -1550,12 +1553,13 @@ function initProfilePickerMap() {
 }
 
 function confirmProfileMapPick() {
+  const prefix = _profileMapPickerContext;
   const pos = _profilePickerMarker.getLatLng();
   const lat = pos.lat.toFixed(5);
   const lng = pos.lng.toFixed(5);
-  document.getElementById('epLocationLat').value = lat;
-  document.getElementById('epLocationLng').value = lng;
-  const statusEl = document.getElementById('epLocationStatus');
+  document.getElementById(prefix + 'LocationLat').value = lat;
+  document.getElementById(prefix + 'LocationLng').value = lng;
+  const statusEl = document.getElementById(prefix + 'LocationStatus');
   if (statusEl) {
     statusEl.style.display = 'block';
     statusEl.innerHTML = `<i class="fas fa-check-circle" style="color:var(--success)"></i>
