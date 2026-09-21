@@ -593,6 +593,26 @@
   </div>
 </div>
 
+<!-- PROFILE MAP PICKER MODAL — مستقل تماماً عن خريطة الطلب، صفر تداخل -->
+<div class="modal-overlay" id="profileMapPickerModal">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-header" style="background:linear-gradient(135deg,#0a5c8a,#1a8bbf)">
+      <div class="modal-title"><i class="fas fa-map-marked-alt"></i> اختر موقعك من الخريطة</div>
+      <button class="close-btn" onclick="closeProfileMapPicker()"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="modal-body" style="padding:16px">
+      <div style="font-size:13px;color:var(--text-muted);margin-bottom:12px">
+        <i class="fas fa-info-circle"></i> اضغط على الخريطة أو اسحب الدبوس لتحديد موقعك بدقة
+      </div>
+      <div id="leafletProfilePickerMap" style="width:100%;height:360px;border-radius:var(--radius-sm);border:2px solid var(--border)"></div>
+    </div>
+    <div class="modal-footer" style="justify-content:space-between">
+      <button class="btn-back" onclick="closeProfileMapPicker()"><i class="fas fa-times"></i> إلغاء</button>
+      <button class="btn-submit" onclick="confirmProfileMapPick()"><i class="fas fa-check"></i> تأكيد الموقع</button>
+    </div>
+  </div>
+</div>
+
 <!-- CLIENTS LIST MODAL -->
 <div class="modal-overlay" id="clientsListModal" style="align-items:flex-start;padding:0;overflow-y:auto">
   <div style="background:#f0f4f8;min-height:100vh;width:100%;max-width:100%">
