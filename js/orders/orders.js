@@ -1452,6 +1452,17 @@ function openEditProfile() {
           <input type="tel" class="form-input" id="epPhone" value="${escHtml(currentUser.phone||'')}" placeholder="05xxxxxxxx">
         </div>
         <div class="form-group">
+          <label class="form-label"><i class="fas fa-envelope" style="color:var(--primary-light)"></i> البريد الإلكتروني</label>
+          <input type="email" class="form-input" id="epEmail" value="${escHtml(currentUser.email||'')}" placeholder="بريدك الإلكتروني" oninput="toggleEpPasswordField()">
+        </div>
+        <div class="form-group" id="epPasswordWrap" style="display:none">
+          <label class="form-label"><i class="fas fa-lock" style="color:var(--primary-light)"></i> كلمة المرور الحالية <small style="color:var(--text-muted);font-weight:500">(مطلوبة لتأكيد تغيير البريد)</small></label>
+          <div class="input-with-icon">
+            <input type="password" class="form-input" id="epCurrentPassword" placeholder="كلمة المرور الحالية">
+            <i class="fas fa-eye input-icon" style="cursor:pointer;pointer-events:all" onclick="togglePassVis('epCurrentPassword',this)"></i>
+          </div>
+        </div>
+        <div class="form-group">
           <label class="form-label"><i class="fas fa-map-marker-alt" style="color:var(--primary-light)"></i> وصف الموقع اليدوي <small style="color:var(--text-muted);font-weight:500">(اختياري)</small></label>
           <textarea class="form-textarea" id="epLocationText" placeholder="مثال: عمّان، الدوار السابع، مقابل...">${escHtml(currentUser.profileLocationText||'')}</textarea>
         </div>
@@ -1569,10 +1580,19 @@ function confirmProfileMapPick() {
   showToast(t('✅ تم تحديد الموقع من الخريطة','✅ Location selected from map'), 'success');
 }
 
+function toggleEpPasswordField() {
+  const newEmail = document.getElementById('epEmail').value.trim();
+  const wrap = document.getElementById('epPasswordWrap');
+  if (!wrap) return;
+  wrap.style.display = (currentUser.email && newEmail && newEmail !== currentUser.email) ? 'block' : 'none';
+}
+
 async function saveProfile() {
   const name   = document.getElementById('epName').value.trim();
   const clinic = document.getElementById('epClinic').value.trim();
   const phone  = document.getElementById('epPhone').value.trim();
+  const newEmail = document.getElementById('epEmail').value.trim();
+  const currentPassword = document.getElementById('epCurrentPassword')?.value || '';
   const locationText = document.getElementById('epLocationText').value.trim();
   const locationLat  = document.getElementById('epLocationLat').value || null;
   const locationLng  = document.getElementById('epLocationLng').value || null;
@@ -1580,9 +1600,32 @@ async function saveProfile() {
     document.getElementById('epError').style.display = 'flex';
     return;
   }
+
+  const oldEmail = currentUser.email;
+  const emailChanged = newEmail && newEmail !== oldEmail;
+
+  // تغيير البريد يتطلب تأكيد هوية حقيقي (كلمة السر الحالية) قبل أي حفظ
+  if (emailChanged) {
+    if (!currentPassword) {
+      showToast('⚠️ أدخل كلمة المرور الحالية لتأكيد تغيير البريد', 'error');
+      return;
+    }
+    try {
+      const fbUser = window._auth.currentUser;
+      const credential = window._fbEmailAuthProvider.credential(oldEmail, currentPassword);
+      await window._fbReauthenticate(fbUser, credential);
+      await window._fbUpdateEmail(fbUser, newEmail);
+      await fbUser.getIdToken(true); // تحديث فوري للتوكن ليطابق البريد الجديد قبل الكتابة على Firestore
+    } catch(e) {
+      showToast('❌ تعذر تغيير البريد: ' + (e.message || 'تحقق من كلمة المرور'), 'error');
+      return;
+    }
+  }
+
   currentUser.name   = name;
   currentUser.clinic = clinic;
   currentUser.phone  = phone;
+  if (emailChanged) currentUser.email = newEmail;
   currentUser.profileLocationText = locationText;
   currentUser.profileLocationLat  = locationLat;
   currentUser.profileLocationLng  = locationLng;
@@ -1597,12 +1640,12 @@ async function saveProfile() {
           profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
           updatedAt: new Date().toISOString() }
       );
-      await propagateProfileUpdateToRecords(currentUser.email, { name, clinic, phone });
+      await propagateProfileUpdateToRecords(oldEmail, { name, clinic, phone });
     }
     // حفظ محلي
     const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
-    const idx = users.findIndex(u => u.email === currentUser.email);
-    if (idx !== -1) { users[idx] = { ...users[idx], firstName: name, clinic, phone, profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng }; }
+    const idx = users.findIndex(u => u.email === oldEmail);
+    if (idx !== -1) { users[idx] = { ...users[idx], firstName: name, clinic, phone, email: currentUser.email, profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng }; }
     else { users.push({ firstName: name, clinic, phone, email: currentUser.email, profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng }); }
     localStorage.setItem('dentapro_users', JSON.stringify(users));
   } catch(e) { console.warn('saveProfile Firebase:', e); }
