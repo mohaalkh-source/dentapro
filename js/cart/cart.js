@@ -523,8 +523,33 @@ function selectPayMethod(method) {
   renderConfirmDetails();
 }
 
-function nextStep() {
+async function nextStep() {
   if (!validateStep(currentStep)) return;
+
+  // خطوة "بياناتك": لو زائر جديد كلياً (مو مسجّل دخول، ومافي تطابق برقم هاتفه)، ننشئ له حساب فعلي الآن
+  if (currentStep === 2 && !currentUser) {
+    const phone = document.getElementById('phoneNumber').value.trim();
+    let matched = null;
+    if (typeof findRegisteredClientByPhone === 'function') {
+      matched = await findRegisteredClientByPhone(phone);
+    }
+    window._guestResolvedClient = matched;
+
+    if (!matched) {
+      const doctor = document.getElementById('doctorName').value.trim();
+      const clinic = document.getElementById('clinicName').value.trim();
+      const email = document.getElementById('guestEmail').value;
+      const password = document.getElementById('guestPassword').value;
+      const passwordConfirm = document.getElementById('guestPasswordConfirm').value;
+      const result = await createGuestAccountIfNeeded(email, password, passwordConfirm, doctor, clinic, phone);
+      if (!result.ok) {
+        document.getElementById('guestPasswordError').classList.add('show');
+        document.getElementById('guestPasswordError').querySelector('span').textContent = result.message;
+        return;
+      }
+    }
+  }
+
   if (currentStep < 4) { currentStep++; renderModalStep(); }
 }
 function prevStep() {
