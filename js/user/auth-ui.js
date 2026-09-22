@@ -476,6 +476,53 @@ async function createGuestAccountIfNeeded(rawEmail, password, passwordConfirm, n
     logActivity('register');
     return { ok: true };
   } catch(e) {
+    console.error('Register error:', e.code);
+    let msg = 'حدث خطأ، حاول مرة أخرى';
+    if (e.code === 'auth/email-already-in-use') msg = 'هذا البريد مسجل مسبقاً';
+    if (e.code === 'auth/weak-password') msg = 'كلمة المرور ضعيفة جداً';
+    if (e.code === 'auth/invalid-email') msg = 'البريد الإلكتروني غير صحيح';
+    showRegError(msg);
+  }
+}
+
+// تحويل بريد الزائر لبريد داخلي وهمي لو ما أدخل بريد حقيقي — نفس رقم هاتفه كأساس
+function resolveGuestEmail(rawEmail, phone) {
+  const trimmed = (rawEmail || '').trim();
+  if (trimmed && /\S+@\S+\.\S+/.test(trimmed)) return { email: trimmed, isReal: true };
+  const digits = (typeof normalizeClientPhone === 'function' ? normalizeClientPhone(phone) : phone.replace(/\D/g,'')) || phone.replace(/\D/g,'');
+  return { email: `${digits}@dentapro.local`, isReal: false };
+}
+
+// إنشاء حساب عميل حقيقي تلقائياً لزائر جديد وقت الطلب (لا يُستدعى إذا كان مسجّل دخول أو متطابق برقم هاتفه مسبقاً)
+async function createGuestAccountIfNeeded(rawEmail, password, passwordConfirm, name, clinic, phone) {
+  if (!password || password.length < 8) {
+    return { ok: false, message: 'كلمة المرور يجب أن تكون 8 أحرف على الأقل' };
+  }
+  if (password !== passwordConfirm) {
+    return { ok: false, message: 'كلمتا المرور غير متطابقتين' };
+  }
+  const { email, isReal } = resolveGuestEmail(rawEmail, phone);
+
+  try {
+    const cred = await window._fbCreateUser(window._auth, email, password);
+    const fbUser = cred.user;
+    await window._fbUpdateProfile(fbUser, { displayName: name });
+
+    await window._fbSetDoc(
+      window._fbDoc2('users', fbUser.uid),
+      { firstName: name, clinic, email, phone, role: 'client', hasRealEmail: isReal, createdAt: new Date().toISOString() }
+    );
+
+    const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
+    if (!users.find(u => u.email === email)) {
+      users.push({ firstName: name, clinic, email, phone, role: 'client', uid: fbUser.uid, hasRealEmail: isReal, createdAt: Date.now() });
+      localStorage.setItem('dentapro_users', JSON.stringify(users));
+    }
+
+    loginSuccess({ role: 'client', name, clinic, email, phone, uid: fbUser.uid, hasRealEmail: isReal });
+    logActivity('register');
+    return { ok: true };
+  } catch(e) {
     console.error('createGuestAccountIfNeeded error:', e.code);
     let msg = 'تعذر إنشاء الحساب، حاول مرة أخرى';
     if (e.code === 'auth/email-already-in-use') msg = 'هذا البريد مسجل مسبقاً — سجّل دخولك بدل ما تكمل كزائر';
