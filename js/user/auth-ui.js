@@ -291,7 +291,18 @@ async function doLogin() {
   }
 
   try {
-    const cred = await window._fbSignIn(window._auth, id, pass);
+    let signInEmail = id;
+    // لو المُدخل مش بريد إلكتروني (ما فيه @)، نعتبره رقم هاتف ونلاقي البريد المرتبط فيه
+    if (!id.includes('@')) {
+      const matched = await findRegisteredClientByPhone(id);
+      if (!matched || !matched.email) {
+        document.getElementById('loginErrorMsg').textContent = 'ما لقينا حساب مرتبط بهذا الرقم';
+        document.getElementById('loginError').style.display = 'flex';
+        return;
+      }
+      signInEmail = matched.email;
+    }
+    const cred = await window._fbSignIn(window._auth, signInEmail, pass);
     const fbUser = cred.user;
     const resolved = await resolveUserRole(fbUser);
     loginSuccess({ ...resolved, email: fbUser.email, uid: fbUser.uid });
