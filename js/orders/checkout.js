@@ -483,6 +483,20 @@ async function submitQOInfo(event) {
   if (!getActiveClientSession() && typeof findRegisteredClientByPhone === 'function') {
     window._guestResolvedClient = await findRegisteredClientByPhone(phone);
   }
+
+  // زائر جديد كلياً (مو مسجّل دخول، ومافي تطابق برقم هاتفه) → ننشئ له حساب فعلي الآن
+  if (!getActiveClientSession() && !window._guestResolvedClient && !currentUser) {
+    const email = document.getElementById('qoGuestEmail').value;
+    const password = document.getElementById('qoGuestPassword').value;
+    const passwordConfirm = document.getElementById('qoGuestPasswordConfirm').value;
+    const result = await createGuestAccountIfNeeded(email, password, passwordConfirm, doctor, clinic, phone);
+    if (!result.ok) {
+      document.getElementById('qoInfoError').style.display = 'block';
+      document.getElementById('qoInfoError').innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
+      return;
+    }
+  }
+
   closeQOInfoModal();
 
   const sessionForLocation = getActiveClientSession() || window._guestResolvedClient || null;
