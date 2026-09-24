@@ -416,12 +416,14 @@ async function doRegister() {
     document.getElementById('regError').style.display = 'flex';
   };
 
-  if (!firstName || !clinic || !email || !phone || !password) return showRegError('يرجى ملء جميع الحقول المطلوبة');
-  if (!/\S+@\S+\.\S+/.test(email)) return showRegError('البريد الإلكتروني غير صحيح');
+  if (!firstName || !clinic || !phone || !password) return showRegError('يرجى ملء جميع الحقول المطلوبة');
+  if (email && !/\S+@\S+\.\S+/.test(email)) return showRegError('البريد الإلكتروني غير صحيح');
   if (password.length < 8) return showRegError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
 
+  const { email: finalEmail, isReal: hasRealEmail } = resolveGuestEmail(email, phone);
+
   try {
-    const cred = await window._fbCreateUser(window._auth, email, password);
+    const cred = await window._fbCreateUser(window._auth, finalEmail, password);
     const fbUser = cred.user;
 
     await window._fbUpdateProfile(fbUser, { displayName: firstName });
@@ -538,6 +540,36 @@ function togglePassVis(fieldId, icon) {
   field.type = isPass ? 'text' : 'password';
   icon.className = `fas fa-${isPass ? 'eye-slash' : 'eye'} input-icon`;
   icon.style.cssText = 'cursor:pointer;pointer-events:all';
+}
+
+// استرجاع كلمة المرور — يشتغل بالبريد الإلكتروني حصراً حتى لو العميل كتب رقم هاتفه بخانة الدخول
+async function sendPasswordReset() {
+  const id = document.getElementById('loginIdentifier').value.trim();
+  document.getElementById('loginError').style.display = 'none';
+  if (!id) {
+    document.getElementById('loginErrorMsg').textContent = 'اكتب بريدك الإلكتروني أو رقم هاتفك بخانة الدخول أولاً';
+    document.getElementById('loginError').style.display = 'flex';
+    return;
+  }
+
+  let resetEmail = id;
+  if (!id.includes('@')) {
+    const matched = await findRegisteredClientByPhone(id);
+    if (!matched || !matched.email || matched.hasRealEmail === false) {
+      document.getElementById('loginErrorMsg').textContent = 'استرجاع كلمة المرور يحتاج بريد إلكتروني حقيقي مسجّل — أضفه من صفحة "تعديل الملف" أولاً';
+      document.getElementById('loginError').style.display = 'flex';
+      return;
+    }
+    resetEmail = matched.email;
+  }
+
+  try {
+    await window._fbSendPasswordResetEmail(window._auth, resetEmail);
+    showToast('✅ تم إرسال رابط استعادة كلمة المرور لبريدك', 'success');
+  } catch(e) {
+    document.getElementById('loginErrorMsg').textContent = 'تعذر إرسال رابط الاستعادة، تأكد من صحة البريد/الرقم المدخل';
+    document.getElementById('loginError').style.display = 'flex';
+  }
 }
 
 function checkPassStrength(val) {
