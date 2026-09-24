@@ -431,22 +431,22 @@ async function doRegister() {
     // حفظ بيانات العميل الإضافية في Firestore
     await window._fbSetDoc(
       window._fbDoc2('users', fbUser.uid),
-      { firstName, clinic, email, phone, role: 'client',
+      { firstName, clinic, email: finalEmail, phone, role: 'client', hasRealEmail,
         profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
         createdAt: new Date().toISOString() }
     );
 
     // حفظ محلي أيضاً للتوافق
     const users = JSON.parse(localStorage.getItem('dentapro_users') || '[]');
-    if (!users.find(u => u.email === email)) {
-      users.push({ firstName, clinic, email, phone, role: 'client', uid: fbUser.uid,
+    if (!users.find(u => u.email === finalEmail)) {
+      users.push({ firstName, clinic, email: finalEmail, phone, role: 'client', uid: fbUser.uid, hasRealEmail,
         profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
         createdAt: Date.now() });
       localStorage.setItem('dentapro_users', JSON.stringify(users));
     }
 
     document.getElementById('regError').style.display = 'none';
-    loginSuccess({ role: 'client', name: firstName, clinic, email, phone,
+    loginSuccess({ role: 'client', name: firstName, clinic, email: finalEmail, phone, hasRealEmail,
       profileLocationText: locationText, profileLocationLat: locationLat, profileLocationLng: locationLng,
       uid: fbUser.uid });
     logActivity('register');
