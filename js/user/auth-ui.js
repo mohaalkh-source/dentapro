@@ -416,9 +416,11 @@ async function doRegister() {
     document.getElementById('regError').style.display = 'flex';
   };
 
+  const passwordConfirm = document.getElementById('regPasswordConfirm').value;
   if (!firstName || !clinic || !phone || !password) return showRegError('يرجى ملء جميع الحقول المطلوبة');
   if (email && !/\S+@\S+\.\S+/.test(email)) return showRegError('البريد الإلكتروني غير صحيح');
   if (password.length < 8) return showRegError('كلمة المرور يجب أن تكون 8 أحرف على الأقل');
+  if (password !== passwordConfirm) return showRegError('كلمتا المرور غير متطابقتين');
 
   const { email: finalEmail, isReal: hasRealEmail } = resolveGuestEmail(email, phone);
 
