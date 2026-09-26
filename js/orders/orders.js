@@ -1568,6 +1568,27 @@ function confirmProfileMapPick() {
   const pos = _profilePickerMarker.getLatLng();
   const lat = pos.lat.toFixed(5);
   const lng = pos.lng.toFixed(5);
+
+  // "طلب سريع" له بنية بيانات مختلفة (متغيّرات JS، مو حقول input مخفية) — نعالجه بشكل خاص
+  if (prefix === 'qo') {
+    qoLocationData.lat = lat;
+    qoLocationData.lng = lng;
+    qoLocationData.address = `${t('خط العرض','Lat')}: ${lat}, ${t('خط الطول','Lng')}: ${lng}`;
+    qoLocationData.method = 'map';
+    const box = document.getElementById('qoMapPreview');
+    box.classList.add('located');
+    box.innerHTML = `
+      <i class="fas fa-map-marker-alt" style="color:var(--success)"></i>
+      <div class="map-placeholder-text" style="color:var(--primary-dark)">تم تحديد الموقع من الخريطة</div>
+      <div class="map-coords">📍 ${lat}, ${lng}</div>`;
+    document.getElementById('qoLocationConfirm').classList.add('show');
+    document.getElementById('qoLocationConfirmText').textContent = `✅ تم تحديد موقعك من الخريطة بنجاح!`;
+    document.getElementById('qoLocationError').classList.remove('show');
+    closeProfileMapPicker();
+    showToast(t('✅ تم تحديد الموقع من الخريطة','✅ Location selected from map'), 'success');
+    return;
+  }
+
   document.getElementById(prefix + 'LocationLat').value = lat;
   document.getElementById(prefix + 'LocationLng').value = lng;
   const statusEl = document.getElementById(prefix + 'LocationStatus');
