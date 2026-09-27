@@ -370,3 +370,47 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
 
   return result;
 });
+// تتبع عام آمن للطلبات/عروض الأسعار: لا يعيد المستند الخام ولا يسمح
+// بقراءة Firestore قبل التحقق من رقم الهاتف على الخادم.
+exports.trackPublicOrder = onCall({ region: 'us-central1' }, async (request) => {
+  const data = request.data || {};
+  const id = String(data.id || '').trim().toUpperCase();
+  const phone = String(data.phone || '').trim();
+  if (!id || !phone || phone.length < 6 || phone.length > 30) {
+    throw new HttpsError('invalid-argument', 'رقم الطلب ورقم الهاتف مطلوبان');
+  }
+  const isQuote = id.startsWith('QT-');
+  const isOrder = id.startsWith('DP-');
+  if (!isQuote && !isOrder) throw new HttpsError('invalid-argument', 'رقم الطلب غير صالح');
+
+  const snap = await db.doc(`${isQuote ? 'quotes' : 'orders'}/${id}`).get();
+  if (!snap.exists) throw new HttpsError('not-found', 'لم يتم العثور على الطلب');
+  const raw = snap.data();
+  if (normalizePhone(raw.phone) !== normalizePhone(phone)) {
+    throw new HttpsError('permission-denied', 'بيانات التحقق غير صحيحة');
+  }
+
+  const items = Array.isArray(raw.items) ? raw.items.slice(0, 50).map((item) => ({
+    ar: String(item.ar || '').slice(0, 200),
+    en: String(item.en || '').slice(0, 200),
+    qty: Number.isInteger(item.qty) ? item.qty : 0,
+    icon: String(item.icon || '📦').slice(0, 20),
+  })) : [];
+
+  return {
+    id,
+    type: isQuote ? 'quote' : 'order',
+    status: String(raw.status || 'pending'),
+    orderStatus: raw.orderStatus ? String(raw.orderStatus) : null,
+    createdAt: raw.createdAt && typeof raw.createdAt.toDate === 'function'
+      ? raw.createdAt.toDate().toISOString() : (raw.createdAt || null),
+    items,
+    total: isOrder ? Number(raw.total || 0) : null,
+    totalPoints: isOrder ? Number(raw.totalPoints || 0) : null,
+    payMethod: isOrder ? String(raw.payMethod || 'money') : null,
+    quoteTotal: isQuote ? items.reduce((sum, item, idx) => {
+      const original = Array.isArray(raw.items) ? raw.items[idx] : {};
+      return sum + Number(original.unitPrice || 0) * item.qty;
+    }, 0) : null,
+  };
+});
