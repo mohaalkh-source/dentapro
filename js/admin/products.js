@@ -112,7 +112,7 @@ function renderAdminTable() {
       <td style="padding:14px 16px;font-weight:800;color:#0a5c8a;font-size:15px">${fmtPrice(p.price)} د.أ</td>
       <td style="padding:14px 16px;color:#5a7a90;font-size:13px;text-decoration:line-through">${p.old ? fmtPrice(p.old)+' د.أ' : '—'}</td>
       <td style="padding:14px 16px">
-        ${p.badge ? `<span style="padding:4px 10px;border-radius:50px;background:${badgeColors[p.badge]||'#f59e0b'};color:#fff;font-size:11px;font-weight:700">${p.badge}</span>` : '<span style="color:#ccc;font-size:13px">—</span>'}
+        ${p.badge ? `<span style="padding:4px 10px;border-radius:50px;background:${badgeColors[p.badge]||'#f59e0b'};color:#fff;font-size:11px;font-weight:700">${escHtml(p.badge)}</span>` : '<span style="color:#ccc;font-size:13px">—</span>'}
       </td>
       <td style="padding:14px 16px;text-align:center">
         <div style="display:flex;gap:8px;justify-content:center">
