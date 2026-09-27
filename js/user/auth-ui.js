@@ -344,7 +344,7 @@ function loginSuccess(user) {
   closeAuthModal();
   renderAuthHeader();
   loadAndRenderNotifIcon();
-  showToast(`👋 أهلاً ${user.name}!`, 'success');
+  showToast(`👋 أهلاً ${escHtml(user.name)}!`, 'success');
   if (user.role === 'admin' || user.role === 'manager') {
     setTimeout(async () => {
       document.getElementById('adminPanel').classList.add('open');
@@ -372,7 +372,7 @@ function showClientWelcome(user) {
   banner.innerHTML = `
     <i class="fas fa-hand-sparkles"></i>
     <div>
-      <div style="font-weight:800;font-size:15px;color:var(--primary-dark)">أهلاً بك ${user.name}!</div>
+      <div style="font-weight:800;font-size:15px;color:var(--primary-dark)">أهلاً بك ${escHtml(user.name)}!</div>
     </div>`;
   host.appendChild(banner);
 }
@@ -527,6 +527,10 @@ async function doLogout() {
 async function openAdminDirect() {
   if (!isStaff()) {
     showToast('⛔ غير مصرح لك بالدخول', 'error'); return;
+  }
+  if (typeof window.ensureAdminModules === 'function') {
+    try { await window.ensureAdminModules(); }
+    catch(e) { showToast('تعذر تحميل لوحة الإدارة', 'error'); return; }
   }
   document.getElementById('adminPanel').classList.add('open');
   applyAdminUIPermissions();
