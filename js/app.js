@@ -4,55 +4,86 @@ import { setState } from './state.js';
 import { wait } from './utils.js';
 import { waitForFirebase } from './firebase/firebase-services.js';
 
-const DOMAIN_SCRIPTS = [
+// Core modules needed by every customer. Admin-only modules are loaded on demand.
+const CORE_SCRIPTS = [
   './js/products/products.js',
   './js/cart/cart.js',
   './js/location/location.js',
   './js/ui/navigation.js',
   './js/user/auth-ui.js',
-  './js/admin/products.js',
   './js/orders/checkout.js',
   './js/orders/orders.js',
-  './js/admin/clients.js',
   './js/messages/messages.js',
+];
+
+const ADMIN_SCRIPTS = [
+  './js/admin/products.js',
+  './js/admin/clients.js',
   './js/admin/admin.js',
 ];
-const DOMAIN_SCRIPT_VERSION = 'fix-3';
 
-function versionedScriptSrc(src) {
-  return `${src}${src.includes('?') ? '&' : '?'}v=${DOMAIN_SCRIPT_VERSION}`;
-}
+const loadedScripts = new Map();
+let adminLoadPromise = null;
 
 function loadDomainScript(src) {
-  return new Promise((resolve, reject) => {
+  if (loadedScripts.has(src)) return loadedScripts.get(src);
+
+  const promise = new Promise((resolve, reject) => {
     const script = document.createElement('script');
-    script.src = versionedScriptSrc(src);
+    script.src = src;
+    script.async = false;
     script.onload = resolve;
     script.onerror = () => reject(new Error(`Failed to load ${src}`));
     document.head.appendChild(script);
   });
+
+  loadedScripts.set(src, promise);
+  return promise;
 }
 
-function loadDomainScriptOrdered(src) {
-  return new Promise((resolve, reject) => {
-    const script = document.createElement('script');
-    script.src = versionedScriptSrc(src);
-    script.async = false; // يحافظ على ترتيب التنفيذ الأصلي، بس التحميل نفسه يصير بالتوازي
-    script.onload = resolve;
-    script.onerror = () => reject(new Error(`Failed to load ${src}`));
-    document.head.appendChild(script);
-  });
+async function loadScripts(scripts) {
+  // Keep the historical execution order: some extracted modules depend on
+  // globals created by earlier modules.
+  for (const src of scripts) await loadDomainScript(src);
 }
 
-await Promise.all(DOMAIN_SCRIPTS.map(loadDomainScriptOrdered));
+// Called only when a staff member actually opens the admin area.
+async function ensureAdminModules() {
+  if (adminLoadPromise) return adminLoadPromise;
+  adminLoadPromise = loadScripts(ADMIN_SCRIPTS);
+  try {
+    await adminLoadPromise;
+    return true;
+  } catch (error) {
+    adminLoadPromise = null;
+    console.error('Admin modules load:', error);
+    throw error;
+  }
+}
 
-// لا ننتظر Firebase أو تهيئة المنتجات قبل إخفاء شاشة البداية.
-// أي تأخير أو خطأ في الشبكة يجب ألا يمنع المستخدم من دخول الصفحة الرئيسية.
+// Auth/navigation are loaded before the admin modules, so provide temporary
+// bridges for inline handlers. admin.js replaces these globals with the real
+// implementations once it has loaded.
+window.ensureAdminModules = ensureAdminModules;
+window.openAccountMenu = async function () {
+  await ensureAdminModules();
+  return window.openAccountMenu?.();
+};
+window.handleBottomNavAccount = async function () {
+  if (window.currentUser && typeof window.isStaff === 'function' && window.isStaff()) {
+    await ensureAdminModules();
+    return window.handleBottomNavAccount?.();
+  }
+  if (typeof window.goHome === 'function') return window.goHome();
+};
+
+await loadScripts(CORE_SCRIPTS);
+
 if (typeof window.initializeProductsModule === 'function') {
   window.initializeProductsModule().catch(err => console.error('Products init:', err));
 }
 
-// مؤقت أمان مستقل عن Firebase والمنتجات لإخفاء شاشة البداية دائماً.
+// Do not block first paint on Firebase or product initialization.
 setTimeout(() => {
   const splash = document.getElementById('splashScreen');
   if (splash) {
@@ -68,4 +99,4 @@ document.documentElement.dataset.app = APP_NAME;
 document.documentElement.dataset.language = APP_CONFIG.defaultLanguage;
 await wait(0);
 
-export { DOMAIN_SCRIPTS, loadDomainScript };
+export { CORE_SCRIPTS, ADMIN_SCRIPTS, loadDomainScript, ensureAdminModules };

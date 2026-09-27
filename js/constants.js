@@ -4,4 +4,4 @@ export const STORAGE_KEYS = Object.freeze({ cart: 'dentapro_cart', products: 'de
 
 // عند تفعيلها (بعد نشر Cloud Function وترقية Blaze)، إنشاء الطلبات (Quick Order وسلة الشراء)
 // ينتقل من الحساب المحلي في المتصفح إلى دالة createOrder على الخادم
-window.SERVER_ORDER_CREATION_ENABLED = false;
+window.SERVER_ORDER_CREATION_ENABLED = true;
