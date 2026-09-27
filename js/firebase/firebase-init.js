@@ -86,6 +86,7 @@ window._fbGetDocFromServer = getDocFromServer;
   // معطّلة افتراضياً (SERVER_ORDER_CREATION_ENABLED = false) لحد ما تُنشر الدالة فعلياً على Blaze
   const functions = getFunctions(app);
   window._fbCreateOrderFn = httpsCallable(functions, 'createOrder');
+  window._fbTrackPublicOrderFn = httpsCallable(functions, 'trackPublicOrder');
 
   // التخزين المحلي مُفعَّل تلقائياً عبر persistentLocalCache() في إعداد Firestore
 
