@@ -1530,12 +1530,31 @@ function detectProfileLocation() {
 // ═══ خريطة اختيار الموقع لصفحة الملف الشخصي — مستقلة تماماً عن خريطة الطلب (location.js) ═══
 let _profilePickerMap = null;
 let _profilePickerMarker = null;
-let _profileMapPickerContext = 'ep'; // 'ep' = تعديل الملف، 'reg' = إنشاء حساب جديد
+let _profileMapPickerContext = 'ep'; // 'ep' = تعديل الملف، 'reg' = إنشاء حساب جديد، 'qo' = طلب سريع
+let _profileMapPickerGPSFallback = null;
 
 async function openProfileMapPicker(context) {
   _profileMapPickerContext = context || 'ep';
   if (typeof loadLeafletIfNeeded === 'function') await loadLeafletIfNeeded();
   document.getElementById('profileMapPickerModal').classList.add('open');
+
+  // لو ما كان في موقع محفوظ مسبقاً بهالفورم، نحاول نجيب GPS الحالي تلقائياً قبل ما نفتح الخريطة
+  const savedLat = document.getElementById(_profileMapPickerContext + 'LocationLat')?.value;
+  if (!savedLat && navigator.geolocation) {
+    await new Promise((resolve) => {
+      const timeoutId = setTimeout(resolve, 3000); // لا تنتظر أكثر من 3 ثواني
+      navigator.geolocation.getCurrentPosition(
+        pos => {
+          clearTimeout(timeoutId);
+          _profileMapPickerGPSFallback = { lat: pos.coords.latitude.toFixed(5), lng: pos.coords.longitude.toFixed(5) };
+          resolve();
+        },
+        () => { clearTimeout(timeoutId); resolve(); },
+        { timeout: 2500 }
+      );
+    });
+  }
+
   setTimeout(initProfilePickerMap, 150);
 }
 
@@ -1547,8 +1566,9 @@ function initProfilePickerMap() {
   const prefix = _profileMapPickerContext;
   const savedLat = document.getElementById(prefix + 'LocationLat')?.value;
   const savedLng = document.getElementById(prefix + 'LocationLng')?.value;
-  const defaultLat = savedLat ? parseFloat(savedLat) : 31.9539;
-  const defaultLng = savedLng ? parseFloat(savedLng) : 35.9106;
+  const gps = _profileMapPickerGPSFallback;
+  const defaultLat = savedLat ? parseFloat(savedLat) : (gps ? parseFloat(gps.lat) : 31.9539);
+  const defaultLng = savedLng ? parseFloat(savedLng) : (gps ? parseFloat(gps.lng) : 35.9106);
   if (!_profilePickerMap) {
     _profilePickerMap = L.map('leafletProfilePickerMap').setView([defaultLat, defaultLng], 13);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
