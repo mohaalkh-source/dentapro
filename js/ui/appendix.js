@@ -599,10 +599,7 @@ var STATIC_MODAL_IDS = new Set([
 
 function isTrackableUIElement(el) {
   if (!el || !el.classList || !el.id) return false;
-  // قائمة الإشعارات ليست صفحة ولا يجب أن تضيف حالات إلى history.
-  // إدخالها في مكدس history ثم فتح صفحة الطلبات في نفس النقرة
-  // يسبب تعارضاً بين history.go و history.pushState على بعض WebView.
-  if (el.id === 'cartSidebar') return true;
+  if (el.id === 'cartSidebar' || el.id === 'notifDropdown') return true;
   return el.classList.contains('modal-overlay');
 }
 

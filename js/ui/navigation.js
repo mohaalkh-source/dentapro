@@ -1030,38 +1030,34 @@ async function trackGuestOrder() {
   const resultBox = document.getElementById('trackResultBox');
 
   if (!idInput || !phoneInput) return showTrackError('يرجى إدخال رقم الطلب ورقم الهاتف');
-
   resultBox.innerHTML = `<div style="text-align:center;padding:32px;color:var(--text-muted)">
     <div class="spinner" style="margin:0 auto 14px;width:28px;height:28px;border-width:4px"></div>جاري البحث...</div>`;
 
   try {
-    const isQuote = idInput.startsWith('QT-');
-    const colName = isQuote ? 'quotes' : 'orders';
-    const snap = await window._fbGetDoc(window._fbDoc2(colName, idInput));
+    if (typeof window._fbTrackPublicOrderFn !== 'function') {
+      throw new Error('خدمة تتبع الطلب غير متاحة حالياً');
+    }
+    const response = await window._fbTrackPublicOrderFn({ id: idInput, phone: phoneInput });
+    const data = response.data || {};
+    const isQuote = data.type === 'quote';
+    if (!data.id) return showTrackError('تعذر قراءة بيانات الطلب');
 
-    if (!snap.exists()) return showTrackError('لم يتم العثور على طلب بهذا الرقم، تأكد من كتابته بشكل صحيح');
+    const createdAt = data.createdAt ? new Date(data.createdAt) : null;
+    const date = createdAt && !Number.isNaN(createdAt.getTime())
+      ? createdAt.toLocaleDateString('ar-SA-u-ca-gregory', { year:'numeric', month:'long', day:'numeric' })
+      : '';
 
-    const data = snap.data();
-    const cleanPhone  = (data.phone || '').replace(/\D/g,'');
-    const inputPhone  = phoneInput.replace(/\D/g,'');
-    // مقارنة آخر 9 أرقام (تغطي الرقم المحلي الكامل بدون رمز الدولة، أدق من 7 أرقام)
-    const matches = cleanPhone.length >= 9 && inputPhone.length >= 9 && cleanPhone.slice(-9) === inputPhone.slice(-9);
-    if (!matches) return showTrackError('رقم الهاتف لا يطابق بيانات هذا الطلب');
-
-    if (isQuote) rememberGuestQuote({ id: idInput, phone: data.phone, createdAt: data.createdAt });
-    else rememberGuestOrder({ id: idInput, phone: data.phone, createdAt: data.createdAt });
-
-    const date = new Date(data.createdAt).toLocaleDateString('ar-SA-u-ca-gregory',
-      { year:'numeric', month:'long', day:'numeric' });
+    if (isQuote) rememberGuestQuote({ id: idInput, phone: phoneInput, createdAt: data.createdAt });
+    else rememberGuestOrder({ id: idInput, phone: phoneInput, createdAt: data.createdAt });
 
     if (isQuote) {
-      const total = (data.items||[]).reduce((s,i)=> s + ((i.unitPrice||0)*(i.qty||1)), 0);
+      const total = Number(data.quoteTotal || 0);
       resultBox.innerHTML = `
         <div class="order-track-card">
           <div class="order-track-header">
             <div>
               <div class="order-track-num"><i class="fas fa-file-invoice-dollar"></i> #${escHtml(data.id)}</div>
-              <div class="order-track-date">📅 ${date}</div>
+              <div class="order-track-date">📅 ${escHtml(date)}</div>
             </div>
             ${quoteStatusBadge(data.status)}
           </div>
@@ -1070,8 +1066,8 @@ async function trackGuestOrder() {
             <div class="order-items-list">
               ${(data.items||[]).map(i=>`
                 <div class="order-item-row">
-                  <div class="order-item-icon">${i.icon||'📦'}</div>
-                  <div style="flex:1;font-weight:600">${escHtml(i.ar)}</div>
+                  <div class="order-item-icon">${escHtml(i.icon || '📦')}</div>
+                  <div style="flex:1;font-weight:600">${escHtml(i.ar || i.en || '')}</div>
                   <div style="color:var(--text-muted)">${i.qty?`× ${i.qty}`:''}</div>
                 </div>`).join('')}
             </div>
@@ -1084,7 +1080,7 @@ async function trackGuestOrder() {
           <div class="order-track-header">
             <div>
               <div class="order-track-num"><i class="fas fa-receipt"></i> #${escHtml(data.id)}</div>
-              <div class="order-track-date">📅 ${date}</div>
+              <div class="order-track-date">📅 ${escHtml(date)}</div>
             </div>
             ${statusBadgeHTML(data.status)}
           </div>
@@ -1093,20 +1089,23 @@ async function trackGuestOrder() {
             <div class="order-items-list">
               ${(data.items||[]).map(i=>`
                 <div class="order-item-row">
-                  <div class="order-item-icon">${escHtml(i.icon || '')}</div>
-                  <div style="flex:1;font-weight:600">${escHtml(i.ar)}</div>
-                  <div style="color:var(--text-muted)">× ${i.qty}</div>
+                  <div class="order-item-icon">${escHtml(i.icon || '📦')}</div>
+                  <div style="flex:1;font-weight:600">${escHtml(i.ar || i.en || '')}</div>
+                  <div style="color:var(--text-muted)">× ${Number(i.qty || 0)}</div>
                 </div>`).join('')}
             </div>
             <div style="text-align:left;font-weight:900;color:var(--primary);margin-top:10px">
-              الإجمالي: ${data.payMethod==='points' ? `${data.totalPoints||0} نقطة` : `${fmtPrice(data.total)} د.أ`}
+              الإجمالي: ${data.payMethod==='points' ? `${Number(data.totalPoints||0)} نقطة` : `${fmtPrice(Number(data.total||0))} د.أ`}
             </div>
           </div>
         </div>`;
     }
-  } catch(e) {
-    console.error(e);
-    showTrackError('حدث خطأ أثناء البحث، تحقق من الاتصال بالإنترنت');
+  } catch (e) {
+    const code = e && e.code ? String(e.code) : '';
+    if (code.includes('not-found')) return showTrackError('لم يتم العثور على طلب بهذا الرقم، تأكد من كتابته بشكل صحيح');
+    if (code.includes('permission-denied')) return showTrackError('رقم الهاتف لا يطابق بيانات هذا الطلب');
+    console.error('Secure order tracking failed:', e);
+    return showTrackError('تعذر تتبع الطلب حالياً، حاول مرة أخرى');
   }
 }
 
