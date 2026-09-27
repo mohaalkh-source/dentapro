@@ -253,6 +253,7 @@ async function submitOrder() {
         notes: cleanOrder.notes,
         payMethod: cleanOrder.payMethod,
         sourceQuoteId: null,
+        idempotencyKey: (window.crypto && crypto.randomUUID) ? crypto.randomUUID() : `dp-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`,
       });
       orderNum = serverResult.data.orderNum;
       cleanOrder.id = orderNum;
