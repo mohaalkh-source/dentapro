@@ -492,7 +492,7 @@ async function submitQOInfo(event) {
     const result = await createGuestAccountIfNeeded(email, password, passwordConfirm, doctor, clinic, phone);
     if (!result.ok) {
       document.getElementById('qoInfoError').style.display = 'block';
-      document.getElementById('qoInfoError').innerHTML = `<i class="fas fa-exclamation-circle"></i> ${result.message}`;
+      document.getElementById('qoInfoError').innerHTML = `<i class="fas fa-exclamation-circle"></i> ${escHtml(result.message)}`;
       return;
     }
   }
@@ -643,37 +643,30 @@ async function finalizeQuickOrderSend() {
         ...(discountResult ? { originalTotal: discountResult.originalTotal, discountPercent: discountResult.discountPercent } : {})
       };
 
-      if (window.SERVER_ORDER_CREATION_ENABLED) {
-        // مسار الخادم: الدالة تحسب السعر/الخصم/التوصيل/المخزون بنفسها وتنشئ الطلب
-        try {
-          const serverResult = await window._fbCreateOrderFn({
-            items: items.map(i => ({ id: i.productId, qty: i.qty })),
-            clinic, doctor, phone, address,
-            locationLat: locLat || null, locationLng: locLng || null,
-            notes: order.notes, payMethod: 'money',
-            sourceQuoteId: fromQuoteIdStr || null,
-          });
-          orderNum = serverResult.data.orderNum;
-          total = serverResult.data.total;
-          order.id = orderNum;
-          order.total = total;
-        } catch(serverErr) {
-          showToast(`❌ ${serverErr.message}`, 'error');
-          return;
-        }
-      } else {
-        // المسار المحلي الحالي (سيُزال لاحقاً بعد التأكد من عمل مسار الخادم بثقة)
-        try {
-          const stockResult = await reserveOrderStock(order.items);
-          order.stockReserved = stockResult.reserved;
-        } catch(stockErr) {
-          showToast(`❌ ${stockErr.message}`, 'error');
-          return;
-        }
-
-        await window._fbSetDoc(window._fbDoc2('orders', orderNum), order);
-        if (!guestClient) rememberGuestOrder(order);
+      // إنشاء الطلب يتم حصراً على الخادم: الأسعار والخصومات والتوصيل والمخزون
+      // لا تُؤخذ من بيانات العميل. مفتاح التكرار يمنع إنشاء طلبين عند إعادة المحاولة.
+      const idempotencyKey = (window.crypto && crypto.randomUUID)
+        ? crypto.randomUUID()
+        : `dp-${Date.now()}-${Math.random().toString(36).slice(2, 12)}`;
+      try {
+        const serverResult = await window._fbCreateOrderFn({
+          items: items.map(i => ({ id: i.productId, qty: i.qty, isBundle: !!i.isBundle })),
+          clinic, doctor, phone, address,
+          locationLat: locLat || null, locationLng: locLng || null,
+          notes: order.notes, payMethod: 'money',
+          sourceQuoteId: fromQuoteIdStr || null,
+          idempotencyKey,
+        });
+        orderNum = serverResult.data.orderNum;
+        total = serverResult.data.total;
+        order.id = orderNum;
+        order.total = total;
+      } catch(serverErr) {
+        console.error('Secure createOrder failed:', serverErr);
+        showToast(`❌ ${serverErr.message || 'تعذر إنشاء الطلب'}`, 'error');
+        return;
       }
+      if (!guestClient) rememberGuestOrder(order);
 
       if (fromQuoteDocId) {
         await updateQuote(fromQuoteDocId, { status: 'accepted', orderStatus: 'pending' });
