@@ -25,6 +25,22 @@ const ADMIN_SCRIPTS = [
 const loadedScripts = new Map();
 let adminLoadPromise = null;
 
+// Shared browser-safe helpers required by customer modules. These used to live
+// inside admin-only modules, which caused runtime errors after admin lazy-loading.
+window.cldOptimize = window.cldOptimize || function cldOptimize(url, width) {
+  if (!url || typeof url !== 'string' || !url.includes('/upload/')) return url;
+  const w = width ? `,w_${width}` : '';
+  return url.replace('/upload/', `/upload/f_auto,q_auto${w}/`);
+};
+
+// Customer-side discount preview is intentionally non-authoritative. The server
+// remains the source of truth for discounts. Admin modules replace this with the
+// full calculator when they are loaded. Returning null avoids breaking cart/checkout
+// when the admin-only calculator is not present.
+window.computeGeneralDiscountForCart = window.computeGeneralDiscountForCart || async function computeGeneralDiscountForCart() {
+  return null;
+};
+
 function loadDomainScript(src) {
   if (loadedScripts.has(src)) return loadedScripts.get(src);
 
