@@ -40,6 +40,9 @@ function loadDomainScriptOrdered(src) {
 }
 
 await Promise.all(DOMAIN_SCRIPTS.map(loadDomainScriptOrdered));
+if (typeof window.initializeProductsModule !== 'function') {
+  console.warn('initializeProductsModule غير متوفرة');
+}
 
 // لا ننتظر Firebase أو تهيئة المنتجات قبل إخفاء شاشة البداية.
 // أي تأخير أو خطأ في الشبكة يجب ألا يمنع المستخدم من دخول الصفحة الرئيسية.
