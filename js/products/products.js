@@ -3325,19 +3325,28 @@ async function notifyPendingOrdersOnLogin() {
     showToast(`🔔 لديك ${count} طلب قيد الانتظار`, 'success');
 
     if (!('Notification' in window)) return;
+    const showSystemNotification = async () => {
+      try {
+        if (!('serviceWorker' in navigator)) return;
+        const reg = await navigator.serviceWorker.ready;
+        if (!reg || typeof reg.showNotification !== 'function') return;
+        await reg.showNotification('🔔 طلبات قيد الانتظار', {
+          body: `لديك ${count} طلب يحتاج للمراجعة في DentaPro`,
+          icon: './icons/icon-192.png',
+          badge: './icons/icon-192.png',
+          dir: 'rtl',
+          lang: 'ar'
+        });
+      } catch (notificationError) {
+        console.warn('notifyPendingOrdersOnLogin: system notification unavailable', notificationError?.message || notificationError);
+      }
+    };
+
     if (Notification.permission === 'granted') {
-      new Notification('🔔 طلبات قيد الانتظار', {
-        body: `لديك ${count} طلب يحتاج للمراجعة في DentaPro`,
-        icon: '🦷'
-      });
+      await showSystemNotification();
     } else if (Notification.permission !== 'denied') {
       const perm = await Notification.requestPermission();
-      if (perm === 'granted') {
-        new Notification('🔔 طلبات قيد الانتظار', {
-          body: `لديك ${count} طلب يحتاج للمراجعة في DentaPro`,
-          icon: '🦷'
-        });
-      }
+      if (perm === 'granted') await showSystemNotification();
     }
   } catch (e) {
     console.warn('notifyPendingOrdersOnLogin:', e);
