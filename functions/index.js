@@ -135,15 +135,19 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
     throw new HttpsError('invalid-argument', `عدد العناصر أكبر من الحد المسموح (${MAX_DISTINCT_ITEMS})`);
   }
 
-  const payMethod = data.payMethod === 'points' ? 'points' : 'money';
+  const payMethod = data.sourceQuoteId ? 'money' : (data.payMethod === 'points' ? 'points' : 'money');
   const clinic = String(data.clinic || '').trim();
   const doctor = String(data.doctor || '').trim();
   const phone = String(data.phone || '').trim();
   const address = String(data.address || '').trim();
+  if (clinic.length > 200 || doctor.length > 120 || phone.length > 30 || address.length > 500) {
+    throw new HttpsError('invalid-argument', 'بيانات الطلب تتجاوز الحدود المسموحة');
+  }
   const locationLat = typeof data.locationLat === 'number' ? data.locationLat : null;
   const locationLng = typeof data.locationLng === 'number' ? data.locationLng : null;
   const notes = String(data.notes || '').slice(0, 1000);
   const sourceQuoteId = data.sourceQuoteId ? String(data.sourceQuoteId) : null;
+  const quotePhone = String(data.quotePhone || '').trim();
 
   // مفتاح تكرار إلزامي: العميل يولّده مرة واحدة لكل محاولة شراء ويعيد إرساله نفسه عند أي إعادة محاولة تلقائية
   const idempotencyKey = String(data.idempotencyKey || '').trim();
@@ -166,7 +170,8 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
   const clientEmail = clientDoc ? (clientDoc.email || 'guest') : 'guest';
   const clientName = clientDoc ? (clientDoc.name || doctor) : doctor;
 
-  // تحقق مبدئي من صيغة العناصر (قبل الدخول بالمعاملة)
+  // تحقق مبدئي من صيغة العناصر (قبل الدخول بالمعاملة).
+  // عند تحويل Quote: عناصر الطلب لا تأتي من العميل إطلاقاً؛ ستُبنى لاحقاً من quote.items.
   const requestedItems = [];
   for (const raw of rawItems) {
     const id = raw.id !== undefined && raw.id !== null ? raw.id : raw.productId;
@@ -209,12 +214,56 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
       if (q.orderCreated) {
         throw new HttpsError('failed-precondition', 'تم إنشاء طلب من هذا العرض مسبقاً');
       }
-      const ownsQuote = clientUid ? q.clientUid === clientUid : q.clientEmail === 'guest';
-      if (!ownsQuote) throw new HttpsError('permission-denied', 'هذا العرض لا يخص هذا الحساب');
+      if (clientUid) {
+        if (q.clientUid !== clientUid) throw new HttpsError('permission-denied', 'هذا العرض لا يخص هذا الحساب');
+      } else {
+        if (!quotePhone || normalizePhone(q.phone) !== normalizePhone(quotePhone)) {
+          throw new HttpsError('permission-denied', 'رقم الهاتف لا يطابق صاحب عرض السعر');
+        }
+      }
     }
 
+    // إذا كان التحويل من Quote، نعيد بناء العناصر من العرض المقبول فقط.
+    // لا نثق إطلاقاً بقائمة items المرسلة من المتصفح.
+    let quoteOrderItems = null;
+    if (sourceQuoteId) {
+      const q = quoteSnap.data();
+      const qItems = Array.isArray(q.items) ? q.items : [];
+      if (!qItems.length || qItems.length > MAX_DISTINCT_ITEMS) {
+        throw new HttpsError('failed-precondition', 'عرض السعر لا يحتوي على عناصر صالحة');
+      }
+      quoteOrderItems = qItems.map((it, idx) => {
+        const qty = Number(it.qty);
+        const unitPrice = Number(it.unitPrice);
+        if (!Number.isInteger(qty) || qty <= 0 || qty > MAX_QTY_PER_ITEM) {
+          throw new HttpsError('failed-precondition', `كمية غير صالحة في عرض السعر عند العنصر ${idx + 1}`);
+        }
+        if (!Number.isFinite(unitPrice) || unitPrice < 0) {
+          throw new HttpsError('failed-precondition', `سعر غير صالح في عرض السعر عند العنصر ${idx + 1}`);
+        }
+        return {
+          id: it.productId || null,
+          ar: String(it.ar || '').slice(0, 200),
+          en: String(it.en || '').slice(0, 200),
+          icon: String(it.icon || '📦').slice(0, 20),
+          qty,
+          price: unitPrice,
+          basePrice: null,
+          points: 0,
+          isCustom: !!it.isCustom,
+        };
+      });
+      if (quoteOrderItems.some(it => !it.id && !it.isCustom)) {
+        throw new HttpsError('failed-precondition', 'يوجد عنصر غير صالح في عرض السعر');
+      }
+    }
+
+    const effectiveRequestedItems = sourceQuoteId
+      ? quoteOrderItems.filter((it) => it.id).map((it) => ({ id: it.id, qty: it.qty, isBundle: false }))
+      : requestedItems;
+
     // 2) نجيب تعريفات الباقات الحقيقية (store_data/offers) لأي عنصر isBundle، ونتجاهل أي بيانات باقة من العميل تماماً
-    const bundleRequests = requestedItems.filter((i) => i.isBundle);
+    const bundleRequests = effectiveRequestedItems.filter((i) => i.isBundle);
     let offersDoc = null;
     if (bundleRequests.length) {
       const offersSnap = await tx.get(db.doc('store_data/offers'));
@@ -242,7 +291,7 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
     // 3) نبني خريطة خصم المخزون الفعلي (بعد توسيع الباقات لمنتجاتها الحقيقية)
     const merged = {};
     let totalReservedQty = 0;
-    for (const ri of requestedItems) {
+    for (const ri of effectiveRequestedItems) {
       if (ri.isBundle) {
         const b = resolvedBundles[ri.id];
         for (const bi of b.items) {
@@ -259,7 +308,7 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
       throw new HttpsError('invalid-argument', `إجمالي الكمية المطلوبة أكبر من الحد المسموح (${MAX_TOTAL_RESERVED_QTY})`);
     }
 
-    const plainProductIds = requestedItems.filter((i) => !i.isBundle).map((i) => i.id);
+    const plainProductIds = effectiveRequestedItems.filter((i) => !i.isBundle).map((i) => i.id);
     const allProductIds = Array.from(new Set([...Object.keys(merged), ...plainProductIds]));
 
     // 4) نقرأ كل مستندات المنتجات المطلوبة فعلياً (من مصدر الحقيقة الوحيد: products)
@@ -281,7 +330,7 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
     }
 
     // 6) نعيد بناء عناصر الطلب بالسعر الحقيقي (من products أو من تعريف الباقة الحقيقي) — نتجاهل أي سعر أرسله العميل
-    const orderItems = requestedItems.map((ri) => {
+    const orderItems = sourceQuoteId ? quoteOrderItems : requestedItems.map((ri) => {
       if (ri.isBundle) {
         const b = resolvedBundles[ri.id];
         return {
@@ -321,12 +370,17 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
       pointsDeducted = true;
     }
 
-    // 8) الخصم العام/المخصص يُحسب من إعدادات الخادم فقط
-    const discountResult = await computeGeneralDiscountForCart(cashOnlyItems, clientEmail, phone);
-    const subtotalForDelivery = discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100;
+    // 8) Quote مقبول هو سعر تفاوضي مثبت من الإدارة؛ لا نعيد تطبيق خصم عام عليه.
+    const discountResult = sourceQuoteId ? null : await computeGeneralDiscountForCart(cashOnlyItems, clientEmail, phone);
+    const subtotalForDelivery = sourceQuoteId
+      ? Math.round(rawTotal * 100) / 100
+      : (discountResult ? discountResult.total : Math.round(rawTotal * 100) / 100);
 
-    // 9) أجور التوصيل تُحسب من إعدادات الخادم فقط
-    const deliveryResult = await resolveDeliveryFee(clientUid, subtotalForDelivery);
+    // 9) عند Quote: نستخدم أجور التوصيل المثبتة في العرض إن كانت محددة، وإلا نحسبها خادمياً.
+    const quoteData = sourceQuoteId ? quoteSnap.data() : null;
+    const deliveryResult = sourceQuoteId && quoteData.deliveryDetermined
+      ? { determined: true, fee: Math.max(0, Number(quoteData.deliveryFee) || 0) }
+      : await resolveDeliveryFee(clientUid, subtotalForDelivery);
     const finalTotal = deliveryResult.determined ? subtotalForDelivery + (deliveryResult.fee || 0) : subtotalForDelivery;
 
     // 10) نخصم المخزون فعلياً (نفس المعاملة — ذرّي بالكامل مع إنشاء الطلب)
