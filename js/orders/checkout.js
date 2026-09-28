@@ -655,6 +655,7 @@ async function finalizeQuickOrderSend() {
           locationLat: locLat || null, locationLng: locLng || null,
           notes: order.notes, payMethod: 'money',
           sourceQuoteId: fromQuoteIdStr || null,
+          quotePhone: fromQuoteDocId ? phone : null,
           idempotencyKey,
         });
         orderNum = serverResult.data.orderNum;
