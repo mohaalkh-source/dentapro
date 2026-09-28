@@ -1,39 +1,4 @@
-// يحسب الخصم المخصص (لو مفعّل ومطابق للعميل بأحد المستويات الثلاثة) — نظام شرائح تصاعدية
-// يرجع null لو ما فيه خصم ينطبق، أو {originalTotal, total, discountPercent} لو انطبق
-async function computeCustomDiscount(rawTotal, clientEmail, clientPhone) {
-  try {
-    const cfg = await loadCustomDiscountConfig();
-    if (!cfg || !cfg.enabled || !Array.isArray(cfg.tiers)) return null;
-
-    const isEligible = (tier) => {
-      // فحص انتهاء صلاحية المستوى (لو محدد وقت انتهاء وانقضى)
-      if (tier.expiresAt && new Date(tier.expiresAt) <= new Date()) return false;
-      if (tier.scope === 'all') return true;
-      if (!tier.targetIds || !tier.targetIds.length) return false;
-      return tier.targetIds.some(id => {
-        if (id.startsWith('guest:')) return normalizePhone(clientPhone) === normalizePhone(id.slice(6));
-        return id === clientEmail;
-      });
-    };
-
-    const eligibleTiers = cfg.tiers.filter(isEligible).sort((a,b) => a.amount - b.amount);
-    if (!eligibleTiers.length) return null;
-
-    // نختار أعلى مستوى وصل المجموع لحده فعلاً (المجموع >= amount الخاص فيه)
-    // لو المجموع ما وصل حتى أدنى مستوى، ما في خصم إطلاقاً
-    let matchedTier = null;
-    for (const t of eligibleTiers) {
-      if (rawTotal >= t.amount) matchedTier = t;
-    }
-    if (!matchedTier || matchedTier.percent <= 0) return null;
-
-    const discounted = Math.max(0, rawTotal - (rawTotal * matchedTier.percent / 100));
-    return { originalTotal: rawTotal, total: Math.round(discounted * 100) / 100, discountPercent: matchedTier.percent };
-  } catch(e) {
-    console.warn('computeCustomDiscount:', e.message);
-    return null;
-  }
-}
+// computeCustomDiscount انتقلت إلى js/shared/discounts.js
 // DentaPro domain module: extracted from the original implementation.
 // QUOTE REQUEST (طلب عرض سعر) — CLIENT SIDE
 // =====================
