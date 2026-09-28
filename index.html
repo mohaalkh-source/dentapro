@@ -46,9 +46,14 @@
 </script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700;900&family=DM+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+<link rel="preconnect" href="https://www.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://firestore.googleapis.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin>
 <link rel="preconnect" href="https://res.cloudinary.com">
+<link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
+<noscript><link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800;900&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"></noscript>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css"></noscript>
 
 <link rel="stylesheet" href="./css/variables.css?v=final2">
 <link rel="stylesheet" href="./css/base.css?v=final2">
@@ -65,6 +70,19 @@
 <link rel="stylesheet" href="./css/location.css?v=final2">
 <link rel="stylesheet" href="./css/footer.css?v=final2">
 <link rel="stylesheet" href="./css/responsive.css?v=final2">
+<link rel="modulepreload" href="./js/firebase/firebase-init.js?v=final2">
+<link rel="modulepreload" href="./js/app.js?v=final2">
+<link rel="preload" as="script" href="./js/products/products.js">
+<link rel="preload" as="script" href="./js/cart/cart.js">
+<link rel="preload" as="script" href="./js/location/location.js">
+<link rel="preload" as="script" href="./js/ui/navigation.js">
+<link rel="preload" as="script" href="./js/user/auth-ui.js">
+<link rel="preload" as="script" href="./js/admin/products.js">
+<link rel="preload" as="script" href="./js/orders/checkout.js">
+<link rel="preload" as="script" href="./js/orders/orders.js">
+<link rel="preload" as="script" href="./js/admin/clients.js">
+<link rel="preload" as="script" href="./js/messages/messages.js">
+<link rel="preload" as="script" href="./js/admin/admin.js">
 <script type="module" src="./js/firebase/firebase-init.js?v=final2"></script>
 <script type="module" src="./js/app.js?v=final2"></script>
 </head>
@@ -79,7 +97,7 @@
     display:flex;align-items:center;justify-content:center;overflow:hidden;
     box-shadow:0 8px 32px rgba(0,0,0,0.3);margin-bottom:20px;
     animation:splashPop 0.6s cubic-bezier(0.34,1.56,0.64,1)">
-    <img src="./icons/icon-512.png" alt="DentaPro" style="width:100%;height:100%;object-fit:cover">
+    <img src="./icons/icon-192.png" alt="DentaPro" width="100" height="100" fetchpriority="high" decoding="async" style="width:100%;height:100%;object-fit:cover">
   </div>
   <div style="color:#fff;font-size:26px;font-weight:900;letter-spacing:-0.5px">
     Denta<span style="color:#00c2a8">Pro</span>
@@ -110,7 +128,7 @@
       <span></span><span></span><span></span>
     </button>
     <a href="#" class="logo" onclick="goHome()">
-  <span class="logo-3d-wrap"><img class="logo-3d-spin" src="./icons/header-logo.png" alt="DentaPro" style="width:44px;height:44px;object-fit:contain"></span>
+  <span class="logo-3d-wrap"><img class="logo-3d-spin" src="./icons/header-logo.png" alt="DentaPro" width="44" height="44" fetchpriority="high" decoding="async" style="width:44px;height:44px;object-fit:contain"></span>
   <span class="logo-text">Denta<span>Pro</span></span>
 </a>
     <div class="header-actions">
@@ -2680,6 +2698,10 @@
 
 <script>
 (function () {
+  // يعمل فقط عند فتح الموقع بالرابط: ?debug=1  (أو بعد تنفيذ localStorage.setItem('dp_debug','1'))
+  try {
+    if (!/[?&]debug=1(&|$)/.test(location.search) && !localStorage.getItem('dp_debug')) return;
+  } catch (e) { return; }
   var STORE_KEY = 'dp_debug_logs_v1';
   var LAST_CLICK_KEY = 'dp_debug_lastclick_v1';
   var MAX_LOGS = 150;
