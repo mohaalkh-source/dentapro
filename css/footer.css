@@ -36,6 +36,7 @@ footer{
 .footer-payments{display:flex; gap:8px}
 
 body.dark-mode footer { background:#070e17; }
+
 footer, .footer {
   content-visibility: auto;
   contain-intrinsic-size: auto 400px;
