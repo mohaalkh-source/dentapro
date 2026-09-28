@@ -4,9 +4,7 @@
 var _cachedClientsList = [];
 
 // يوحّد رقم الهاتف لآخر 9 أرقام (يتجاهل رمز الدولة والأصفار البادئة) لمطابقة دقيقة
-function normalizePhone(phone) {
-  return (phone || '').replace(/\D/g, '').slice(-9);
-}
+// normalizePhone انتقلت إلى js/shared/discounts.js
 
 async function openClientsListModal() {
   document.getElementById('clientsListModal').classList.add('open');
@@ -471,58 +469,8 @@ function invalidateDiscountConfigCache() {
 
 
 
-// نسخة خاصة بالسلة: بتفصل عروض الكمية والباقات عن باقي المنتجات حسب إعداد الأدمن
-// (applyToOffers) قبل حساب الخصم. لو الإعداد "تطبيق على العروض" مفعّل (الافتراضي)،
-// نفس سلوك computeGeneralDiscount العادي. لو معطّل، الخصم يُحسب فقط على المنتجات
-// العادية، والعروض تُضاف بسعرها الكامل بدون خصم إضافي فوقها.
-async function computeGeneralDiscountForCart(cartItems, clientEmail, clientPhone) {
-  const cfg = await loadCustomDiscountConfig();
-  if (!cfg || !cfg.enabled) return null;
-
-  const isOfferItem = (item) => item.isBundle || (item.basePrice && item.price < item.basePrice);
-
-  if (cfg.applyToOffers !== false) {
-    const rawTotal = cartItems.reduce((s, i) => s + i.price * i.qty, 0);
-    return computeCustomDiscount(rawTotal, clientEmail, clientPhone);
-  }
-
-  const offerTotal = cartItems.filter(isOfferItem).reduce((s, i) => s + i.price * i.qty, 0);
-  const normalTotal = cartItems.filter(i => !isOfferItem(i)).reduce((s, i) => s + i.price * i.qty, 0);
-  if (normalTotal <= 0) return null;
-
-  const discountOnNormal = await computeCustomDiscount(normalTotal, clientEmail, clientPhone);
-  if (!discountOnNormal) return null;
-
-  return {
-    originalTotal: offerTotal + normalTotal,
-    total: Math.round((discountOnNormal.total + offerTotal) * 100) / 100,
-    discountPercent: discountOnNormal.discountPercent
-  };
-}
-// ============================
-// الخصم المخصص — 3 مستويات شرائحية، كل مستوى له نسبة + قيمة تصنيف + عملاء معنيين
-// ============================
-var _customDiscountConfigCache = null;
-var _customDiscountConfigCacheTime = 0;
-
-async function loadCustomDiscountConfig() {
-  if (_customDiscountConfigCache !== null && (Date.now() - _customDiscountConfigCacheTime) < 15000) {
-    return _customDiscountConfigCache;
-  }
-  try {
-    const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'custom_discount_settings'));
-    _customDiscountConfigCache = snap.exists() ? snap.data() : null;
-    _customDiscountConfigCacheTime = Date.now();
-    return _customDiscountConfigCache;
-  } catch(e) {
-    console.warn('loadCustomDiscountConfig:', e.message);
-    return null;
-  }
-}
-function invalidateCustomDiscountConfigCache() {
-  _customDiscountConfigCache = null;
-  _customDiscountConfigCacheTime = 0;
-}
+// normalizePhone / computeGeneralDiscountForCart / loadCustomDiscountConfig /
+// invalidateCustomDiscountConfigCache / computeCustomDiscount انتقلت إلى js/shared/discounts.js
 
 function setCustomDiscExpiryPreset(idx, days) {
   const d = new Date();
