@@ -45,9 +45,9 @@ function loadCategories() {
 
 async function loadCategoriesFromFirebase() {
   try {
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 180; i++) {
       if (window._fbDoc2 && window._fbGetDoc) break;
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 50));
     }
     if (!window._fbDoc2 || !window._fbGetDoc) return;
 
@@ -646,11 +646,13 @@ var _productsCollectionReady = false; // true إذا كانت Collection الج�
 var _ensureAllPromise = null;
 
 async function waitForFirebase(maxTries = 30) {
-  for (let i = 0; i < maxTries; i++) {
-    if (window._fbCollection && window._fbGetDocs && window._fbLimit) return true;
-    await new Promise(r => setTimeout(r, 250));
+  const ready = () => window._fbCollection && window._fbGetDocs && window._fbLimit;
+  const total = maxTries * 5; // نفس مدة الانتظار الكلية السابقة، لكن بفحص كل 50ms بدل 250ms
+  for (let i = 0; i < total; i++) {
+    if (ready()) return true;
+    await new Promise(r => setTimeout(r, 50));
   }
-  return !!(window._fbCollection && window._fbGetDocs && window._fbLimit);
+  return !!ready();
 }
 
 // يجلب صفحة واحدة من Collection "products" باستخدام limit() الحقيقي، ومع startAfter() لما بعد أول صفحة
@@ -857,9 +859,9 @@ function loadOffers() {
 
 async function loadOffersFromFirebase() {
   try {
-    for (let i = 0; i < 30; i++) {
+    for (let i = 0; i < 180; i++) {
       if (window._fbDoc2 && window._fbGetDoc) break;
-      await new Promise(r => setTimeout(r, 300));
+      await new Promise(r => setTimeout(r, 50));
     }
     if (!window._fbDoc2 || !window._fbGetDoc) return;
     const snap = await window._fbGetDoc(window._fbDoc2('store_data', 'offers'));
@@ -1676,7 +1678,7 @@ async function initializeProductsModule() {
   // يضمن أن الأقسام والبحث وزر "عرض المزيد" تعمل على كامل الكتالوج
   renderAdBanner();
 
-  ensureAllProductsLoaded().then(() => {
+  const _loadRestOfCatalog = () => ensureAllProductsLoaded().then(() => {
     renderProducts();
     renderCategories();
     populateCategorySelects();
@@ -1684,6 +1686,9 @@ async function initializeProductsModule() {
       document.getElementById('homePage')?.classList.add('active');
     }
   });
+  // نؤجل تحميل بقية الكتالوج حتى يفرغ المتصفح من رسم الصفحة الأولى
+  if ('requestIdleCallback' in window) requestIdleCallback(_loadRestOfCatalog, { timeout: 3000 });
+  else setTimeout(_loadRestOfCatalog, 1500);
 }
 
 // يستدعيه app.js بعد تحميل جميع الوحدات، ويمنع تشغيل التهيئة قبل cart/auth/navigation.
