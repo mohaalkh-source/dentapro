@@ -139,7 +139,8 @@ var CLOUDINARY_MAX_SIZE_MB = 5;
 // يحوّل رابط Cloudinary العادي إلى رابط محسّن (ضغط تلقائي + صيغة تلقائية + تحديد عرض)
 function cldOptimize(url, width) {
   if (!url || typeof url !== 'string' || !url.includes('/upload/')) return url;
-  const w = width ? `,w_${width}` : '';
+  if (/\/upload\/(?:[^/]*,)?(?:f_auto|q_auto)/.test(url)) return url;
+  const w = width ? `,w_${width},c_limit` : '';
   return url.replace('/upload/', `/upload/f_auto,q_auto${w}/`);
 }
 
@@ -1456,7 +1457,7 @@ function renderBannerImageSlide(slide, current) {
     slide.style.cursor = 'default';
   }
 
-  slide.innerHTML = `<img src="${imgUrl}" alt="banner" loading="lazy" style="width:100%;height:100%;object-fit:cover">`;
+  slide.innerHTML = `<img src="${imgUrl}" alt="banner" fetchpriority="high" decoding="async" style="width:100%;height:100%;object-fit:cover">`;
 }
 
 // ============================
