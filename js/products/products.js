@@ -1149,10 +1149,11 @@ async function loadAndRenderNotifIcon() {
   else updateClientMsgBadge();
 }
 
-function openAdminMessagesPanel() {
+async function openAdminMessagesPanel() {
   if (!isStaff()) return;
   document.getElementById('adminPanel').classList.add('open');
-  switchAdminTab('messages');
+  if (typeof window.loadAdminScriptsOnce === 'function') await window.loadAdminScriptsOnce();
+  if (typeof switchAdminTab === 'function') switchAdminTab('messages');
 }
 
 // ── تتبّع قراءة محادثات العملاء (للأدمن) ──
