@@ -302,6 +302,12 @@ function openOrderModal() {
   orderSubmitted = false;
   window._autoFilledOnce = false;
   window._orderGuestResolvedClient = null;
+  // مفتاح idempotency: يُولَّد مرة واحدة لكل طلب جديد (هنا)، ويبقى ثابتاً حتى لو
+  // فشلت محاولة الإرسال وأعاد المستخدم الضغط على الزر — هذا هو معنى منع التكرار أصلاً.
+  // نستخدم crypto.randomUUID عند توفرها (كل متصفح حديث عبر HTTPS)، وإلا بديل بسيط.
+  window._currentOrderIdempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `idem-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
   setOrderGuestFieldsLocked(false);
   locationData = { lat: null, lng: null, address: '', method: '' };
   document.getElementById('locationConfirm').classList.remove('show');
