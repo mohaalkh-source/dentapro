@@ -10,14 +10,16 @@ const CORE_SCRIPTS = [
   './js/location/location.js',
   './js/ui/navigation.js',
   './js/user/auth-ui.js',
-];
-
-// هذه الملفات تُحمَّل فقط إذا كان المستخدم Staff (أدمن/مدير) — كل كود لوحة الإدارة
-// وملحقاتها (الطلبات، العملاء، الرسائل) موجود هنا، ولا يحتاجه زائر أو عميل عادي إطلاقاً
-const ADMIN_SCRIPTS = [
-  './js/admin/products.js',
+  // وظائف الطلبات وطلب عرض السعر مطلوبة من واجهة العميل أيضاً،
+  // وليست خاصة بلوحة الإدارة. كانت محمّلة سابقاً للأدمن فقط،
+  // لذلك كانت أزرار العميل تستدعي دوال غير موجودة وتبدو وكأنها لا تعمل.
   './js/orders/checkout.js',
   './js/orders/orders.js',
+];
+
+// ملفات لوحة الإدارة فقط — لا تُحمّل للعميل العادي.
+const ADMIN_SCRIPTS = [
+  './js/admin/products.js',
   './js/admin/clients.js',
   './js/messages/messages.js',
   './js/admin/admin.js',
