@@ -253,6 +253,7 @@ async function submitOrder() {
         notes: cleanOrder.notes,
         payMethod: cleanOrder.payMethod,
         sourceQuoteId: null,
+        idempotencyKey: window._currentOrderIdempotencyKey,
       });
       orderNum = serverResult.data.orderNum;
       cleanOrder.id = orderNum;
