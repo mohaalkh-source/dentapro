@@ -703,7 +703,13 @@ async function saveOrderDeliveryFee(docId) {
 }
 async function updateOrderStatus(docId, orderId, newStatus) {
   try {
-    const order = (window._cachedOrders || []).find(o => o._docId === docId) || {};
+    // نقرأ الطلب طازجاً من قاعدة البيانات مباشرة (وليس من الكاش المحلي الذي قد يكون قديماً)
+    // حتى نضمن أن قرار خصم النقاط/المخزون يُبنى على القيم الفعلية الحالية
+    // (payMethod, pointsDeducted, stockDeducted, totalPoints, clientUid, ...)
+    const freshSnap = await window._fbGetDoc(window._fbDoc(docId));
+    const order = freshSnap.exists()
+      ? { _docId: docId, ...freshSnap.data() }
+      : ((window._cachedOrders || []).find(o => o._docId === docId) || {});
     await window._fbUpdateDoc(window._fbDoc(docId), { status: newStatus });
 
     if (order.clientEmail && order.clientEmail !== 'guest') {
@@ -719,11 +725,10 @@ async function updateOrderStatus(docId, orderId, newStatus) {
     }
 // خصم المخزون تلقائياً عند التسليم، فقط للطلبات القديمة التي لم يُحجز مخزونها عند الإنشاء
 // (الطلبات الجديدة تُحجز فعلياً وقت الإرسال عبر reserveOrderStock، فلا داعي لخصمها مرة أخرى هنا)
-    const orderForStock = (window._cachedOrders || []).find(o => o._docId === docId);
-    if (newStatus === 'delivered' && orderForStock && !orderForStock.stockDeducted && !orderForStock.stockReserved) {
+    if (newStatus === 'delivered' && order && !order.stockDeducted && !order.stockReserved) {
       await ensureAllProductsLoaded(); // نضمن أن كل المنتجات محمّلة محلياً قبل تعديل مخزونها
       const changedProducts = [];
-      (orderForStock.items || []).forEach(item => {
+      (order.items || []).forEach(item => {
         if (item.isBundle && item.bundleItems) {
           item.bundleItems.forEach(bi => {
             const prod = products.find(x => x.id === bi.productId);
@@ -780,9 +785,9 @@ async function updateOrderStatus(docId, orderId, newStatus) {
       await window._fbUpdateDoc(window._fbDoc(docId), { earnPointsAwarded: true });
     }
 
-    if (newStatus === 'cancelled' && orderForStock && orderForStock.stockReserved && !orderForStock.stockReleased) {
+    if (newStatus === 'cancelled' && order && order.stockReserved && !order.stockReleased) {
       await ensureAllProductsLoaded();
-      await releaseOrderStock(orderForStock.items);
+      await releaseOrderStock(order.items);
       await window._fbUpdateDoc(window._fbDoc(docId), { stockReleased: true });
     }
 
