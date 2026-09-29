@@ -239,10 +239,12 @@ function renderAuthHeader() {
   const roleLabel = isAdminRole ? 'مدير النظام' : (isManagerRole ? 'مدير فرعي' : 'عميل');
 
   const displayName = escHtml(currentUser.name || currentUser.email || 'حسابي');
+  const isStaffUser = isStaff();
+  const chipClickHandler = isStaffUser ? 'openAccountMenu()' : 'goHome()';
   area.innerHTML = `
     <div class="user-chip" role="button" tabindex="0"
-      onclick="openAccountMenu()"
-      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openAccountMenu();}">
+      onclick="${chipClickHandler}"
+      onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();${chipClickHandler};}">
       <div class="user-avatar" style="background:${avatarBg}">${avatarIcon}</div>
       <div style="min-width:0">
         <div class="user-chip-name">${displayName}</div>
@@ -349,9 +351,10 @@ function loginSuccess(user) {
     setTimeout(async () => {
       document.getElementById('adminPanel').classList.add('open');
       applyAdminUIPermissions();
+      if (typeof window.loadAdminScriptsOnce === 'function') await window.loadAdminScriptsOnce();
       await ensureAllProductsLoaded();
-      updateAdminStats();
-      renderAdminTable();
+      if (typeof updateAdminStats === 'function') updateAdminStats();
+      if (typeof renderAdminTable === 'function') renderAdminTable();
     }, 400);
   } else {
     showClientWelcome(user);
@@ -531,9 +534,10 @@ async function openAdminDirect() {
   document.getElementById('adminPanel').classList.add('open');
   applyAdminUIPermissions();
   showToast('🔄 جاري تحميل كل المنتجات...', '');
+  if (typeof window.loadAdminScriptsOnce === 'function') await window.loadAdminScriptsOnce();
   await ensureAllProductsLoaded(); // لوحة التحكم تحتاج كل المنتجات (إحصائيات/جدول/بحث دقيق)
-  updateAdminStats();
-  renderAdminTable();
+  if (typeof updateAdminStats === 'function') updateAdminStats();
+  if (typeof renderAdminTable === 'function') renderAdminTable();
 }
 
 function togglePassVis(fieldId, icon) {
