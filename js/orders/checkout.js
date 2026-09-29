@@ -408,6 +408,11 @@ function proceedQuickOrderCheckout(items, hasCustomItem) {
   window._qoLocationText = null;
   window._qoLocationLat = null;
   window._qoLocationLng = null;
+  // مفتاح idempotency لهذا الطلب — نقطة الالتقاء المشتركة لكل مسارات الطلب السريع
+  // (من السلة عبر openQuickOrderModal، ومن عرض سعر مقبول عبر products.js مباشرة)
+  window._currentOrderIdempotencyKey = (typeof crypto !== 'undefined' && crypto.randomUUID)
+    ? crypto.randomUUID()
+    : `idem-${Date.now().toString(36)}-${Math.random().toString(36).slice(2)}`;
 
   const clientSession = getActiveClientSession();
   const missingInfo = !clientSession || !clientSession.clinic || !clientSession.phone;
@@ -617,6 +622,7 @@ async function finalizeQuickOrderSend() {
             locationLat: locLat || null, locationLng: locLng || null,
             notes: order.notes, payMethod: 'money',
             sourceQuoteId: fromQuoteIdStr || null,
+            idempotencyKey: window._currentOrderIdempotencyKey,
           });
           orderNum = serverResult.data.orderNum;
           total = serverResult.data.total;
