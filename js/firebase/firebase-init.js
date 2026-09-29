@@ -121,6 +121,10 @@ window._fbGetDocFromServer = getDocFromServer;
         }
         window._currentRole = role;
         const isStaffUser = (role === 'admin' || role === 'manager');
+        // تحميل كود لوحة الإدارة (admin/products.js وأخواتها) فقط الآن، بعد تأكيد الدور فعلياً
+        if (isStaffUser && typeof window.loadAdminScriptsOnce === 'function') {
+          window.loadAdminScriptsOnce();
+        }
         // تحديد عدد الطلبات المراقَبة لحظياً لتفادي تجميد الصفحة عند تراكم آلاف الطلبات
         const q = isStaffUser
           ? query(collection(db, 'orders'), orderBy('createdAt', 'desc'), limit(50))
@@ -170,4 +174,14 @@ window._fbGetDocFromServer = getDocFromServer;
         }
       } catch(e) { console.warn('Listener:', e); }
     });
+  });
+
+  // بعد اكتمال تحميل كود لوحة الإدارة (admin/products.js وأخواتها)، نعيد رسم أي واجهة
+  // إدارية كانت قد فُتحت أو طُلبت قبل اكتمال التحميل (نادراً ما يحدث، لكن ممكن على شبكة بطيئة)
+  document.addEventListener('dp:admin-scripts-ready', () => {
+    const adminOpen  = document.getElementById('adminPanel')?.classList.contains('open');
+    const ordersOpen = document.getElementById('ordersPage')?.classList.contains('active');
+    if (adminOpen  && typeof window.renderAdminOrders  === 'function') window.renderAdminOrders();
+    if (ordersOpen && typeof window.renderClientOrders === 'function') window.renderClientOrders();
+    if (typeof window.renderPointsInHeader === 'function') window.renderPointsInHeader();
   });
