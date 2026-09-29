@@ -4,12 +4,17 @@ import { setState } from './state.js';
 import { wait } from './utils.js';
 import { waitForFirebase } from './firebase/firebase-services.js';
 
-const DOMAIN_SCRIPTS = [
+const CORE_SCRIPTS = [
   './js/products/products.js',
   './js/cart/cart.js',
   './js/location/location.js',
   './js/ui/navigation.js',
   './js/user/auth-ui.js',
+];
+
+// هذه الملفات تُحمَّل فقط إذا كان المستخدم Staff (أدمن/مدير) — كل كود لوحة الإدارة
+// وملحقاتها (الطلبات، العملاء، الرسائل) موجود هنا، ولا يحتاجه زائر أو عميل عادي إطلاقاً
+const ADMIN_SCRIPTS = [
   './js/admin/products.js',
   './js/orders/checkout.js',
   './js/orders/orders.js',
@@ -17,6 +22,8 @@ const DOMAIN_SCRIPTS = [
   './js/messages/messages.js',
   './js/admin/admin.js',
 ];
+
+const DOMAIN_SCRIPTS = [...CORE_SCRIPTS, ...ADMIN_SCRIPTS]; // يبقى للتوافق مع أي كود يستورد هذا الاسم
 
 function loadDomainScript(src) {
   return new Promise((resolve, reject) => {
@@ -39,9 +46,32 @@ function loadDomainScriptOrdered(src) {
   });
 }
 
-await Promise.all(DOMAIN_SCRIPTS.map(loadDomainScriptOrdered));
-if (typeof window.initializeProductsModule !== 'function') {
-  console.warn('initializeProductsModule غير متوفرة');
+await Promise.all(CORE_SCRIPTS.map(loadDomainScriptOrdered));
+
+// ── تحميل كود لوحة الإدارة (ADMIN_SCRIPTS) فقط إذا كان المستخدم Staff ──
+// نتحقق أولاً من الجلسة المحلية الفورية (بلا انتظار شبكة) لتفادي أي تأخير محسوس
+// لأدمن يفتح الموقع، ثم نُثبّت القرار لاحقاً عبر onAuthStateChanged الحقيقي في firebase-init.js
+let _adminScriptsLoaded = false;
+let _adminScriptsLoadingPromise = null;
+
+function loadAdminScriptsOnce() {
+  if (_adminScriptsLoaded) return Promise.resolve();
+  if (_adminScriptsLoadingPromise) return _adminScriptsLoadingPromise;
+  _adminScriptsLoadingPromise = Promise.all(ADMIN_SCRIPTS.map(loadDomainScriptOrdered)).then(() => {
+    _adminScriptsLoaded = true;
+    document.dispatchEvent(new CustomEvent('dp:admin-scripts-ready'));
+  }).catch(err => {
+    console.error('فشل تحميل كود لوحة الإدارة:', err);
+    _adminScriptsLoadingPromise = null; // يسمح بإعادة المحاولة لاحقاً
+  });
+  return _adminScriptsLoadingPromise;
+}
+window.loadAdminScriptsOnce = loadAdminScriptsOnce; // متاحة لـ firebase-init.js وأي كود آخر يحتاج التأكد من جاهزيتها
+
+// فحص أولي سريع من الجلسة المحلية المحفوظة (currentUser تُضبط في auth-ui.js أعلاه بشكل متزامن)
+if (typeof window.currentUser !== 'undefined' && window.currentUser &&
+    (window.currentUser.role === 'admin' || window.currentUser.role === 'manager')) {
+  loadAdminScriptsOnce();
 }
 
 // لا ننتظر Firebase أو تهيئة المنتجات قبل إخفاء شاشة البداية.
