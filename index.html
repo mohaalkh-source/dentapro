@@ -86,6 +86,7 @@
 <script src="./js/shared/media.js?v=final2"></script>
 <script src="./js/shared/discounts.js?v=final2"></script>
 <script src="./js/shared/loyalty.js?v=final2"></script>
+<script src="./js/shared/ad-banner.js?v=final2"></script>
 <script type="module" src="./js/firebase/firebase-init.js?v=final2"></script>
 <script type="module" src="./js/app.js?v=final2"></script>
 </head>
@@ -2862,86 +2863,4 @@
 </script>
 
 </body>
-  <!-- ═══ سكربت تشخيص مؤقت — احذفه بعد الانتهاء من التشخيص ═══ -->
-<div id="dpDiagBox" style="display:none;position:fixed;inset:0;z-index:999999;background:#0b1220;color:#e5e7eb;
-  font-family:monospace;font-size:13px;padding:16px;overflow:auto;direction:ltr;text-align:left;line-height:1.6">
-  <button onclick="document.getElementById('dpDiagBox').style.display='none'"
-    style="position:fixed;top:10px;right:10px;background:#ef4444;color:#fff;border:none;
-    padding:8px 14px;border-radius:8px;font-weight:bold">إغلاق ✕</button>
-  <div id="dpDiagContent">جارٍ الفحص...</div>
-</div>
-<button id="dpDiagOpenBtn" onclick="window.__dpRunDiag()"
-  style="position:fixed;bottom:16px;left:16px;z-index:999998;background:#2563eb;color:#fff;
-  border:none;padding:10px 16px;border-radius:10px;font-weight:bold;box-shadow:0 4px 12px rgba(0,0,0,.3)">
-  🔍 فحص الطلبات
-</button>
-
-<script>
-window.__dpRunDiag = async function () {
-  const box = document.getElementById('dpDiagBox');
-  const content = document.getElementById('dpDiagContent');
-  box.style.display = 'block';
-  content.textContent = 'جارٍ الفحص...';
-
-  const lines = [];
-  const log = (s) => lines.push(s);
-
-  try {
-    log('=== 1) فحص جاهزية Firebase ===');
-    log('window._fbGetDocs موجودة: ' + (typeof window._fbGetDocs === 'function'));
-    log('window._fbOrdersRef موجودة: ' + (typeof window._fbOrdersRef === 'function'));
-    log('window._fbQuery موجودة: ' + (typeof window._fbQuery === 'function'));
-    log('window._fbLimit موجودة: ' + (typeof window._fbLimit === 'function'));
-    log('window._fbOrderBy موجودة: ' + (typeof window._fbOrderBy === 'function'));
-    log('');
-
-    log('=== 2) فحص الدوال المنقولة (shared/) ===');
-    log('typeof cldOptimize: ' + typeof window.cldOptimize);
-    log('typeof computeGeneralDiscountForCart: ' + typeof window.computeGeneralDiscountForCart);
-    log('typeof getClientPoints: ' + typeof window.getClientPoints);
-    log('typeof saveClientPoints: ' + typeof window.saveClientPoints);
-    log('typeof updateOrderStatus: ' + typeof window.updateOrderStatus);
-    log('');
-
-    log('=== 3) window._cachedOrders الحالية (إن وُجدت) ===');
-    const cached = window._cachedOrders || [];
-    log('عدد الطلبات في الكاش المحلي: ' + cached.length);
-    if (cached.length) {
-      cached.slice(0, 5).forEach(o => {
-        log(`  #${o.id || o._docId} | status=${o.status} | payMethod=${o.payMethod} | pointsDeducted=${o.pointsDeducted} | totalPoints=${o.totalPoints}`);
-      });
-    }
-    log('');
-
-    log('=== 4) قراءة آخر 10 طلبات مباشرة من Firestore ===');
-    if (typeof window._fbGetDocs === 'function' && typeof window._fbOrdersRef === 'function') {
-      const q = window._fbQuery(window._fbOrdersRef(), window._fbOrderBy('createdAt', 'desc'), window._fbLimit(10));
-      const snap = await window._fbGetDocs(q);
-      const orders = snap.docs.map(d => ({ _docId: d.id, ...d.data() }));
-      log('عدد الطلبات المقروءة من السيرفر: ' + orders.length);
-      orders.forEach(o => {
-        log(`  #${o.id || o._docId}`);
-        log(`     status=${o.status}`);
-        log(`     payMethod=${JSON.stringify(o.payMethod)}`);
-        log(`     pointsDeducted=${o.pointsDeducted}`);
-        log(`     totalPoints=${o.totalPoints}`);
-        log(`     clientUid=${o.clientUid}`);
-        log(`     clientEmail=${o.clientEmail}`);
-        log('   ---');
-      });
-    } else {
-      log('⚠️ Firebase غير جاهز بعد، لا يمكن القراءة المباشرة');
-    }
-    log('');
-
-    log('=== انتهى الفحص ===');
-  } catch (e) {
-    log('❌ خطأ أثناء الفحص: ' + e.message);
-    log(e.stack || '');
-  }
-
-  content.textContent = lines.join('\n');
-};
-</script>
-<!-- ═══ نهاية سكربت التشخيص ═══ -->
 </html>
