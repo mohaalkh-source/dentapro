@@ -1,9 +1,13 @@
 const { onCall, HttpsError } = require('firebase-functions/v2/https');
+const { onDocumentCreated } = require('firebase-functions/v2/firestore');
+const { getMessaging } = require('firebase-admin/messaging');
 const { initializeApp } = require('firebase-admin/app');
 const { getFirestore, FieldValue } = require('firebase-admin/firestore');
 
 initializeApp();
 const db = getFirestore();
+// يمنع الفشل (internal) عند وجود حقل undefined في بيانات منتج/باقة
+db.settings({ ignoreUndefinedProperties: true });
 
 // حدود صارمة تمنع طلبات غير منطقية أو محاولات استنزاف
 const MAX_DISTINCT_ITEMS = 30;
@@ -189,7 +193,9 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
   const idempotencyRef = db.doc(`order_idempotency/${idempotencyKey}`);
   const orderRef = db.doc(`orders/${orderNum}`);
 
-  const result = await db.runTransaction(async (tx) => {
+  let result;
+  try {
+  result = await db.runTransaction(async (tx) => {
     // 0) تحقق من التكرار أولاً — لو نفس المفتاح استُخدم قبل، نرجّع نتيجة الطلب الأصلي بدل إنشاء طلب ثانٍ
     const idemSnap = await tx.get(idempotencyRef);
     if (idemSnap.exists) {
@@ -367,6 +373,71 @@ exports.createOrder = onCall({ region: 'us-central1' }, async (request) => {
 
     return { orderNum, total: finalTotal, totalPoints: order.totalPoints, duplicate: false };
   });
+  } catch (err) {
+    if (err instanceof HttpsError) throw err;
+    // يظهر السبب الحقيقي في Firebase Console > Functions > Logs
+    console.error('createOrder failed:', err && err.stack ? err.stack : err);
+    throw new HttpsError('internal', 'تعذّر إنشاء الطلب: ' + (err && err.message ? err.message : 'خطأ غير معروف'));
+  }
 
   return result;
 });
+
+// =====================================================
+// إرسال إشعارات الدفع (FCM) عند إنشاء مستند في notifications
+// scope: 'broadcast' → كل المشتركين | 'admin' → الإدارة | targetEmail → عميل محدد
+// =====================================================
+async function collectTokens(n) {
+  const tokens = new Set();
+
+  if (n.targetEmail) {
+    const q = await db.collection('fcm_tokens').where('email', '==', n.targetEmail).get();
+    q.forEach(d => d.data().token && tokens.add(d.data().token));
+  } else if (n.scope === 'admin') {
+    // الدور يُقرأ من users وليس من fcm_tokens (لا نثق بما يكتبه العميل)
+    const staff = await db.collection('users').where('role', 'in', ['admin', 'manager']).get();
+    const ids = new Set();
+    staff.forEach(d => { ids.add(d.id); if (d.data().email) ids.add(d.data().email); });
+    const docs = await Promise.all([...ids].map(id => db.doc('fcm_tokens/' + id).get()));
+    docs.forEach(d => d.exists && d.data().token && tokens.add(d.data().token));
+  } else if (n.scope === 'broadcast') {
+    const all = await db.collection('fcm_tokens').get();
+    all.forEach(d => d.data().token && tokens.add(d.data().token));
+  }
+  return [...tokens];
+}
+
+exports.sendPushOnNotification = onDocumentCreated(
+  { document: 'notifications/{id}', region: 'us-central1' },
+  async (event) => {
+    const n = event.data && event.data.data();
+    if (!n) return;
+
+    const tokens = await collectTokens(n);
+    if (!tokens.length) return;
+
+    // رسالة بيانات فقط (data-only) لتجنب تكرار الإشعار مع الـ Service Worker
+    const data = {
+      title: String(n.title || 'DentaPro'),
+      body: String(n.message || ''),
+      link: n.link && /^https:\/\//i.test(n.link) ? String(n.link) : ''
+    };
+
+    const invalid = [];
+    for (let i = 0; i < tokens.length; i += 500) {
+      const chunk = tokens.slice(i, i + 500);
+      const res = await getMessaging().sendEachForMulticast({ tokens: chunk, data });
+      res.responses.forEach((r, idx) => {
+        const c = r.error && r.error.code;
+        if (c === 'messaging/registration-token-not-registered' ||
+            c === 'messaging/invalid-registration-token') invalid.push(chunk[idx]);
+      });
+    }
+
+    // تنظيف التوكنات المنتهية
+    for (let i = 0; i < invalid.length; i += 10) {
+      const q = await db.collection('fcm_tokens').where('token', 'in', invalid.slice(i, i + 10)).get();
+      await Promise.all(q.docs.map(d => d.ref.delete()));
+    }
+  }
+);
