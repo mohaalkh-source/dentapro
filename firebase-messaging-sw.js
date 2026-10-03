@@ -15,7 +15,7 @@ firebase.initializeApp({
 const messaging = firebase.messaging();
 
 messaging.onBackgroundMessage((payload) => {
-  const notification = payload.notification || {};
+  const notification = payload.notification || { title: (payload.data||{}).title, body: (payload.data||{}).body };
   const title = notification.title || 'DentaPro';
   const options = {
     body: notification.body || '',
