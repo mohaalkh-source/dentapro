@@ -1184,8 +1184,8 @@ async function enablePushNotifications() {
 
 // إشعار يصل والموقع مفتوح بالمقدمة فعلياً — نعرضه toast بدل إشعار نظام مزدوج
 window._onForegroundFCMMessage = function(payload) {
-  const title = payload.notification?.title || '';
-  const body = payload.notification?.body || '';
+  const title = payload.notification?.title || payload.data?.title || '';
+  const body = payload.notification?.body || payload.data?.body || '';
   showToast(`🔔 ${title}${body ? ' — ' + body : ''}`, 'success');
   if (typeof loadAndRenderNotifIcon === 'function' && currentUser) loadAndRenderNotifIcon();
 };
