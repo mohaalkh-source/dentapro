@@ -195,18 +195,6 @@ match /delivery_settings/{userId} {
       allow update, delete: if false;
     }
 
-    match /fcm_tokens/{tokenId} {
-      // لا قراءة من العميل؛ الإرسال يتم من Cloud Function (Admin SDK)
-      allow read: if false;
-      allow create, update: if isLoggedIn() &&
-                            (tokenId == request.auth.uid || tokenId == request.auth.token.email) &&
-                            request.resource.data.keys().hasOnly(['token','email','role','updatedAt']) &&
-                            request.resource.data.token is string && request.resource.data.token.size() < 500 &&
-                            request.resource.data.email == request.auth.token.email;
-      allow delete: if isLoggedIn() &&
-                    (tokenId == request.auth.uid || tokenId == request.auth.token.email);
-    }
-
     match /notifications/{notifId} {
       allow read: if isStaff() ||
                   (isLoggedIn() &&
