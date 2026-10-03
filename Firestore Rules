@@ -1,0 +1,253 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function isAdmin() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'admin';
+    }
+
+    function isStaff() {
+      return request.auth != null &&
+             get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role in ['admin','manager'];
+    }
+
+    function isLoggedIn() {
+      return request.auth != null;
+    }
+    
+    match /products/{productId} {
+      allow read: if true;
+      allow write: if isStaff();
+      allow update: if isLoggedIn() &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['stock']) &&
+                       request.resource.data.stock is int &&
+                       request.resource.data.stock >= 0 &&
+                       request.resource.data.stock < resource.data.stock &&
+                       (resource.data.stock - request.resource.data.stock) <= 50;
+    }
+
+    match /orders/{orderId} {
+      allow create: if
+        isStaff() &&
+        request.resource.data.keys().hasOnly([
+          'id','clientName','clientEmail','clientUid','clinic','doctor','phone',
+          'address','locationLat','locationLng','notes','items','total','totalPoints',
+          'payMethod','pointsDeducted','status','createdAt','createdByAdmin','sourceQuoteId',
+          'originalTotal','discountPercent','manualDiscountAmount','manualDiscountType','stockReserved',
+          'deliveryFee','deliveryDetermined'
+        ]) &&
+        request.resource.data.keys().hasAll(['id','clinic','doctor','phone','items','total','status','createdAt']) &&
+        request.resource.data.pointsDeducted == false &&
+        request.resource.data.items is list &&
+        request.resource.data.items.size() > 0 &&
+        request.resource.data.items.size() <= 100 &&
+        request.resource.data.total is number &&
+        request.resource.data.total >= 0 &&
+        request.resource.data.phone is string &&
+        request.resource.data.status in ['pending','confirmed'] &&
+        request.resource.data.payMethod in ['money','points','free'];
+
+      // get: قراءة طلب واحد بمعرفه المحدد (تستخدمها ميزة تتبّع الطلب)
+      allow get: if isStaff() ||
+                     (isLoggedIn() && resource.data.clientEmail == request.auth.token.email) ||
+                     resource.data.clientEmail == 'guest';
+
+      // list: أي استعلام/تصفح لمجموعة طلبات — ممنوع لغير الموظفين
+      // (يمنع سحب كل طلبات الزوار دفعة وحدة عبر where('clientEmail','==','guest'))
+      allow list: if isStaff() ||
+                      (isLoggedIn() && request.auth.token.email == resource.data.clientEmail);
+
+      allow update: if (isStaff() &&
+                       request.resource.data.diff(resource.data).affectedKeys()
+                         .hasOnly(['status','stockDeducted','pointsDeducted','earnPointsAwarded','stockReleased','deliveryFee','deliveryDetermined','total']))
+                       ||
+                       (isLoggedIn() &&
+                        resource.data.clientEmail == request.auth.token.email &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['clientName','doctor','clinic','phone']))
+                       ||
+                       (isLoggedIn() &&
+                        resource.data.clientEmail == 'guest' &&
+                        resource.data.phone == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phone &&
+                        request.resource.data.clientEmail == request.auth.token.email &&
+                        request.resource.data.clientUid == request.auth.uid &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['clientName','doctor','clinic','phone','clientEmail','clientUid']));
+
+      allow delete: if isAdmin();
+    }
+
+    match /points/{userId} {
+      allow read: if isAdmin() ||
+                      (isLoggedIn() && request.auth.uid == userId);
+      allow write: if isAdmin() &&
+                      request.resource.data.keys().hasOnly(['email','uid','balance','logs']) &&
+                      request.resource.data.balance is number &&
+                      request.resource.data.balance >= 0 &&
+                      request.resource.data.logs is list;
+    }
+match /delivery_settings/{userId} {
+      allow read: if userId == '_global' || isStaff() ||
+                      (isLoggedIn() && request.auth.uid == userId);
+      allow write: if isStaff();
+    }
+    match /store_data/{docId} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+
+    match /users/{userId} {
+      allow read: if isStaff() ||
+                      (isLoggedIn() && request.auth.uid == userId);
+
+      allow create: if isLoggedIn() &&
+                       request.auth.uid == userId &&
+                       request.resource.data.role == 'client';
+
+      allow update: if isAdmin() ||
+                       (isLoggedIn() && request.auth.uid == userId &&
+                        request.resource.data.role == resource.data.role &&
+                        request.resource.data.email == request.auth.token.email &&
+                        request.resource.data.diff(resource.data).affectedKeys()
+                          .hasOnly(['firstName','clinic','phone','email','profileLocationText','profileLocationLat','profileLocationLng','updatedAt']));
+
+      allow delete: if isAdmin() ||
+                       (isLoggedIn() && request.auth.uid == userId);
+    }
+
+    match /contact_messages/{msgId} {
+      allow create: if
+        request.resource.data.keys().hasOnly(['name','email','message','createdAt']) &&
+        request.resource.data.name is string && request.resource.data.name.size() > 0 && request.resource.data.name.size() < 100 &&
+        request.resource.data.email is string && request.resource.data.email.size() > 0 && request.resource.data.email.size() < 150 &&
+        request.resource.data.message is string && request.resource.data.message.size() > 0 && request.resource.data.message.size() < 2000;
+      allow read: if isStaff();
+      allow update, delete: if false;
+    }
+
+    match /quotes/{quoteId} {
+      allow get: if isStaff() ||
+                  (isLoggedIn() && resource.data.clientEmail == request.auth.token.email) ||
+                  resource.data.clientEmail == 'guest';
+
+      allow list: if isStaff() ||
+                  (isLoggedIn() && request.auth.token.email == resource.data.clientEmail);
+
+      allow create: if
+        request.resource.data.keys().hasOnly([
+          'id','clientName','clientEmail','clientUid','clinic','phone',
+          'items','notes','attachedImage','status','createdAt'
+        ]) &&
+        request.resource.data.keys().hasAll([
+          'id','clientName','clientEmail','clinic','phone','items','notes','attachedImage','status','createdAt'
+        ]) &&
+        request.resource.data.status == 'pending' &&
+        request.resource.data.items is list &&
+        request.resource.data.items.size() > 0 &&
+        request.resource.data.items.size() <= 50 &&
+        request.resource.data.phone is string &&
+        request.resource.data.phone.size() > 5 &&
+        request.resource.data.phone.size() < 30 &&
+        request.resource.data.clientName is string &&
+        request.resource.data.clientName.size() > 0 &&
+        request.resource.data.clientName.size() < 100 &&
+        request.resource.data.clinic is string &&
+        request.resource.data.clinic.size() < 150 &&
+        request.resource.data.notes is string &&
+        request.resource.data.notes.size() < 2000 &&
+        (request.resource.data.attachedImage == null ||
+         (request.resource.data.attachedImage is string &&
+          request.resource.data.attachedImage.size() < 500 &&
+          request.resource.data.attachedImage.matches('^https://res\\.cloudinary\\.com/.*'))) &&
+        (isLoggedIn()
+          ? request.resource.data.clientEmail == request.auth.token.email
+          : request.resource.data.clientEmail == 'guest') &&
+        request.resource.data.clientUid == (isLoggedIn() ? request.auth.uid : null);
+
+      allow update: if isStaff() ||
+                    (isLoggedIn() &&
+                     resource.data.clientEmail == request.auth.token.email &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'orderStatus']) &&
+                     resource.data.status == 'priced' &&
+                     request.resource.data.status in ['accepted', 'rejected', 'saved']) ||
+                    (isLoggedIn() &&
+                     resource.data.clientEmail == request.auth.token.email &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientName','phone'])) ||
+                    (isLoggedIn() &&
+                     resource.data.clientEmail == 'guest' &&
+                     resource.data.phone == get(/databases/$(database)/documents/users/$(request.auth.uid)).data.phone &&
+                     request.resource.data.clientEmail == request.auth.token.email &&
+                     request.resource.data.clientUid == request.auth.uid &&
+                     request.resource.data.diff(resource.data).affectedKeys().hasOnly(['clientName','phone','clientEmail','clientUid']));
+
+      allow delete: if isAdmin();
+    }
+
+    match /activity_log/{logId} {
+      allow create: if isLoggedIn() &&
+                       request.resource.data.keys().hasOnly(['email','name','type','details','createdAt']) &&
+                       request.resource.data.email == request.auth.token.email &&
+                       request.resource.data.type in ['login','add_to_cart','order_placed','register','profile_updated'] &&
+                       request.resource.data.name is string && request.resource.data.name.size() < 100 &&
+                       request.resource.data.details is map && request.resource.data.details.size() < 20;
+      allow read: if isStaff();
+      allow update, delete: if false;
+    }
+
+    match /fcm_tokens/{tokenId} {
+      // لا قراءة من العميل؛ الإرسال يتم من Cloud Function (Admin SDK)
+      allow read: if false;
+      allow create, update: if isLoggedIn() &&
+                            (tokenId == request.auth.uid || tokenId == request.auth.token.email) &&
+                            request.resource.data.keys().hasOnly(['token','email','role','updatedAt']) &&
+                            request.resource.data.token is string && request.resource.data.token.size() < 500 &&
+                            request.resource.data.email == request.auth.token.email;
+      allow delete: if isLoggedIn() &&
+                    (tokenId == request.auth.uid || tokenId == request.auth.token.email);
+    }
+
+    match /notifications/{notifId} {
+      allow read: if isStaff() ||
+                  (isLoggedIn() &&
+                   (resource.data.scope == 'broadcast' ||
+                    resource.data.targetEmail == request.auth.token.email));
+
+      allow create: if isStaff() ||
+                    (request.resource.data.scope == 'admin' &&
+                     request.resource.data.targetEmail == null &&
+                     request.resource.data.keys().hasOnly(['scope','targetEmail','icon','title','message','link','createdAt']) &&
+                     request.resource.data.icon is string && request.resource.data.icon.size() < 10 &&
+                     request.resource.data.title is string && request.resource.data.title.size() < 100 &&
+                     request.resource.data.message is string && request.resource.data.message.size() < 500 &&
+                     (request.resource.data.link == null ||
+                      (request.resource.data.link is string && request.resource.data.link.size() < 200)));
+
+      allow update, delete: if isStaff();
+    }
+
+    match /messages/{messageId} {
+      allow read: if isStaff() ||
+                  (isLoggedIn() &&
+                   (resource.data.clientEmail == request.auth.token.email ||
+                    resource.data.clientEmail == 'broadcast'));
+
+      allow create: if
+        request.resource.data.keys().hasOnly(['clientEmail','fromRole','fromName','text','imageUrl','createdAt']) &&
+        request.resource.data.text is string && request.resource.data.text.size() < 2000 &&
+        request.resource.data.fromName is string && request.resource.data.fromName.size() < 100 &&
+        (request.resource.data.imageUrl == null ||
+         (request.resource.data.imageUrl is string &&
+          request.resource.data.imageUrl.size() < 500 &&
+          request.resource.data.imageUrl.matches('^https://res\\.cloudinary\\.com/.*'))) &&
+        (
+          (isStaff() && request.resource.data.fromRole == 'admin') ||
+          (isLoggedIn() &&
+           request.resource.data.fromRole == 'client' &&
+           request.resource.data.clientEmail == request.auth.token.email)
+        );
+
+      allow update, delete: if false;
+    }
+  }
+}
